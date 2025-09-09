@@ -230,7 +230,7 @@ let guidedPoints = [
 
     { id: 8, pos: new BABYLON.Vector3(-27, .5, -35), alpha: BABYLON.Tools.ToRadians(62), beta: BABYLON.Tools.ToRadians(85) }, // STATE_EXPLORE_4
     
-    { id: 9, pos: new BABYLON.Vector3(-3, 20, -75), alpha: BABYLON.Tools.ToRadians(90), beta: BABYLON.Tools.ToRadians(85)},
+    { id: 9, pos: new BABYLON.Vector3(3, 20, -75), alpha: BABYLON.Tools.ToRadians(85), beta: BABYLON.Tools.ToRadians(87)},
     
     { id: 9.1, pos: new BABYLON.Vector3(-15, 0, -25) },
     
@@ -1711,9 +1711,10 @@ function createScene() {
                 title : "Babylon.js Editor",
                 html  : `
                     <p>A Babylon.js web editor with real-time collaborative support I've been building that prioritizes user experience, performance and accessibility of artists and designers in 3D web workflows.</p>
-                    <img src="./assets/textures/babylonEditor.png">
+                    <img src="./assets/images/babylonDashboard.png">
                     <p>Engineered with React + TypeScript + Tailwind and Supabase (auth, storage, realtime). I also designed all the UX and built the full toolchain.</p>
                     <p>The result is a modern 3D creation environment where artists and designers can build interactive WebGL experiences without installs, just open a link and create.</p>
+                    <img src="./assets/textures/babylonEditor.png">
                 `,
                 radius: 6
             });
@@ -2717,7 +2718,7 @@ function updatePortals(isVisible) {
             target: shipRoot,
             pullIn: true,
             portalPosition: new BABYLON.Vector3(50, -3, 20),
-            teleportPosition: new BABYLON.Vector3(0, 0, 0),
+            teleportPosition: new BABYLON.Vector3(-37, .7, -4),
             iblUrl: "./assets/textures/environment7.env",
             portalRadius: 6,
             name: "atlasflowTour",
@@ -2749,7 +2750,7 @@ function updatePortals(isVisible) {
             //portalPosition: editorCube.position.clone(),
             //teleportPosition: teleportPosition,
             portalPosition: new BABYLON.Vector3(-50, -3, 20),
-            teleportPosition: new BABYLON.Vector3(-1.8, .7, -4),
+            teleportPosition: new BABYLON.Vector3(37, .7, -4),
             iblUrl: "./assets/textures/environment7.env",
             portalRadius: 6,
             name: "babylonEditor",
@@ -3915,7 +3916,7 @@ function initializeScrollActions() {
     
         updateState();
 
-        if (currentState === STATE_EXPLORE && guidedMode) {
+/*         if (currentState === STATE_EXPLORE && guidedMode) {
             setTimeout(() => {
                 if (isAnimating) return;
     
@@ -3926,7 +3927,7 @@ function initializeScrollActions() {
             
                 updateState();
             }, 500);
-        }
+        } */
     }
 
     function scrollBackward() {
@@ -3939,7 +3940,7 @@ function initializeScrollActions() {
     
         updateState();
     
-        if (currentState === STATE_EXPLORE && guidedMode) {
+/*         if (currentState === STATE_EXPLORE && guidedMode) {
             setTimeout(() => {
                 if (isAnimating) return;
     
@@ -3950,7 +3951,7 @@ function initializeScrollActions() {
     
                 updateState();
             }, 1500);
-        }
+        } */
     }
 
     function updateState() {
@@ -4004,6 +4005,8 @@ function initializeScrollActions() {
                         if (currentState === maxGuidedState) {
                             setClipPath(true, 500);
                             // Change icons back to default color over time
+                            canvasContainer.style.transition = 'all 1.5s ease'
+                            header.style.transition = 'all 1.5s ease';
                             header.classList.remove('white-icons');
                             header.style.height = `60px`;
                             header.style.backgroundColor= '#F4F2ED';
@@ -4017,6 +4020,8 @@ function initializeScrollActions() {
                         } else {
                             removeClipPath(500);
                             // Change icons to light color over time
+                            canvasContainer.style.transition = 'all 0.5s ease'
+                            header.style.transition = 'all 0.5s ease';
                             header.classList.add('white-icons');
                             header.style.height = `60px`;
                             header.style.backgroundColor='transparent';

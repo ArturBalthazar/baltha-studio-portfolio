@@ -674,6 +674,24 @@ html, body {
     padding: 0px 20px;
 }
 
+/* Mobile Design (default, applies when screen < 768px) */
+.header {
+    width: calc(100% - 40px); /* Match canvas width minus padding */
+    max-width: none;
+    margin: 20px 20px;
+}
+
+#canvas-container {
+    width: 100%;
+    left: 0;
+    right: 0;
+}
+
+#home-page {
+    padding: 0px 20px; /* Ensure consistent padding with header */
+}
+
+
 /* Header */
 .header {
     position: relative;
