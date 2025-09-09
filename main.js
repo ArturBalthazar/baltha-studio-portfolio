@@ -1043,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         setTimeout(function() {
             hideLoadingScreen();
             console.log("Loading screen hidden, home page revealed");
-        }, 500);
+        }, 800);
         
         // Load additional assets in background (as requested)
         idle(async () => {
@@ -2763,7 +2763,7 @@ function updatePortals(isVisible) {
                 //   "_blank",
                 //   "noopener,noreferrer"
                 // );
-                alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk more about it in depth upon request!");
+                alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk about it more in depth upon request!");
                 attachShipControls(true, guidedMode);
               }
         });
@@ -2792,7 +2792,7 @@ function updatePortals(isVisible) {
                 //   "_blank",
                 //   "noopener,noreferrer"
                 // );
-                alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk more about it in depth upon request!");
+                alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk about it more in depth upon request!");
                 attachShipControls(true, guidedMode);
               }
         });
@@ -2927,8 +2927,8 @@ function createPortal({
     swirl.maxAngularSpeed = 3;
     swirl.enableColorGradients = true;
     swirl.addColorGradient(0.0, new BABYLON.Color4(0.2, 0.2, .7, 0));
-    swirl.addColorGradient(0.2, new BABYLON.Color4(.3, .2, .7, 1));
-    swirl.addColorGradient(0.8, new BABYLON.Color4(.5, .3, .9, 1));
+    swirl.addColorGradient(0.2, new BABYLON.Color4(.6/1.5, .62/1.5, .9/1.2, .4));
+    swirl.addColorGradient(0.8, new BABYLON.Color4(.78/1.5, .63/1.5, .82/1.2, .4));  
     swirl.addColorGradient(1.0, new BABYLON.Color4(.5, 0.2, 0.9, 0));
     swirl.minLifeTime = 4;
     swirl.maxLifeTime = 8;
