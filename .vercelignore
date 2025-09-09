@@ -1,0 +1,31 @@
+# Development files
+*.log
+.env
+.env.*
+
+# Source maps (if you generate them)
+*.map
+
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Documentation and non-essential files
+README.md
+*.md
+
+# Training data (sensitive)
+balthaStudio-trainingData.jsonl
+
+# Backup files
+*.bak
+*.backup
+
+
+# Development dependencies (already handled by Vercel)
+node_modules/
