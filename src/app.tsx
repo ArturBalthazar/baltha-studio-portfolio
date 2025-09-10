@@ -35,16 +35,15 @@ export default function App() {
           pt = top padding, pb = bottom margin, gap = space between rows. */}
       <main
         className="
-          h-screen w-full
+          h-[100dvh] min-h-[100svh] w-full
           overflow-hidden
-          grid
-          grid-rows-[max-content,1fr]
+          grid grid-rows-[max-content,1fr]
           gap-2 md:gap-4
           px-2 md:px-0
           pt-2 md:pt-4
           pb-2 md:pb-4
         "
-        style={{ transition: "all 500ms ease" }}
+        style={{ transition: "all 500ms ease", height: 'var(--app-vh)', minHeight: 'var(--app-vh)'}}
       >
         {/* Single header card; shows welcome text based on state config */}
         <Header showWelcome={true} />
