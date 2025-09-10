@@ -1,16 +1,19 @@
 import React from "react";
+import cx from "classnames";
 import { Header } from "./components/header";
 import { CanvasFrame } from "./components/canvasFrame";
 import { BabylonCanvas } from "./components/canvasBabylon";
-import { TypingText } from "./components/TypingText";
-import { OverlayBox } from "./components/OverlayBox";
-import { useUI, S } from "./state";
-import { getStateConfig } from "./states";
-
-export default function App() {
-  const s = useUI((st) => st.state);
-  const { next } = useUI();
-  const config = getStateConfig(s);
+  import { TypingText } from "./components/TypingText";
+  import { OverlayBox } from "./components/OverlayBox";
+  import { Chat } from "./components/Chat";
+  import { useUI, S } from "./state";
+  import { getStateConfig } from "./states";
+  
+  export default function App() {
+    const s = useUI((st) => st.state);
+    const chatOpen = useUI((st) => st.chatOpen);
+    const { next, setChatOpen } = useUI();
+    const config = getStateConfig(s);
 
   const handleButtonClick = (index: number) => {
     console.log(`Button ${index} clicked:`, config.content.overlayContent?.buttons[index]);
@@ -29,22 +32,26 @@ export default function App() {
     }
   };
 
-  return (
-    <>
-      {/* Full-viewport grid: header (auto) + canvas (fills rest).
-          pt = top padding, pb = bottom margin, gap = space between rows. */}
-      <main
-        className="
-          h-[100dvh] min-h-[100svh] w-full
-          overflow-hidden
-          grid grid-rows-[max-content,1fr]
-          gap-2 md:gap-4
-          px-2 md:px-0
-          pt-2 md:pt-4
-          pb-2 md:pb-4
-        "
-        style={{ transition: "all 500ms ease", height: 'var(--app-vh)', minHeight: 'var(--app-vh)'}}
-      >
+    return (
+      <>
+       {/* Desktop: Full width layout, chat overlays on top */}
+       <div className="h-[100dvh] min-h-[100svh] w-full overflow-hidden" 
+            style={{ height: 'var(--app-vh)', minHeight: 'var(--app-vh)' }}>
+         
+         {/* Main content: header + canvas */}
+         <main
+           className={cx(
+             "h-full w-full",
+             "grid grid-rows-[max-content,1fr]",
+             "gap-2 md:gap-4",
+             "px-2 md:px-0",
+             "pt-2 md:pt-4",
+             "pb-2 md:pb-4",
+             "transition-all duration-500 ease-in-out",
+             // Slide left by 20% on desktop when chat is open
+             chatOpen ? "md:transform md:-translate-x-[11%]" : ""
+           )}
+         >
         {/* Single header card; shows welcome text based on state config */}
         <Header showWelcome={true} />
 
@@ -165,16 +172,70 @@ export default function App() {
             BALTHA STUDIO 2025
           </footer>
         )}
-      </main>
+         </main>
+         
+       </div>
 
-       {/* Chat FAB placeholder (state-driven later) */}
        <button
-         className="fixed z-50 h-12 w-12 rounded-full shadow-hero bg-white/90 backdrop-blur text-ink
-                   bottom-6 left-1/2 transform -translate-x-1/2 md:translate-x-0 md:bottom-6 md:right-6 md:left-auto"
-         aria-label="Open chat"
-       >
-         <span className="sr-only">Open chat</span>💬
-       </button>
-    </>
+          onClick={() => setChatOpen(!chatOpen)}
+          className={cx(
+            "fixed z-50 rounded-full",
+            // mobile (centered)
+            "bottom-[75px] -right-[50%] -translate-x-[25px]",
+            // desktop overrides (pin to right with margin)
+            "md:bottom-[70px] md:-right-[100%] md:-translate-x-[70px]",
+
+            "flex items-center justify-center cursor-pointer",
+            "backdrop-blur-sm shadow-[inset_0_0_4px_3px_rgba(255,255,255,0.452)]",
+            "relative overflow-visible",
+            "transition-all duration-300 ease-in-out hover:scale-105",
+
+            // Hide on desktop when chat is open
+            chatOpen ? "md:hidden" : "",
+            chatOpen ? "w-[50px] h-[50px]" : "w-[50px] h-[50px]"
+          )}
+          style={{
+            background: chatOpen 
+              ? `rgba(255,255,255,0.233)` // No gradient when open (mobile)
+              : `radial-gradient(circle, transparent 30%, rgba(255,255,255,0.233) 70%)`
+          }}
+          aria-label={chatOpen ? "Close chat" : "Open chat"}
+        >
+          {/* Animated rotating glow background - only when closed */}
+          {!chatOpen && (
+            <div
+              className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10
+                        rounded-[35%] blur-[10px] opacity-100"
+              style={{
+                background: `conic-gradient(
+                  from 0deg,
+                  #9A92D2,
+                  #7583ff,
+                  #FF8800,
+                  #FF99CC,
+                  #9A92D2
+                )`,
+                animation: 'rotateGlow 5s linear infinite'
+              }}
+            />
+          )}
+          
+          {/* Chat icon - changes when open/closed */}
+          <img 
+            src={chatOpen ? "/assets/images/close.png" : "/assets/images/chatIcon.png"}
+            alt={chatOpen ? "Close" : "Chat"}
+            className={chatOpen ? "w-[20px] h-[20px]" : "w-[30px] h-[30px] mt-[5px]"}
+          />
+          <span className="sr-only">{chatOpen ? "Close chat" : "Open chat"}</span>
+        </button>
+
+        {/* Mobile Chat component */}
+        {chatOpen && (
+          <Chat 
+            className="md:hidden" 
+            onClose={() => setChatOpen(false)} 
+          />
+        )}
+     </>
   );
 }
