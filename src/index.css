@@ -16,9 +16,9 @@
 }
 
 /* Full-viewport app, no scroll */
-html, body, #root {
+/* html, body, #root {
   height: 100dhv;
-}
+} */
 
 body {
   margin: 0;
