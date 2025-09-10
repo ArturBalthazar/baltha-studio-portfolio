@@ -17,7 +17,7 @@
 
 /* Full-viewport app, no scroll */
 html, body, #root {
-  height: 100dhv;
+  height: var(--app-vh);
 }
 
 body {
