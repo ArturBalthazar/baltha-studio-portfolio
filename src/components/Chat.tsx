@@ -123,7 +123,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
     <div
       className={cx(
         // MOBILE: fixed with small insets
-        "fixed z-50 right-2 left-2 top-2 bottom-[90px]",
+        "fixed z-50 right-2 left-2 top-[60px] bottom-[90px]",
 
         // DESKTOP: keep it fixed too, but give it roomy margins + width
         "md:top-4 md:right-4 md:bottom-4 md:left-auto",
