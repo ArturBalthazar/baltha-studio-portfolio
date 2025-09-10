@@ -1,4 +1,19 @@
+# dependencies
 node_modules/
-.env
+
+# builds / caches
 dist/
+.vite/
+.vscode/
 .DS_Store
+
+# env & local
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
