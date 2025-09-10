@@ -16,14 +16,19 @@
 }
 
 /* Full-viewport app, no scroll */
-/* html, body, #root {
+html, body, #root {
   height: 100dhv;
-} */
+}
 
 body {
   margin: 0;
-  overflow: hidden; /* prevent page scroll on this screen */
-  background: url("/assets/brand/background.png") center / cover no-repeat fixed;
+  overflow: clip; /* softer than hidden; prevents scroll but plays nicer with viewport changes */
+  background: url("/assets/brand/background.png") center / cover no-repeat;
+}
+
+/* If you really want parallax-like fixed on desktop only */
+@media (min-width: 768px) {
+  body { background-attachment: fixed; }
 }
 
 /* Nice inert scroll (harmless even though overflow is hidden) */
