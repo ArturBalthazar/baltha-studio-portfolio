@@ -5,13 +5,11 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// put this in your app bootstrap (e.g., main.tsx)
 function setAppVh() {
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty('--app-vh', `${h}px`);
-  }
-  setAppVh();
-  
-  window.addEventListener('resize', setAppVh);
-  window.visualViewport?.addEventListener('resize', setAppVh);
-  window.visualViewport?.addEventListener('scroll', setAppVh);
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--app-vh", `${h}px`);
+}
+setAppVh();
+window.addEventListener("resize", setAppVh);
+window.visualViewport?.addEventListener("resize", setAppVh);
+window.visualViewport?.addEventListener("scroll", setAppVh);

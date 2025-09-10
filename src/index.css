@@ -2,12 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Map Adobe kit font-family names → CSS vars (confirm names in your kit) */
 :root {
   --font-sans: "ballinger-condensed", system-ui, sans-serif;
   --font-mono: "ballinger-mono", ui-monospace, SFMono-Regular, monospace;
-
-  /* kept for potential framed variants later */
   --clip-top: 0px;
   --clip-right: 0px;
   --clip-bottom: 0px;
@@ -15,37 +12,27 @@
   --clip-radius: 16px;
 }
 
-/* Full-viewport app, no scroll */
+/* full-viewport root tied to visual viewport */
 html, body, #root {
   height: var(--app-vh);
 }
 
 body {
   margin: 0;
-  overflow: clip; /* softer than hidden; prevents scroll but plays nicer with viewport changes */
+  overflow: clip; /* nicer than hidden with mobile bars */
   background: url("/assets/brand/background.png") center / cover no-repeat;
 }
 
-/* If you really want parallax-like fixed on desktop only */
 @media (min-width: 768px) {
   body { background-attachment: fixed; }
 }
 
-/* Nice inert scroll (harmless even though overflow is hidden) */
 html, body { scroll-behavior: smooth; }
 
-/* Tailwind font families hook */
 .font-sans { font-family: var(--font-sans), system-ui, sans-serif; }
 .font-mono { font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace; }
 
-/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

@@ -5,13 +5,13 @@ export function CanvasFrame({ children }: { children: React.ReactNode }) {
     <section
       className="
         relative
-        h-full min-h-0
-        rounded-[16px] overflow-hidden
+        h-full min-h-0 w-full
+        overflow-hidden rounded-[16px]
         shadow-[0_6px_20px_rgba(0,0,0,0.10)]
         bg-transparent
       "
     >
-      {/* Responsive radial: ellipse scales with container size, anchored at bottom center */}
+      {/* Paint-only layer; doesn't affect layout height */}
       <div
         aria-hidden
         className="absolute inset-0"
