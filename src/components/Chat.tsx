@@ -116,7 +116,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
       className={cx(
         // MOBILE: use viewport height instead of bottom positioning to work with keyboard
         "fixed z-50 right-4 left-4 top-[64px]",
-        "h-[calc(100dvh-80px)]", // Height that responds to keyboard
+        "h-auto", // Height that responds to keyboard
         "max-h-[calc(100dvh-80px)]", // Dynamic viewport support
         // DESKTOP: keep it fixed too, but give it roomy margins + width
         "md:top-4 md:right-4 md:bottom-4 md:left-auto",
