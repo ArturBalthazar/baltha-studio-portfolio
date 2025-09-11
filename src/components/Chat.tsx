@@ -114,16 +114,17 @@ export function Chat({ className = "", onClose }: ChatProps) {
   return (
       <div
         className={cx(
-          "fixed z-50 right-4 left-4",         // mobile insets
-          "md:right-4 md:left-auto md:w-[20%] lg:w-[21%]",
-          "md:z-[60]",
+          "fixed z-50 right-4 left-4 top-[68px]",
+          "md:right-4 md:left-auto md:w-[calc(25%-24px)] md:top-4 md:z-[60]",
+
+          // MOBILE vs DESKTOP values for the top offset
+          "[--chat-top:68px] md:[--chat-top:16px]",
           className
         )}
         // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)
         style={{
-          top: "68px", // your header margin
           height:
-            "calc(var(--app-vh, 100dvh) - 68px - max(env(safe-area-inset-bottom,0px), 16px))",
+            "calc(var(--app-vh, 100dvh) - var(--chat-top) - max(env(safe-area-inset-bottom,0px), 16px))",
         }}
       >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
@@ -141,12 +142,12 @@ export function Chat({ className = "", onClose }: ChatProps) {
         className={cx(
           "relative z-10",
           "bg-brand-white backdrop-blur-sm rounded-bigButton shadow-hero",
-          "md:bg-brand-white md:rounded-bigButton",
+          "md:bg-brand-white md:rounded-canvas",
           "flex flex-col overflow-hidden w-full h-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center bg-brand-dark font-sans text-white p-2 rounded-t-bigButton">
+        <div className="flex items-center bg-brand-dark font-sans text-white p-2 rounded-t-bigButton md:rounded-t-canvas">
           <img
             src="/assets/images/chatbot_avatar.jpg"
             alt="Artur Balthazar"
@@ -234,7 +235,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-200 bg-gray-50 pl-3 pt-2 pb-1 rounded-b-bigButton">
+        <div className="border-t border-gray-200 bg-gray-50 pl-3 pt-2 pb-1 rounded-b-bigButton ">
           <textarea
             ref={inputRef}
             value={inputValue}

@@ -13,7 +13,7 @@ export function Header({ showWelcome = true }: Props) {
   return (
     <header
       className={cx(
-        "mx-auto w-full md:w-3/4",
+        "mx-auto w-full",
         "rounded-bigButton md:rounded-canvas shadow-[0_6px_20px_rgba(0,0,0,0.08)]",
         "bg-[#F4F2ED] text-[#081529]",
         // Dynamic padding from state config

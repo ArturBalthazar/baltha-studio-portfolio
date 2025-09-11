@@ -6,7 +6,7 @@ export function CanvasFrame({ children }: { children: React.ReactNode }) {
       className="
         relative
         h-full min-h-0 w-full
-        overflow-hidden rounded-[16px]
+        overflow-hidden rounded-canvas
         shadow-[0_6px_20px_rgba(0,0,0,0.10)]
         bg-transparent
       "
