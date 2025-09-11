@@ -114,21 +114,17 @@ export function Chat({ className = "", onClose }: ChatProps) {
   return (
     <div
       className={cx(
-        // MOBILE: fixed with small insets
-        "fixed z-50 right-4 left-4 top-[64px] bottom-4",
+        // MOBILE: use viewport height instead of bottom positioning to work with keyboard
+        "fixed z-50 right-4 left-4 top-[64px]",
+        "h-[calc(100vh-80px)]", // Height that responds to keyboard
+        "max-h-[calc(100dvh-80px)]", // Dynamic viewport support
         // DESKTOP: keep it fixed too, but give it roomy margins + width
         "md:top-4 md:right-4 md:bottom-4 md:left-auto",
         "md:w-[20%] lg:w-[21%]",
         "md:z-[60]",
+        "md:h-auto md:max-h-none", // Reset mobile height constraints for desktop
         // NOTE: no need for 'relative' — absolute child will size to this fixed parent
-  
       )}
-        // Use inline top/bottom so we can override bottom dynamically with the keyboard offset.
-        style={{
-          // Keep at least 16px (1rem) + safe area.
-          // When the keyboard opens, --kb-offset grows and pushes the chat up.
-          bottom: "calc(max(env(safe-area-inset-bottom, 0px), var(--kb-offset, 0px)) + 16px)",
-        }}
       >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
       <div
