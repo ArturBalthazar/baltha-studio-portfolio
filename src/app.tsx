@@ -172,14 +172,6 @@ import { BabylonCanvas } from "./components/canvasBabylon";
             BALTHA STUDIO 2025
           </footer>
         )}
-
-        {/* Mobile Chat component - inside main wrapper so it moves with keyboard */}
-        {chatOpen && (
-          <Chat 
-            className="md:hidden" 
-            onClose={() => setChatOpen(false)} 
-          />
-        )}
          </main>
          
        </div>
@@ -237,6 +229,13 @@ import { BabylonCanvas } from "./components/canvasBabylon";
           <span className="sr-only">{chatOpen ? "Close chat" : "Open chat"}</span>
         </button>
 
+        {/* Mobile Chat component */}
+        {chatOpen && (
+          <Chat 
+            className="md:hidden" 
+            onClose={() => setChatOpen(false)} 
+          />
+        )}
      </>
   );
 }
