@@ -8,32 +8,8 @@ import { OverlayBox } from "./components/OverlayBox";
 import { Chat } from "./components/Chat";
 import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
-import { useEffect } from "react";
-
-function useVisualViewportHeightVar() {
-  useEffect(() => {
-    const vv = window.visualViewport;
-
-    const setVH = () => {
-      const h = vv ? vv.height : window.innerHeight;
-      document.documentElement.style.setProperty("--app-vh", `${h}px`);
-    };
-
-    setVH();
-    vv?.addEventListener("resize", setVH);
-    vv?.addEventListener("scroll", setVH);
-    window.addEventListener("orientationchange", setVH);
-    return () => {
-      vv?.removeEventListener("resize", setVH);
-      vv?.removeEventListener("scroll", setVH);
-      window.removeEventListener("orientationchange", setVH);
-    };
-  }, []);
-}
 
 export default function App() {
-  useVisualViewportHeightVar();
-  
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
   const { next, setChatOpen } = useUI();
@@ -59,8 +35,8 @@ const handleNext = () => {
   return (
     <>
       {/* Desktop: Full width layout, chat overlays on top */}
-      <div className="h-[100dvh] min-h-[100svh] w-full overflow-hidden" 
-          style={{ height: 'var(--app-vh)', minHeight: 'var(--app-vh)' }}>
+      <div className="h-[100dvh] min-h-[100svh] w-full overflow-hidden overscroll-contain" 
+          style={{ height: 'var(--app-vh)' }}>
         
         {/* Main content: header + canvas */}
         <main
