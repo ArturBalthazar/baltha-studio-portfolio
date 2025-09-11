@@ -41,3 +41,18 @@ html, body { scroll-behavior: smooth; }
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+@keyframes pulse-rect {
+  0%, 100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleX(1.02) scaleY(1.007); /* wider vertically */
+    opacity: 1;
+  }
+}
+
+.animate-pulse-rect {
+  animation: pulse-rect 2.5s ease-in-out infinite;
+}

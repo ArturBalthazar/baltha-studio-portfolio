@@ -81,12 +81,12 @@ export function OverlayBox({
     switch (currentState) {
       case S.state_2:
         return {
-          width: { mobile: "w-[95%]", desktop: "md:w-[40%]" },
-          height: { mobile: "h-[50%]", desktop: "md:h-[55%]" }
+          width: { mobile: "w-[95%]", desktop: "md:w-[calc(20%+200px)]" },
+          height: { mobile: "h-[50%]", desktop: "md:h-[60%]" }
         };
       case S.state_3:
         return {
-          width: { mobile: "w-[95%]", desktop: "md:w-[85%]" },
+          width: { mobile: "w-[95%]", desktop: "md:w-[calc(90%-100px)]" },
           height: { mobile: "h-[70%]", desktop: "md:h-[55%]" }
         };
       default:
@@ -135,7 +135,7 @@ export function OverlayBox({
       >
         {/* HALO layer: blurred border only (no frosted glass) */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-canvas border-2 border-white"
+          className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white"
           style={{
             filter: "blur(6px)",
             transform: "scale(1)", // or 1.02 for a bit more outward bleed
@@ -145,7 +145,7 @@ export function OverlayBox({
         />
 
         {/* CRISP stroke on top */}
-        <div className="pointer-events-none absolute inset-0 rounded-canvas border-2 border-white/45" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45" aria-hidden />
 
          {/* MAIN CONTENT */}
          <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center">
@@ -274,7 +274,7 @@ export function OverlayBox({
             ) : (
               <>
                 {/* Original bottom-center layout */}
-                <div className="flex justify-center gap-4 md:gap-6">
+                <div className="flex justify-center gap-2 md:gap-3">
                   {content.buttons.map((button, index) => (
                     <button
                       key={index}
