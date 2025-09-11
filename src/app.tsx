@@ -35,8 +35,8 @@ const handleNext = () => {
   return (
     <>
       {/* Desktop: Full width layout, chat overlays on top */}
-      <div className="h-[100dvh] min-h-[100svh] w-full overflow-hidden overscroll-contain" 
-          style={{ height: 'var(--app-vh)', minHeight: 'var(--app-vh)' }}>
+      <div className="h-[100dvh] min-h-[100svh] w-full overflow-hidden" 
+          style={{ height: 'var(--app-vh)' }}>
         
         {/* Main content: header + canvas */}
         <main
