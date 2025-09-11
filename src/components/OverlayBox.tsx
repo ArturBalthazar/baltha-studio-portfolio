@@ -105,7 +105,7 @@ export function OverlayBox({
   return (
     <div
       className={cx(
-        "absolute inset-0 flex items-center justify-center translate-y-[3%] transition-all",
+        "absolute inset-0 flex items-center justify-center md:translate-y-[3%] transition-all",
         showBox ? "opacity-100" : "opacity-0",
         className
       )}
@@ -114,7 +114,7 @@ export function OverlayBox({
       {/* Frame container (no blur on content) */}
       <div
         className={cx(
-          "relative shrink-0 rounded-canvas transition-all duration-1000 ease-in-out",
+          "relative shrink-0 rounded-canvas transition-all duration-1000",
           // width
           box.width.mobile,
           box.width.desktop,
