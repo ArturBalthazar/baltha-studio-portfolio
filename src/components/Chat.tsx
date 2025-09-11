@@ -131,7 +131,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
         className="absolute z-0 rounded-bigButton -inset-1 pointer-events-none"
         style={{
           // <<< your styles here (example placeholder)
-          background: 'linear-gradient(180deg,rgba(0, 255, 76, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
+          background: 'linear-gradient(180deg,rgba(155, 146, 210, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
           filter: 'blur(6px)',
         }}
       />
