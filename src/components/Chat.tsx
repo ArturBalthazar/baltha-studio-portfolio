@@ -24,7 +24,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
   const suggestions = [
     "What's your professional background?",
     "What tools and technologies do you work with?",
-    "How can I get in touch with you?"
+    "How can I get in touch with you?",
   ];
 
   const scrollToBottom = () => {
@@ -36,19 +36,16 @@ export function Chat({ className = "", onClose }: ChatProps) {
   }, [messages]);
 
   useEffect(() => {
-    // Show suggestions when chat opens for the first time
-    if (!suggestionsDisplayed) {
-      setSuggestionsDisplayed(true);
-    }
+    if (!suggestionsDisplayed) setSuggestionsDisplayed(true);
   }, []);
 
   const formatMarkdown = (text: string): string => {
     return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')   // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')               // Italic
-      .replace(/__(.*?)__/g, '<u>$1</u>')                 // Underline
-      .replace(/`(.*?)`/g, '<code>$1</code>')             // Inline code
-      .replace(/\n/g, '<br>');                            // Line breaks
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/__(.*?)__/g, "<u>$1</u>")
+      .replace(/`(.*?)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
   };
 
   const addMessage = (text: string, type: "user" | "bot") => {
@@ -56,40 +53,35 @@ export function Chat({ className = "", onClose }: ChatProps) {
       id: Date.now().toString(),
       text,
       type,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    setMessages(prev => [...prev, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
   };
 
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
 
-    // Add user message
     addMessage(message, "user");
     setInputValue("");
     setIsTyping(true);
 
     try {
-      const BASE_URL = window.location.hostname === "localhost"
-        ? "http://127.0.0.1:8081"
-        : "https://baltha-studio.onrender.com";
+      const BASE_URL =
+        window.location.hostname === "localhost"
+          ? "http://127.0.0.1:8081"
+          : "https://baltha-studio.onrender.com";
 
       const response = await fetch(`${BASE_URL}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
+      if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
       addMessage(data.response, "bot");
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       addMessage("Oops! Something went wrong.", "bot");
     } finally {
       setIsTyping(false);
@@ -101,7 +93,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputValue);
     }
@@ -109,7 +101,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
   const adjustTextareaHeight = () => {
     if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = "auto";
       const scrollHeight = inputRef.current.scrollHeight;
       inputRef.current.style.height = `${Math.min(scrollHeight, 60)}px`;
     }
@@ -123,25 +115,38 @@ export function Chat({ className = "", onClose }: ChatProps) {
     <div
       className={cx(
         // MOBILE: fixed with small insets
-        "fixed z-50 right-2 left-2 top-[60px] bottom-[90px]",
-
+        "fixed z-50 right-4 left-4 top-[68px] bottom-4",
         // DESKTOP: keep it fixed too, but give it roomy margins + width
         "md:top-4 md:right-4 md:bottom-4 md:left-auto",
-        "md:w-[20%] lg:w-[21%]",                 // card width
+        "md:w-[20%] lg:w-[21%]",
         "md:z-[60]",
-
+        // NOTE: no need for 'relative' — absolute child will size to this fixed parent
+        className
       )}
     >
-       {/* Chat container */}
-       <div className={cx(
-         "bg-brand-white backdrop-blur-sm rounded-bigButton shadow-hero",
-         "md:bg-brand-white md:rounded-bigButton",
-         "flex flex-col overflow-hidden w-full h-full"
-       )}>
+      {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
+      <div
+        className="absolute z-0 rounded-bigButton -inset-3 pointer-events-none"
+        style={{
+          // <<< your styles here (example placeholder)
+          background: 'linear-gradient(180deg, rgba(117,131,255,0.35) 0%, rgba(255,77,109,0.20) 70%, rgba(255,77,109,0) 100%)',
+          filter: 'blur(8px)',
+        }}
+      />
+
+      {/* Chat container (above the background box) */}
+      <div
+        className={cx(
+          "relative z-10",
+          "bg-brand-white backdrop-blur-sm rounded-bigButton shadow-hero",
+          "md:bg-brand-white md:rounded-bigButton",
+          "flex flex-col overflow-hidden w-full h-full"
+        )}
+      >
         {/* Header */}
         <div className="flex items-center bg-brand-dark font-sans text-white p-2 rounded-t-bigButton">
-          <img 
-            src="/assets/images/chatbot_avatar.jpg" 
+          <img
+            src="/assets/images/chatbot_avatar.jpg"
             alt="Artur Balthazar"
             className="w-10 h-10 rounded-full border-[3px] border-white mr-3"
           />
@@ -149,7 +154,6 @@ export function Chat({ className = "", onClose }: ChatProps) {
             <div className="font-bold font-sans">Artur Balthazar</div>
             <div className="text-sm opacity-90">Director at Baltha Studio</div>
           </div>
-          {/* Close button - show on both mobile and desktop */}
           <button
             onClick={onClose}
             className="text-white hover:text-white/80 text-lg font-bold w-6 h-6 flex items-center justify-center"
@@ -160,54 +164,65 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-          {/* Suggestions - only show if no messages */}
-          {messages.length === 0 && suggestions.map((suggestion, index) => (
-            <button
-              key={index}
-              onClick={() => handleSuggestionClick(suggestion)}
-              className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm px-3 py-2 rounded-bigButton border border-gray-300 transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
+          {messages.length === 0 &&
+            suggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm px-3 py-2 rounded-bigButton border border-gray-300 transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
 
-          {/* Chat messages */}
           {messages.map((message) => (
-            <div key={message.id} className={cx(
-              "flex",
-              message.type === "user" ? "justify-end" : "justify-start"
-            )}>
+            <div
+              key={message.id}
+              className={cx(
+                "flex",
+                message.type === "user" ? "justify-end" : "justify-start"
+              )}
+            >
               {message.type === "bot" && (
-                <img 
-                  src="/assets/images/chatbot_avatar.jpg" 
+                <img
+                  src="/assets/images/chatbot_avatar.jpg"
                   alt="Artur"
                   className="w-8 h-8 rounded-full border-2 border-white mr-2 flex-shrink-0"
                 />
               )}
-              <div className={cx(
-                "max-w-[80%] px-3 py-2 rounded-bigButton text-sm",
-                message.type === "user" 
-                  ? "bg-brand-dark/80 text-white ml-auto" 
-                  : "bg-gray-200 text-gray-800 border border-gray-300"
-              )}>
-                <div dangerouslySetInnerHTML={{ __html: formatMarkdown(message.text) }} />
+              <div
+                className={cx(
+                  "max-w-[80%] px-3 py-2 rounded-bigButton text-sm",
+                  message.type === "user"
+                    ? "bg-brand-dark/80 text-white ml-auto"
+                    : "bg-gray-200 text-gray-800 border border-gray-300"
+                )}
+              >
+                <div
+                  dangerouslySetInnerHTML={{ __html: formatMarkdown(message.text) }}
+                />
               </div>
             </div>
           ))}
 
-          {/* Typing indicator */}
           {isTyping && (
             <div className="flex justify-start">
-              <img 
-                src="/assets/images/chatbot_avatar.jpg" 
+              <img
+                src="/assets/images/chatbot_avatar.jpg"
                 alt="Artur"
                 className="w-8 h-8 rounded-full border-2 border-white mr-2 flex-shrink-0"
               />
               <div className="bg-gray-200 text-gray-800 px-3 py-3 rounded-bigButton border border-gray-300 text-sm">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  />
                 </div>
               </div>
             </div>
@@ -226,7 +241,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
             placeholder="Type your message here..."
             className="w-full resize-none border-0 outline-none bg-transparent font-mono text-xs text-brand-dark/70 max-h-[60px] overflow-y-auto leading-5"
             rows={1}
-            style={{ minHeight: '20px' }}
+            style={{ minHeight: "20px" }}
           />
         </div>
       </div>
