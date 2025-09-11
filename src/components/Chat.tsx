@@ -114,14 +114,15 @@ export function Chat({ className = "", onClose }: ChatProps) {
   return (
     <div
       className={cx(
-        // MOBILE: absolute positioning within main wrapper (moves with keyboard)
-        "absolute z-50 inset-4",
-        "top-16", // Small top margin within the wrapper
-        
-        // DESKTOP: fixed positioning for overlay
-        "md:fixed md:top-4 md:right-4 md:bottom-4 md:left-auto",
+        // MOBILE: use viewport height instead of bottom positioning to work with keyboard
+        "absolute z-50 right-4 left-4 top-[64px]",
+        "h-[calc(100dvh-80px)]", // Height that responds to keyboard
+        "max-h-[calc(100dvh-80px)]", // Dynamic viewport support
+        // DESKTOP: keep it fixed too, but give it roomy margins + width
+        "md:top-4 md:right-4 md:bottom-4 md:left-auto",
         "md:w-[20%] lg:w-[21%]",
-        "md:z-[60]"
+        "md:z-[60]",
+        "md:h-auto md:max-h-none", // Reset mobile height constraints for desktop
         // NOTE: no need for 'relative' — absolute child will size to this fixed parent
       )}
       >
@@ -130,7 +131,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
         className="absolute z-0 rounded-bigButton -inset-1 pointer-events-none"
         style={{
           // <<< your styles here (example placeholder)
-          background: 'linear-gradient(180deg,rgba(155, 146, 210, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
+          background: 'linear-gradient(180deg,rgba(63, 245, 7, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
           filter: 'blur(6px)',
         }}
       />
