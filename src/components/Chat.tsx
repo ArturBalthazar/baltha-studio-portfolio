@@ -115,22 +115,28 @@ export function Chat({ className = "", onClose }: ChatProps) {
     <div
       className={cx(
         // MOBILE: fixed with small insets
-        "fixed z-50 right-4 left-4 top-[68px] bottom-4",
+        "fixed z-50 right-4 left-4 top-[64px] bottom-4",
         // DESKTOP: keep it fixed too, but give it roomy margins + width
         "md:top-4 md:right-4 md:bottom-4 md:left-auto",
         "md:w-[20%] lg:w-[21%]",
         "md:z-[60]",
         // NOTE: no need for 'relative' — absolute child will size to this fixed parent
-        className
+  
       )}
-    >
+        // Use inline top/bottom so we can override bottom dynamically with the keyboard offset.
+        style={{
+          // Keep at least 16px (1rem) + safe area.
+          // When the keyboard opens, --kb-offset grows and pushes the chat up.
+          bottom: "calc(max(env(safe-area-inset-bottom, 0px), var(--kb-offset, 0px)) + 16px)",
+        }}
+      >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
       <div
-        className="absolute z-0 rounded-bigButton -inset-3 pointer-events-none"
+        className="absolute z-0 rounded-bigButton -inset-1 pointer-events-none"
         style={{
           // <<< your styles here (example placeholder)
-          background: 'linear-gradient(180deg, rgba(117,131,255,0.35) 0%, rgba(255,77,109,0.20) 70%, rgba(255,77,109,0) 100%)',
-          filter: 'blur(8px)',
+          background: 'linear-gradient(180deg,rgba(155, 146, 210, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
+          filter: 'blur(6px)',
         }}
       />
 
