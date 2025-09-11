@@ -114,15 +114,14 @@ export function Chat({ className = "", onClose }: ChatProps) {
   return (
     <div
       className={cx(
-        // MOBILE: use viewport height instead of bottom positioning to work with keyboard
-        "fixed z-50 right-4 left-4 top-[64px]",
-        "h-auto", // Height that responds to keyboard
-        "max-h-[calc(100dvh-80px)]", // Dynamic viewport support
-        // DESKTOP: keep it fixed too, but give it roomy margins + width
-        "md:top-4 md:right-4 md:bottom-4 md:left-auto",
+        // MOBILE: absolute positioning within main wrapper (moves with keyboard)
+        "absolute z-50 inset-4",
+        "top-16", // Small top margin within the wrapper
+        
+        // DESKTOP: fixed positioning for overlay
+        "md:fixed md:top-4 md:right-4 md:bottom-4 md:left-auto",
         "md:w-[20%] lg:w-[21%]",
-        "md:z-[60]",
-        "md:h-auto md:max-h-none", // Reset mobile height constraints for desktop
+        "md:z-[60]"
         // NOTE: no need for 'relative' — absolute child will size to this fixed parent
       )}
       >
