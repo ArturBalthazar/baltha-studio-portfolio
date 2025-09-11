@@ -18,6 +18,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [suggestionsDisplayed, setSuggestionsDisplayed] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(true); // Start closed for entrance animation
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -37,6 +38,13 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
   useEffect(() => {
     if (!suggestionsDisplayed) setSuggestionsDisplayed(true);
+    
+    // Entrance animation - small delay then open
+    const timer = setTimeout(() => {
+      setIsAnimating(false);
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const formatMarkdown = (text: string): string => {
@@ -111,12 +119,23 @@ export function Chat({ className = "", onClose }: ChatProps) {
     adjustTextareaHeight();
   }, [inputValue]);
 
+  const handleClose = () => {
+    setIsAnimating(true); // Start close animation 
+    onClose?.(); // Trigger parent state change immediately so header/canvas animate
+    // Chat component will be removed by parent after 500ms
+  };
+
+
   return (
       <div
         className={cx(
-          "fixed z-50 right-4 left-4 top-[68px]",
-          "md:right-4 md:left-auto md:w-[calc(25%-24px)] md:top-4 md:z-[60]",
-
+          "fixed z-50 right-4 left-4 transition-all duration-500",
+          // Mobile: animate top position and opacity
+          isAnimating ? "top-[calc(68px+50%)] opacity-0" : "top-[calc(68px+0%)] opacity-100",
+          // Desktop: animate width and opacity, keep top fixed
+          "md:right-4 md:left-auto md:top-4 md:z-[60]",
+          isAnimating ? "md:w-[calc(18%-24px)] md:opacity-0" : "md:w-[calc(25%-24px)] md:opacity-100",
+          
           // MOBILE vs DESKTOP values for the top offset
           "[--chat-top:68px] md:[--chat-top:16px]",
           className
@@ -141,39 +160,39 @@ export function Chat({ className = "", onClose }: ChatProps) {
       <div
         className={cx(
           "relative z-10",
-          "bg-brand-white backdrop-blur-sm rounded-bigButton shadow-hero",
-          "md:bg-brand-white md:rounded-canvas",
+          "bg-brand-white/80 backdrop-blur-sm rounded-bigButton shadow-hero",
+          "md:bg-brand-white/80 md:rounded-canvas",
           "flex flex-col overflow-hidden w-full h-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center bg-brand-dark font-sans text-white p-2 rounded-t-bigButton md:rounded-t-canvas">
+        <div className="flex items-center bg-brand-dark font-helvetica text-white p-2 rounded-t-bigButton md:rounded-t-canvas">
           <img
             src="/assets/images/chatbot_avatar.jpg"
             alt="Artur Balthazar"
             className="w-10 h-10 rounded-full border-[3px] border-white mr-3"
           />
           <div className="flex-1">
-            <div className="font-bold font-sans">Artur Balthazar</div>
+            <div className="font-bold">Artur Balthazar</div>
             <div className="text-sm opacity-90">Director at Baltha Studio</div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-white/80 text-lg font-bold w-6 h-6 flex items-center justify-center"
-          >
+           <button
+             onClick={handleClose}
+             className="text-white hover:text-white/80 text-lg font-bold w-6 h-6 flex -mt-3"
+           >
             <img src="/assets/images/close.png" alt="Close" className="w-5 h-5" />
           </button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
           {messages.length === 0 &&
             suggestions.map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm px-3 py-2 rounded-bigButton border border-gray-300 transition-colors"
-              >
+                className="block mx-auto bg-gray-100 hover:bg-gray-200 text-gray-600 font-helvetica text-sm px-3 py-2 rounded-bigButton border border-gray-300 transition-colors"
+                >
                 {suggestion}
               </button>
             ))}
@@ -195,7 +214,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
               )}
               <div
                 className={cx(
-                  "max-w-[80%] px-3 py-2 rounded-bigButton text-sm",
+                  "max-w-[80%] px-3 py-2 rounded-bigButton font-helvetica text-sm",
                   message.type === "user"
                     ? "bg-brand-dark/80 text-white ml-auto"
                     : "bg-gray-200 text-gray-800 border border-gray-300"
@@ -215,18 +234,19 @@ export function Chat({ className = "", onClose }: ChatProps) {
                 alt="Artur"
                 className="w-8 h-8 rounded-full border-2 border-white mr-2 flex-shrink-0"
               />
-              <div className="bg-gray-200 text-gray-800 px-3 py-3 rounded-bigButton border border-gray-300 text-sm">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  />
-                  <div
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  />
-                </div>
+              <div className="bg-gray-200 text-gray-800 px-2 py-3 rounded-bigButton border border-gray-300 text-sm">
+              <div className="flex space-x-[3px]">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high" />
+                <div
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
+                  style={{ animationDelay: "0.1s" }}
+                />
+                <div
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
+                  style={{ animationDelay: "0.2s" }}
+                />
+              </div>
+
               </div>
             </div>
           )}
@@ -244,7 +264,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
             placeholder="Type your message here..."
             className="w-full resize-none border-0 outline-none bg-transparent font-mono text-xs text-brand-dark/70 max-h-[60px] overflow-y-auto leading-5"
             rows={1}
-            style={{ minHeight: "20px" }}
+            style={{ minHeight: "10px" }}
           />
         </div>
       </div>

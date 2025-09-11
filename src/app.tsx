@@ -14,6 +14,19 @@ export default function App() {
   const chatOpen = useUI((st) => st.chatOpen);
   const { setChatOpen } = useUI();
   const config = getStateConfig(s);
+  
+  const [chatVisible, setChatVisible] = React.useState(false); // For delayed removal
+
+  // Sync chatVisible with chatOpen, but with delay on close
+  React.useEffect(() => {
+    if (chatOpen) {
+      setChatVisible(true);
+    } else {
+      // Delay hiding to allow close animation
+      const timer = setTimeout(() => setChatVisible(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [chatOpen]);
 
   const handleButtonClick = (index: number) => {
     console.log(
@@ -176,7 +189,7 @@ export default function App() {
           "backdrop-blur-sm shadow-[inset_0_0_4px_3px_rgba(255,255,255,0.452)]",
           "relative overflow-visible",
           "transition-all duration-300 ease-in-out hover:scale-105",
-          chatOpen ? "md:hidden" : "",
+          chatOpen ? "opacity-0" : "",
           chatOpen ? "w-[50px] h-[50px]" : "w-[50px] h-[50px]"
         )}
         style={{
@@ -186,7 +199,6 @@ export default function App() {
         }}
         aria-label={chatOpen ? "Close chat" : "Open chat"}
       >
-        {!chatOpen && (
           <div
             className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10 rounded-[35%] blur-[10px] opacity-100"
             style={{
@@ -201,18 +213,17 @@ export default function App() {
               animation: "rotateGlow 5s linear infinite",
             }}
           />
-        )}
 
         <img
-          src={chatOpen ? "/assets/images/close.png" : "/assets/images/chatIcon.png"}
-          alt={chatOpen ? "Close" : "Chat"}
-          className={chatOpen ? "w-[20px] h-[20px]" : "w-[30px] h-[30px] mt-[5px]"}
+          src={chatOpen ? "/assets/images/chatIcon.png" : "/assets/images/chatIcon.png"}
+          alt={chatOpen ? "Chat" : "Chat"}
+          className={chatOpen ? "w-[30px] h-[30px] mt-[5px]" : "w-[30px] h-[30px] mt-[5px]"}
         />
-        <span className="sr-only">{chatOpen ? "Close chat" : "Open chat"}</span>
+        <span className="sr-only">{chatOpen ? "Open chat" : "Open chat"}</span>
       </button>
 
       {/* Chat */}
-      {chatOpen && <Chat onClose={() => setChatOpen(false)} />}
+      {chatVisible && <Chat onClose={() => setChatOpen(false)} />}
     </>
   );
 }

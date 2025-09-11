@@ -6,12 +6,11 @@ export default {
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        helvetica: ['Helvetica', 'Arial', 'sans-serif'],
       },
       colors: {
-        // keep the simple tokens you already use (e.g. bg-card, text-ink)
         ink: "#081529",
         card: "#F4F2ED",
-        // add a namespaced brand palette => text-brand-*, bg-brand-*, border-brand-*
         brand: {
           ink:   "#081529",
           card:  "#F4F2ED",
@@ -20,7 +19,7 @@ export default {
           orange:"#FF8800",
           lilac: "#9A92D2",
           pink:  "#FF99CC",
-          white: "#F5F2ED", // note: this is slightly off-white; change to #FFFFFF if you need pure white
+          white: "#F5F2ED",
         },
       },
       borderRadius: {
@@ -31,6 +30,15 @@ export default {
       },
       boxShadow: {
         hero: "0 6px 20px rgba(0,0,0,0.08)",
+      },
+      keyframes: {
+        'bounce-high': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-3px)' },
+        },
+      },
+      animation: {
+        'bounce-high': 'bounce-high 0.6s infinite',
       },
     },
   },
