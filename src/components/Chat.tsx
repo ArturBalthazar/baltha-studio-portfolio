@@ -112,26 +112,26 @@ export function Chat({ className = "", onClose }: ChatProps) {
   }, [inputValue]);
 
   return (
-    <div
-      className={cx(
-        // MOBILE: use viewport height instead of bottom positioning to work with keyboard
-        "fixed z-50 right-4 left-4 top-[64px]",
-        "h-[calc(100dvh-80px)]", // Height that responds to keyboard
-        "max-h-[calc(100dvh-80px)]", // Dynamic viewport support
-        // DESKTOP: keep it fixed too, but give it roomy margins + width
-        "md:top-4 md:right-4 md:bottom-4 md:left-auto",
-        "md:w-[20%] lg:w-[21%]",
-        "md:z-[60]",
-        "md:h-auto md:max-h-none", // Reset mobile height constraints for desktop
-        // NOTE: no need for 'relative' — absolute child will size to this fixed parent
-      )}
+      <div
+        className={cx(
+          "fixed z-50 right-4 left-4",         // mobile insets
+          "md:right-4 md:left-auto md:w-[20%] lg:w-[21%]",
+          "md:z-[60]",
+          className
+        )}
+        // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)
+        style={{
+          top: "68px", // your header margin
+          height:
+            "calc(var(--app-vh, 100dvh) - 68px - max(env(safe-area-inset-bottom,0px), 16px))",
+        }}
       >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
       <div
         className="absolute z-0 rounded-bigButton -inset-1 pointer-events-none"
         style={{
           // <<< your styles here (example placeholder)
-          background: 'linear-gradient(180deg,rgba(155, 146, 210, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
+          background: 'linear-gradient(180deg,rgba(0, 255, 76, 0.77) 0%,rgba(255, 153, 204, 0.62) 70%,rgba(255, 136, 0, 0.3) 100%)',
           filter: 'blur(6px)',
         }}
       />

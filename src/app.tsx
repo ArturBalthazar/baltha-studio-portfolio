@@ -168,7 +168,7 @@ import { BabylonCanvas } from "./components/canvasBabylon";
         )}
 
         {false && (
-          <footer className="mt-6 text-center text-xs tracking-widest text-ink/80">
+          <footer className="mt-6 text-center text-xs tracking-widest text-ink/80 z-50">
             BALTHA STUDIO 2025
           </footer>
         )}
