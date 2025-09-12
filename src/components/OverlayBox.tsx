@@ -74,27 +74,27 @@ export function OverlayBox({
     switch (currentState) {
       case S.state_2:
         return {
-          width: { mobile: "w-[95%]", desktop: "md:w-[calc(20%+200px)]" },
-          height: { mobile: "h-[50%]", desktop: "md:h-[60%]" },
-          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[5%]" },
+          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(20%+200px)]" },
+          height: { mobile: "h-[50%]", desktop: "sm:h-[60%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "sm:translate-y-[5%]" },
         };
       case S.state_3:
         return {
-          width: { mobile: "w-[95%]", desktop: "md:w-[calc(90%-100px)]" },
-          height: { mobile: "h-[70%]", desktop: "md:h-[55%]" },
-          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[0%]" },
+          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(90%-100px)]" },
+          height: { mobile: "h-[70%]", desktop: "sm:h-[55%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "sm:translate-y-[0%]" },
         };
       case S.state_4:
         return {
-          width: { mobile: "w-[95%]", desktop: "md:w-[30%]" },
-          height: { mobile: "h-[35%]", desktop: "md:h-[35%]" },
-          transform: { mobile: "translate-y-[0%]", desktop: "md:-translate-y-[24%]" },
+          width: { mobile: "w-[95%]", desktop: "sm:w-[30%]" },
+          height: { mobile: "h-[35%]", desktop: "sm:h-[35%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[24%]" },
         };
       default:
         return {
-          width: { mobile: "w-[85%]", desktop: "md:w-[40%]" },
-          height: { mobile: "h-[60%]", desktop: "md:h-[40%]" },
-          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[0%]" },
+          width: { mobile: "w-[85%]", desktop: "sm:w-[40%]" },
+          height: { mobile: "h-[60%]", desktop: "sm:h-[40%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "sm:translate-y-[0%]" },
         };
     }
   };
@@ -208,14 +208,14 @@ export function OverlayBox({
 
             {/* State 2 Buttons */}
             <div className="flex-1 flex flex-col justify-end">
-              <div className="flex justify-center gap-2 md:gap-3">
+              <div className="flex justify-center gap-2 sm:gap-3">
                 {state2Content.buttons.map((button, index) => (
                   <button
                     key={`state2-${index}`}
                     onClick={() => handleInternalButtonClick(index)}
                     className={cx(
-                      "relative w-14 h-14 md:w-16 md:h-16 rounded-bigButton border-0 aspect-square",
-                      "flex items-center justify-center text-lg md:text-xl transition-all duration-300 hover:scale-105",
+                      "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0 aspect-square",
+                      "flex items-center justify-center text-lg sm:text-xl transition-all duration-300 hover:scale-105",
                       "shrink-0"
                     )}
                     title={button.label}
@@ -309,7 +309,7 @@ export function OverlayBox({
                 // Mobile: positioned at top
                 "absolute top-2 left-0 right-0 h-[15%] w-[80%] mx-auto",
                 // Desktop: positioned on right side
-                "md:top-[40%] md:-translate-y-1/2 md:right-4 md:left-auto md:w-[30%] md:h-[60%]"
+                "sm:top-[40%] sm:-translate-y-1/2 sm:right-4 sm:left-auto sm:w-[30%] sm:h-[60%]"
               )}>
                 <GraphComponent 
                   continent={selectedContinent} 
@@ -322,14 +322,14 @@ export function OverlayBox({
                 // Mobile: positioned at bottom
                 "absolute bottom-0 left-1/2 -translate-x-1/2",
                 // Desktop: positioned on left side, vertically centered
-                "md:bottom-1/2 md:translate-y-1/2 md:left-[calc(4%-10px)] md:translate-x-0"
+                "sm:bottom-1/2 sm:translate-y-1/2 sm:left-[calc(4%-10px)] sm:translate-x-0"
               )}>
                 <div
                   className={cx(
                     // Mobile: 3 columns, centered
                     "grid grid-cols-3 gap-2 w-[50vw]",
                     // Desktop: 2 columns
-                    "md:grid-cols-2 md:w-auto md:gap-3"
+                    "sm:grid-cols-2 sm:w-auto sm:gap-3"
                   )}
                 >
                   {state3Content.buttons.map((button, index) => (
@@ -340,10 +340,10 @@ export function OverlayBox({
                         // Mobile: fill cell as square
                         "relative w-full aspect-square rounded-bigButton border-0",
                         // Desktop: fixed size
-                        "md:w-16 md:h-16 md:aspect-auto",
+                        "sm:w-16 sm:h-16 sm:aspect-auto",
                         // Shared
-                        "flex items-center justify-center text-lg md:text-xl transition-all duration-300 hover:scale-105",
-                        "md:shrink-0"
+                        "flex items-center justify-center text-lg sm:text-xl transition-all duration-300 hover:scale-105",
+                        "sm:shrink-0"
                       )}
                       title={button.label}
                     >
@@ -406,18 +406,18 @@ export function OverlayBox({
           >
             {/* State 4 Title */}
             <div className="mb-8 mt-4 text-center">
-              <h2 className="font-sans text-white text-2xl md:text-3xl font-medium">{state4Content.title}</h2>
+              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium">{state4Content.title}</h2>
             </div>
 
             {/* State 4 Navigation Mode Buttons */}
             <div className="flex-1 flex items-center justify-center">
-              <div className="flex gap-8 md:gap-6">
+              <div className="flex gap-8 sm:gap-6">
                 {state4Content.buttons.map((button, index) => (
                   <div key={`state4-${index}`} className="flex flex-col items-center gap-3">
                     <button
                       onClick={() => handleInternalButtonClick(index)}
                       className={cx(
-                        "relative w-20 h-20 md:w-16 md:h-16 rounded-bigButton border-0",
+                        "relative w-20 h-20 sm:w-16 sm:h-16 rounded-bigButton border-0",
                         "flex items-center justify-center transition-all duration-300 hover:scale-105"
                       )}
                       title={button.label}
@@ -459,7 +459,7 @@ export function OverlayBox({
                     </button>
                     
                     {/* Button Label */}
-                    <span className="font-mono text-white text-sm md:text-base">{button.label}</span>
+                    <span className="font-mono text-white text-sm sm:text-base">{button.label}</span>
                   </div>
                 ))}
               </div>
