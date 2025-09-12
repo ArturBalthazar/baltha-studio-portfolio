@@ -307,7 +307,7 @@ export function OverlayBox({
               {/* Graph - Mobile: top, Desktop: right side */}
               <div className={cx(
                 // Mobile: positioned at top
-                "absolute top-0 left-0 right-0 h-32",
+                "absolute top-2 left-0 right-0 h-[15%] w-[80%] mx-auto",
                 // Desktop: positioned on right side
                 "md:top-[40%] md:-translate-y-1/2 md:right-4 md:left-auto md:w-[30%] md:h-[60%]"
               )}>
