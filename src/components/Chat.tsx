@@ -137,7 +137,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
           isAnimating ? "md:translate-x-[50%] md:opacity-0" : "md:translate-x-[0%] md:opacity-100",
           
           // MOBILE vs DESKTOP values for the top offset
-          "[--chat-top:68px] md:[--chat-top:16px]",
+          "[--chat-top:84px] md:[--chat-top:32px]",
           className
         )}
         // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)

@@ -63,7 +63,7 @@ export default function App() {
             "justify-items-start", // pin children to the left
             "px-2 md:px-4",
             "pt-2 md:pt-4",
-            "pb-2 md:pb-4",
+            "pb-6 md:pb-8",
             "transition-all duration-500",
 
           )}
@@ -173,6 +173,12 @@ export default function App() {
               )}
             </CanvasFrame>
           </div>
+          
+          {/* Bottom label */}
+          <div className="absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-20 text-xs text-brand-dark/70 font-mono tracking-wide">
+            BALTHA STUDIO 2025
+          </div>
+
         </main>
       </div>
 

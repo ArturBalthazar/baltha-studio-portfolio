@@ -322,7 +322,7 @@ export function OverlayBox({
                 // Mobile: positioned at bottom
                 "absolute top-4 left-1/2 -translate-x-1/2",
                 // Desktop: positioned on left side, vertically centered
-                "sm:bottom-1/2 sm:translate-y-1/2 sm:left-[calc(4%-10px)] sm:translate-x-0"
+                "sm:top-auto sm:bottom-1/2 sm:translate-y-1/2 sm:left-[calc(4%-10px)] sm:translate-x-0"
               )}>
                 <div
                   className={cx(
@@ -405,7 +405,7 @@ export function OverlayBox({
             )}
           >
             {/* State 4 Title */}
-            <div className="mb-2 mt-[calc(20%-55px)] text-center">
+            <div className="mt-2 mb-2 text-center">
               <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium">{state4Content.title}</h2>
             </div>
 

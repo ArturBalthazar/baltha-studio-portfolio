@@ -20,6 +20,8 @@ export function CanvasFrame({ children }: { children: React.ReactNode }) {
             "radial-gradient(150% 150% at 50% 100%, #49408D 0%, #081428 60%)",
         }}
       />
+
+      {/* Content */}
       <div className="relative w-full h-full">{children}</div>
     </section>
   );
