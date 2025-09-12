@@ -307,7 +307,7 @@ export function OverlayBox({
               {/* Graph - Mobile: top, Desktop: right side */}
               <div className={cx(
                 // Mobile: positioned at top
-                "absolute top-2 left-0 right-0 h-[15%] w-[80%] mx-auto",
+                "absolute bottom-20 left-0 right-0 h-[15%] w-[80%] mx-auto",
                 // Desktop: positioned on right side
                 "sm:top-[40%] sm:-translate-y-1/2 sm:right-4 sm:left-auto sm:w-[30%] sm:h-[60%]"
               )}>
@@ -320,14 +320,14 @@ export function OverlayBox({
               {/* Continent Buttons - Mobile: bottom, Desktop: left side */}
               <div className={cx(
                 // Mobile: positioned at bottom
-                "absolute bottom-0 left-1/2 -translate-x-1/2",
+                "absolute top-4 left-1/2 -translate-x-1/2",
                 // Desktop: positioned on left side, vertically centered
                 "sm:bottom-1/2 sm:translate-y-1/2 sm:left-[calc(4%-10px)] sm:translate-x-0"
               )}>
                 <div
                   className={cx(
                     // Mobile: 3 columns, centered
-                    "grid grid-cols-3 gap-2 w-[50vw]",
+                    "grid grid-cols-3 gap-2 w-[45vw]",
                     // Desktop: 2 columns
                     "sm:grid-cols-2 sm:w-auto sm:gap-3"
                   )}
