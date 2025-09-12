@@ -37,7 +37,7 @@ export function BabylonCanvas() {
     const camera = new BABYLON.ArcRotateCamera(
       "cam",
       -Math.PI * 1.5,
-      Math.PI / 2.2,
+      Math.PI / 2,
       24,
       BABYLON.Vector3.Zero(),
       scene
@@ -47,6 +47,7 @@ export function BabylonCanvas() {
     
     camera.inputs.clear();
     camera.panningSensibility = 0;
+    camera.fov = .4;
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
