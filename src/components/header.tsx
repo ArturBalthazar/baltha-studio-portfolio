@@ -72,7 +72,8 @@ export function Header({ showWelcome = true }: Props) {
             leading-tight
           "
         >
-          Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and web developer.
+          {/* Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and web developer. */}
+          We design interactive web experiences tailored to your brand's essence and accessible to all.
         </h1>
       </div>
     </header>

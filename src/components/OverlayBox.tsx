@@ -39,29 +39,29 @@ export function OverlayBox({
           title: "Customize it",
           description: "",
           titleLayout: {
-            position: 'center',
+            position: "center",
             showLiveSignal: false,
             showWindowControls: false,
-            buttonLayout: 'bottom-center'
+            buttonLayout: "bottom-center",
           },
           buttons: [
             { icon: "/assets/images/1st_default.png", label: "Files", selected: true },
             { icon: "/assets/images/1st_necklace.png", label: "Research", selected: false },
             { icon: "/assets/images/1st_cookie.png", label: "Settings", selected: false },
-            { icon: "/assets/images/1st_badge.png", label: "Awards", selected: false }
-          ]
+            { icon: "/assets/images/1st_badge.png", label: "Awards", selected: false },
+          ],
         };
       case S.state_3:
         return {
           title: "Live Earth - South America",
           description: "",
           titleLayout: {
-            position: 'top-left',
+            position: "top-left",
             showLiveSignal: true,
             showWindowControls: true,
-            buttonLayout: 'left-grid',
+            buttonLayout: "left-grid",
             buttonGridRows: 3,
-            buttonGridCols: 2
+            buttonGridCols: 2,
           },
           buttons: [
             { icon: "/assets/images/Africa.png", label: "Africa", selected: false },
@@ -69,8 +69,8 @@ export function OverlayBox({
             { icon: "/assets/images/Europe.png", label: "Europe", selected: false },
             { icon: "/assets/images/SouthAmerica.png", label: "South America", selected: true },
             { icon: "/assets/images/Oceania.png", label: "Oceania", selected: false },
-            { icon: "/assets/images/Asia.png", label: "Asia", selected: false }
-          ]
+            { icon: "/assets/images/Asia.png", label: "Asia", selected: false },
+          ],
         };
       default:
         return null;
@@ -82,17 +82,17 @@ export function OverlayBox({
       case S.state_2:
         return {
           width: { mobile: "w-[95%]", desktop: "md:w-[calc(20%+200px)]" },
-          height: { mobile: "h-[50%]", desktop: "md:h-[60%]" }
+          height: { mobile: "h-[50%]", desktop: "md:h-[60%]" },
         };
       case S.state_3:
         return {
           width: { mobile: "w-[95%]", desktop: "md:w-[calc(90%-100px)]" },
-          height: { mobile: "h-[70%]", desktop: "md:h-[55%]" }
+          height: { mobile: "h-[70%]", desktop: "md:h-[55%]" },
         };
       default:
         return {
           width: { mobile: "w-[85%]", desktop: "md:w-[40%]" },
-          height: { mobile: "h-[60%]", desktop: "md:h-[40%]" }
+          height: { mobile: "h-[60%]", desktop: "md:h-[40%]" },
         };
     }
   };
@@ -138,7 +138,7 @@ export function OverlayBox({
           className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white"
           style={{
             filter: "blur(6px)",
-            transform: "scale(1)", // or 1.02 for a bit more outward bleed
+            transform: "scale(1)",
             transformOrigin: "center",
           }}
           aria-hidden
@@ -147,12 +147,11 @@ export function OverlayBox({
         {/* CRISP stroke on top */}
         <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45" aria-hidden />
 
-         {/* MAIN CONTENT */}
-         <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center">
-           {/* Title block */}
+        {/* MAIN CONTENT */}
+        <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center">
+          {/* Title block */}
           <div
             className={cx(
-              // tighter spacing when top-left (state 3), keep larger spacing when centered (state 2)
               content.titleLayout?.position === "top-left" ? "mb-1" : "mb-6",
               content.titleLayout?.position === "top-left" ? "-mt-2" : "mt-0",
               content.titleLayout?.position === "top-left" ? "text-left" : "text-center"
@@ -199,16 +198,19 @@ export function OverlayBox({
             className={cx(
               "flex-1 flex",
               content.titleLayout?.buttonLayout === "left-grid"
-                ? "justify-between items-start md:items-center"
-                : "flex-col justify-end"
-            )}
-          >
+                  // mobile: center horizontally & sit on bottom
+                  // desktop: left-aligned with vertical centering
+                  ? "justify-center items-end md:justify-start md:items-center"
+                  : "flex-col justify-end"
+              )}
+            >
             {content.titleLayout?.buttonLayout === "left-grid" ? (
               <div
                 className={cx(
-                  "grid gap-2 translate-x-[3%] md:translate-x-[20%] translate-y-[5%] md:translate-y-[0%]",
-                  content.titleLayout?.buttonGridCols === 2 ? "grid-cols-2" : "grid-cols-1",
-                  "justify-start items-center md:items-center"
+                  // Mobile: 3 columns, centered by parent, add bottom margin
+                  "grid grid-cols-3 gap-2 w-[50%] mb-[calc(3%-10px)]",
+                  // Desktop: 2 columns, left margin, no bottom margin
+                  "md:grid-cols-2 md:max-w-none md:w-auto md:gap-3 md:mb-0 md:ml-[calc(4%-10px)]"
                 )}
               >
                 {content.buttons.map((button, index) => (
@@ -216,9 +218,13 @@ export function OverlayBox({
                     key={index}
                     onClick={() => onButtonClick?.(index)}
                     className={cx(
-                      "relative w-14 h-14 md:w-16 md:h-16 rounded-bigButton border-0 aspect-square",
+                      // Mobile: fill cell as square
+                      "relative w-full aspect-square rounded-bigButton border-0",
+                      // Desktop: fixed size
+                      "md:w-16 md:h-16 md:aspect-auto",
+                      // Shared
                       "flex items-center justify-center text-lg md:text-xl transition-all duration-300 hover:scale-105",
-                      "shrink-0"
+                      "md:shrink-0"
                     )}
                     title={button.label}
                   >
@@ -259,11 +265,7 @@ export function OverlayBox({
                         button.icon.endsWith(".jpg") ||
                         button.icon.endsWith(".jpeg") ||
                         button.icon.endsWith(".svg")) ? (
-                        <img
-                          src={button.icon}
-                          alt={button.label}
-                          className="w-[80%] h-[80%] object-contain"
-                        />
+                        <img src={button.icon} alt={button.label} className="w-[80%] h-[80%] object-contain" />
                       ) : (
                         button.icon
                       )}
@@ -318,11 +320,7 @@ export function OverlayBox({
                           button.icon.endsWith(".jpg") ||
                           button.icon.endsWith(".jpeg") ||
                           button.icon.endsWith(".svg")) ? (
-                          <img
-                            src={button.icon}
-                            alt={button.label}
-                            className="w-[80%] h-[80%] object-contain"
-                          />
+                          <img src={button.icon} alt={button.label} className="w-[80%] h-[80%] object-contain" />
                         ) : (
                           button.icon
                         )}

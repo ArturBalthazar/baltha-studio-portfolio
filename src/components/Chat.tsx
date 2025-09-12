@@ -133,8 +133,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
           // Mobile: animate top position and opacity
           isAnimating ? "top-[calc(68px+50%)] opacity-0" : "top-[calc(68px+0%)] opacity-100",
           // Desktop: animate width and opacity, keep top fixed
-          "md:right-4 md:left-auto md:top-4 md:z-[60]",
-          isAnimating ? "md:w-[calc(18%-24px)] md:opacity-0" : "md:w-[calc(25%-24px)] md:opacity-100",
+          "md:right-4 md:left-auto md:top-4 md:z-[60] md:w-[calc(25%-24px)]",
+          isAnimating ? "md:translate-x-[50%] md:opacity-0" : "md:translate-x-[0%] md:opacity-100",
           
           // MOBILE vs DESKTOP values for the top offset
           "[--chat-top:68px] md:[--chat-top:16px]",
