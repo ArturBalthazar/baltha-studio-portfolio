@@ -104,7 +104,7 @@ export default function App() {
               )}
 
               {/* Single resizing overlay box */}
-              {(s === S.state_2 || s === S.state_3) && (
+              {(s === S.state_2 || s === S.state_3 || s === S.state_4) && (
                 <OverlayBox
                   visible={true}
                   currentState={s}

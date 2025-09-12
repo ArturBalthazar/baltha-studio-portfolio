@@ -37,7 +37,7 @@ export const state2Config: StateConfig = {
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "Whether it's integrating 3D tools into an existing ecosystem, ",
+    typingText: "Whether it's integrating tools into an existing web ecosystem, ",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

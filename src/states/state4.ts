@@ -1,6 +1,6 @@
 import { StateConfig } from './types';
 
-export const state3Config: StateConfig = {
+export const state4Config: StateConfig = {
   header: {
     showWelcomeText: false,
     logoHeight: {
@@ -21,8 +21,8 @@ export const state3Config: StateConfig = {
     }
   },
   canvas: {
-    clickable: false,
-    nextState: null,
+    clickable: true,
+    nextState: 'state_5',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 32,
@@ -37,7 +37,7 @@ export const state3Config: StateConfig = {
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "building custom web applications and data visualizations, ",
+    typingText: "or creating entire virtual worlds, we've got it covered! Ready to start?",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

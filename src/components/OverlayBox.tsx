@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import cx from "classnames";
-import { OverlayContent, OverlayBoxDimensions } from "../states/types";
+import { OverlayContent, OverlayBoxDimensions, StateContentVisibility } from "../states/types";
 import { S } from "../state";
+import { GraphComponent } from "./GraphComponent";
 
 interface OverlayBoxProps {
   visible: boolean;
@@ -21,6 +22,12 @@ export function OverlayBox({
   transitionDuration = 1000,
 }: OverlayBoxProps) {
   const [showBox, setShowBox] = useState(false);
+  
+  // State management for selected buttons
+  const [selectedState2Button, setSelectedState2Button] = useState(0); // Default to first button
+  const [selectedState3Button, setSelectedState3Button] = useState(3); // Default to South America
+  const [selectedContinent, setSelectedContinent] = useState("South America");
+  const [selectedState4Button, setSelectedState4Button] = useState(0); // Default to Guided
 
   useEffect(() => {
     if (visible) {
@@ -31,50 +38,36 @@ export function OverlayBox({
     }
   }, [visible, delay]);
 
-  // State-specific content and dimensions
-  const getStateContent = (): OverlayContent | null => {
-    switch (currentState) {
-      case S.state_2:
-        return {
-          title: "Customize it",
-          description: "",
-          titleLayout: {
-            position: "center",
-            showLiveSignal: false,
-            showWindowControls: false,
-            buttonLayout: "bottom-center",
-          },
-          buttons: [
-            { icon: "/assets/images/1st_default.png", label: "Files", selected: true },
-            { icon: "/assets/images/1st_necklace.png", label: "Research", selected: false },
-            { icon: "/assets/images/1st_cookie.png", label: "Settings", selected: false },
-            { icon: "/assets/images/1st_badge.png", label: "Awards", selected: false },
-          ],
-        };
-      case S.state_3:
-        return {
-          title: "Live Earth - South America",
-          description: "",
-          titleLayout: {
-            position: "top-left",
-            showLiveSignal: true,
-            showWindowControls: true,
-            buttonLayout: "left-grid",
-            buttonGridRows: 3,
-            buttonGridCols: 2,
-          },
-          buttons: [
-            { icon: "/assets/images/Africa.png", label: "Africa", selected: false },
-            { icon: "/assets/images/NorthAmerica.png", label: "North America", selected: false },
-            { icon: "/assets/images/Europe.png", label: "Europe", selected: false },
-            { icon: "/assets/images/SouthAmerica.png", label: "South America", selected: true },
-            { icon: "/assets/images/Oceania.png", label: "Oceania", selected: false },
-            { icon: "/assets/images/Asia.png", label: "Asia", selected: false },
-          ],
-        };
-      default:
-        return null;
-    }
+  // State-specific content definitions
+  const state2Content = {
+    title: "Customize it",
+    buttons: [
+      { icon: "/assets/images/1st_default.png", label: "Files", selected: selectedState2Button === 0 },
+      { icon: "/assets/images/1st_necklace.png", label: "Research", selected: selectedState2Button === 1 },
+      { icon: "/assets/images/1st_cookie.png", label: "Settings", selected: selectedState2Button === 2 },
+      { icon: "/assets/images/1st_badge.png", label: "Awards", selected: selectedState2Button === 3 },
+    ],
+  };
+
+  const continentNames = ["Africa", "North America", "Europe", "South America", "Oceania", "Asia"];
+  const state3Content = {
+    title: `Live Earth - ${selectedContinent}`,
+    buttons: [
+      { icon: "/assets/images/Africa.png", label: "Africa", selected: selectedState3Button === 0 },
+      { icon: "/assets/images/NorthAmerica.png", label: "North America", selected: selectedState3Button === 1 },
+      { icon: "/assets/images/Europe.png", label: "Europe", selected: selectedState3Button === 2 },
+      { icon: "/assets/images/SouthAmerica.png", label: "South America", selected: selectedState3Button === 3 },
+      { icon: "/assets/images/Oceania.png", label: "Oceania", selected: selectedState3Button === 4 },
+      { icon: "/assets/images/Asia.png", label: "Asia", selected: selectedState3Button === 5 },
+    ],
+  };
+
+  const state4Content = {
+    title: "Navigation mode:",
+    buttons: [
+      { icon: "/assets/images/guided_mode.png", label: "Guided", selected: selectedState4Button === 0 },
+      { icon: "/assets/images/free_mode.png", label: "Free", selected: selectedState4Button === 1 },
+    ],
   };
 
   const getStateDimensions = (): OverlayBoxDimensions => {
@@ -83,29 +76,73 @@ export function OverlayBox({
         return {
           width: { mobile: "w-[95%]", desktop: "md:w-[calc(20%+200px)]" },
           height: { mobile: "h-[50%]", desktop: "md:h-[60%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[5%]" },
         };
       case S.state_3:
         return {
           width: { mobile: "w-[95%]", desktop: "md:w-[calc(90%-100px)]" },
           height: { mobile: "h-[70%]", desktop: "md:h-[55%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[0%]" },
+        };
+      case S.state_4:
+        return {
+          width: { mobile: "w-[95%]", desktop: "md:w-[30%]" },
+          height: { mobile: "h-[35%]", desktop: "md:h-[35%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "md:-translate-y-[24%]" },
         };
       default:
         return {
           width: { mobile: "w-[85%]", desktop: "md:w-[40%]" },
           height: { mobile: "h-[60%]", desktop: "md:h-[40%]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "md:translate-y-[0%]" },
         };
     }
   };
 
-  const content = getStateContent();
-  const box = getStateDimensions();
+  // Content visibility based on current state
+  const getContentVisibility = (): StateContentVisibility => {
+    return {
+      state2: {
+        title: currentState === S.state_2,
+        buttons: currentState === S.state_2,
+      },
+      state3: {
+        title: currentState === S.state_3,
+        liveSignal: currentState === S.state_3,
+        windowControls: currentState === S.state_3,
+        buttons: currentState === S.state_3,
+      },
+      state4: {
+        title: currentState === S.state_4,
+        buttons: currentState === S.state_4,
+      },
+    };
+  };
 
-  if (!content) return null;
+  const box = getStateDimensions();
+  const visibility = getContentVisibility();
+
+  // Handle button clicks
+  const handleInternalButtonClick = (index: number) => {
+    if (currentState === S.state_2) {
+      setSelectedState2Button(index);
+    } else if (currentState === S.state_3) {
+      setSelectedState3Button(index);
+      setSelectedContinent(continentNames[index]);
+    } else if (currentState === S.state_4) {
+      setSelectedState4Button(index);
+    }
+    
+    // Also call the external handler if provided
+    onButtonClick?.(index);
+  };
+
+  if (currentState !== S.state_2 && currentState !== S.state_3 && currentState !== S.state_4) return null;
 
   return (
     <div
       className={cx(
-        "absolute inset-0 flex items-center justify-center md:translate-y-[3%] transition-all",
+        "absolute inset-0 flex items-center justify-center transition-all",
         showBox ? "opacity-100" : "opacity-0",
         className
       )}
@@ -126,6 +163,11 @@ export function OverlayBox({
           // height
           box.height.mobile,
           box.height.desktop,
+
+          // transform
+          box.transform.mobile,
+          box.transform.desktop,
+
           // optional max/min heights
           box.maxHeight?.mobile,
           box.maxHeight?.desktop,
@@ -149,94 +191,41 @@ export function OverlayBox({
 
         {/* MAIN CONTENT */}
         <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center">
-          {/* Title block */}
+          
+          {/* STATE 2 CONTENT */}
           <div
             className={cx(
-              content.titleLayout?.position === "top-left" ? "mb-1" : "mb-6",
-              content.titleLayout?.position === "top-left" ? "-mt-2" : "mt-0",
-              content.titleLayout?.position === "top-left" ? "text-left" : "text-center"
+              "absolute inset-4 flex flex-col text-center transition-opacity duration-500",
+              visibility.state2.title ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           >
-            {content.titleLayout?.position === "top-left" ? (
-              // ── State 3: top-left header (tight)
-              <div className="flex items-center justify-between select-none">
-                <div className="flex items-center gap-3">
-                  {content.titleLayout?.showLiveSignal && (
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  )}
-                  <h2 className="font-[500] text-white text-lg">{content.title}</h2>
-                </div>
-
-                {content.titleLayout?.showWindowControls && (
-                  <div className="flex items-center gap-2 blur-[1px]">
-                    <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">−</div>
-                    <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">□</div>
-                    <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">×</div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // ── State 2: centered title (no justify-between — actually centers)
+            {/* State 2 Title */}
+            <div className="mb-6 mt-0 text-center">
               <div className="flex items-center justify-center gap-3">
-                {content.titleLayout?.showLiveSignal && (
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                )}
-                <h2 className="font-[500] text-white text-3xl">{content.title}</h2>
+                <h2 className="font-[500] text-white text-3xl">{state2Content.title}</h2>
               </div>
-            )}
+            </div>
 
-            {/* Separator under header: tighter only for top-left */}
-            {content.titleLayout?.showWindowControls && (
-              <div className={cx(content.titleLayout?.position === "top-left" ? "mt-1" : "mt-2")}>
-                <div className="h-px bg-white/20" />
-              </div>
-            )}
-          </div>
-
-          {/* Content area + buttons layout */}
-          <div
-            className={cx(
-              "flex-1 flex",
-              content.titleLayout?.buttonLayout === "left-grid"
-                  // mobile: center horizontally & sit on bottom
-                  // desktop: left-aligned with vertical centering
-                  ? "justify-center items-end md:justify-start md:items-center"
-                  : "flex-col justify-end"
-              )}
-            >
-            {content.titleLayout?.buttonLayout === "left-grid" ? (
-              <div
-                className={cx(
-                  // Mobile: 3 columns, centered by parent, add bottom margin
-                  "grid grid-cols-3 gap-2 w-[50%] mb-[calc(3%-10px)]",
-                  // Desktop: 2 columns, left margin, no bottom margin
-                  "md:grid-cols-2 md:max-w-none md:w-auto md:gap-3 md:mb-0 md:ml-[calc(4%-10px)]"
-                )}
-              >
-                {content.buttons.map((button, index) => (
+            {/* State 2 Buttons */}
+            <div className="flex-1 flex flex-col justify-end">
+              <div className="flex justify-center gap-2 md:gap-3">
+                {state2Content.buttons.map((button, index) => (
                   <button
-                    key={index}
-                    onClick={() => onButtonClick?.(index)}
+                    key={`state2-${index}`}
+                    onClick={() => handleInternalButtonClick(index)}
                     className={cx(
-                      // Mobile: fill cell as square
-                      "relative w-full aspect-square rounded-bigButton border-0",
-                      // Desktop: fixed size
-                      "md:w-16 md:h-16 md:aspect-auto",
-                      // Shared
+                      "relative w-14 h-14 md:w-16 md:h-16 rounded-bigButton border-0 aspect-square",
                       "flex items-center justify-center text-lg md:text-xl transition-all duration-300 hover:scale-105",
-                      "md:shrink-0"
+                      "shrink-0"
                     )}
                     title={button.label}
                   >
-                    {/* non-selected subtle outline */}
                     {!button.selected && (
                       <div
                         className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
                         aria-hidden
                       />
                     )}
-
-                    {/* selected state: gradient + halo line + crisp line */}
                     {button.selected && (
                       <>
                         <div
@@ -257,8 +246,6 @@ export function OverlayBox({
                         />
                       </>
                     )}
-
-                    {/* icon / content */}
                     <span className="relative z-10 text-white flex items-center justify-center">
                       {typeof button.icon === "string" &&
                       (button.icon.endsWith(".png") ||
@@ -273,27 +260,102 @@ export function OverlayBox({
                   </button>
                 ))}
               </div>
-            ) : (
-              <>
-                {/* Original bottom-center layout */}
-                <div className="flex justify-center gap-2 md:gap-3">
-                  {content.buttons.map((button, index) => (
+            </div>
+          </div>
+
+          {/* STATE 3 CONTENT */}
+          <div
+            className={cx(
+              "absolute inset-4 flex flex-col text-left transition-opacity duration-500",
+              visibility.state3.title ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            {/* State 3 Title with Live Signal and Window Controls */}
+            <div className="mb-1 -mt-2 text-left">
+              <div className="flex items-center justify-between select-none">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={cx(
+                      "w-2 h-2 bg-red-500 rounded-full animate-pulse transition-opacity duration-500",
+                      visibility.state3.liveSignal ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <h2 className="font-[500] text-white text-lg">{state3Content.title}</h2>
+                </div>
+
+                <div
+                  className={cx(
+                    "flex items-center gap-2 blur-[1px] transition-opacity duration-500",
+                    visibility.state3.windowControls ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">−</div>
+                  <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">□</div>
+                  <div className="w-3 h-3 flex items-center justify-center text-white/60 text-lg font-[500]">×</div>
+                </div>
+              </div>
+
+              {/* Separator under header */}
+              <div className="mt-1">
+                <div className="h-px bg-white/20" />
+              </div>
+            </div>
+
+            {/* State 3 Content Layout */}
+            <div className="flex-1 relative">
+              
+              {/* Graph - Mobile: top, Desktop: right side */}
+              <div className={cx(
+                // Mobile: positioned at top
+                "absolute top-0 left-0 right-0 h-32",
+                // Desktop: positioned on right side
+                "md:top-[40%] md:-translate-y-1/2 md:right-4 md:left-auto md:w-[30%] md:h-[60%]"
+              )}>
+                <GraphComponent 
+                  continent={selectedContinent} 
+                  className="w-full h-full"
+                />
+              </div>
+
+              {/* Continent Buttons - Mobile: bottom, Desktop: left side */}
+              <div className={cx(
+                // Mobile: positioned at bottom
+                "absolute bottom-0 left-1/2 -translate-x-1/2",
+                // Desktop: positioned on left side, vertically centered
+                "md:bottom-1/2 md:translate-y-1/2 md:left-[calc(4%-10px)] md:translate-x-0"
+              )}>
+                <div
+                  className={cx(
+                    // Mobile: 3 columns, centered
+                    "grid grid-cols-3 gap-2 w-[50vw]",
+                    // Desktop: 2 columns
+                    "md:grid-cols-2 md:w-auto md:gap-3"
+                  )}
+                >
+                  {state3Content.buttons.map((button, index) => (
                     <button
-                      key={index}
-                      onClick={() => onButtonClick?.(index)}
+                      key={`state3-${index}`}
+                      onClick={() => handleInternalButtonClick(index)}
                       className={cx(
-                        "relative w-14 h-14 md:w-16 md:h-16 rounded-bigButton border-0 aspect-square",
+                        // Mobile: fill cell as square
+                        "relative w-full aspect-square rounded-bigButton border-0",
+                        // Desktop: fixed size
+                        "md:w-16 md:h-16 md:aspect-auto",
+                        // Shared
                         "flex items-center justify-center text-lg md:text-xl transition-all duration-300 hover:scale-105",
-                        "shrink-0"
+                        "md:shrink-0"
                       )}
                       title={button.label}
                     >
+                      {/* non-selected subtle outline */}
                       {!button.selected && (
                         <div
                           className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
                           aria-hidden
                         />
                       )}
+
+                      {/* selected state: gradient + halo line + crisp line */}
                       {button.selected && (
                         <>
                           <div
@@ -314,6 +376,8 @@ export function OverlayBox({
                           />
                         </>
                       )}
+
+                      {/* icon / content */}
                       <span className="relative z-10 text-white flex items-center justify-center">
                         {typeof button.icon === "string" &&
                         (button.icon.endsWith(".png") ||
@@ -328,9 +392,80 @@ export function OverlayBox({
                     </button>
                   ))}
                 </div>
-              </>
-            )}
+              </div>
+
+            </div>
           </div>
+
+          {/* STATE 4 CONTENT */}
+          <div
+            className={cx(
+              "absolute inset-4 flex flex-col text-center transition-opacity duration-500",
+              visibility.state4.title ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            {/* State 4 Title */}
+            <div className="mb-8 mt-4 text-center">
+              <h2 className="font-sans text-white text-2xl md:text-3xl font-medium">{state4Content.title}</h2>
+            </div>
+
+            {/* State 4 Navigation Mode Buttons */}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex gap-8 md:gap-6">
+                {state4Content.buttons.map((button, index) => (
+                  <div key={`state4-${index}`} className="flex flex-col items-center gap-3">
+                    <button
+                      onClick={() => handleInternalButtonClick(index)}
+                      className={cx(
+                        "relative w-20 h-20 md:w-16 md:h-16 rounded-bigButton border-0",
+                        "flex items-center justify-center transition-all duration-300 hover:scale-105"
+                      )}
+                      title={button.label}
+                    >
+                      {/* non-selected subtle outline */}
+                      {!button.selected && (
+                        <div
+                          className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
+                          aria-hidden
+                        />
+                      )}
+
+                      {/* selected state: gradient + halo line + crisp line */}
+                      {button.selected && (
+                        <>
+                          <div
+                            className="absolute inset-0 rounded-bigButton"
+                            style={{
+                              background:
+                                "linear-gradient(to right, rgba(154,146,210,0.5), rgba(255,153,204,0.5))",
+                            }}
+                          />
+                          <div
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white"
+                            style={{ filter: "blur(4px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                            aria-hidden
+                          />
+                          <div
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/70"
+                            aria-hidden
+                          />
+                        </>
+                      )}
+
+                      {/* icon / content */}
+                      <span className="relative z-10 text-white flex items-center justify-center">
+                        <img src={button.icon} alt={button.label} className="w-[70%] h-[70%] object-contain" />
+                      </span>
+                    </button>
+                    
+                    {/* Button Label */}
+                    <span className="font-mono text-white text-sm md:text-base">{button.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

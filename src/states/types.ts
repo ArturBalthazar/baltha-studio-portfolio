@@ -39,11 +39,11 @@ export interface OverlayBoxDimensions {
     mobile: string;
     desktop: string;
   };
-  maxWidth: {
+  maxWidth?: {
     mobile: string;
     desktop: string;
   };
-  minWidth: {
+  minWidth?: {
     mobile: string;
     desktop: string;
   };
@@ -51,11 +51,15 @@ export interface OverlayBoxDimensions {
     mobile: string;
     desktop: string;
   };
-  maxHeight: {
+  maxHeight?: {
     mobile: string;
     desktop: string;
   };
-  minHeight: {
+  minHeight?: {
+    mobile: string;
+    desktop: string;
+  };
+  transform: {
     mobile: string;
     desktop: string;
   };
@@ -68,6 +72,23 @@ export interface TitleLayout {
   buttonLayout: 'bottom-center' | 'left-grid';
   buttonGridRows?: number;
   buttonGridCols?: number;
+}
+
+export interface StateContentVisibility {
+  state2: {
+    title: boolean;
+    buttons: boolean;
+  };
+  state3: {
+    title: boolean;
+    liveSignal: boolean;
+    windowControls: boolean;
+    buttons: boolean;
+  };
+  state4: {
+    title: boolean;
+    buttons: boolean;
+  };
 }
 
 export interface OverlayContent {
