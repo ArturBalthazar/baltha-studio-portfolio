@@ -87,8 +87,8 @@ export function OverlayBox({
       case S.state_4:
         return {
           width: { mobile: "w-[95%]", desktop: "sm:w-[calc(15%+200px)]" },
-          height: { mobile: "h-[35%]", desktop: "sm:h-[35%]" },
-          transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[24%]" },
+          height: { mobile: "h-[35%]", desktop: "sm:h-[calc(20%+100px)]" },
+          transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[calc(60%-100px)]" },
         };
       default:
         return {
@@ -405,7 +405,7 @@ export function OverlayBox({
             )}
           >
             {/* State 4 Title */}
-            <div className="mb-8 mt-4 text-center">
+            <div className="mb-2 mt-[calc(20%-55px)] text-center">
               <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium">{state4Content.title}</h2>
             </div>
 
@@ -417,7 +417,7 @@ export function OverlayBox({
                     <button
                       onClick={() => handleInternalButtonClick(index)}
                       className={cx(
-                        "relative w-20 h-20 sm:w-16 sm:h-16 rounded-bigButton border-0",
+                        "relative w-16 h-16 sm:w-16 sm:h-16 rounded-bigButton border-0",
                         "flex items-center justify-center transition-all duration-300 hover:scale-105"
                       )}
                       title={button.label}
