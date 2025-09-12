@@ -25,8 +25,8 @@ export function OverlayBox({
   
   // State management for selected buttons
   const [selectedState2Button, setSelectedState2Button] = useState(0); // Default to first button
-  const [selectedState3Button, setSelectedState3Button] = useState(3); // Default to South America
-  const [selectedContinent, setSelectedContinent] = useState("South America");
+  const [selectedState3Button, setSelectedState3Button] = useState(2); // Default to South America
+  const [selectedContinent, setSelectedContinent] = useState("Europe");
   const [selectedState4Button, setSelectedState4Button] = useState(0); // Default to Guided
 
   useEffect(() => {
@@ -232,12 +232,12 @@ export function OverlayBox({
                           className="absolute inset-0 rounded-bigButton"
                           style={{
                             background:
-                              "linear-gradient(to right, rgba(154,146,210,0.5), rgba(255,153,204,0.5))",
+                              "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.52))",
                           }}
                         />
                         <div
-                          className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white"
-                          style={{ filter: "blur(4px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                          className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
+                          style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                           aria-hidden
                         />
                         <div
@@ -362,12 +362,12 @@ export function OverlayBox({
                             className="absolute inset-0 rounded-bigButton"
                             style={{
                               background:
-                                "linear-gradient(to right, rgba(154,146,210,0.5), rgba(255,153,204,0.5))",
+                                "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.52))",
                             }}
                           />
                           <div
-                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white"
-                            style={{ filter: "blur(4px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
+                            style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                             aria-hidden
                           />
                           <div
@@ -437,12 +437,12 @@ export function OverlayBox({
                             className="absolute inset-0 rounded-bigButton"
                             style={{
                               background:
-                                "linear-gradient(to right, rgba(154,146,210,0.5), rgba(255,153,204,0.5))",
+                                "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.38))",
                             }}
                           />
                           <div
-                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white"
-                            style={{ filter: "blur(4px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
+                            style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                             aria-hidden
                           />
                           <div
