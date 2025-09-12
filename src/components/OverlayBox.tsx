@@ -86,7 +86,7 @@ export function OverlayBox({
         };
       case S.state_4:
         return {
-          width: { mobile: "w-[95%]", desktop: "sm:w-[30%]" },
+          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(15%+200px)]" },
           height: { mobile: "h-[35%]", desktop: "sm:h-[35%]" },
           transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[24%]" },
         };
