@@ -188,7 +188,7 @@ export default function App() {
         className={cx(
           "fixed z-50 rounded-full",
           // mobile (centered via right hack you used)
-          "bottom-[75px] -right-[50%] -translate-x-[25px]",
+          "bottom-[90px] -right-[50%] -translate-x-[25px]",
           // desktop: push farther right, small bottom tweak
           "md:bottom-[70px] md:-right-[100%] md:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",
