@@ -179,7 +179,7 @@ export function OverlayBox({
         <div
           className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white"
           style={{
-            filter: "blur(6px)",
+            filter: "blur(3px)",
             transform: "scale(1)",
             transformOrigin: "center",
           }}
