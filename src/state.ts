@@ -20,6 +20,10 @@ type UIState = {
   prev: () => void;
   chatOpen: boolean;
   setChatOpen: (open: boolean) => void;
+  selectedLogoModel: number; // 0=logo, 1=chain, 2=cookie, 3=badge
+  setSelectedLogoModel: (index: number) => void;
+  selectedContinent: number; // 0=Africa, 1=North America, 2=Europe, 3=South America, 4=Oceania, 5=Asia
+  setSelectedContinent: (index: number) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -28,5 +32,9 @@ export const useUI = create<UIState>((set, get) => ({
   next: () => set({ state: (get().state + 1) as S }),
   prev: () => set({ state: (get().state - 1) as S }),
   chatOpen: false,
-  setChatOpen: (open) => set({ chatOpen: open })
+  setChatOpen: (open) => set({ chatOpen: open }),
+  selectedLogoModel: 0,
+  setSelectedLogoModel: (index) => set({ selectedLogoModel: index }),
+  selectedContinent: 2, // Default to Europe (index 2)
+  setSelectedContinent: (index) => set({ selectedContinent: index })
 }));

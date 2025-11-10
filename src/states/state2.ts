@@ -25,12 +25,22 @@ export const state2Config: StateConfig = {
     nextState: 'state3',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 68,
-        desktop: 44
+        mobile: 44,
+        desktop: 24
       },
       upperRadiusLimit: {
-        mobile: 68,
-        desktop: 44
+        mobile: 44,
+        desktop: 24
+      }
+    },
+    babylonScene: {
+      logoEnabled: true,
+      planetEnabled: false,
+      rockRingEnabled: false,
+      particlesEnabled: false,
+      rootTransform: {
+        mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
+        desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
       }
     }
   },

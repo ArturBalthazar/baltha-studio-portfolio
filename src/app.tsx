@@ -12,7 +12,7 @@ import { getStateConfig } from "./states";
 export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
-  const { setChatOpen } = useUI();
+  const { setChatOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
   const config = getStateConfig(s);
   
   const [chatVisible, setChatVisible] = React.useState(false); // For delayed removal
@@ -33,6 +33,16 @@ export default function App() {
       `Button ${index} clicked:`,
       config.content.overlayContent?.buttons[index]
     );
+    
+    // Handle state 2 button clicks - switch logo models
+    if (s === S.state_2) {
+      setSelectedLogoModel(index);
+    }
+    
+    // Handle state 3 button clicks - rotate planet to continent
+    if (s === S.state_3) {
+      setSelectedContinent(index);
+    }
   };
 
   const handlePrevious = () => {

@@ -22,10 +22,29 @@ export interface BabylonCameraConfig {
   };
 }
 
+export interface BabylonTransform {
+  position?: { x: number; y: number; z: number };
+  scale?: number;
+}
+
+export interface ResponsiveBabylonTransform {
+  mobile: BabylonTransform;
+  desktop: BabylonTransform;
+}
+
+export interface BabylonSceneConfig {
+  logoEnabled: boolean;
+  planetEnabled: boolean;
+  rockRingEnabled: boolean;
+  particlesEnabled: boolean;
+  rootTransform: ResponsiveBabylonTransform;
+}
+
 export interface CanvasConfig {
   clickable: boolean;
   nextState: string | null;
   babylonCamera?: BabylonCameraConfig;
+  babylonScene?: BabylonSceneConfig;
 }
 
 export interface OverlayButton {
