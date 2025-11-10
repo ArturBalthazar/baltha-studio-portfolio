@@ -9,6 +9,9 @@ export interface HeaderConfig {
   menuHeight: ResponsiveSize;
   padding: ResponsiveSize;
   horizontalPadding: ResponsiveSize;
+  transparentBackground?: boolean; // For state 5 - no background
+  whiteIcons?: boolean; // For state 5 - white colored icons/text
+  collapsed?: boolean; // For state 5 - collapse header to 0 height but keep icons visible
 }
 
 export interface BabylonCameraConfig {
@@ -45,6 +48,8 @@ export interface CanvasConfig {
   nextState: string | null;
   babylonCamera?: BabylonCameraConfig;
   babylonScene?: BabylonSceneConfig;
+  fullscreen?: boolean; // For state 5 - expand to 100% width and height
+  roundedCorners?: boolean; // Whether to show rounded corners (default: true)
 }
 
 export interface OverlayButton {
@@ -125,6 +130,8 @@ export interface ContentConfig {
   customizeBoxVisible?: boolean;
   overlayContent?: OverlayContent;
   overlayBoxDimensions?: OverlayBoxDimensions;
+  showBottomLeftControls?: boolean; // For state 5 - info, audio, navigation buttons
+  whiteBottomLabel?: boolean; // For state 5 - white "BALTHA STUDIO 2025" label
 }
 
 export interface StateConfig {

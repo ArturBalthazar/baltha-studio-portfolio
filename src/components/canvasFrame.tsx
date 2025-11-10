@@ -1,15 +1,19 @@
 import React from "react";
+import { useUI } from "../state";
+import { getStateConfig } from "../states";
+import cx from "classnames";
 
 export function CanvasFrame({ children }: { children: React.ReactNode }) {
+  const s = useUI((st) => st.state);
+  const config = getStateConfig(s);
+  const hasRoundedCorners = config.canvas.roundedCorners !== false; // Default to true
+
   return (
     <section
-      className="
-        relative
-        h-full min-h-0 w-full
-        overflow-hidden rounded-bigButton md:rounded-canvas
-        shadow-[0_6px_20px_rgba(0,0,0,0.10)]
-        bg-transparent
-      "
+      className={cx(
+        "relative h-full min-h-0 w-full overflow-hidden bg-transparent shadow-[0_6px_20px_rgba(0,0,0,0.10)]",
+        hasRoundedCorners && "rounded-bigButton md:rounded-canvas"
+      )}
     >
       {/* Paint-only layer; doesn't affect layout height */}
       <div

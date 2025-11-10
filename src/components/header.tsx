@@ -9,13 +9,20 @@ export function Header({ showWelcome = true }: Props) {
   const s = useUI((st) => st.state);
   const config = getStateConfig(s);
   const showWelcomeText = showWelcome && config.header.showWelcomeText;
+  const isTransparent = config.header.transparentBackground;
+  const isWhite = config.header.whiteIcons;
+  const isCollapsed = config.header.collapsed;
 
   return (
     <header
       className={cx(
-        "mx-auto w-full",
-        "rounded-bigButton md:rounded-canvas shadow-[0_6px_20px_rgba(0,0,0,0.08)]",
-        "bg-[#F4F2ED] text-[#081529]",
+        "w-full relative",
+        // Only apply these styles when not collapsed
+        !isCollapsed && "mx-auto rounded-bigButton md:rounded-canvas",
+        // Conditional background and shadow
+        !isTransparent && "bg-[#F4F2ED] shadow-[0_6px_20px_rgba(0,0,0,0.08)]",
+        // Conditional text color
+        isWhite ? "text-white" : "text-[#081529]",
         // Dynamic padding from state config
         config.header.horizontalPadding.mobile,
         config.header.horizontalPadding.desktop,
@@ -24,12 +31,20 @@ export function Header({ showWelcome = true }: Props) {
       )}
       style={{ 
         transition: "all 500ms ease",
-        overflow: "hidden"
+        overflow: isCollapsed ? "visible" : "hidden",
+        height: isCollapsed ? "0" : "auto",
+        backgroundColor: isTransparent ? 'transparent' : undefined,
+        boxShadow: isTransparent ? 'none' : undefined
       }}
       aria-label="Site header"
     >
       {/* top row: logo left, menu right */}
-      <div className="flex items-center justify-between">
+      <div 
+        className={cx(
+          "flex items-center justify-between",
+          isCollapsed && "absolute top-5 left-[30px] right-[30px] z-50"
+        )}
+      >
         <img
           src="/assets/brand/Baltha_Studio_Icon_Blue.png"
           alt="Baltha Studio"
@@ -38,6 +53,11 @@ export function Header({ showWelcome = true }: Props) {
             config.header.logoHeight.mobile,
             config.header.logoHeight.desktop
           )}
+          style={{
+            filter: isWhite 
+              ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
+              : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
+          }}
           draggable={false}
         />
         <img
@@ -48,6 +68,11 @@ export function Header({ showWelcome = true }: Props) {
             config.header.menuHeight.mobile,
             config.header.menuHeight.desktop
           )}
+          style={{
+            filter: isWhite 
+              ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
+              : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
+          }}
           draggable={false}
         />
       </div>

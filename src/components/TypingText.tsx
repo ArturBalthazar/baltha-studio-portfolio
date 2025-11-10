@@ -55,10 +55,10 @@ export function TypingText({
   }, []);
 
   return (
-    <div className={`font-mono ${className}`}>
-      <span className="typing-content">{displayedText}</span>
+    <div className={`font-mono pointer-events-none select-none ${className}`}>
+      <span className="typing-content select-none">{displayedText}</span>
       <span 
-        className={`inline-block transition-opacity duration-100 ${
+        className={`inline-block transition-opacity duration-100 select-none ${
           cursorVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >

@@ -202,6 +202,13 @@ export function BabylonCanvas() {
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  
+  // Rotation tracking refs
+  const baseRotationRef = useRef({ x: 0, y: 0 });
+  const mouseRotationRef = useRef({ x: 0, y: 0 });
+  const dragRotationRef = useRef(BABYLON.Quaternion.Identity());
+  const isDraggingRef = useRef(false);
+  const lastDragPosRef = useRef({ x: 0, y: 0 });
 
   // Initialize scene once
   useEffect(() => {
@@ -528,6 +535,142 @@ export function BabylonCanvas() {
     };
   }, []); // Initialize once only
 
+  // Mouse tracking for subtle rotation
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingRef.current) return; // Don't track mouse while dragging
+      
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      
+      // Calculate offset from center, normalized to -1 to 1
+      const offsetX = (e.clientX - centerX) / centerX;
+      const offsetY = (e.clientY - centerY) / centerY;
+      
+      // Apply subtle rotation (max 0.1 radians = ~5.7 degrees)
+      mouseRotationRef.current.x = offsetY * 0.25;
+      mouseRotationRef.current.y = offsetX * -0.4;
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Device orientation for mobile
+  useEffect(() => {
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.beta === null || e.gamma === null) return;
+      if (isDraggingRef.current) return; // Don't track orientation while dragging
+      
+      // beta: front-to-back tilt (-180 to 180)
+      // gamma: left-to-right tilt (-90 to 90)
+      const beta = e.beta || 0;
+      const gamma = e.gamma || 0;
+      
+      // Convert to radians and apply subtle rotation
+      mouseRotationRef.current.x = (beta / 180) * 0.1;
+      mouseRotationRef.current.y = (gamma / 90) * 0.1;
+    };
+    
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, []);
+
+  // Drag rotation interaction
+  useEffect(() => {
+    const canvas = ref.current;
+    const camera = cameraRef.current;
+    if (!canvas) return;
+    
+    const handlePointerDown = (e: PointerEvent) => {
+      isDraggingRef.current = true;
+      lastDragPosRef.current = { x: e.clientX, y: e.clientY };
+      canvas.setPointerCapture(e.pointerId);
+    };
+    
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current || !camera) return;
+      
+      const deltaX = e.clientX - lastDragPosRef.current.x;
+      const deltaY = e.clientY - lastDragPosRef.current.y;
+      
+      // Apply rotation in screen space using quaternions
+      // Horizontal drag rotates around world Y axis
+      // Vertical drag rotates around camera's right vector
+      const sensitivity = 0.012;
+      
+      // Create rotation quaternions
+      const yAxisRotation = BABYLON.Quaternion.RotationAxis(
+        BABYLON.Vector3.Up(),
+        -deltaX * sensitivity
+      );
+      
+      // Get camera's right vector for vertical rotation
+      const cameraRight = camera.getDirection(BABYLON.Axis.X);
+      const xAxisRotation = BABYLON.Quaternion.RotationAxis(
+        cameraRight,
+        -deltaY * sensitivity
+      );
+      
+      // Combine rotations: first apply the new rotation, then the existing one
+      dragRotationRef.current = yAxisRotation.multiply(xAxisRotation).multiply(dragRotationRef.current);
+      
+      lastDragPosRef.current = { x: e.clientX, y: e.clientY };
+    };
+    
+    const handlePointerUp = (e: PointerEvent) => {
+      isDraggingRef.current = false;
+      canvas.releasePointerCapture(e.pointerId);
+    };
+    
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+    
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, []);
+
+  // Apply combined rotation every frame
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const root1 = root1Ref.current;
+    if (!scene || !root1) return;
+    
+    const applyRotation = () => {
+      // Combine base rotation, mouse rotation, and drag quaternion
+      const baseMouseX = baseRotationRef.current.x + mouseRotationRef.current.x;
+      const baseMouseY = baseRotationRef.current.y + mouseRotationRef.current.y;
+      
+      // Convert base+mouse Euler to quaternion
+      const baseMouseQuat = BABYLON.Quaternion.RotationYawPitchRoll(
+        baseMouseY,  // yaw (Y axis)
+        baseMouseX,  // pitch (X axis)
+        0            // roll (Z axis)
+      );
+      
+      // Combine with drag quaternion
+      const finalQuat = dragRotationRef.current.multiply(baseMouseQuat);
+      
+      // Convert back to Euler and apply
+      const euler = finalQuat.toEulerAngles();
+      root1.rotation.x = euler.x;
+      root1.rotation.y = euler.y;
+      root1.rotation.z = euler.z;
+    };
+    
+    const observer = scene.onBeforeRenderObservable.add(applyRotation);
+    
+    return () => {
+      scene.onBeforeRenderObservable.remove(observer);
+    };
+  }, []);
+
   // Update camera settings when state changes (animated)
   useEffect(() => {
     const camera = cameraRef.current;
@@ -598,6 +741,36 @@ export function BabylonCanvas() {
 
     // Handle logo visibility based on config
     logosRoot.setEnabled(sceneConfig.logoEnabled);
+    
+    // Reset drag rotation to identity on state change with animation (quaternion slerp)
+    const currentDragQuat = dragRotationRef.current.clone();
+    const identityQuat = BABYLON.Quaternion.Identity();
+    
+    // Only animate if there's a meaningful rotation
+    if (!currentDragQuat.equals(identityQuat)) {
+      // Animate drag rotation back to identity using quaternion slerp
+      const startTime = performance.now();
+      const duration = 800; // ms
+      
+      const animateDragReset = () => {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        
+        // Spherical linear interpolation from current to identity
+        dragRotationRef.current = BABYLON.Quaternion.Slerp(currentDragQuat, identityQuat, eased);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateDragReset);
+        } else {
+          dragRotationRef.current = BABYLON.Quaternion.Identity();
+        }
+      };
+      
+      animateDragReset();
+    }
     
     // Handle root1 transform (position and scale) with animation
     const isMobile = window.innerWidth < 768;

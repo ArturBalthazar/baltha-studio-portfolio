@@ -5,6 +5,7 @@ import { CanvasFrame } from "./components/canvasFrame";
 import { BabylonCanvas } from "./components/canvasBabylon";
 import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
+import { BottomLeftControls } from "./components/BottomLeftControls";
 import { Chat } from "./components/Chat";
 import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
@@ -14,6 +15,7 @@ export default function App() {
   const chatOpen = useUI((st) => st.chatOpen);
   const { setChatOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
   const config = getStateConfig(s);
+  const isFullscreen = config.canvas.fullscreen;
   
   const [chatVisible, setChatVisible] = React.useState(false); // For delayed removal
 
@@ -69,21 +71,18 @@ export default function App() {
           className={cx(
             "h-full w-full",
             "grid grid-rows-[max-content,1fr]",
-            "gap-2 md:gap-4",
             "justify-items-start", // pin children to the left
-            "px-2 md:px-4",
-            "pt-2 md:pt-4",
-            "pb-6 md:pb-8",
             "transition-all duration-500",
-
+            // Conditional spacing - fullscreen has no margins/padding
+            isFullscreen ? "gap-0 p-0" : "gap-2 md:gap-4 px-2 md:px-4 pt-2 md:pt-4 pb-6 md:pb-8"
           )}
         >
           {/* Header */}
           <div
             className={cx(
-              "w-full md:w-[75%] justify-self-start",
-              "transition-[margin] duration-500",
-              chatOpen ? "md:ml-0" : "md:ml-[12.5%]"
+              "justify-self-start transition-all duration-500",
+              isFullscreen ? "w-full" : "w-full md:w-[75%]",
+              !isFullscreen && (chatOpen ? "md:ml-0" : "md:ml-[12.5%]")
             )}
           >
             <Header showWelcome={true} />
@@ -92,11 +91,10 @@ export default function App() {
           {/* Canvas */}
           <div
             className={cx(
-              "w-full md:w-[75%] h-full min-h-0 relative justify-self-start",
-              "transition-[margin] duration-500",
-              chatOpen ? "md:ml-0" : "md:ml-[12.5%]"
+              "h-full min-h-0 relative justify-self-start transition-all duration-500",
+              isFullscreen ? "w-full" : "w-full md:w-[75%]",
+              !isFullscreen && (chatOpen ? "md:ml-0" : "md:ml-[12.5%]")
             )}
-            style={{ transition: "margin 500ms ease" }}
           >
             <CanvasFrame>
               <BabylonCanvas />
@@ -128,13 +126,13 @@ export default function App() {
               {s > S.state_1 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Previous state"
-                    className="w-12 h-12 rotate-180"
+                    className="w-12 h-12 rotate-180 pointer-events-none"
                   />
                 </button>
               )}
@@ -142,13 +140,13 @@ export default function App() {
               {s < S.state_10 && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Next state"
-                    className="w-12 h-12"
+                    className="w-12 h-12 pointer-events-none"
                   />
                 </button>
               )}
@@ -157,13 +155,13 @@ export default function App() {
               {s > S.state_1 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50"
+                  className="absolute left-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Previous state"
-                    className="w-12 h-12 rotate-180"
+                    className="w-12 h-12 rotate-180 pointer-events-none"
                   />
                 </button>
               )}
@@ -171,21 +169,31 @@ export default function App() {
               {s < S.state_10 && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50"
+                  className="absolute right-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Next state"
-                    className="w-12 h-12"
+                    className="w-12 h-12 pointer-events-none"
                   />
                 </button>
+              )}
+
+              {/* Bottom Left Controls (State 5+) */}
+              {config.content.showBottomLeftControls && (
+                <BottomLeftControls visible={true} delay={500} />
               )}
             </CanvasFrame>
           </div>
           
           {/* Bottom label */}
-          <div className="absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-20 text-xs text-brand-dark/70 font-mono tracking-wide">
+          <div 
+            className={cx(
+              "absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-20 text-xs font-mono tracking-wide transition-colors duration-500 select-none pointer-events-none",
+              config.content.whiteBottomLabel ? "text-brand-white" : "text-brand-dark/70"
+            )}
+          >
             BALTHA STUDIO 2025
           </div>
 

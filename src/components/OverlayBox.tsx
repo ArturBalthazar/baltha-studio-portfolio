@@ -51,7 +51,7 @@ export function OverlayBox({
 
   const continentNames = ["Africa", "North America", "Europe", "South America", "Oceania", "Asia"];
   const state3Content = {
-    title: `Live Earth - ${selectedContinent}`,
+    title: "Live Earth",
     buttons: [
       { icon: "/assets/images/Africa.png", label: "Africa", selected: selectedState3Button === 0 },
       { icon: "/assets/images/NorthAmerica.png", label: "North America", selected: selectedState3Button === 1 },
@@ -142,7 +142,7 @@ export function OverlayBox({
   return (
     <div
       className={cx(
-        "absolute inset-0 flex items-center justify-center transition-all",
+        "absolute inset-0 flex items-center justify-center transition-all pointer-events-none select-none",
         showBox ? "opacity-100" : "opacity-0",
         className
       )}
@@ -177,7 +177,7 @@ export function OverlayBox({
       >
         {/* HALO layer: blurred border only (no frosted glass) */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white"
+          className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white select-none"
           style={{
             filter: "blur(3px)",
             transform: "scale(1)",
@@ -187,27 +187,27 @@ export function OverlayBox({
         />
 
         {/* CRISP stroke on top */}
-        <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45 select-none" aria-hidden />
 
         {/* MAIN CONTENT */}
-        <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center">
+        <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center pointer-events-none select-none">
           
           {/* STATE 2 CONTENT */}
           <div
             className={cx(
-              "absolute inset-4 flex flex-col text-center transition-opacity duration-500",
-              visibility.state2.title ? "opacity-100" : "opacity-0 pointer-events-none"
+              "absolute inset-4 flex flex-col text-center transition-opacity duration-500 select-none",
+              visibility.state2.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
             {/* State 2 Title */}
-            <div className="mb-6 mt-0 text-center">
+            <div className="mb-6 mt-0 text-center pointer-events-none">
               <div className="flex items-center justify-center gap-3">
-                <h2 className="font-[500] text-white text-3xl">{state2Content.title}</h2>
+                <h2 className="font-[500] text-white text-3xl select-none">{state2Content.title}</h2>
               </div>
             </div>
 
             {/* State 2 Buttons */}
-            <div className="flex-1 flex flex-col justify-end">
+            <div className="flex-1 flex flex-col justify-end pointer-events-none">
               <div className="flex justify-center gap-2 sm:gap-3">
                 {state2Content.buttons.map((button, index) => (
                   <button
@@ -216,7 +216,8 @@ export function OverlayBox({
                     className={cx(
                       "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0 aspect-square",
                       "flex items-center justify-center text-lg sm:text-xl transition-all duration-300 hover:scale-105",
-                      "shrink-0"
+                      "shrink-0 select-none",
+                      visibility.state2.buttons ? "pointer-events-auto" : "pointer-events-none"
                     )}
                     title={button.label}
                   >
@@ -266,12 +267,12 @@ export function OverlayBox({
           {/* STATE 3 CONTENT */}
           <div
             className={cx(
-              "absolute inset-4 flex flex-col text-left transition-opacity duration-500",
-              visibility.state3.title ? "opacity-100" : "opacity-0 pointer-events-none"
+              "absolute inset-4 flex flex-col text-left transition-opacity duration-500 select-none",
+              visibility.state3.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
             {/* State 3 Title with Live Signal and Window Controls */}
-            <div className="mb-1 -mt-2 text-left">
+            <div className="mb-1 -mt-2 text-left pointer-events-none">
               <div className="flex items-center justify-between select-none">
                 <div className="flex items-center gap-3">
                   <div
@@ -281,6 +282,11 @@ export function OverlayBox({
                     )}
                   />
                   <h2 className="font-[500] text-white text-lg">{state3Content.title}</h2>
+                </div>
+
+                {/* Continent name in center */}
+                <div className="absolute left-1/2 -translate-x-1/2">
+                  <h2 className="font-[500] text-white text-lg">{selectedContinent}</h2>
                 </div>
 
                 <div
@@ -302,7 +308,7 @@ export function OverlayBox({
             </div>
 
             {/* State 3 Content Layout */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative pointer-events-none">
               
               {/* Graph - Mobile: top, Desktop: right side */}
               <div className={cx(
@@ -343,7 +349,8 @@ export function OverlayBox({
                         "sm:w-16 sm:h-16 sm:aspect-auto",
                         // Shared
                         "flex items-center justify-center text-lg sm:text-xl transition-all duration-300 hover:scale-105",
-                        "sm:shrink-0"
+                        "sm:shrink-0 select-none",
+                        visibility.state3.buttons ? "pointer-events-auto" : "pointer-events-none"
                       )}
                       title={button.label}
                     >
@@ -400,25 +407,26 @@ export function OverlayBox({
           {/* STATE 4 CONTENT */}
           <div
             className={cx(
-              "absolute inset-4 flex flex-col text-center transition-opacity duration-500",
-              visibility.state4.title ? "opacity-100" : "opacity-0 pointer-events-none"
+              "absolute inset-4 flex flex-col text-center transition-opacity duration-500 select-none",
+              visibility.state4.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
             {/* State 4 Title */}
-            <div className="mt-2 mb-2 text-center">
-              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium">{state4Content.title}</h2>
+            <div className="mt-2 mb-2 text-center pointer-events-none">
+              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium select-none">{state4Content.title}</h2>
             </div>
 
             {/* State 4 Navigation Mode Buttons */}
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center pointer-events-none">
               <div className="flex gap-8 sm:gap-6">
                 {state4Content.buttons.map((button, index) => (
-                  <div key={`state4-${index}`} className="flex flex-col items-center gap-3">
+                  <div key={`state4-${index}`} className="flex flex-col items-center gap-3 pointer-events-none">
                     <button
                       onClick={() => handleInternalButtonClick(index)}
                       className={cx(
                         "relative w-16 h-16 sm:w-16 sm:h-16 rounded-bigButton border-0",
-                        "flex items-center justify-center transition-all duration-300 hover:scale-105"
+                        "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
+                        visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
                       )}
                       title={button.label}
                     >
@@ -459,7 +467,7 @@ export function OverlayBox({
                     </button>
                     
                     {/* Button Label */}
-                    <span className="font-mono text-white text-sm sm:text-base">{button.label}</span>
+                    <span className="font-mono text-white text-sm sm:text-base select-none">{button.label}</span>
                   </div>
                 ))}
               </div>
