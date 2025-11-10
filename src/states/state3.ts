@@ -38,6 +38,7 @@ export const state3Config: StateConfig = {
       planetEnabled: true,
       rockRingEnabled: false,
       particlesEnabled: false,
+      portalsEnabled: false,
       rootTransform: {
         mobile: { scale: 0.9, position: { x: 0, y: 0, z: 0 } },
         desktop: { scale: 0.9, position: { x: 1, y: -0.3, z: 0 } }

@@ -182,7 +182,13 @@ export default function App() {
 
               {/* Bottom Left Controls (State 5+) */}
               {config.content.showBottomLeftControls && (
-                <BottomLeftControls visible={true} delay={500} />
+                <BottomLeftControls 
+                  visible={true} 
+                  delay={500}
+                  isState5={s === S.state_5}
+                  chatOpen={chatOpen}
+                  onChatToggle={() => setChatOpen(!chatOpen)}
+                />
               )}
             </CanvasFrame>
           </div>
@@ -200,14 +206,15 @@ export default function App() {
         </main>
       </div>
 
-      {/* Chat FAB */}
+      {/* Chat FAB - Hidden in State 5 on mobile only (integrated into BottomLeftControls on mobile) */}
       <button
         onClick={() => setChatOpen(!chatOpen)}
         className={cx(
           "fixed z-50 rounded-full",
-          // mobile (centered via right hack you used)
+          // mobile (centered via right hack you used) - hidden in State 5
           "bottom-[90px] -right-[50%] -translate-x-[25px]",
-          // desktop: push farther right, small bottom tweak
+          s === S.state_5 && "hidden md:flex",
+          // desktop: push farther right, small bottom tweak - always visible
           "md:bottom-[70px] md:-right-[100%] md:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",
           "backdrop-blur-sm shadow-[inset_0_0_4px_3px_rgba(255,255,255,0.452)]",
@@ -216,35 +223,35 @@ export default function App() {
           chatOpen ? "opacity-0" : "",
           chatOpen ? "w-[50px] h-[50px]" : "w-[50px] h-[50px]"
         )}
-        style={{
-          background: chatOpen
-            ? `rgba(255,255,255,0.233)`
-            : `radial-gradient(circle, transparent 30%, rgba(255,255,255,0.233) 70%)`,
-        }}
-        aria-label={chatOpen ? "Close chat" : "Open chat"}
-      >
-          <div
-            className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10 rounded-[35%] blur-[10px] opacity-100"
-            style={{
-              background: `conic-gradient(
-                from 0deg,
-                #9A92D2,
-                #7583ff,
-                #FF8800,
-                #FF99CC,
-                #9A92D2
-              )`,
-              animation: "rotateGlow 5s linear infinite",
-            }}
-          />
+          style={{
+            background: chatOpen
+              ? `rgba(255,255,255,0.233)`
+              : `radial-gradient(circle, transparent 30%, rgba(255,255,255,0.233) 70%)`,
+          }}
+          aria-label={chatOpen ? "Close chat" : "Open chat"}
+        >
+            <div
+              className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10 rounded-[35%] blur-[10px] opacity-100"
+              style={{
+                background: `conic-gradient(
+                  from 0deg,
+                  #9A92D2,
+                  #7583ff,
+                  #FF8800,
+                  #FF99CC,
+                  #9A92D2
+                )`,
+                animation: "rotateGlow 5s linear infinite",
+              }}
+            />
 
-        <img
-          src={chatOpen ? "/assets/images/chatIcon.png" : "/assets/images/chatIcon.png"}
-          alt={chatOpen ? "Chat" : "Chat"}
-          className={chatOpen ? "w-[30px] h-[30px] mt-[5px]" : "w-[30px] h-[30px] mt-[5px]"}
-        />
-        <span className="sr-only">{chatOpen ? "Open chat" : "Open chat"}</span>
-      </button>
+          <img
+            src={chatOpen ? "/assets/images/chatIcon.png" : "/assets/images/chatIcon.png"}
+            alt={chatOpen ? "Chat" : "Chat"}
+            className={chatOpen ? "w-[30px] h-[30px] mt-[5px]" : "w-[30px] h-[30px] mt-[5px]"}
+          />
+          <span className="sr-only">{chatOpen ? "Open chat" : "Open chat"}</span>
+        </button>
 
       {/* Chat */}
       {chatVisible && <Chat onClose={() => setChatOpen(false)} />}

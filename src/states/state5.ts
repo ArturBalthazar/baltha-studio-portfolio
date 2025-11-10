@@ -43,6 +43,8 @@ export const state5Config: StateConfig = {
       planetEnabled: false,
       rockRingEnabled: true,
       particlesEnabled: true,
+      portalsEnabled: true, // Show portals in state 5
+      cameraControlsEnabled: false, // Will be dynamically toggled based on navigation mode
       rootTransform: {
         mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }

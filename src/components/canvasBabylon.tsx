@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as BABYLON from "babylonjs";
 import "@babylonjs/loaders";
-import { useUI } from "../state";
+import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 
 // Force register the GLB loader
@@ -183,6 +183,86 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
   }
 }
 
+// Universal material opacity animation function
+interface AnimateMaterialOpacityOptions {
+  target: BABYLON.AbstractMesh;
+  scene: BABYLON.Scene;
+  duration: number; // in seconds
+  delay?: number; // delay before animation starts (in seconds)
+  fromOpacity: number; // starting opacity
+  toOpacity: number; // target opacity
+  easing?: BABYLON.EasingFunction;
+  onComplete?: () => void;
+}
+
+function animateMaterialOpacity(options: AnimateMaterialOpacityOptions): void {
+  const { target, scene, duration, delay = 0, fromOpacity, toOpacity, easing, onComplete } = options;
+  
+  const executeAnimation = () => {
+    const fps = 60;
+    const totalFrames = fps * duration;
+    
+    // Gather all materials from target and its children
+    const materials: BABYLON.Material[] = [];
+    if (target.material) {
+      materials.push(target.material);
+    }
+    target.getChildMeshes().forEach(mesh => {
+      if (mesh.material) {
+        materials.push(mesh.material);
+      }
+    });
+    
+    if (materials.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+    
+    // Animate each material
+    let completedCount = 0;
+    const totalMaterials = materials.length;
+    
+    materials.forEach((material, index) => {
+      const alphaAnimation = new BABYLON.Animation(
+        `materialOpacityAnim_${index}`,
+        "alpha",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      
+      alphaAnimation.setKeys([
+        { frame: 0, value: fromOpacity },
+        { frame: totalFrames, value: toOpacity }
+      ]);
+      
+      if (easing) alphaAnimation.setEasingFunction(easing);
+      
+      material.animations = [alphaAnimation];
+      scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
+        material.alpha = toOpacity;
+        completedCount++;
+        
+        // Only call onComplete once when all materials are done
+        if (completedCount === totalMaterials) {
+          // If faded out completely, disable the target
+          if (toOpacity === 0 || toOpacity < 0.02) {
+            target.setEnabled(false);
+          }
+          if (onComplete) onComplete();
+        }
+      });
+    });
+  };
+  
+  // Apply delay if specified
+  if (delay > 0) {
+    setTimeout(executeAnimation, delay * 1000);
+  } else {
+    executeAnimation();
+  }
+}
+
 export function BabylonCanvas() {
   const s = useUI((st) => st.state);
   const selectedLogoModel = useUI((st) => st.selectedLogoModel);
@@ -202,6 +282,12 @@ export function BabylonCanvas() {
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  
+  // Portal refs
+  const portalsRef = useRef<BABYLON.Mesh[]>([]);
+  const portalSwirlsRef = useRef<BABYLON.ParticleSystem[]>([]);
+  const warpEffectRef = useRef<BABYLON.PostProcess | null>(null);
+  const warpEffectAttachedRef = useRef(false);
   
   // Rotation tracking refs
   const baseRotationRef = useRef({ x: 0, y: 0 });
@@ -495,6 +581,227 @@ export function BabylonCanvas() {
     
     smoke.start();
     smokeParticleSystemRef.current = smoke;
+
+    // ========================
+    // Portal System
+    // ========================
+    
+    // Portal Warp Post-Process Effect
+    BABYLON.Effect.ShadersStore["portalWarpFragmentShader"] = `
+        precision highp float;
+        varying vec2 vUV;
+        uniform sampler2D textureSampler;
+        uniform float intensity;
+        
+        void main(void) {
+            vec2 center = vec2(0.5, 0.5);
+            vec2 toCenter = vUV - center;
+            float dist = length(toCenter);
+            
+            float warpStrength = intensity * 0.1 * (1.0 - dist);
+            vec2 offset = normalize(toCenter) * sin(dist * 20.0) * warpStrength;
+            
+            vec2 uv = vUV + offset;
+            vec4 color = texture2D(textureSampler, uv);
+            
+            vec2 texel = vec2(1.0) / vec2(1920.0, 1080.0);
+            vec4 blur = (
+                texture2D(textureSampler, uv + vec2(texel.x, 0.0)) +
+                texture2D(textureSampler, uv - vec2(texel.x, 0.0)) +
+                texture2D(textureSampler, uv + vec2(0.0, texel.y)) +
+                texture2D(textureSampler, uv - vec2(0.0, texel.y))
+            ) * 0.25;
+
+            gl_FragColor = mix(color, blur, 0.3);
+        }
+    `;
+
+    const warpEffect = new BABYLON.PostProcess(
+        "portalWarp",
+        "portalWarp",
+        ["intensity"],
+        null,
+        1.0,
+        camera
+    );
+    warpEffect.onApply = function (effect) {
+        effect.setFloat("intensity", (warpEffect as any)._intensity || 0);
+    };
+    (warpEffect as any)._intensity = 0;
+    camera.detachPostProcess(warpEffect);
+    warpEffectRef.current = warpEffect;
+
+    // Portal Shader
+    BABYLON.Effect.ShadersStore["portalVertexShader"] = `
+        precision highp float;
+        attribute vec3 position;
+        attribute vec2 uv;
+        uniform mat4 worldViewProjection;
+        varying vec2 vUV;
+        void main(void) {
+            vUV = uv;
+            gl_Position = worldViewProjection * vec4(position, 1.0);
+        }
+    `;
+
+    BABYLON.Effect.ShadersStore["portalFragmentShader"] = `
+        precision highp float;
+        varying vec2 vUV;
+        uniform sampler2D textureSampler;
+        uniform float time;
+        uniform vec2 uvOffset;
+        uniform float globalAlpha;
+
+        void main(void) {
+            vec2 center = vec2(0.5);
+            vec2 toCenter = vUV - center;
+            float dist = length(toCenter);
+
+            vec2 uv = vUV;
+            uv.x = vUV.x * 0.5 - uvOffset.x;
+
+            float rippleFade = 1.0 - pow((dist - 0.5) * 2.0, 2.0);
+            float ripple = sin(dist * 30.0 - time * 2.0) * 0.015 * rippleFade;
+            uv -= normalize(toCenter) * ripple;
+
+            vec4 color = texture2D(textureSampler, uv);
+            float alpha = smoothstep(0.5, 0.1, dist);
+
+            gl_FragColor = vec4(color.rgb, alpha * globalAlpha);
+        }
+    `;
+
+    // Portal creation function
+    function createPortal(
+      portalPosition: BABYLON.Vector3,
+      portalRadius: number,
+      name: string,
+      title: string
+    ): BABYLON.Mesh {
+      // Create portal mesh
+      const portalMesh = BABYLON.MeshBuilder.CreateDisc(name, {
+        radius: portalRadius,
+        tessellation: 16
+      }, scene);
+      portalMesh.position = portalPosition.clone();
+      portalMesh.rotation.x = Math.PI;
+      portalMesh.rotation.y = Math.PI / 2;
+      portalMesh.name = name;
+      portalMesh.alwaysSelectAsActiveMesh = true;
+
+      // Create shader material
+      const shaderMat = new BABYLON.ShaderMaterial("portalShader_" + name, scene, {
+        vertex: "portal",
+        fragment: "portal"
+      }, {
+        attributes: ["position", "uv"],
+        uniforms: ["worldViewProjection", "time", "globalAlpha", "uvOffset"]
+      });
+
+      shaderMat.backFaceCulling = false;
+      shaderMat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+      shaderMat.needAlphaBlending = () => true;
+      
+      const portalTex = new BABYLON.Texture("/assets/textures/static_portal.jpg", scene);
+      portalTex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+      portalTex.uScale = 1;
+      shaderMat.setTexture("textureSampler", portalTex);
+      shaderMat.setFloat("globalAlpha", 1.0);
+      shaderMat.setVector2("uvOffset", new BABYLON.Vector2(0, 0));
+
+      portalMesh.material = shaderMat;
+
+      // Particle swirl
+      const swirl = new BABYLON.ParticleSystem("swirl_" + name, 30, scene);
+      swirl.particleTexture = new BABYLON.Texture("/assets/textures/twirl_02.png", scene);
+      swirl.emitter = portalMesh;
+      swirl.minEmitBox = swirl.maxEmitBox = new BABYLON.Vector3(0, 0, 0);
+      swirl.direction1 = swirl.direction2 = new BABYLON.Vector3(0, 0, 0);
+      swirl.minEmitPower = swirl.maxEmitPower = 0;
+      swirl.minSize = portalRadius * 2 * 0.3;
+      swirl.maxSize = portalRadius * 2 * 1.2;
+      swirl.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+      swirl.minAngularSpeed = 1;
+      swirl.maxAngularSpeed = 3;
+      swirl.addColorGradient(0.0, new BABYLON.Color4(0.2, 0.2, 0.7, 0));
+      swirl.addColorGradient(0.2, new BABYLON.Color4(0.6 / 1.5, 0.62 / 1.5, 0.9 / 1.2, 0.4));
+      swirl.addColorGradient(0.8, new BABYLON.Color4(0.78 / 1.5, 0.63 / 1.5, 0.82 / 1.2, 0.4));
+      swirl.addColorGradient(1.0, new BABYLON.Color4(0.5, 0.2, 0.9, 0));
+      swirl.minLifeTime = 4;
+      swirl.maxLifeTime = 8;
+      swirl.emitRate = 10;
+      swirl.gravity = BABYLON.Vector3.Zero();
+      swirl.updateSpeed = 0.01;
+      swirl.billboardMode = BABYLON.AbstractMesh.BILLBOARDMODE_ALL;
+      swirl.disposeOnStop = false;
+      swirl.start();
+
+      portalSwirlsRef.current.push(swirl);
+
+      // Runtime logic: face camera and animate shader
+      scene.registerBeforeRender(() => {
+        // Update shader time
+        shaderMat.setFloat("time", performance.now() * 0.001);
+
+        // Face the camera
+        const toCam = camera.position.subtract(portalMesh.position).normalize();
+        const lookQuat = BABYLON.Quaternion.FromLookDirectionLH(toCam, BABYLON.Axis.Y);
+        const flipZ = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, Math.PI);
+        const flipY = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI);
+        const targetRot = lookQuat.multiply(flipZ).multiply(flipY);
+        if (!portalMesh.rotationQuaternion)
+          portalMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
+        BABYLON.Quaternion.SlerpToRef(portalMesh.rotationQuaternion, targetRot, 0.01, portalMesh.rotationQuaternion);
+
+        // Scroll UV based on portal orientation
+        const forward = portalMesh.forward || portalMesh.getDirection(BABYLON.Axis.Z);
+        const angle = Math.atan2(forward.x, forward.z);
+        const scrollOffset = angle / (2 * Math.PI);
+        shaderMat.setVector2("uvOffset", new BABYLON.Vector2(-scrollOffset, 0));
+      });
+
+      // Initially disabled
+      portalMesh.setEnabled(false);
+
+      return portalMesh;
+    }
+
+    // Create 4 portals at positions from prototype
+    const portal1 = createPortal(
+      new BABYLON.Vector3(40, 4, -50),
+      6,
+      "portal_bydSeagull",
+      "BYD Car Visualizer"
+    );
+    portalsRef.current.push(portal1);
+
+    const portal2 = createPortal(
+      new BABYLON.Vector3(50, -3, 20),
+      6,
+      "portal_atlasflow",
+      "Atlasflow"
+    );
+    portalsRef.current.push(portal2);
+
+    const portal3 = createPortal(
+      new BABYLON.Vector3(-50, -3, 20),
+      6,
+      "portal_babylonEditor",
+      "Babylon.js Editor"
+    );
+    portalsRef.current.push(portal3);
+
+    const portal4 = createPortal(
+      new BABYLON.Vector3(-40, -2, -50),
+      6,
+      "portal_fda",
+      "FDA Training Platform"
+    );
+    portalsRef.current.push(portal4);
+
+    // ========================
+    // End Portal System
+    // ========================
 
     // === Size-agno stic: keep engine buffer matching CSS size exactly ===
     let lastW = 0, lastH = 0;
@@ -806,13 +1113,21 @@ export function BabylonCanvas() {
       }
     }
 
+    // Handle portal visibility
+    const portals = portalsRef.current;
+    if (portals && portals.length > 0) {
+      const portalsEnabled = sceneConfig.portalsEnabled || false;
+      portals.forEach(portal => {
+        portal.setEnabled(portalsEnabled);
+      });
+    }
+
+    // Handle camera controls - managed by navigation mode in a separate effect
+    // (see useEffect below that watches navigationMode)
+
     // Handle state 4 - rockring fade in (only once)
     if (s === 3 && rockRing && !rockRingHasShownRef.current) { // State 4
       rockRingHasShownRef.current = true;
-      
-      const fps = 60;
-      const duration = 1; // seconds
-      const totalFrames = fps * duration;
       
       // Enable rockring and play animation
       rockRing.setEnabled(true);
@@ -821,44 +1136,17 @@ export function BabylonCanvas() {
         animGroup.start(false, 1.0, 1, 120);
       }
       
-      // Gather materials from rockRing and its children
-      const materials: BABYLON.Material[] = [];
-      rockRing.getChildMeshes().forEach(mesh => {
-        if (mesh.material) {
-          materials.push(mesh.material);
-        }
-      });
-      if (rockRing.material) {
-        materials.push(rockRing.material);
-      }
+      // Fade in using global function
+      const easingAlpha = new BABYLON.CubicEase();
+      easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
       
-      // Fade in animation for all materials
-      materials.forEach(material => {
-        material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-        
-        const fromAlpha = 0.01;
-        const toAlpha = 1;
-        material.alpha = fromAlpha;
-        
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeAlpha",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        alphaAnimation.setKeys([
-          { frame: 0, value: fromAlpha },
-          { frame: totalFrames, value: toAlpha }
-        ]);
-        
-        const easingAlpha = new BABYLON.CubicEase();
-        easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        alphaAnimation.setEasingFunction(easingAlpha);
-        
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false);
+      animateMaterialOpacity({
+        target: rockRing,
+        scene,
+        duration: 1.0,
+        fromOpacity: 0.01,
+        toOpacity: 1,
+        easing: easingAlpha
       });
     }
 
@@ -884,55 +1172,30 @@ export function BabylonCanvas() {
         );
         planet.rotation = fromRotation;
         
-        // Fade in animation
-        const fps = 60;
-        const duration = 1.5; // seconds
-        const totalFrames = fps * duration;
-        
-        material.alpha = 0.01;
-        
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeInPlanet",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        alphaAnimation.setKeys([
-          { frame: 0, value: 0.01 },
-          { frame: totalFrames, value: 1 }
-        ]);
-        
+        // Fade in using global function
         const easingAlpha = new BABYLON.CubicEase();
         easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        alphaAnimation.setEasingFunction(easingAlpha);
         
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
-          material.alpha = 1;
+        animateMaterialOpacity({
+          target: planet,
+          scene,
+          duration: 1.5,
+          fromOpacity: 0.01,
+          toOpacity: 1,
+          easing: easingAlpha
         });
         
         // Rotation animation during fade in
-        const rotationAnimation = new BABYLON.Animation(
-          "rotateInPlanet",
-          "rotation",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        rotationAnimation.setKeys([
-          { frame: 0, value: fromRotation },
-          { frame: totalFrames, value: targetRotation }
-        ]);
-        
         const easingRot = new BABYLON.CubicEase();
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        rotationAnimation.setEasingFunction(easingRot);
         
-        planet.animations = [rotationAnimation];
-        scene.beginAnimation(planet, 0, totalFrames, false);
+        animateTransform({
+          target: planet,
+          scene,
+          duration: 1.5,
+          rotation: targetRotation,
+          easing: easingRot
+        });
       }
     } else {
       // States 1, 2, 4: Normal logo size and position, fade out and hide planet
@@ -940,34 +1203,21 @@ export function BabylonCanvas() {
       logosRoot.position.set(0, 0, 0);
       
       if (material && planet.isEnabled()) {
-        // Fade out animation
-        const fps = 60;
-        const duration = 0.8; // seconds
-        const totalFrames = fps * duration;
-        
-        material.alpha = 1;
-        
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeOutPlanet",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        alphaAnimation.setKeys([
-          { frame: 0, value: 1 },
-          { frame: totalFrames, value: 0.01 }
-        ]);
-        
+        // Fade out using global function
         const easingAlpha = new BABYLON.CubicEase();
         easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-        alphaAnimation.setEasingFunction(easingAlpha);
         
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
-          planet.setEnabled(false);
-          material.alpha = 1;
+        animateMaterialOpacity({
+          target: planet,
+          scene,
+          duration: 0.8,
+          fromOpacity: 1,
+          toOpacity: 0.01,
+          easing: easingAlpha,
+          onComplete: () => {
+            // Reset material alpha for next use
+            if (material) material.alpha = 1;
+          }
         });
         
         // Rotation animation during fade out (rotate to opposite)
@@ -978,25 +1228,16 @@ export function BabylonCanvas() {
           currentRotation.z
         );
         
-        const rotationAnimation = new BABYLON.Animation(
-          "rotateOutPlanet",
-          "rotation",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        rotationAnimation.setKeys([
-          { frame: 0, value: currentRotation },
-          { frame: totalFrames, value: toRotation }
-        ]);
-        
         const easingRot = new BABYLON.CubicEase();
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-        rotationAnimation.setEasingFunction(easingRot);
         
-        planet.animations = [rotationAnimation];
-        scene.beginAnimation(planet, 0, totalFrames, false);
+        animateTransform({
+          target: planet,
+          scene,
+          duration: 0.8,
+          rotation: toRotation,
+          easing: easingRot
+        });
       } else {
         planet.setEnabled(false);
       }
@@ -1027,6 +1268,25 @@ export function BabylonCanvas() {
       });
     }
   }, [selectedContinent]);
+
+  // Navigation mode effect - toggle camera controls based on mode in state 5
+  const navigationMode = useUI((st) => st.navigationMode);
+  
+  useEffect(() => {
+    const canvas = ref.current;
+    const camera = cameraRef.current;
+    if (!canvas || !camera) return;
+
+    // Only enable controls in state 5 with free mode
+    const inState5 = s === S.state_5;
+    const shouldEnableControls = inState5 && navigationMode === 'free';
+
+    if (shouldEnableControls) {
+      camera.attachControl(canvas, true);
+    } else {
+      camera.detachControl();
+    }
+  }, [s, navigationMode]);
 
   return <canvas ref={ref} className="block w-full h-full" />;
 }

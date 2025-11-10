@@ -24,6 +24,8 @@ type UIState = {
   setSelectedLogoModel: (index: number) => void;
   selectedContinent: number; // 0=Africa, 1=North America, 2=Europe, 3=South America, 4=Oceania, 5=Asia
   setSelectedContinent: (index: number) => void;
+  navigationMode: 'guided' | 'free'; // Navigation mode for state 5
+  setNavigationMode: (mode: 'guided' | 'free') => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -36,5 +38,7 @@ export const useUI = create<UIState>((set, get) => ({
   selectedLogoModel: 0,
   setSelectedLogoModel: (index) => set({ selectedLogoModel: index }),
   selectedContinent: 2, // Default to Europe (index 2)
-  setSelectedContinent: (index) => set({ selectedContinent: index })
+  setSelectedContinent: (index) => set({ selectedContinent: index }),
+  navigationMode: 'guided', // Default to guided mode
+  setNavigationMode: (mode) => set({ navigationMode: mode })
 }));

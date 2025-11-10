@@ -40,6 +40,8 @@ export interface BabylonSceneConfig {
   planetEnabled: boolean;
   rockRingEnabled: boolean;
   particlesEnabled: boolean;
+  portalsEnabled?: boolean; // Show portals in the scene
+  cameraControlsEnabled?: boolean; // Enable camera controls (for free mode in state 5)
   rootTransform: ResponsiveBabylonTransform;
 }
 
