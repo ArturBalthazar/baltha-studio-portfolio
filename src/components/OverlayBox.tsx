@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import cx from "classnames";
 import { OverlayContent, OverlayBoxDimensions, StateContentVisibility } from "../states/types";
-import { S } from "../state";
+import { S, useUI } from "../state";
 import { GraphComponent } from "./GraphComponent";
 
 interface OverlayBoxProps {
@@ -23,11 +23,14 @@ export function OverlayBox({
 }: OverlayBoxProps) {
   const [showBox, setShowBox] = useState(false);
   
+  // Get navigation mode from global store
+  const navigationMode = useUI((st) => st.navigationMode);
+  const { setNavigationMode } = useUI();
+  
   // State management for selected buttons
   const [selectedState2Button, setSelectedState2Button] = useState(0); // Default to first button
   const [selectedState3Button, setSelectedState3Button] = useState(2); // Default to South America
   const [selectedContinent, setSelectedContinent] = useState("Europe");
-  const [selectedState4Button, setSelectedState4Button] = useState(0); // Default to Guided
 
   useEffect(() => {
     if (visible) {
@@ -65,8 +68,8 @@ export function OverlayBox({
   const state4Content = {
     title: "Navigation mode:",
     buttons: [
-      { icon: "/assets/images/guided_mode.png", label: "Guided", selected: selectedState4Button === 0 },
-      { icon: "/assets/images/free_mode.png", label: "Free", selected: selectedState4Button === 1 },
+      { icon: "/assets/images/guided_mode.png", label: "Guided", selected: navigationMode === 'guided' },
+      { icon: "/assets/images/free_mode.png", label: "Free", selected: navigationMode === 'free' },
     ],
   };
 
@@ -130,7 +133,8 @@ export function OverlayBox({
       setSelectedState3Button(index);
       setSelectedContinent(continentNames[index]);
     } else if (currentState === S.state_4) {
-      setSelectedState4Button(index);
+      // Update global navigation mode
+      setNavigationMode(index === 0 ? 'guided' : 'free');
     }
     
     // Also call the external handler if provided

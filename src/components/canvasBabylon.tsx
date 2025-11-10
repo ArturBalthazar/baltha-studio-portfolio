@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as BABYLON from "babylonjs";
 import "@babylonjs/loaders";
-import { useUI, S } from "../state";
+import { useUI } from "../state";
 import { getStateConfig } from "../states";
 
 // Force register the GLB loader
@@ -173,86 +173,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
     } else if (onComplete) {
       onComplete();
     }
-  };
-  
-  // Apply delay if specified
-  if (delay > 0) {
-    setTimeout(executeAnimation, delay * 1000);
-  } else {
-    executeAnimation();
-  }
-}
-
-// Universal material opacity animation function
-interface AnimateMaterialOpacityOptions {
-  target: BABYLON.AbstractMesh;
-  scene: BABYLON.Scene;
-  duration: number; // in seconds
-  delay?: number; // delay before animation starts (in seconds)
-  fromOpacity: number; // starting opacity
-  toOpacity: number; // target opacity
-  easing?: BABYLON.EasingFunction;
-  onComplete?: () => void;
-}
-
-function animateMaterialOpacity(options: AnimateMaterialOpacityOptions): void {
-  const { target, scene, duration, delay = 0, fromOpacity, toOpacity, easing, onComplete } = options;
-  
-  const executeAnimation = () => {
-    const fps = 60;
-    const totalFrames = fps * duration;
-    
-    // Gather all materials from target and its children
-    const materials: BABYLON.Material[] = [];
-    if (target.material) {
-      materials.push(target.material);
-    }
-    target.getChildMeshes().forEach(mesh => {
-      if (mesh.material) {
-        materials.push(mesh.material);
-      }
-    });
-    
-    if (materials.length === 0) {
-      if (onComplete) onComplete();
-      return;
-    }
-    
-    // Animate each material
-    let completedCount = 0;
-    const totalMaterials = materials.length;
-    
-    materials.forEach((material, index) => {
-      const alphaAnimation = new BABYLON.Animation(
-        `materialOpacityAnim_${index}`,
-        "alpha",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      
-      alphaAnimation.setKeys([
-        { frame: 0, value: fromOpacity },
-        { frame: totalFrames, value: toOpacity }
-      ]);
-      
-      if (easing) alphaAnimation.setEasingFunction(easing);
-      
-      material.animations = [alphaAnimation];
-      scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
-        material.alpha = toOpacity;
-        completedCount++;
-        
-        // Only call onComplete once when all materials are done
-        if (completedCount === totalMaterials) {
-          // If faded out completely, disable the target
-          if (toOpacity === 0 || toOpacity < 0.02) {
-            target.setEnabled(false);
-          }
-          if (onComplete) onComplete();
-        }
-      });
-    });
   };
   
   // Apply delay if specified
@@ -1129,6 +1049,10 @@ export function BabylonCanvas() {
     if (s === 3 && rockRing && !rockRingHasShownRef.current) { // State 4
       rockRingHasShownRef.current = true;
       
+      const fps = 60;
+      const duration = 1; // seconds
+      const totalFrames = fps * duration;
+      
       // Enable rockring and play animation
       rockRing.setEnabled(true);
       if (rockRingAnimationGroups.length > 0) {
@@ -1136,17 +1060,44 @@ export function BabylonCanvas() {
         animGroup.start(false, 1.0, 1, 120);
       }
       
-      // Fade in using global function
-      const easingAlpha = new BABYLON.CubicEase();
-      easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+      // Gather materials from rockRing and its children
+      const materials: BABYLON.Material[] = [];
+      rockRing.getChildMeshes().forEach(mesh => {
+        if (mesh.material) {
+          materials.push(mesh.material);
+        }
+      });
+      if (rockRing.material) {
+        materials.push(rockRing.material);
+      }
       
-      animateMaterialOpacity({
-        target: rockRing,
-        scene,
-        duration: 1.0,
-        fromOpacity: 0.01,
-        toOpacity: 1,
-        easing: easingAlpha
+      // Fade in animation for all materials
+      materials.forEach(material => {
+        material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+        
+        const fromAlpha = 0.01;
+        const toAlpha = 1;
+        material.alpha = fromAlpha;
+        
+        const alphaAnimation = new BABYLON.Animation(
+          "fadeAlpha",
+          "alpha",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        alphaAnimation.setKeys([
+          { frame: 0, value: fromAlpha },
+          { frame: totalFrames, value: toAlpha }
+        ]);
+        
+        const easingAlpha = new BABYLON.CubicEase();
+        easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        alphaAnimation.setEasingFunction(easingAlpha);
+        
+        material.animations = [alphaAnimation];
+        scene.beginAnimation(material, 0, totalFrames, false);
       });
     }
 
@@ -1172,30 +1123,55 @@ export function BabylonCanvas() {
         );
         planet.rotation = fromRotation;
         
-        // Fade in using global function
+        // Fade in animation
+        const fps = 60;
+        const duration = 1.5; // seconds
+        const totalFrames = fps * duration;
+        
+        material.alpha = 0.01;
+        
+        const alphaAnimation = new BABYLON.Animation(
+          "fadeInPlanet",
+          "alpha",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        alphaAnimation.setKeys([
+          { frame: 0, value: 0.01 },
+          { frame: totalFrames, value: 1 }
+        ]);
+        
         const easingAlpha = new BABYLON.CubicEase();
         easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        alphaAnimation.setEasingFunction(easingAlpha);
         
-        animateMaterialOpacity({
-          target: planet,
-          scene,
-          duration: 1.5,
-          fromOpacity: 0.01,
-          toOpacity: 1,
-          easing: easingAlpha
+        material.animations = [alphaAnimation];
+        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
+          material.alpha = 1;
         });
         
         // Rotation animation during fade in
+        const rotationAnimation = new BABYLON.Animation(
+          "rotateInPlanet",
+          "rotation",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        rotationAnimation.setKeys([
+          { frame: 0, value: fromRotation },
+          { frame: totalFrames, value: targetRotation }
+        ]);
+        
         const easingRot = new BABYLON.CubicEase();
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        rotationAnimation.setEasingFunction(easingRot);
         
-        animateTransform({
-          target: planet,
-          scene,
-          duration: 1.5,
-          rotation: targetRotation,
-          easing: easingRot
-        });
+        planet.animations = [rotationAnimation];
+        scene.beginAnimation(planet, 0, totalFrames, false);
       }
     } else {
       // States 1, 2, 4: Normal logo size and position, fade out and hide planet
@@ -1203,21 +1179,34 @@ export function BabylonCanvas() {
       logosRoot.position.set(0, 0, 0);
       
       if (material && planet.isEnabled()) {
-        // Fade out using global function
+        // Fade out animation
+        const fps = 60;
+        const duration = 0.8; // seconds
+        const totalFrames = fps * duration;
+        
+        material.alpha = 1;
+        
+        const alphaAnimation = new BABYLON.Animation(
+          "fadeOutPlanet",
+          "alpha",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        alphaAnimation.setKeys([
+          { frame: 0, value: 1 },
+          { frame: totalFrames, value: 0.01 }
+        ]);
+        
         const easingAlpha = new BABYLON.CubicEase();
         easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
+        alphaAnimation.setEasingFunction(easingAlpha);
         
-        animateMaterialOpacity({
-          target: planet,
-          scene,
-          duration: 0.8,
-          fromOpacity: 1,
-          toOpacity: 0.01,
-          easing: easingAlpha,
-          onComplete: () => {
-            // Reset material alpha for next use
-            if (material) material.alpha = 1;
-          }
+        material.animations = [alphaAnimation];
+        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
+          planet.setEnabled(false);
+          material.alpha = 1;
         });
         
         // Rotation animation during fade out (rotate to opposite)
@@ -1228,16 +1217,25 @@ export function BabylonCanvas() {
           currentRotation.z
         );
         
+        const rotationAnimation = new BABYLON.Animation(
+          "rotateOutPlanet",
+          "rotation",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        rotationAnimation.setKeys([
+          { frame: 0, value: currentRotation },
+          { frame: totalFrames, value: toRotation }
+        ]);
+        
         const easingRot = new BABYLON.CubicEase();
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
+        rotationAnimation.setEasingFunction(easingRot);
         
-        animateTransform({
-          target: planet,
-          scene,
-          duration: 0.8,
-          rotation: toRotation,
-          easing: easingRot
-        });
+        planet.animations = [rotationAnimation];
+        scene.beginAnimation(planet, 0, totalFrames, false);
       } else {
         planet.setEnabled(false);
       }
@@ -1278,7 +1276,7 @@ export function BabylonCanvas() {
     if (!canvas || !camera) return;
 
     // Only enable controls in state 5 with free mode
-    const inState5 = s === S.state_5;
+    const inState5 = s === 4; // S.state_5 = 4
     const shouldEnableControls = inState5 && navigationMode === 'free';
 
     if (shouldEnableControls) {

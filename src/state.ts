@@ -24,7 +24,7 @@ type UIState = {
   setSelectedLogoModel: (index: number) => void;
   selectedContinent: number; // 0=Africa, 1=North America, 2=Europe, 3=South America, 4=Oceania, 5=Asia
   setSelectedContinent: (index: number) => void;
-  navigationMode: 'guided' | 'free'; // Navigation mode for state 5
+  navigationMode: 'guided' | 'free'; // Navigation mode for states 4 & 5
   setNavigationMode: (mode: 'guided' | 'free') => void;
 };
 
