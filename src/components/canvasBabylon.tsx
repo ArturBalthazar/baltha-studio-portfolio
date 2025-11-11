@@ -209,6 +209,8 @@ export function BabylonCanvas() {
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  const starsEmitterRef = useRef<BABYLON.Mesh | null>(null);
+  const smokeEmitterRef = useRef<BABYLON.Mesh | null>(null);
   const prevStateRef = useRef<number>(s);
   
   // Portal refs
@@ -246,11 +248,26 @@ export function BabylonCanvas() {
     rotation: null,
     cameraAlpha: null
   });
+  
+  // Mobile control refs
+  const isMobileRef = useRef(false);
+  const controlSphereRef = useRef<BABYLON.Mesh | null>(null);
+  const mobileControlRef = useRef({
+    isDragging: false,
+    targetDirection: new BABYLON.Vector3(0, 0, 1), // Default forward
+    hasDirection: false
+  });
 
   // Initialize scene once
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    
+    // Detect if mobile
+    isMobileRef.current = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                         ('ontouchstart' in window) || 
+                         (navigator.maxTouchPoints > 0);
+    console.log("📱 Mobile detected:", isMobileRef.current);
 
     // Engine
     const engine = new BABYLON.Engine(canvas, true, {
@@ -270,7 +287,7 @@ export function BabylonCanvas() {
     scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
     scene.fogColor = new BABYLON.Color3(13/255, 13/255, 38/255);
     scene.fogStart = 0;
-    scene.fogEnd = 300;
+    scene.fogEnd = 800;
 
     // Create camera pivot - camera will target this
     const shipPivot = new BABYLON.TransformNode("shipPivot", scene);
@@ -313,6 +330,18 @@ export function BabylonCanvas() {
 
     // Lock vertical FOV so height framing never squishes
     camera.fovMode = BABYLON.Camera.FOVMODE_VERTICAL_FIXED;
+    
+    // Create large invisible control sphere for mobile drag detection
+    // Low poly: 16 horizontal segments, 8 vertical segments
+    const controlSphere = BABYLON.MeshBuilder.CreateSphere("controlSphere", {
+      diameter: 2000, // Very large sphere
+      segments: 8,    // Low poly count
+      sideOrientation: BABYLON.Mesh.DOUBLESIDE
+    }, scene);
+    controlSphere.isVisible = false; // Invisible
+    controlSphere.isPickable = true; // But pickable for raycasting
+    controlSphereRef.current = controlSphere;
+    console.log("🎯 Control sphere created for mobile input");
 
     // IBL
     const env = BABYLON.CubeTexture.CreateFromPrefilteredData(
@@ -461,10 +490,24 @@ export function BabylonCanvas() {
       (meshes) => {
         if (meshes.length) {
           const spaceship = meshes[0];
-          spaceship.position.set(0, -1.4, 0);
-          // Use Math.abs to remove negative scaling (matches prototype behavior)
-          const s = spaceship.scaling;
-          spaceship.scaling.set(Math.abs(s.x)*1.1, Math.abs(s.y)*1.1, Math.abs(s.z)*1.1);
+          
+          // Get shiproot transform node from the loaded model
+          const shipRoot = scene.getTransformNodeByName("shiproot");
+          if (!shipRoot) {
+            console.error("❌ shiproot not found in spaceship.glb! Make sure it's exported from Blender.");
+            return;
+          }
+          
+          // Set position and scaling on shiproot
+          console.log("📦 ShipRoot loaded at position:", shipRoot.position.clone());
+          shipRoot.position.set(0, -1.4, 0);
+          const s = shipRoot.scaling;
+          shipRoot.scaling.set(Math.abs(s.x)*1.1, Math.abs(s.y)*1.1, Math.abs(s.z)*-1.1);
+          shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
+          
+          // Check if ship mesh has offset inside shipRoot
+          console.log("📦 ShipRoot position after set:", shipRoot.position);
+          console.log("📦 Spaceship mesh position:", spaceship.position);
           
           // Setup materials for transparency
           meshes.forEach(mesh => {
@@ -475,15 +518,9 @@ export function BabylonCanvas() {
             }
           });
           
-          spaceship.setEnabled(false); // Hidden by default, shown in state 4
-          spaceshipRef.current = spaceship;
-          
-          // Try to find shiproot transform node
-          const shipRoot = scene.getTransformNodeByName("shiproot");
-          if (shipRoot) {
-            spaceshipRootRef.current = shipRoot;
-            shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
-          }
+          shipRoot.setEnabled(false); // Hidden by default, shown in state 4
+          spaceshipRef.current = spaceship; // Keep mesh reference for materials
+          spaceshipRootRef.current = shipRoot; // This is what we control
           
           // Create engine flame particle system
           const emitter = scene.getTransformNodeByName("engineFlame");
@@ -542,27 +579,38 @@ export function BabylonCanvas() {
     const starsEmitter = BABYLON.Mesh.CreateBox("starsEmitter", 0.01, scene);
     starsEmitter.visibility = 0;
     starsEmitter.position.set(0, 0, 0);
+    starsEmitterRef.current = starsEmitter;
     
     const stars = new BABYLON.ParticleSystem("starsParticles", 3000, scene);
     stars.particleTexture = new BABYLON.Texture("/assets/textures/star_07.png", scene);
     stars.emitter = starsEmitter;
     
-    // Custom spawn function for stars with forbidden radius
+    // Custom spawn function for stars with forbidden radius that follows shipRoot
     const forbiddenRadius = 3000;
     const forbiddenRadiusSq = forbiddenRadius * forbiddenRadius;
     
     stars.startPositionFunction = (worldMatrix, position) => {
-      let x, y, z;
-      // Rejection sampling - keep generating until outside forbidden radius
-      do {
-        x = BABYLON.Scalar.RandomRange(-3500, 3500);
-        y = BABYLON.Scalar.RandomRange(-3500, 3500);
-        z = BABYLON.Scalar.RandomRange(-3500, 3500);
-      } while (x * x + y * y + z * z < forbiddenRadiusSq);
+      // Get shipRoot position (will be set when ship is loaded)
+      const shipRoot = spaceshipRootRef.current;
+      const shipPos = shipRoot ? shipRoot.position : BABYLON.Vector3.Zero();
       
-      position.x = x;
-      position.y = y;
-      position.z = z;
+      let x, y, z;
+      // Rejection sampling - keep generating until outside forbidden radius around ship
+      do {
+        x = BABYLON.Scalar.RandomRange(-3500 + shipPos.x, 3500 + shipPos.x);
+        y = BABYLON.Scalar.RandomRange(-3500 + shipPos.y, 3500 + shipPos.y);
+        z = BABYLON.Scalar.RandomRange(-3500 + shipPos.z, 3500 + shipPos.z);
+      } while (
+        (x - shipPos.x) * (x - shipPos.x) +
+        (y - shipPos.y) * (y - shipPos.y) +
+        (z - shipPos.z) * (z - shipPos.z)
+        < forbiddenRadiusSq
+      );
+      
+      // Position relative to emitter (which follows the ship)
+      position.x = starsEmitter.position.x + x;
+      position.y = starsEmitter.position.y + y;
+      position.z = starsEmitter.position.z + z;
     };
     
     // Color gradients for stars
@@ -595,6 +643,7 @@ export function BabylonCanvas() {
     const smokeEmitter = BABYLON.Mesh.CreateBox("smokeEmitter", 0.01, scene);
     smokeEmitter.visibility = 0;
     smokeEmitter.position.set(0, 0, 25);
+    smokeEmitterRef.current = smokeEmitter;
     
     const smoke = new BABYLON.ParticleSystem("smokeParticles", 120, scene);
     smoke.particleTexture = new BABYLON.Texture("/assets/textures/smoke_15.png", scene);
@@ -921,8 +970,8 @@ export function BabylonCanvas() {
       const gamma = e.gamma || 0;
       
       // Convert to radians and apply subtle rotation
-      mouseRotationRef.current.x = (beta / 180) * .3;
-      mouseRotationRef.current.y = (gamma / 90) * -1;
+      mouseRotationRef.current.x = (beta / 180) * .6;
+      mouseRotationRef.current.y = (gamma / 90) * .6;
     };
     
     window.addEventListener('deviceorientation', handleOrientation);
@@ -960,15 +1009,31 @@ export function BabylonCanvas() {
     if (!shouldEnableControls) {
       console.log("🚀 Disabling controls");
       
-      // Detach camera pivot from ship when not in free mode
+      // Detach camera pivot and smoke emitter from ship when not in free mode
       const shipPivot = shipPivotRef.current;
       const cameraLookAt = cameraLookAtRef.current;
+      const camera = cameraRef.current;
+      const smokeEmitter = smokeEmitterRef.current;
+      
       if (shipPivot && shipPivot.parent) {
         shipPivot.setParent(null);
         shipPivot.position.set(0, 0, 0);
       }
-      if (cameraLookAt) {
+      if (cameraLookAt && cameraLookAt.parent) {
+        cameraLookAt.setParent(null);
         cameraLookAt.position.set(0, 0, 0);
+      }
+      
+      // Unparent smoke emitter
+      if (smokeEmitter && smokeEmitter.parent) {
+        smokeEmitter.parent = null;
+        smokeEmitter.position.set(0, 0, 25);
+      }
+      
+      // Unlock camera from ship
+      if (camera && camera.lockedTarget === shipPivot) {
+        camera.lockedTarget = null;
+        camera.setTarget(BABYLON.Vector3.Zero());
       }
       
       // Clear keys
@@ -986,7 +1051,7 @@ export function BabylonCanvas() {
       return;
     }
     
-    // Try to find shipRoot if not already cached
+    // Get shipRoot - this is required now
     let shipRoot = spaceshipRootRef.current;
     if (!shipRoot) {
       shipRoot = scene.getTransformNodeByName("shiproot");
@@ -994,11 +1059,14 @@ export function BabylonCanvas() {
         console.log("🚀 Found shiproot in scene");
         spaceshipRootRef.current = shipRoot;
         shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
+      } else {
+        console.error("❌ shiproot not found! Cannot enable controls. Make sure shiproot is exported from Blender.");
+        return;
       }
     }
     
-    // Use spaceship mesh if no shipRoot found
-    const controlTarget = shipRoot || spaceship;
+    // Always use shipRoot as control target
+    const controlTarget = shipRoot;
     console.log("🚀 Control target:", controlTarget.name, "Position:", controlTarget.position);
     console.log("🚀 Control target scaling:", controlTarget.scaling);
     console.log("🚀 Control target rotation:", controlTarget.rotation);
@@ -1036,24 +1104,36 @@ export function BabylonCanvas() {
       console.log("🚀 Initialized control angles from ship rotation:", { pitch: S.pitch, yaw: S.yawTarget });
     }
     
-    // Parent camera pivot to ship at center (for correct rotation pivot)
+    // Setup camera following - parent pivot to shipRoot at rotation center
     const shipPivot = shipPivotRef.current;
-    const cameraLookAt = cameraLookAtRef.current;
-    if (shipPivot && shipPivot.parent !== controlTarget) {
-      console.log("📷 Parenting camera pivot to ship at (0,0,0)");
-      shipPivot.setParent(controlTarget);
-      // Keep at (0,0,0) so ship rotates around its own center
-      shipPivot.position.set(0, 0, 0);
-      shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
-    }
     
-    // Update camera look-at target to follow ship with upward offset
-    if (cameraLookAt && camera && shipPivot) {
-      // Don't parent cameraLookAt - we'll update its position manually each frame
-      // This gives us independent control of where camera looks vs where ship rotates
-      const shipWorldPos = shipPivot.getAbsolutePosition();
-      cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.4, shipWorldPos.z);
-      camera.setTarget(cameraLookAt.position);
+    if (shipPivot && shipPivot.parent !== controlTarget) {
+      console.log("📷 Parenting shipPivot to shipRoot at center");
+      shipPivot.setParent(controlTarget);
+      // Different position for mobile vs desktop
+      const pivotY = isMobileRef.current ? 1.2 : 0.5;
+      shipPivot.position.set(0, pivotY, 0);
+      shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
+      console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
+
+      
+      // Parent smoke emitter to shipPivot so it follows the ship (like prototype)
+      const smokeEmitter = smokeEmitterRef.current;
+      if (smokeEmitter && !smokeEmitter.parent) {
+        smokeEmitter.parent = shipPivot;
+        console.log("💨 Smoke emitter parented to shipPivot - will follow ship");
+      }
+      
+      // Camera targets the center pivot (ship rotates correctly around its center)
+      if (camera) {
+        camera.lockedTarget = shipPivot;
+        
+        // Adjust camera beta (vertical angle) to look down at the ship from above
+        // Beta of Math.PI/2 = horizontal, smaller values = looking down from above
+        camera.beta = Math.PI / 2.2; // Look down at about 82 degrees
+        
+        console.log("📷 Camera locked to shipPivot, viewing from above");
+      }
     }
     
     // Helper: get animation groups
@@ -1124,7 +1204,50 @@ export function BabylonCanvas() {
     canvas.tabIndex = 1;
     canvas.focus();
     
-    console.log("✅ Spaceship controls ENABLED - Press W to move forward!");
+    // Mobile drag control handlers
+    const MC = mobileControlRef.current;
+    
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!isMobileRef.current) return; // Only for mobile
+      MC.isDragging = true;
+      console.log("📱 Mobile drag started");
+    };
+    
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isMobileRef.current || !MC.isDragging) return;
+      
+      // Raycast from cursor to control sphere
+      const pickInfo = scene.pick(e.clientX, e.clientY, (mesh) => mesh === controlSphereRef.current);
+      
+      if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
+        // Get direction from ship to picked point on sphere
+        const shipPos = controlTarget.getAbsolutePosition();
+        const targetPoint = pickInfo.pickedPoint;
+        const direction = targetPoint.subtract(shipPos).normalize();
+        
+        MC.targetDirection = direction;
+        MC.hasDirection = true;
+        
+        // Log occasionally
+        if (Math.random() < 0.05) {
+          console.log("📱 Drag direction:", direction);
+        }
+      }
+    };
+    
+    const handlePointerUp = (e: PointerEvent) => {
+      if (!isMobileRef.current) return;
+      MC.isDragging = false;
+      MC.hasDirection = false;
+      console.log("📱 Mobile drag ended");
+    };
+    
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+    
+    console.log("✅ Spaceship controls ENABLED - " + (isMobileRef.current ? "Drag to move!" : "Press W to move forward!"));
     
     // Animation blending helper
     let lastPlayedAnim = "idle";
@@ -1168,81 +1291,134 @@ export function BabylonCanvas() {
       const dt = scene.getEngine().getDeltaTime() * 0.001;
       const K = S.keys;
       
-      // Update camera look-at target to follow ship with upward offset
-      if (camera && cameraLookAt && shipPivot && shipPivot.parent === controlTarget) {
-        const shipWorldPos = shipPivot.getAbsolutePosition();
-        cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.4, shipWorldPos.z);
-        camera.setTarget(cameraLookAt.position);
-      }
-      
       // Log every 60 frames (about once per second)
       if (frameCount % 60 === 0 && Object.keys(K).length > 0) {
         console.log("🎮 Active keys:", Object.keys(K).filter(k => K[k]));
       }
       frameCount++;
       
-      // Yaw from A/D (D=right, A=left)
-      const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) - 
-                     ((K["a"] || K["arrowleft"]) ? 1 : 0);
-      
-      // Pitch from Q/E with easing (E=up, Q=down)
-      const pitchIn = (K["e"] ? 1 : 0) - (K["q"] ? 1 : 0);
-      const targetPitchVel = pitchIn * PITCH_RATE;
-      S.pitchVel += (targetPitchVel - S.pitchVel) * Math.min(1, dt * SMOOTH);
-      S.pitch -= S.pitchVel * dt;
-      
-      // Calculate rotation deltas
-      const yawDelta = turnIn * PITCH_RATE * dt;
-      S.yawTarget += yawDelta; // Track total rotation for reference
-      
-      // Ship orientation - LOCAL rotation around ship's own pivot
-      const currentQuat = controlTarget.rotationQuaternion || BABYLON.Quaternion.Identity();
-      
-      // Create local rotation quaternions (small deltas applied to current orientation)
-      const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, yawDelta);
-      const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, -S.pitchVel * dt);
-      
-      // Apply rotations in local space: yaw first, then pitch, multiplied to current
-      const localRotation = qYaw.multiply(qPitch);
-      controlTarget.rotationQuaternion = currentQuat.multiply(localRotation);
-      
-      // Choose & blend animation
-      const BLEND_PER_SEC = 4;
-      const wStep = BLEND_PER_SEC * dt;
-      
-      const forwardKey = K["w"] || K["arrowup"];
-      const brakeKey = K["s"] || K["arrowdown"];
-      
-      if (A.fwd && A.brk && A.L && A.R && A.I) {
-        if (turnIn < 0) play(A.L, wStep);
-        else if (turnIn > 0) play(A.R, wStep);
-        else if (brakeKey) play(A.brk, wStep);
-        else if (forwardKey) play(A.fwd, wStep);
-        else play(A.I, wStep);
-      }
-      
-      // Smooth Shift throttle
-      const wantSpeed = K["shift"] ? S.speed * S.speedK : S.speed;
-      S.v += (wantSpeed - S.v) * Math.min(1, dt * 5);
-      
-      // Movement
-      const throttle = forwardKey && !brakeKey ? 1 :
-                      forwardKey && brakeKey ? 0.5 : 0;
-      
-      if (throttle) {
-        // Get forward direction (already includes pitch rotation for circular motion)
-        const forwardVector = new BABYLON.Vector3(0, 0, 1);
+      // Mobile vs Desktop controls
+      if (isMobileRef.current) {
+        // ========== MOBILE CONTROLS ==========
+        // Rotation and movement are both based on drag direction
         
-        const dir = BABYLON.Vector3.TransformNormal(
-          forwardVector,
-          controlTarget.getWorldMatrix()
-        ).normalize();
+        // Play forward animation when dragging
+        const BLEND_PER_SEC = 4;
+        const wStep = BLEND_PER_SEC * dt;
         
-        const movement = dir.scale(S.v * dt * throttle);
-        controlTarget.position.addInPlace(movement);
+        if (MC.isDragging && MC.hasDirection) {
+          if (A.fwd) play(A.fwd, wStep);
+          
+          // Calculate rotation to face the drag direction
+          const targetDir = MC.targetDirection.clone().normalize();
+          
+          // Invert Y and X to fix direction (sphere interior pointing)
+          targetDir.y *= -1;
+          targetDir.z *= -1;
+          
+          // Calculate yaw (rotation around Y axis) from X and Z components
+          const yaw = Math.atan2(targetDir.x, targetDir.z);
+          
+          // Calculate pitch (rotation around X axis) from Y component
+          const horizontalDist = Math.sqrt(targetDir.x * targetDir.x + targetDir.z * targetDir.z);
+          const pitch = -Math.atan2(targetDir.y, horizontalDist);
+          
+          // Create rotation quaternion from yaw and pitch
+          const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, yaw);
+          const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, pitch);
+          const targetRotation = qYaw.multiply(qPitch);
+          
+          // Smoothly interpolate to target rotation
+          controlTarget.rotationQuaternion = BABYLON.Quaternion.Slerp(
+            controlTarget.rotationQuaternion!,
+            targetRotation,
+            Math.min(1, dt * 8) // Smooth rotation speed
+          );
+          
+          // Move in the ship's forward direction (after rotation)
+          const forwardVector = new BABYLON.Vector3(0, 0, 1);
+          const dir = BABYLON.Vector3.TransformNormal(
+            forwardVector,
+            controlTarget.getWorldMatrix()
+          ).normalize();
+          
+          // Invert X axis (like desktop controls)
+          dir.x *= -1;
+          
+          const movement = dir.scale(S.speed * dt);
+          controlTarget.position.addInPlace(movement);
+          
+          if (frameCount % 60 === 0) {
+            console.log("📱 Mobile - Target dir:", targetDir, "Yaw:", yaw, "Pitch:", pitch);
+          }
+        } else {
+          // Idle when not dragging
+          if (A.I) play(A.I, wStep);
+        }
+      } else {
+        // ========== DESKTOP CONTROLS ==========
+        // Yaw from A/D (D=right, A=left)
+        const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) - 
+                       ((K["a"] || K["arrowleft"]) ? 1 : 0);
         
-        if (frameCount % 60 === 0) {
-          console.log("🚀 Moving! Throttle:", throttle, "Speed:", S.v, "Movement:", movement);
+        // Pitch from Q/E with easing (E=up, Q=down)
+        const pitchIn = (K["q"] ? 1 : 0) - (K["e"] ? 1 : 0);
+        const targetPitchVel = pitchIn * PITCH_RATE;
+        S.pitchVel += (targetPitchVel - S.pitchVel) * Math.min(1, dt * SMOOTH);
+        S.pitch -= S.pitchVel * dt;
+        
+        // Yaw accumulation from A/D
+        S.yawTarget -= turnIn * PITCH_RATE * dt;
+        
+        // Ship orientation - ABSOLUTE rotation from accumulated angles (like prototype)
+        const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, S.yawTarget);
+        const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, S.pitch);
+        const qFinal = qYaw.multiply(qPitch);
+        
+        // Apply rotation directly without Slerp for immediate response
+        controlTarget.rotationQuaternion = qFinal;
+        
+        // Choose & blend animation
+        const BLEND_PER_SEC = 4;
+        const wStep = BLEND_PER_SEC * dt;
+        
+        const forwardKey = K["w"] || K["arrowup"];
+        const brakeKey = K["s"] || K["arrowdown"];
+        
+        if (A.fwd && A.brk && A.L && A.R && A.I) {
+          if (turnIn < 0) play(A.L, wStep);
+          else if (turnIn > 0) play(A.R, wStep);
+          else if (brakeKey) play(A.brk, wStep);
+          else if (forwardKey) play(A.fwd, wStep);
+          else play(A.I, wStep);
+        }
+        
+        // Smooth Shift throttle
+        const wantSpeed = K["shift"] ? S.speed * S.speedK : S.speed;
+        S.v += (wantSpeed - S.v) * Math.min(1, dt * 5);
+        
+        // Movement
+        const throttle = forwardKey && !brakeKey ? 1 :
+                        forwardKey && brakeKey ? 0.5 : 0;
+        
+        if (throttle) {
+          // Get forward direction (already includes pitch rotation for circular motion)
+          const forwardVector = new BABYLON.Vector3(0, 0, 1);
+          
+          const dir = BABYLON.Vector3.TransformNormal(
+            forwardVector,
+            controlTarget.getWorldMatrix()
+          ).normalize();
+          
+          // Invert X axis to fix left-right direction (like prototype)
+          dir.x *= -1;
+          
+          const movement = dir.scale(S.v * dt * throttle);
+          controlTarget.position.addInPlace(movement);
+          
+          if (frameCount % 60 === 0) {
+            console.log("🚀 Moving! Throttle:", throttle, "Speed:", S.v, "Movement:", movement);
+          }
         }
       }
     });
@@ -1250,6 +1426,12 @@ export function BabylonCanvas() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      
+      // Clean up pointer event listeners (mobile control)
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
       
       if (S.observer) {
         scene.onBeforeRenderObservable.remove(S.observer);
@@ -1516,9 +1698,9 @@ export function BabylonCanvas() {
     const portals = portalsRef.current;
     if (portals && portals.length > 0) {
       const portalsEnabled = sceneConfig.portalsEnabled || false;
-      portals.forEach(portal => {
+/*       portals.forEach(portal => {
         portal.setEnabled(portalsEnabled);
-      });
+      }); */
     }
 
     // Reset ship and camera when coming from state 5 to state 4
@@ -1543,7 +1725,6 @@ export function BabylonCanvas() {
         console.warn("⚠️ No saved initial state found, resetting to defaults");
         if (controlTarget) {
           controlTarget.position.set(0, -1.4, 0);
-          controlTarget.rotationQuaternion = BABYLON.Quaternion.Identity();
         }
       }
       
@@ -1561,8 +1742,25 @@ export function BabylonCanvas() {
       }
       
       // Reset camera look-at target
-      if (lookAtToReset) {
+      if (lookAtToReset && lookAtToReset.parent) {
+        lookAtToReset.setParent(null);
         lookAtToReset.position.set(0, 0, 0);
+        console.log("🔄 Reset cameraLookAt (State 5 → State 4)");
+      }
+      
+      // Reset smoke emitter
+      const smokeEmitter = smokeEmitterRef.current;
+      if (smokeEmitter && smokeEmitter.parent) {
+        smokeEmitter.parent = null;
+        smokeEmitter.position.set(0, 0, 25);
+        console.log("🔄 Reset smoke emitter (State 5 → State 4)");
+      }
+      
+      // Unlock camera from ship
+      if (camera && camera.lockedTarget === pivotToReset) {
+        camera.lockedTarget = null;
+        camera.setTarget(BABYLON.Vector3.Zero());
+        console.log("🔄 Unlocked camera from ship (State 5 → State 4)");
       }
       
       // Reset control angles
@@ -1574,12 +1772,15 @@ export function BabylonCanvas() {
 
     // Handle spaceship visibility with fade animations
     const spaceship = spaceshipRef.current;
-    if (spaceship) {
+    const shipRoot = spaceshipRootRef.current;
+    const spaceshipContainer = shipRoot || spaceship; // Use shipRoot if available, otherwise spaceship
+    
+    if (spaceshipContainer) {
       const shouldBeVisible = sceneConfig.spaceshipEnabled;
-      const isCurrentlyVisible = spaceship.isEnabled();
+      const isCurrentlyVisible = spaceshipContainer.isEnabled();
       
       // Fade in when transitioning to state with spaceship enabled
-      if (shouldBeVisible && !isCurrentlyVisible) {
+      if (shouldBeVisible && !isCurrentlyVisible && spaceship) {
         // Collect materials
         const spaceshipMaterials: BABYLON.Material[] = [];
         spaceship.getChildMeshes().forEach(mesh => {
@@ -1593,7 +1794,7 @@ export function BabylonCanvas() {
         
         // Enable with invisible materials
         spaceshipMaterials.forEach(mat => mat.alpha = 0.01);
-        spaceship.setEnabled(true);
+        spaceshipContainer.setEnabled(true);
         
         // Fade in
         const fps = 60;
@@ -1625,7 +1826,7 @@ export function BabylonCanvas() {
         });
       }
       // Fade out when transitioning away from state with spaceship
-      else if (!shouldBeVisible && isCurrentlyVisible) {
+      else if (!shouldBeVisible && isCurrentlyVisible && spaceship) {
         // Collect materials
         const spaceshipMaterials: BABYLON.Material[] = [];
         spaceship.getChildMeshes().forEach(mesh => {
@@ -1670,7 +1871,7 @@ export function BabylonCanvas() {
         
         // Disable after fade completes
         setTimeout(() => {
-          spaceship.setEnabled(false);
+          spaceshipContainer.setEnabled(false);
         }, duration * 1000);
       }
     }
@@ -1884,7 +2085,7 @@ export function BabylonCanvas() {
       if (material && planet.isEnabled()) {
         // Fade out animation
         const fps = 60;
-        const duration = 0.8; // seconds
+        const duration = 0.6; // seconds
         const totalFrames = fps * duration;
         
         material.alpha = 1;
@@ -1899,7 +2100,7 @@ export function BabylonCanvas() {
         
         alphaAnimation.setKeys([
           { frame: 0, value: 1 },
-          { frame: totalFrames, value: 0.01 }
+          { frame: totalFrames/1.5, value: 0.01 }
         ]);
         
         const easingAlpha = new BABYLON.CubicEase();
@@ -1907,7 +2108,7 @@ export function BabylonCanvas() {
         alphaAnimation.setEasingFunction(easingAlpha);
         
         material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
+        scene.beginAnimation(material, 0, totalFrames/1.5, false, 1, () => {
           planet.setEnabled(false);
           material.alpha = 1;
         });

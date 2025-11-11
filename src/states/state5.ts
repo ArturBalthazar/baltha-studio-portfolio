@@ -4,11 +4,11 @@ export const state5Config: StateConfig = {
   header: {
     showWelcomeText: false,
     logoHeight: {
-      mobile: "h-5",
+      mobile: "h-6",
       desktop: "md:h-7"
     },
     menuHeight: {
-      mobile: "h-5",
+      mobile: "h-6",
       desktop: "md:h-7"
     },
     padding: {
@@ -31,7 +31,7 @@ export const state5Config: StateConfig = {
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 4,
-        desktop: 2
+        desktop: 3
       },
       upperRadiusLimit: {
         mobile: 7,

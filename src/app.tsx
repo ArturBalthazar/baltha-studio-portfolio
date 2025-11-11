@@ -217,9 +217,9 @@ export default function App() {
           "fixed z-50 rounded-full",
           // mobile (centered via right hack you used) - hidden in State 5
           "bottom-[90px] -right-[50%] -translate-x-[25px]",
-          s === S.state_5 && "hidden md:flex",
+          s === S.state_5 && "hidden sm:flex",
           // desktop: push farther right, small bottom tweak - always visible
-          "md:bottom-[70px] md:-right-[100%] md:-translate-x-[70px]",
+          "sm:bottom-[70px] sm:-right-[100%] sm:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",
           "backdrop-blur-sm shadow-[inset_0_0_4px_3px_rgba(255,255,255,0.452)]",
           "relative overflow-visible",
