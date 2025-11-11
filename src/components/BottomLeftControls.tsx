@@ -170,7 +170,7 @@ export function BottomLeftControls({
             "transition-all duration-300 hover:scale-[1.07]",
             "relative overflow-visible",
             // Hide on desktop (regular chat button will show)
-            "sm:hidden",
+            "md:hidden",
             chatOpen && "opacity-0"
           )}
           style={{
