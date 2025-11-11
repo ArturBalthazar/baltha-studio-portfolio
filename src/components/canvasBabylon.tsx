@@ -921,8 +921,8 @@ export function BabylonCanvas() {
       const gamma = e.gamma || 0;
       
       // Convert to radians and apply subtle rotation
-      mouseRotationRef.current.x = (beta / 180) * 1;
-      mouseRotationRef.current.y = (gamma / 90) * 1;
+      mouseRotationRef.current.x = (beta / 180) * -1;
+      mouseRotationRef.current.y = (gamma / 90) * .2;
     };
     
     window.addEventListener('deviceorientation', handleOrientation);
