@@ -17,9 +17,9 @@ export function BottomLeftControls({
   chatOpen = false,
   onChatToggle
 }: BottomLeftControlsProps) {
-  const [audioEnabled, setAudioEnabled] = useState(true);
+  const audioEnabled = useUI((st) => st.audioEnabled);
   const navigationMode = useUI((st) => st.navigationMode);
-  const { setNavigationMode } = useUI();
+  const { setAudioEnabled, setNavigationMode } = useUI();
   const [infoOpen, setInfoOpen] = useState(false);
 
   const toggleAudio = () => {
@@ -46,7 +46,7 @@ export function BottomLeftControls({
         // Mobile: State 5 uses full width centered, other states left-aligned
         isState5 ? "bottom-[40px] left-3 right-3 justify-center px-4" : "bottom-[90px] left-[30px]",
         // Desktop: Always left-aligned at same position
-        isState5 ? "md:bottom-5 md:left-[30px] md:right-auto md:justify-start md:px-0" : "md:bottom-5",
+        isState5 ? "sm:bottom-5 sm:left-[30px] sm:right-auto sm:justify-start sm:px-0" : "sm:bottom-5",
         visible ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
       style={{
@@ -56,7 +56,7 @@ export function BottomLeftControls({
       <div className={cx(
         "flex items-center",
         // Mobile: State 5 spreads buttons, other states grouped
-        isState5 ? "w-full max-w-[500px] justify-between md:w-auto md:justify-start md:gap-4" : "gap-4"
+        isState5 ? "w-full max-w-[500px] justify-between sm:w-auto sm:justify-start sm:gap-4" : "gap-4"
       )}>
       {/* Info Button */}
       <button
@@ -170,7 +170,7 @@ export function BottomLeftControls({
             "transition-all duration-300 hover:scale-[1.07]",
             "relative overflow-visible",
             // Hide on desktop (regular chat button will show)
-            "md:hidden",
+            "sm:hidden",
             chatOpen && "opacity-0"
           )}
           style={{

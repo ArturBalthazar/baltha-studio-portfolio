@@ -7,6 +7,7 @@ import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
 import { BottomLeftControls } from "./components/BottomLeftControls";
 import { Chat } from "./components/Chat";
+import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
 
@@ -61,6 +62,9 @@ export default function App() {
 
   return (
     <>
+      {/* Global Audio Manager */}
+      <AudioManager />
+      
       {/* Desktop: Full width layout, chat overlays on top */}
       <div
         className="h-[100dvh] min-h-[100svh] w-full overflow-hidden"

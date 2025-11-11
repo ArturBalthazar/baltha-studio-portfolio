@@ -26,6 +26,8 @@ type UIState = {
   setSelectedContinent: (index: number) => void;
   navigationMode: 'guided' | 'free'; // Navigation mode for states 4 & 5
   setNavigationMode: (mode: 'guided' | 'free') => void;
+  audioEnabled: boolean; // Global audio manager
+  setAudioEnabled: (enabled: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -40,5 +42,7 @@ export const useUI = create<UIState>((set, get) => ({
   selectedContinent: 2, // Default to Europe (index 2)
   setSelectedContinent: (index) => set({ selectedContinent: index }),
   navigationMode: 'guided', // Default to guided mode
-  setNavigationMode: (mode) => set({ navigationMode: mode })
+  setNavigationMode: (mode) => set({ navigationMode: mode }),
+  audioEnabled: true, // Audio on by default
+  setAudioEnabled: (enabled) => set({ audioEnabled: enabled })
 }));

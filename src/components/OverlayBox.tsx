@@ -23,12 +23,12 @@ export function OverlayBox({
 }: OverlayBoxProps) {
   const [showBox, setShowBox] = useState(false);
   
-  // Get navigation mode from global store
+  // Get global state
   const navigationMode = useUI((st) => st.navigationMode);
-  const { setNavigationMode } = useUI();
+  const selectedLogoModel = useUI((st) => st.selectedLogoModel);
+  const { setNavigationMode, setSelectedLogoModel } = useUI();
   
   // State management for selected buttons
-  const [selectedState2Button, setSelectedState2Button] = useState(0); // Default to first button
   const [selectedState3Button, setSelectedState3Button] = useState(2); // Default to South America
   const [selectedContinent, setSelectedContinent] = useState("Europe");
 
@@ -45,10 +45,10 @@ export function OverlayBox({
   const state2Content = {
     title: "Customize it",
     buttons: [
-      { icon: "/assets/images/1st_default.png", label: "Baltha Logo", selected: selectedState2Button === 0 },
-      { icon: "/assets/images/1st_necklace.png", label: "Baltha Chain", selected: selectedState2Button === 1 },
-      { icon: "/assets/images/1st_cookie.png", label: "Baltha Cookie", selected: selectedState2Button === 2 },
-      { icon: "/assets/images/1st_badge.png", label: "Baltha Badge", selected: selectedState2Button === 3 },
+      { icon: "/assets/images/1st_default.png", label: "Baltha Logo", selected: selectedLogoModel === 0 },
+      { icon: "/assets/images/1st_necklace.png", label: "Baltha Chain", selected: selectedLogoModel === 1 },
+      { icon: "/assets/images/1st_cookie.png", label: "Baltha Cookie", selected: selectedLogoModel === 2 },
+      { icon: "/assets/images/1st_badge.png", label: "Baltha Badge", selected: selectedLogoModel === 3 },
     ],
   };
 
@@ -128,7 +128,7 @@ export function OverlayBox({
   // Handle button clicks
   const handleInternalButtonClick = (index: number) => {
     if (currentState === S.state_2) {
-      setSelectedState2Button(index);
+      setSelectedLogoModel(index);
     } else if (currentState === S.state_3) {
       setSelectedState3Button(index);
       setSelectedContinent(continentNames[index]);

@@ -199,6 +199,7 @@ export function BabylonCanvas() {
   const rockRingRef = useRef<BABYLON.AbstractMesh | null>(null);
   const rockRingAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
   const rockRingHasShownRef = useRef(false);
+  const particlesHaveStartedRef = useRef(false); // Track if particles have been started
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
@@ -1022,15 +1023,15 @@ export function BabylonCanvas() {
       easing
     });
     
-    // Handle particle systems
+    // Handle particle systems - once started, they stay on forever
     if (stars && smoke) {
-      if (sceneConfig.particlesEnabled) {
+      // If particles should be enabled and haven't been started yet, start them
+      if (sceneConfig.particlesEnabled && !particlesHaveStartedRef.current) {
         stars.emitRate = 100000;
         smoke.emitRate = 10000;
-      } else {
-        stars.emitRate = 0;
-        smoke.emitRate = 0;
+        particlesHaveStartedRef.current = true;
       }
+      // Once started, never turn them off (like background music and rockring)
     }
 
     // Handle portal visibility
@@ -1247,6 +1248,45 @@ export function BabylonCanvas() {
     const planet = planetMeshRef.current;
     const scene = sceneRef.current;
     if (!planet || !scene) return;
+
+    // Reset drag rotation when changing continents to avoid conflicts
+    const currentDragQuat = dragRotationRef.current.clone();
+    const identityQuat = BABYLON.Quaternion.Identity();
+    
+    // Check if there's any drag rotation to reset
+    if (!currentDragQuat.equals(identityQuat)) {
+      // On mobile, reset instantly to avoid visual glitch
+      // On desktop, animate smoothly
+      const isMobile = window.innerWidth < 768;
+      
+      if (isMobile) {
+        // Instant reset on mobile
+        dragRotationRef.current = BABYLON.Quaternion.Identity();
+      } else {
+        // Smooth reset on desktop
+        const startTime = performance.now();
+        const duration = 1500; // ms (faster than state change reset)
+        
+        const animateDragReset = () => {
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Ease out cubic
+          const eased = 1 - Math.pow(1 - progress, 3);
+          
+          // Spherical linear interpolation from current to identity
+          dragRotationRef.current = BABYLON.Quaternion.Slerp(currentDragQuat, identityQuat, eased);
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateDragReset);
+          } else {
+            dragRotationRef.current = BABYLON.Quaternion.Identity();
+          }
+        };
+        
+        animateDragReset();
+      }
+    }
 
     if (planetRotations[selectedContinent]) {
       const targetRotation = planetRotations[selectedContinent].clone();
