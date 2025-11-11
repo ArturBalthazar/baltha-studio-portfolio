@@ -34,8 +34,8 @@ export const state5Config: StateConfig = {
         desktop: 2
       },
       upperRadiusLimit: {
-        mobile: 14,
-        desktop: 7
+        mobile: 7,
+        desktop: 6
       }
     },
     babylonScene: {

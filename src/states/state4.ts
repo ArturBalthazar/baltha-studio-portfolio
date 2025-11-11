@@ -29,8 +29,8 @@ export const state4Config: StateConfig = {
         desktop: 2
       },
       upperRadiusLimit: {
-        mobile: 14,
-        desktop: 7
+        mobile: 7,
+        desktop: 6
       },
       animationDuration: 1.0, // Longer animation when zooming in
       animationDelay: 0 // Delay before starting zoom

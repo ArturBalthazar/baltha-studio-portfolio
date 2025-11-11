@@ -461,10 +461,10 @@ export function BabylonCanvas() {
       (meshes) => {
         if (meshes.length) {
           const spaceship = meshes[0];
-          spaceship.position.set(0, -1.6, 0);
+          spaceship.position.set(0, -1.4, 0);
           // Use Math.abs to remove negative scaling (matches prototype behavior)
           const s = spaceship.scaling;
-          spaceship.scaling.set(Math.abs(s.x) * 1.5, Math.abs(s.y) * 1.5, Math.abs(s.z) * 1.5);
+          spaceship.scaling.set(Math.abs(s.x)*1.1, Math.abs(s.y)*1.1, Math.abs(s.z)*1.1);
           
           // Setup materials for transparency
           meshes.forEach(mesh => {
@@ -505,8 +505,8 @@ export function BabylonCanvas() {
             flame.particleEmitterType = new BABYLON.PointParticleEmitter();
             
             // Size randomness
-            flame.minSize = 0.3;
-            flame.maxSize = 0.8;
+            flame.minSize = 0.2;
+            flame.maxSize = 0.5;
             
             // Rotation randomness
             flame.minInitialRotation = Math.PI * 1.9;
@@ -1052,7 +1052,7 @@ export function BabylonCanvas() {
       // Don't parent cameraLookAt - we'll update its position manually each frame
       // This gives us independent control of where camera looks vs where ship rotates
       const shipWorldPos = shipPivot.getAbsolutePosition();
-      cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.6, shipWorldPos.z);
+      cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.4, shipWorldPos.z);
       camera.setTarget(cameraLookAt.position);
     }
     
@@ -1171,7 +1171,7 @@ export function BabylonCanvas() {
       // Update camera look-at target to follow ship with upward offset
       if (camera && cameraLookAt && shipPivot && shipPivot.parent === controlTarget) {
         const shipWorldPos = shipPivot.getAbsolutePosition();
-        cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.6, shipWorldPos.z);
+        cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.4, shipWorldPos.z);
         camera.setTarget(cameraLookAt.position);
       }
       
@@ -1542,7 +1542,7 @@ export function BabylonCanvas() {
       } else {
         console.warn("⚠️ No saved initial state found, resetting to defaults");
         if (controlTarget) {
-          controlTarget.position.set(0, -1.6, 0);
+          controlTarget.position.set(0, -1.4, 0);
           controlTarget.rotationQuaternion = BABYLON.Quaternion.Identity();
         }
       }
