@@ -31,14 +31,19 @@ export const state3Config: StateConfig = {
       upperRadiusLimit: {
         mobile: 44,
         desktop: 24
-      }
+      },
+      animationDuration: 0.8, // When coming from state 4
+      animationDelay: 0 // No delay when transitioning back from state 4
     },
     babylonScene: {
       logoEnabled: true,
       planetEnabled: true,
       rockRingEnabled: false,
+      spaceshipEnabled: false,
       particlesEnabled: false,
       portalsEnabled: false,
+      materialAnimationDelay: 0.4, // Delay after camera radius change from state 4
+      transformAnimationDelay: 0.4, // Delay after camera radius change from state 4
       rootTransform: {
         mobile: { scale: 0.9, position: { x: 0, y: 0, z: 0 } },
         desktop: { scale: 0.9, position: { x: 1, y: -0.3, z: 0 } }

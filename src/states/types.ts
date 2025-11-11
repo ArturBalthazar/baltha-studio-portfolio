@@ -23,6 +23,8 @@ export interface BabylonCameraConfig {
     mobile: number;
     desktop: number;
   };
+  animationDuration?: number; // Duration of camera radius animation in seconds
+  animationDelay?: number; // Delay before camera radius animation in seconds
 }
 
 export interface BabylonTransform {
@@ -39,10 +41,13 @@ export interface BabylonSceneConfig {
   logoEnabled: boolean;
   planetEnabled: boolean;
   rockRingEnabled: boolean;
+  spaceshipEnabled: boolean;
   particlesEnabled: boolean;
   portalsEnabled?: boolean; // Show portals in the scene
   cameraControlsEnabled?: boolean; // Enable camera controls (for free mode in state 5)
   rootTransform: ResponsiveBabylonTransform;
+  materialAnimationDelay?: number; // Delay before material animations in seconds
+  transformAnimationDelay?: number; // Delay before transform animations in seconds
 }
 
 export interface CanvasConfig {

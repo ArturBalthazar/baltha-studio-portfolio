@@ -25,18 +25,21 @@ export const state4Config: StateConfig = {
     nextState: 'state_5',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 44,
-        desktop: 24
+        mobile: 4,
+        desktop: 2
       },
       upperRadiusLimit: {
-        mobile: 44,
-        desktop: 24
-      }
+        mobile: 14,
+        desktop: 7
+      },
+      animationDuration: 1.0, // Longer animation when zooming in
+      animationDelay: 0 // Delay before starting zoom
     },
     babylonScene: {
       logoEnabled: false,
       planetEnabled: false,
       rockRingEnabled: true,
+      spaceshipEnabled: true,
       particlesEnabled: true,
       portalsEnabled: false,
       rootTransform: {

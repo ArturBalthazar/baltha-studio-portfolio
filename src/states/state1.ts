@@ -37,6 +37,7 @@ export const state1Config: StateConfig = {
       logoEnabled: true,
       planetEnabled: false,
       rockRingEnabled: false,
+      spaceshipEnabled: false,
       particlesEnabled: false,
       portalsEnabled: false,
       rootTransform: {

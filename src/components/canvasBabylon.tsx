@@ -6,6 +6,7 @@ import { getStateConfig } from "../states";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
+// @ts-ignore - Type mismatch between babylon imports is non-breaking
 BABYLON.SceneLoader.RegisterPlugin(new GLTFFileLoader());
 
 // Continent rotations - these will be added to the base rotation
@@ -192,6 +193,8 @@ export function BabylonCanvas() {
   const engineRef = useRef<BABYLON.Engine | null>(null);
   const sceneRef = useRef<BABYLON.Scene | null>(null);
   const cameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
+  const shipPivotRef = useRef<BABYLON.TransformNode | null>(null);
+  const cameraLookAtRef = useRef<BABYLON.TransformNode | null>(null);
   const logoModelsRef = useRef<BABYLON.AbstractMesh[]>([]);
   const logosRootRef = useRef<BABYLON.TransformNode | null>(null);
   const planetMeshRef = useRef<BABYLON.AbstractMesh | null>(null);
@@ -200,9 +203,13 @@ export function BabylonCanvas() {
   const rockRingAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
   const rockRingHasShownRef = useRef(false);
   const particlesHaveStartedRef = useRef(false); // Track if particles have been started
+  const spaceshipRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const spaceshipRootRef = useRef<BABYLON.TransformNode | null>(null);
+  const flameParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  const prevStateRef = useRef<number>(s);
   
   // Portal refs
   const portalsRef = useRef<BABYLON.Mesh[]>([]);
@@ -216,6 +223,29 @@ export function BabylonCanvas() {
   const dragRotationRef = useRef(BABYLON.Quaternion.Identity());
   const isDraggingRef = useRef(false);
   const lastDragPosRef = useRef({ x: 0, y: 0 });
+  
+  // Spaceship control state refs
+  const shipControlsRef = useRef({
+    keys: {} as Record<string, boolean>,
+    speed: 10,
+    speedK: 3,
+    v: 10,
+    pitch: 0,
+    yawTarget: 0,
+    pitchVel: 0,
+    observer: null as BABYLON.Nullable<BABYLON.Observer<BABYLON.Scene>>
+  });
+  
+  // Store initial ship state for restoration
+  const shipInitialStateRef = useRef<{
+    position: BABYLON.Vector3 | null;
+    rotation: BABYLON.Quaternion | null;
+    cameraAlpha: number | null;
+  }>({
+    position: null,
+    rotation: null,
+    cameraAlpha: null
+  });
 
   // Initialize scene once
   useEffect(() => {
@@ -242,13 +272,23 @@ export function BabylonCanvas() {
     scene.fogStart = 0;
     scene.fogEnd = 300;
 
-    // Camera (static)
+    // Create camera pivot - camera will target this
+    const shipPivot = new BABYLON.TransformNode("shipPivot", scene);
+    shipPivot.position = BABYLON.Vector3.Zero();
+    shipPivotRef.current = shipPivot;
+
+    // Create separate camera look-at target (for positioning camera view without affecting ship rotation)
+    const cameraLookAt = new BABYLON.TransformNode("cameraLookAt", scene);
+    cameraLookAt.position = BABYLON.Vector3.Zero();
+    cameraLookAtRef.current = cameraLookAt;
+
+    // Camera (static) - targets the pivot
     const camera = new BABYLON.ArcRotateCamera(
       "cam",
       -Math.PI * 1.5,
       Math.PI / 2,
       24,
-      BABYLON.Vector3.Zero(),
+      shipPivot.position,
       scene
     );
     camera.attachControl(canvas, true);
@@ -409,6 +449,91 @@ export function BabylonCanvas() {
       undefined,
       (sceneOrMesh, message, exception) => {
         console.error("rockring.glb load error:", message, exception);
+      }
+    );
+
+    // Load spaceship2.glb
+    BABYLON.SceneLoader.ImportMesh(
+      "",
+      "/assets/models/",
+      "spaceship2.glb",
+      scene,
+      (meshes) => {
+        if (meshes.length) {
+          const spaceship = meshes[0];
+          spaceship.position.set(0, -1.6, 0);
+          // Use Math.abs to remove negative scaling (matches prototype behavior)
+          const s = spaceship.scaling;
+          spaceship.scaling.set(Math.abs(s.x) * 1.5, Math.abs(s.y) * 1.5, Math.abs(s.z) * 1.5);
+          
+          // Setup materials for transparency
+          meshes.forEach(mesh => {
+            if (mesh.material) {
+              mesh.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+              mesh.material.needDepthPrePass = true;
+              mesh.material.backFaceCulling = false;
+            }
+          });
+          
+          spaceship.setEnabled(false); // Hidden by default, shown in state 4
+          spaceshipRef.current = spaceship;
+          
+          // Try to find shiproot transform node
+          const shipRoot = scene.getTransformNodeByName("shiproot");
+          if (shipRoot) {
+            spaceshipRootRef.current = shipRoot;
+            shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
+          }
+          
+          // Create engine flame particle system
+          const emitter = scene.getTransformNodeByName("engineFlame");
+          if (emitter) {
+            console.log("🔥 Found engineFlame emitter node");
+            emitter.rotation.y = BABYLON.Tools.ToRadians(90);
+            emitter.rotation.x = BABYLON.Tools.ToRadians(152);
+            emitter.rotation.z = BABYLON.Tools.ToRadians(25);
+            
+            const flame = new BABYLON.ParticleSystem("engineFlamePS", 600, scene);
+            flame.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
+            flame.emitter = emitter as any; // TransformNode is valid emitter
+            flame.updateSpeed = 0.01;
+            flame.minEmitPower = 0.02;
+            flame.maxEmitPower = 0.05;
+            flame.emitRate = 1000; // Start disabled, enable in free mode
+            
+            // Point spawn at nozzle (no direction - uses emitter transform + emitPower)
+            flame.particleEmitterType = new BABYLON.PointParticleEmitter();
+            
+            // Size randomness
+            flame.minSize = 0.3;
+            flame.maxSize = 0.8;
+            
+            // Rotation randomness
+            flame.minInitialRotation = Math.PI * 1.9;
+            flame.maxInitialRotation = Math.PI * 2.1;
+            
+            // Lifetime
+            flame.minLifeTime = 0.03;
+            flame.maxLifeTime = 0.1;
+            
+            // Color & blend
+            flame.gravity = new BABYLON.Vector3(0, 0, 0);
+            flame.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            flame.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
+            flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
+            flame.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
+            
+            flame.start();
+            flameParticleSystemRef.current = flame;
+            console.log("🔥 Engine flame particle system created and started");
+          } else {
+            console.warn("⚠️ engineFlame transform node not found in spaceship model");
+          }
+        }
+      },
+      undefined,
+      (sceneOrMesh, message, exception) => {
+        console.error("spaceship2.glb load error:", message, exception);
       }
     );
 
@@ -804,6 +929,340 @@ export function BabylonCanvas() {
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, []);
 
+  // Advanced spaceship controls with animation blending (only in free mode)
+  const navigationMode = useUI((st) => st.navigationMode);
+  
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const canvas = ref.current;
+    const spaceship = spaceshipRef.current;
+    
+    if (!scene || !canvas) return;
+    
+    console.log("🚀 Spaceship controls effect triggered", { s, navigationMode, spaceship: !!spaceship });
+    
+    const S = shipControlsRef.current;
+    const flame = flameParticleSystemRef.current;
+    
+    // Only enable controls in state 5 (index 4) with free mode
+    const inState5 = s === 4;
+    const shouldEnableControls = inState5 && navigationMode === 'free';
+    
+    console.log("🚀 Control state:", { inState5, navigationMode, shouldEnableControls });
+    
+    // Cleanup previous observer if exists
+    if (S.observer) {
+      scene.onBeforeRenderObservable.remove(S.observer);
+      S.observer = null;
+    }
+    
+    // Disable controls in guided mode
+    if (!shouldEnableControls) {
+      console.log("🚀 Disabling controls");
+      
+      // Detach camera pivot from ship when not in free mode
+      const shipPivot = shipPivotRef.current;
+      const cameraLookAt = cameraLookAtRef.current;
+      if (shipPivot && shipPivot.parent) {
+        shipPivot.setParent(null);
+        shipPivot.position.set(0, 0, 0);
+      }
+      if (cameraLookAt) {
+        cameraLookAt.position.set(0, 0, 0);
+      }
+      
+      // Clear keys
+      S.keys = {};
+      S.pitch = 0;
+      S.yawTarget = 0;
+      S.pitchVel = 0;
+      
+      return;
+    }
+    
+    // Enable controls in free mode
+    if (!spaceship) {
+      console.log("🚀 No spaceship found, cannot enable controls");
+      return;
+    }
+    
+    // Try to find shipRoot if not already cached
+    let shipRoot = spaceshipRootRef.current;
+    if (!shipRoot) {
+      shipRoot = scene.getTransformNodeByName("shiproot");
+      if (shipRoot) {
+        console.log("🚀 Found shiproot in scene");
+        spaceshipRootRef.current = shipRoot;
+        shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
+      }
+    }
+    
+    // Use spaceship mesh if no shipRoot found
+    const controlTarget = shipRoot || spaceship;
+    console.log("🚀 Control target:", controlTarget.name, "Position:", controlTarget.position);
+    console.log("🚀 Control target scaling:", controlTarget.scaling);
+    console.log("🚀 Control target rotation:", controlTarget.rotation);
+    
+    // Ensure quaternion is initialized, but DON'T reset existing rotation
+    if (!controlTarget.rotationQuaternion) {
+      // Convert euler to quaternion if it exists
+      controlTarget.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
+        controlTarget.rotation.x,
+        controlTarget.rotation.y,
+        controlTarget.rotation.z
+      );
+    }
+    
+    // Get camera reference
+    const camera = cameraRef.current;
+    
+    // Save initial ship state for restoration when exiting free mode
+    if (!shipInitialStateRef.current.position || !shipInitialStateRef.current.rotation) {
+      shipInitialStateRef.current.position = controlTarget.position.clone();
+      shipInitialStateRef.current.rotation = controlTarget.rotationQuaternion.clone();
+      shipInitialStateRef.current.cameraAlpha = camera ? camera.alpha : null;
+      console.log("💾 Saved initial ship state:", {
+        position: shipInitialStateRef.current.position,
+        rotation: shipInitialStateRef.current.rotation,
+        cameraAlpha: shipInitialStateRef.current.cameraAlpha
+      });
+    }
+    
+    // Initialize control angles from current ship rotation (only on first enable)
+    if (S.pitch === 0 && S.yawTarget === 0) {
+      const euler = controlTarget.rotationQuaternion.toEulerAngles();
+      S.pitch = euler.x;
+      S.yawTarget = euler.y;
+      console.log("🚀 Initialized control angles from ship rotation:", { pitch: S.pitch, yaw: S.yawTarget });
+    }
+    
+    // Parent camera pivot to ship at center (for correct rotation pivot)
+    const shipPivot = shipPivotRef.current;
+    const cameraLookAt = cameraLookAtRef.current;
+    if (shipPivot && shipPivot.parent !== controlTarget) {
+      console.log("📷 Parenting camera pivot to ship at (0,0,0)");
+      shipPivot.setParent(controlTarget);
+      // Keep at (0,0,0) so ship rotates around its own center
+      shipPivot.position.set(0, 0, 0);
+      shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
+    }
+    
+    // Update camera look-at target to follow ship with upward offset
+    if (cameraLookAt && camera && shipPivot) {
+      // Don't parent cameraLookAt - we'll update its position manually each frame
+      // This gives us independent control of where camera looks vs where ship rotates
+      const shipWorldPos = shipPivot.getAbsolutePosition();
+      cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.6, shipWorldPos.z);
+      camera.setTarget(cameraLookAt.position);
+    }
+    
+    // Helper: get animation groups
+    const grab = () => ({
+      fwd: scene.getAnimationGroupByName("forward"),
+      brk: scene.getAnimationGroupByName("stop"),
+      L: scene.getAnimationGroupByName("turnRight"),
+      R: scene.getAnimationGroupByName("turnLeft"),
+      I: scene.getAnimationGroupByName("idle")
+    });
+    
+    // Check what animation groups exist in the scene
+    console.log("🎬 ALL animation groups in scene:", scene.animationGroups.map(g => g.name));
+    
+    const A = grab();
+    console.log("🎬 Animation groups found:", {
+      forward: A.fwd ? A.fwd.name : "NOT FOUND",
+      stop: A.brk ? A.brk.name : "NOT FOUND",
+      turnLeft: A.L ? A.L.name : "NOT FOUND",
+      turnRight: A.R ? A.R.name : "NOT FOUND",
+      idle: A.I ? A.I.name : "NOT FOUND"
+    });
+    
+    // Setup animation groups if they exist
+    if (A.fwd && A.brk && A.L && A.R && A.I) {
+      console.log("🎬 ✅ All animations found! Setting up blending...");
+      Object.values(A).forEach(g => {
+        if (g) {
+          g.enableBlending = true;
+          g.blendingSpeed = 0.06;
+          g.loopAnimation = true;
+          g.stop();
+          g.reset();
+          console.log(`🎬 Configured animation: ${g.name}`);
+        }
+      });
+      A.I.play(true); // Start with idle
+      console.log("🎬 ▶️ Playing IDLE animation");
+    } else {
+      console.warn("⚠️ Some animation groups are missing!");
+      if (!A.fwd) console.warn("   Missing: forward");
+      if (!A.brk) console.warn("   Missing: stop");
+      if (!A.L) console.warn("   Missing: turnLeft");
+      if (!A.R) console.warn("   Missing: turnRight");
+      if (!A.I) console.warn("   Missing: idle");
+      console.warn("   Controls will work without animations");
+    }
+    
+    console.log("🔥 Flame particle system:", !!flame);
+    if (flame) {
+      console.log("🔥 Flame emitter:", flame.emitter);
+    }
+    
+    // Keyboard listeners
+    const handleKeyDown = (e: KeyboardEvent) => {
+      S.keys[e.key.toLowerCase()] = true;
+      console.log("⌨️ Key down:", e.key);
+    };
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      S.keys[e.key.toLowerCase()] = false;
+      console.log("⌨️ Key up:", e.key);
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    canvas.tabIndex = 1;
+    canvas.focus();
+    
+    console.log("✅ Spaceship controls ENABLED - Press W to move forward!");
+    
+    // Animation blending helper
+    let lastPlayedAnim = "idle";
+    const play = (target: BABYLON.AnimationGroup | undefined, step: number) => {
+      if (!target) return;
+      
+      // Log when animation changes
+      if (target.name !== lastPlayedAnim) {
+        console.log(`🎬 Switching to animation: ${target.name}`);
+        lastPlayedAnim = target.name;
+      }
+      
+      Object.values(A).forEach(g => {
+        if (!g) return;
+        
+        let w = (g as any).weight || 0;
+        if (g === target) {
+          if (!g.isPlaying) {
+            g.play(true);
+            console.log(`🎬 ▶️ Started playing: ${g.name}`);
+          }
+          w += step * (1 - w);
+        } else {
+          w -= step * w;
+          if (w < 0.01 && g.isPlaying) {
+            g.stop();
+            console.log(`🎬 ⏹️ Stopped: ${g.name}`);
+          }
+        }
+        (g as any).weight = BABYLON.Scalar.Clamp(w, 0, 1);
+      });
+    };
+    
+    // Constants
+    const PITCH_RATE = Math.PI / 1.5;
+    const SMOOTH = 5;
+    
+    // Per-frame update
+    let frameCount = 0;
+    S.observer = scene.onBeforeRenderObservable.add(() => {
+      const dt = scene.getEngine().getDeltaTime() * 0.001;
+      const K = S.keys;
+      
+      // Update camera look-at target to follow ship with upward offset
+      if (camera && cameraLookAt && shipPivot && shipPivot.parent === controlTarget) {
+        const shipWorldPos = shipPivot.getAbsolutePosition();
+        cameraLookAt.position.set(shipWorldPos.x, shipWorldPos.y + 1.6, shipWorldPos.z);
+        camera.setTarget(cameraLookAt.position);
+      }
+      
+      // Log every 60 frames (about once per second)
+      if (frameCount % 60 === 0 && Object.keys(K).length > 0) {
+        console.log("🎮 Active keys:", Object.keys(K).filter(k => K[k]));
+      }
+      frameCount++;
+      
+      // Yaw from A/D (D=right, A=left)
+      const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) - 
+                     ((K["a"] || K["arrowleft"]) ? 1 : 0);
+      
+      // Pitch from Q/E with easing (E=up, Q=down)
+      const pitchIn = (K["e"] ? 1 : 0) - (K["q"] ? 1 : 0);
+      const targetPitchVel = pitchIn * PITCH_RATE;
+      S.pitchVel += (targetPitchVel - S.pitchVel) * Math.min(1, dt * SMOOTH);
+      S.pitch -= S.pitchVel * dt;
+      
+      // Calculate rotation deltas
+      const yawDelta = turnIn * PITCH_RATE * dt;
+      S.yawTarget += yawDelta; // Track total rotation for reference
+      
+      // Ship orientation - LOCAL rotation around ship's own pivot
+      const currentQuat = controlTarget.rotationQuaternion || BABYLON.Quaternion.Identity();
+      
+      // Create local rotation quaternions (small deltas applied to current orientation)
+      const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, yawDelta);
+      const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, -S.pitchVel * dt);
+      
+      // Apply rotations in local space: yaw first, then pitch, multiplied to current
+      const localRotation = qYaw.multiply(qPitch);
+      controlTarget.rotationQuaternion = currentQuat.multiply(localRotation);
+      
+      // Choose & blend animation
+      const BLEND_PER_SEC = 4;
+      const wStep = BLEND_PER_SEC * dt;
+      
+      const forwardKey = K["w"] || K["arrowup"];
+      const brakeKey = K["s"] || K["arrowdown"];
+      
+      if (A.fwd && A.brk && A.L && A.R && A.I) {
+        if (turnIn < 0) play(A.L, wStep);
+        else if (turnIn > 0) play(A.R, wStep);
+        else if (brakeKey) play(A.brk, wStep);
+        else if (forwardKey) play(A.fwd, wStep);
+        else play(A.I, wStep);
+      }
+      
+      // Smooth Shift throttle
+      const wantSpeed = K["shift"] ? S.speed * S.speedK : S.speed;
+      S.v += (wantSpeed - S.v) * Math.min(1, dt * 5);
+      
+      // Movement
+      const throttle = forwardKey && !brakeKey ? 1 :
+                      forwardKey && brakeKey ? 0.5 : 0;
+      
+      if (throttle) {
+        // Get forward direction (already includes pitch rotation for circular motion)
+        const forwardVector = new BABYLON.Vector3(0, 0, 1);
+        
+        const dir = BABYLON.Vector3.TransformNormal(
+          forwardVector,
+          controlTarget.getWorldMatrix()
+        ).normalize();
+        
+        const movement = dir.scale(S.v * dt * throttle);
+        controlTarget.position.addInPlace(movement);
+        
+        if (frameCount % 60 === 0) {
+          console.log("🚀 Moving! Throttle:", throttle, "Speed:", S.v, "Movement:", movement);
+        }
+      }
+    });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      
+      if (S.observer) {
+        scene.onBeforeRenderObservable.remove(S.observer);
+        S.observer = null;
+      }
+      
+      // Stop animations
+      const groups = grab();
+      Object.values(groups).forEach(g => g?.stop?.());
+      
+    };
+  }, [s, navigationMode]);
+
   // Drag rotation interaction
   useEffect(() => {
     const canvas = ref.current;
@@ -911,8 +1370,9 @@ export function BabylonCanvas() {
       const lowerLimit = isMobile ? cameraConfig.lowerRadiusLimit.mobile : cameraConfig.lowerRadiusLimit.desktop;
       const upperLimit = isMobile ? cameraConfig.upperRadiusLimit.mobile : cameraConfig.upperRadiusLimit.desktop;
       
-      // Special delay for state 1 to state 2 transition
-      const delay = (s === 1) ? 0.5 : 0; // 0.5 second delay for state 2
+      // Use config values for duration and delay, with fallbacks
+      const duration = cameraConfig.animationDuration !== undefined ? cameraConfig.animationDuration : 0.4;
+      const delay = cameraConfig.animationDelay !== undefined ? cameraConfig.animationDelay : 0.2;
       
       const easing = new BABYLON.CubicEase();
       easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
@@ -920,8 +1380,8 @@ export function BabylonCanvas() {
       animateCameraRadius({
         camera,
         scene,
-        duration: 0.5,
-        delay: 0.2,
+        duration,
+        delay,
         lowerRadiusLimit: lowerLimit,
         upperRadiusLimit: upperLimit,
         easing
@@ -962,13 +1422,27 @@ export function BabylonCanvas() {
     const stars = starsParticleSystemRef.current;
     const smoke = smokeParticleSystemRef.current;
     const scene = sceneRef.current;
-    if (!logosRoot || !planet || !scene || !root1) return;
+    const camera = cameraRef.current;
+    if (!logosRoot || !planet || !scene || !root1 || !camera) return;
 
     const sceneConfig = config.canvas.babylonScene;
     if (!sceneConfig) return;
 
-    // Handle logo visibility based on config
-    logosRoot.setEnabled(sceneConfig.logoEnabled);
+    // Track state transitions
+    const prevState = prevStateRef.current;
+    const isComingFromState4 = prevState === 3 && s === 2; // State 4 → State 3
+    const isComingFromState5 = prevState === 4 && s === 3; // State 5 → State 4
+
+    // Handle logo visibility based on config with delay when coming from state 4
+    if (isComingFromState4 && sceneConfig.logoEnabled) {
+      // Disable logo initially, enable after delay
+      logosRoot.setEnabled(false);
+      setTimeout(() => {
+        logosRoot.setEnabled(true);
+      }, 400); // 0.4 second delay
+    } else {
+      logosRoot.setEnabled(sceneConfig.logoEnabled);
+    }
     
     // Reset drag rotation to identity on state change with animation (quaternion slerp)
     const currentDragQuat = dragRotationRef.current.clone();
@@ -1014,10 +1488,14 @@ export function BabylonCanvas() {
     const easing = new BABYLON.CubicEase();
     easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
     
+    // Use config value for transform delay only when coming from state 4 to state 3
+    const transformDelay = isComingFromState4 ? (sceneConfig.transformAnimationDelay ?? 0) : 0;
+    
     animateTransform({
       target: root1,
       scene,
       duration: 1.0, // 1 second animation
+      delay: transformDelay,
       position: targetPosition,
       scaling: targetScale,
       easing
@@ -1041,6 +1519,160 @@ export function BabylonCanvas() {
       portals.forEach(portal => {
         portal.setEnabled(portalsEnabled);
       });
+    }
+
+    // Reset ship and camera when coming from state 5 to state 4
+    if (isComingFromState5) {
+      const shipToReset = spaceshipRef.current;
+      const shipRootToReset = spaceshipRootRef.current;
+      const pivotToReset = shipPivotRef.current;
+      const lookAtToReset = cameraLookAtRef.current;
+      
+      // Restore ship to initial saved state
+      const controlTarget = shipRootToReset || shipToReset;
+      const initialState = shipInitialStateRef.current;
+      
+      if (controlTarget && initialState.position && initialState.rotation) {
+        controlTarget.position.copyFrom(initialState.position);
+        controlTarget.rotationQuaternion = initialState.rotation.clone();
+        console.log("🔄 Restored ship to initial state:", {
+          position: initialState.position,
+          rotation: initialState.rotation
+        });
+      } else {
+        console.warn("⚠️ No saved initial state found, resetting to defaults");
+        if (controlTarget) {
+          controlTarget.position.set(0, -1.6, 0);
+          controlTarget.rotationQuaternion = BABYLON.Quaternion.Identity();
+        }
+      }
+      
+      // Restore camera alpha rotation
+      if (camera && initialState.cameraAlpha !== null) {
+        camera.alpha = initialState.cameraAlpha;
+        console.log("🔄 Restored camera alpha:", initialState.cameraAlpha);
+      }
+      
+      // Reset ship pivot
+      if (pivotToReset && pivotToReset.parent) {
+        pivotToReset.setParent(null);
+        pivotToReset.position.set(0, 0, 0);
+        console.log("🔄 Reset ship pivot (State 5 → State 4)");
+      }
+      
+      // Reset camera look-at target
+      if (lookAtToReset) {
+        lookAtToReset.position.set(0, 0, 0);
+      }
+      
+      // Reset control angles
+      const S = shipControlsRef.current;
+      S.pitch = 0;
+      S.yawTarget = 0;
+      S.pitchVel = 0;
+    }
+
+    // Handle spaceship visibility with fade animations
+    const spaceship = spaceshipRef.current;
+    if (spaceship) {
+      const shouldBeVisible = sceneConfig.spaceshipEnabled;
+      const isCurrentlyVisible = spaceship.isEnabled();
+      
+      // Fade in when transitioning to state with spaceship enabled
+      if (shouldBeVisible && !isCurrentlyVisible) {
+        // Collect materials
+        const spaceshipMaterials: BABYLON.Material[] = [];
+        spaceship.getChildMeshes().forEach(mesh => {
+          if (mesh.material) {
+            spaceshipMaterials.push(mesh.material);
+          }
+        });
+        if (spaceship.material) {
+          spaceshipMaterials.push(spaceship.material);
+        }
+        
+        // Enable with invisible materials
+        spaceshipMaterials.forEach(mat => mat.alpha = 0.01);
+        spaceship.setEnabled(true);
+        
+        // Fade in
+        const fps = 60;
+        const duration = 1.0;
+        const totalFrames = fps * duration;
+        
+        spaceshipMaterials.forEach(mat => {
+          const alphaAnimation = new BABYLON.Animation(
+            "fadeInSpaceship",
+            "alpha",
+            fps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          
+          alphaAnimation.setKeys([
+            { frame: 0, value: 0.01 },
+            { frame: totalFrames, value: 1 }
+          ]);
+          
+          const easing = new BABYLON.CubicEase();
+          easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+          alphaAnimation.setEasingFunction(easing);
+          
+          mat.animations = [alphaAnimation];
+          scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
+            mat.alpha = 1;
+          });
+        });
+      }
+      // Fade out when transitioning away from state with spaceship
+      else if (!shouldBeVisible && isCurrentlyVisible) {
+        // Collect materials
+        const spaceshipMaterials: BABYLON.Material[] = [];
+        spaceship.getChildMeshes().forEach(mesh => {
+          if (mesh.material) {
+            spaceshipMaterials.push(mesh.material);
+          }
+        });
+        if (spaceship.material) {
+          spaceshipMaterials.push(spaceship.material);
+        }
+        
+        // Fade out
+        const fps = 60;
+        const duration = 0.8;
+        const totalFrames = fps * duration;
+        
+        spaceshipMaterials.forEach(mat => {
+          mat.alpha = 1;
+          
+          const alphaAnimation = new BABYLON.Animation(
+            "fadeOutSpaceship",
+            "alpha",
+            fps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          
+          alphaAnimation.setKeys([
+            { frame: 0, value: 1 },
+            { frame: totalFrames, value: 0.01 }
+          ]);
+          
+          const easing = new BABYLON.CubicEase();
+          easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
+          alphaAnimation.setEasingFunction(easing);
+          
+          mat.animations = [alphaAnimation];
+          scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
+            mat.alpha = 0.01;
+          });
+        });
+        
+        // Disable after fade completes
+        setTimeout(() => {
+          spaceship.setEnabled(false);
+        }, duration * 1000);
+      }
     }
 
     // Handle camera controls - managed by navigation mode in a separate effect
@@ -1103,10 +1735,67 @@ export function BabylonCanvas() {
     }
 
     if (s === 2) { // State 3 (S.state_3 = 2)
-      // State 3: Scale down logos, move them, show planet with fade in
+      // State 3: Scale down logos, move them
       logosRoot.scaling.set(0.25, 0.25, 0.25);
       logosRoot.position.set(0, 1.25, 4);
-      planet.setEnabled(true);
+      
+      // Fade in logos when coming from state 4
+      if (isComingFromState4) {
+        const logoModels = logoModelsRef.current;
+        const currentLogoModel = logoModels[selectedLogoModel];
+        
+        if (currentLogoModel) {
+          const logoMaterials: BABYLON.Material[] = [];
+          currentLogoModel.getChildMeshes().forEach(mesh => {
+            if (mesh.material) {
+              logoMaterials.push(mesh.material);
+            }
+          });
+          if (currentLogoModel.material) {
+            logoMaterials.push(currentLogoModel.material);
+          }
+          
+          const logoMaterialDelay = (sceneConfig.materialAnimationDelay ?? 0) * 1000;
+          
+          const animateLogo = () => {
+            const fps = 60;
+            const duration = 1.0; // 1 second fade
+            const totalFrames = fps * duration;
+            
+            logoMaterials.forEach(mat => {
+              mat.alpha = 0.01;
+              
+              const alphaAnimation = new BABYLON.Animation(
+                "fadeInLogo",
+                "alpha",
+                fps,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+              );
+              
+              alphaAnimation.setKeys([
+                { frame: 0, value: 0.01 },
+                { frame: totalFrames, value: 1 }
+              ]);
+              
+              const easingAlpha = new BABYLON.CubicEase();
+              easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+              alphaAnimation.setEasingFunction(easingAlpha);
+              
+              mat.animations = [alphaAnimation];
+              scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
+                mat.alpha = 1;
+              });
+            });
+          };
+          
+          if (logoMaterialDelay > 0) {
+            setTimeout(animateLogo, logoMaterialDelay);
+          } else {
+            animateLogo();
+          }
+        }
+      }
       
       if (material) {
         // Get target rotation for current continent
@@ -1124,55 +1813,68 @@ export function BabylonCanvas() {
         );
         planet.rotation = fromRotation;
         
-        // Fade in animation
-        const fps = 60;
-        const duration = 1.5; // seconds
-        const totalFrames = fps * duration;
+        // Use config value for material animation delay only when coming from state 4
+        const materialDelay = isComingFromState4 ? (sceneConfig.materialAnimationDelay ?? 0) * 1000 : 0;
         
-        material.alpha = 0.01;
+        const animatePlanet = () => {
+          // Enable planet with invisible material right before animation
+          material.alpha = 0.01;
+          planet.setEnabled(true);
+          
+          // Fade in animation
+          const fps = 60;
+          const duration = 1.5; // seconds
+          const totalFrames = fps * duration;
+          
+          const alphaAnimation = new BABYLON.Animation(
+            "fadeInPlanet",
+            "alpha",
+            fps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          
+          alphaAnimation.setKeys([
+            { frame: 0, value: 0.01 },
+            { frame: totalFrames, value: 1 }
+          ]);
+          
+          const easingAlpha = new BABYLON.CubicEase();
+          easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+          alphaAnimation.setEasingFunction(easingAlpha);
+          
+          material.animations = [alphaAnimation];
+          scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
+            material.alpha = 1;
+          });
+          
+          // Rotation animation during fade in
+          const rotationAnimation = new BABYLON.Animation(
+            "rotateInPlanet",
+            "rotation",
+            fps,
+            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          
+          rotationAnimation.setKeys([
+            { frame: 0, value: fromRotation },
+            { frame: totalFrames, value: targetRotation }
+          ]);
+          
+          const easingRot = new BABYLON.CubicEase();
+          easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+          rotationAnimation.setEasingFunction(easingRot);
+          
+          planet.animations = [rotationAnimation];
+          scene.beginAnimation(planet, 0, totalFrames, false);
+        };
         
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeInPlanet",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        alphaAnimation.setKeys([
-          { frame: 0, value: 0.01 },
-          { frame: totalFrames, value: 1 }
-        ]);
-        
-        const easingAlpha = new BABYLON.CubicEase();
-        easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        alphaAnimation.setEasingFunction(easingAlpha);
-        
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
-          material.alpha = 1;
-        });
-        
-        // Rotation animation during fade in
-        const rotationAnimation = new BABYLON.Animation(
-          "rotateInPlanet",
-          "rotation",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        
-        rotationAnimation.setKeys([
-          { frame: 0, value: fromRotation },
-          { frame: totalFrames, value: targetRotation }
-        ]);
-        
-        const easingRot = new BABYLON.CubicEase();
-        easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        rotationAnimation.setEasingFunction(easingRot);
-        
-        planet.animations = [rotationAnimation];
-        scene.beginAnimation(planet, 0, totalFrames, false);
+        if (materialDelay > 0) {
+          setTimeout(animatePlanet, materialDelay);
+        } else {
+          animatePlanet();
+        }
       }
     } else {
       // States 1, 2, 4: Normal logo size and position, fade out and hide planet
@@ -1241,6 +1943,9 @@ export function BabylonCanvas() {
         planet.setEnabled(false);
       }
     }
+    
+    // Update previous state reference for next transition
+    prevStateRef.current = s;
   }, [s, config]);
 
   // Handle planet rotation when continent changes (animated)
@@ -1308,8 +2013,6 @@ export function BabylonCanvas() {
   }, [selectedContinent]);
 
   // Navigation mode effect - toggle camera controls based on mode in state 5
-  const navigationMode = useUI((st) => st.navigationMode);
-  
   useEffect(() => {
     const canvas = ref.current;
     const camera = cameraRef.current;
@@ -1320,9 +2023,13 @@ export function BabylonCanvas() {
     const shouldEnableControls = inState5 && navigationMode === 'free';
 
     if (shouldEnableControls) {
+      // Re-add mouse wheel and pointer inputs for camera rotation/zoom
+      camera.inputs.addMouseWheel();
+      camera.inputs.addPointers();
       camera.attachControl(canvas, true);
     } else {
       camera.detachControl();
+      camera.inputs.clear();
     }
   }, [s, navigationMode]);
 

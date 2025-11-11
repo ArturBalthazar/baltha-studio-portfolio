@@ -30,18 +30,19 @@ export const state5Config: StateConfig = {
     roundedCorners: false, // No rounded corners in state 5
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 44,
-        desktop: 24
+        mobile: 4,
+        desktop: 2
       },
       upperRadiusLimit: {
-        mobile: 44,
-        desktop: 24
+        mobile: 14,
+        desktop: 7
       }
     },
     babylonScene: {
       logoEnabled: false,
       planetEnabled: false,
       rockRingEnabled: true,
+      spaceshipEnabled: true,
       particlesEnabled: true,
       portalsEnabled: true, // Show portals in state 5
       cameraControlsEnabled: false, // Will be dynamically toggled based on navigation mode
