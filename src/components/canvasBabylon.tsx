@@ -1111,7 +1111,7 @@ export function BabylonCanvas() {
       console.log("📷 Parenting shipPivot to shipRoot at center");
       shipPivot.setParent(controlTarget);
       // Different position for mobile vs desktop
-      const pivotY = isMobileRef.current ? 1.2 : 0.5;
+      const pivotY = isMobileRef.current ? 1 : 0.5;
       shipPivot.position.set(0, pivotY, 0);
       shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
       console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
@@ -1291,6 +1291,9 @@ export function BabylonCanvas() {
       const dt = scene.getEngine().getDeltaTime() * 0.001;
       const K = S.keys;
       
+      // Camera beta is set at initialization and naturally follows the ship pivot
+      // No need to update it in the render loop
+      
       // Log every 60 frames (about once per second)
       if (frameCount % 60 === 0 && Object.keys(K).length > 0) {
         console.log("🎮 Active keys:", Object.keys(K).filter(k => K[k]));
@@ -1312,9 +1315,13 @@ export function BabylonCanvas() {
           // Calculate rotation to face the drag direction
           const targetDir = MC.targetDirection.clone().normalize();
           
-          // Invert Y and X to fix direction (sphere interior pointing)
+          // Invert Y and Z to fix direction (sphere interior pointing)
           targetDir.y *= -1;
           targetDir.z *= -1;
+          
+          // Add upward bias to create "camera from above" effect
+          targetDir.y -= 0.2; // Force ship to point slightly upward
+          targetDir.normalize();
           
           // Calculate yaw (rotation around Y axis) from X and Z components
           const yaw = Math.atan2(targetDir.x, targetDir.z);
