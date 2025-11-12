@@ -255,7 +255,10 @@ export function BabylonCanvas() {
   const mobileControlRef = useRef({
     isDragging: false,
     targetDirection: new BABYLON.Vector3(0, 0, 1), // Default forward
-    hasDirection: false
+    hasDirection: false,
+    cameraRotation: 0, // -1 for left, 0 for none, 1 for right
+    pointerX: 0, // Track pointer X position
+    pointerY: 0  // Track pointer Y position
   });
 
   // Initialize scene once
@@ -313,7 +316,7 @@ export function BabylonCanvas() {
     
     camera.inputs.clear();
     camera.panningSensibility = 0;
-    camera.fov = .7;
+    camera.fov = 1;
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
@@ -1216,29 +1219,16 @@ export function BabylonCanvas() {
     const handlePointerMove = (e: PointerEvent) => {
       if (!isMobileRef.current || !MC.isDragging) return;
       
-      // Raycast from cursor to control sphere
-      const pickInfo = scene.pick(e.clientX, e.clientY, (mesh) => mesh === controlSphereRef.current);
-      
-      if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-        // Get direction from ship to picked point on sphere
-        const shipPos = controlTarget.getAbsolutePosition();
-        const targetPoint = pickInfo.pickedPoint;
-        const direction = targetPoint.subtract(shipPos).normalize();
-        
-        MC.targetDirection = direction;
-        MC.hasDirection = true;
-        
-        // Log occasionally
-        if (Math.random() < 0.05) {
-          console.log("📱 Drag direction:", direction);
-        }
-      }
+      // Just update pointer position - raycasting happens in render loop
+      MC.pointerX = e.clientX;
+      MC.pointerY = e.clientY;
     };
     
     const handlePointerUp = (e: PointerEvent) => {
       if (!isMobileRef.current) return;
       MC.isDragging = false;
       MC.hasDirection = false;
+      MC.cameraRotation = 0; // Stop camera rotation
       console.log("📱 Mobile drag ended");
     };
     
@@ -1291,8 +1281,39 @@ export function BabylonCanvas() {
       const dt = scene.getEngine().getDeltaTime() * 0.001;
       const K = S.keys;
       
-      // Camera beta is set at initialization and naturally follows the ship pivot
-      // No need to update it in the render loop
+      // Mobile drag control: Update direction and edge rotation every frame
+      if (isMobileRef.current && MC.isDragging) {
+        // Check if pointer is near screen edges (5% threshold)
+        const screenWidth = window.innerWidth;
+        const edgeThreshold = screenWidth * 0.05;
+        
+        if (MC.pointerX < edgeThreshold) {
+          MC.cameraRotation = -1; // Rotate left
+        } else if (MC.pointerX > screenWidth - edgeThreshold) {
+          MC.cameraRotation = 1; // Rotate right
+        } else {
+          MC.cameraRotation = 0; // No edge rotation
+        }
+        
+        // Raycast from current pointer position to control sphere
+        const pickInfo = scene.pick(MC.pointerX, MC.pointerY, (mesh) => mesh === controlSphereRef.current);
+        
+        if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
+          // Get direction from ship to picked point on sphere
+          const shipPos = controlTarget.getAbsolutePosition();
+          const targetPoint = pickInfo.pickedPoint;
+          const direction = targetPoint.subtract(shipPos).normalize();
+          
+          MC.targetDirection = direction;
+          MC.hasDirection = true;
+        }
+      }
+      
+      // Camera edge rotation (when dragging near screen edges)
+      if (camera && MC.cameraRotation !== 0) {
+        const rotationSpeed = 1; // Radians per second
+        camera.alpha -= MC.cameraRotation * rotationSpeed * dt;
+      }
       
       // Log every 60 frames (about once per second)
       if (frameCount % 60 === 0 && Object.keys(K).length > 0) {

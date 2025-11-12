@@ -25,12 +25,12 @@ export const state3Config: StateConfig = {
     nextState: null,
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 44,
-        desktop: 24
+        mobile: 28,
+        desktop: 18
       },
       upperRadiusLimit: {
-        mobile: 44,
-        desktop: 24
+        mobile: 28,
+        desktop: 18
       },
       animationDuration: 0.8, // When coming from state 4
       animationDelay: 0 // No delay when transitioning back from state 4
