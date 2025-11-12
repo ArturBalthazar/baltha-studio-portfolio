@@ -1285,7 +1285,7 @@ export function BabylonCanvas() {
       if (isMobileRef.current && MC.isDragging) {
         // Check if pointer is near screen edges (5% threshold)
         const screenWidth = window.innerWidth;
-        const edgeThreshold = screenWidth * 0.05;
+        const edgeThreshold = screenWidth * 0.1;
         
         if (MC.pointerX < edgeThreshold) {
           MC.cameraRotation = -1; // Rotate left
