@@ -271,7 +271,6 @@ export function BabylonCanvas() {
   const sceneRef = useRef<BABYLON.Scene | null>(null);
   const cameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
   const shipPivotRef = useRef<BABYLON.TransformNode | null>(null);
-  const cameraLookAtRef = useRef<BABYLON.TransformNode | null>(null);
   const logoModelsRef = useRef<BABYLON.AbstractMesh[]>([]);
   const logosRootRef = useRef<BABYLON.TransformNode | null>(null);
   const planetMeshRef = useRef<BABYLON.AbstractMesh | null>(null);
@@ -320,10 +319,12 @@ export function BabylonCanvas() {
     position: BABYLON.Vector3 | null;
     rotation: BABYLON.Quaternion | null;
     cameraAlpha: number | null;
+    cameraBeta: number | null;
   }>({
     position: null,
     rotation: null,
-    cameraAlpha: null
+    cameraAlpha: null,
+    cameraBeta: null
   });
   
   // Mobile control refs
@@ -335,7 +336,9 @@ export function BabylonCanvas() {
     hasDirection: false,
     cameraRotation: 0, // -1 for left, 0 for none, 1 for right
     pointerX: 0, // Track pointer X position
-    pointerY: 0  // Track pointer Y position
+    pointerY: 0,  // Track pointer Y position
+    previousYaw: 0, // Track previous yaw for turn rate calculation
+    yawRate: 0 // Current turn rate (-1 to 1, negative = left, positive = right)
   });
 
   // Initialize scene once
@@ -374,12 +377,7 @@ export function BabylonCanvas() {
     shipPivot.position = BABYLON.Vector3.Zero();
     shipPivotRef.current = shipPivot;
 
-    // Create separate camera look-at target (for positioning camera view without affecting ship rotation)
-    const cameraLookAt = new BABYLON.TransformNode("cameraLookAt", scene);
-    cameraLookAt.position = BABYLON.Vector3.Zero();
-    cameraLookAtRef.current = cameraLookAt;
-
-    // Camera (static) - targets the pivot
+    // Camera (static) - always locked to shipPivot
     const camera = new BABYLON.ArcRotateCamera(
       "cam",
       -Math.PI * 1.5,
@@ -391,9 +389,12 @@ export function BabylonCanvas() {
     camera.attachControl(canvas, true);
     cameraRef.current = camera;
     
+    // Lock camera to always target shipPivot (follows it when it moves)
+    camera.lockedTarget = shipPivot;
+    
     camera.inputs.clear();
     camera.panningSensibility = 0;
-    camera.fov = 1.2;
+    camera.fov = 1;
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
@@ -500,7 +501,7 @@ export function BabylonCanvas() {
           planet.position.set(0, 0, 0);
           planet.parent = root1;
           
-          planet.setEnabled(false); // Hidden by default, shown in state 3
+          planet.setEnabled(false); // Hidden by default, shown in state 2
           planetMeshRef.current = planet;
           
           // Find the planet mesh with material and set up transparency
@@ -555,7 +556,7 @@ export function BabylonCanvas() {
             }
           });
           
-          rockRing.setEnabled(false); // Hidden by default, shown in state 4
+          rockRing.setEnabled(false); // Hidden by default, shown in state 3
           rockRingRef.current = rockRing;
         }
       },
@@ -584,8 +585,8 @@ export function BabylonCanvas() {
           
           // Set position and scaling on shiproot
           console.log("📦 ShipRoot loaded at position:", shipRoot.position.clone());
-          // Initially place ship behind camera, will animate to correct position when entering state 4
-          shipRoot.position.set(0, -1.1, 20);
+          // Initially place ship behind camera, will animate to correct position when entering state 3
+          shipRoot.position.set(0, -4, 20);
           const s = shipRoot.scaling;
           shipRoot.scaling.set(Math.abs(s.x)*1.1, Math.abs(s.y)*1.1, Math.abs(s.z)*-1.1);
           shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
@@ -603,7 +604,7 @@ export function BabylonCanvas() {
             }
           });
           
-          shipRoot.setEnabled(false); // Hidden by default, shown in state 4
+          shipRoot.setEnabled(false); // Hidden by default, shown in state 3
           spaceshipRef.current = spaceship; // Keep mesh reference for materials
           spaceshipRootRef.current = shipRoot; // This is what we control
           
@@ -1005,8 +1006,16 @@ export function BabylonCanvas() {
     };
     measureAndResize();
 
-    // Render
-    engine.runRenderLoop(() => scene.render());
+    const fpsCounter = document.getElementById('fpsCounter');
+
+    engine.runRenderLoop(() => {
+      scene.render();
+    
+      if (fpsCounter) {
+        fpsCounter.textContent = `FPS: ${engine.getFps().toFixed(0)}`;
+      }
+    });
+    
 
     // Also react to window resizes (DPR changes)
     const onWinResize = () => {
@@ -1078,11 +1087,11 @@ export function BabylonCanvas() {
     const S = shipControlsRef.current;
     const flame = flameParticleSystemRef.current;
     
-    // Only enable controls in state 5 (index 4) with free mode
-    const inState5 = s === 4;
-    const shouldEnableControls = inState5 && navigationMode === 'free';
+    // Only enable controls in state 4 (index 4) with free mode
+    const inState4 = s === 4;
+    const shouldEnableControls = inState4 && navigationMode === 'free';
     
-    console.log("🚀 Control state:", { inState5, navigationMode, shouldEnableControls });
+    console.log("🚀 Control state:", { inState4, navigationMode, shouldEnableControls });
     
     // Cleanup previous observer if exists
     if (S.observer) {
@@ -1090,42 +1099,30 @@ export function BabylonCanvas() {
       S.observer = null;
     }
     
-    // Disable controls in guided mode
+    // Disable controls in guided mode but play idle animation
     if (!shouldEnableControls) {
-      console.log("🚀 Disabling controls");
-      
-      // Detach camera pivot and smoke emitter from ship when not in free mode
-      const shipPivot = shipPivotRef.current;
-      const cameraLookAt = cameraLookAtRef.current;
-      const camera = cameraRef.current;
-      const smokeEmitter = smokeEmitterRef.current;
-      
-      if (shipPivot && shipPivot.parent) {
-        shipPivot.setParent(null);
-        shipPivot.position.set(0, 0, 0);
-      }
-      if (cameraLookAt && cameraLookAt.parent) {
-        cameraLookAt.setParent(null);
-        cameraLookAt.position.set(0, 0, 0);
-      }
-      
-      // Unparent smoke emitter
-      if (smokeEmitter && smokeEmitter.parent) {
-        smokeEmitter.parent = null;
-        smokeEmitter.position.set(0, 0, 25);
-      }
-      
-      // Unlock camera from ship
-      if (camera && camera.lockedTarget === shipPivot) {
-        camera.lockedTarget = null;
-        camera.setTarget(BABYLON.Vector3.Zero());
-      }
+      console.log("🚀 Disabling controls - playing idle animation");
       
       // Clear keys
       S.keys = {};
       S.pitch = 0;
       S.yawTarget = 0;
       S.pitchVel = 0;
+      
+      // Play idle animation in guided mode if spaceship is loaded
+      if (spaceship) {
+        const idleAnim = scene.getAnimationGroupByName("idle");
+        if (idleAnim && !idleAnim.isPlaying) {
+          // Stop all other animations
+          scene.animationGroups.forEach(g => {
+            if (g !== idleAnim && g.isPlaying) {
+              g.stop();
+            }
+          });
+          idleAnim.play(true);
+          console.log("🎬 Playing IDLE animation in guided mode");
+        }
+      }
       
       return;
     }
@@ -1174,10 +1171,12 @@ export function BabylonCanvas() {
       shipInitialStateRef.current.position = controlTarget.position.clone();
       shipInitialStateRef.current.rotation = controlTarget.rotationQuaternion.clone();
       shipInitialStateRef.current.cameraAlpha = camera ? camera.alpha : null;
+      shipInitialStateRef.current.cameraBeta = camera ? camera.beta : null;
       console.log("💾 Saved initial ship state:", {
         position: shipInitialStateRef.current.position,
         rotation: shipInitialStateRef.current.rotation,
-        cameraAlpha: shipInitialStateRef.current.cameraAlpha
+        cameraAlpha: shipInitialStateRef.current.cameraAlpha,
+        cameraBeta: shipInitialStateRef.current.cameraBeta
       });
     }
     
@@ -1196,7 +1195,7 @@ export function BabylonCanvas() {
       console.log("📷 Parenting shipPivot to shipRoot at center");
       shipPivot.setParent(controlTarget);
       // Different position for mobile vs desktop
-      const pivotY = isMobileRef.current ? 1 : 0.5;
+      const pivotY = isMobileRef.current ? 1 : 0.7;
       shipPivot.position.set(0, pivotY, 0);
       shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
       console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
@@ -1215,9 +1214,9 @@ export function BabylonCanvas() {
         
         // Adjust camera beta (vertical angle) to look down at the ship from above
         // Beta of Math.PI/2 = horizontal, smaller values = looking down from above
-        camera.beta = Math.PI / 2.1; // Look down at about 82 degrees
+         // Look down at about 82 degrees
         
-        console.log("📷 Camera locked to shipPivot, viewing from above");
+        console.log("📷 Camera locked to shipPivot");
       }
     }
     
@@ -1295,6 +1294,7 @@ export function BabylonCanvas() {
     const handlePointerDown = (e: PointerEvent) => {
       if (!isMobileRef.current) return; // Only for mobile
       MC.isDragging = true;
+      MC.yawRate = 0; // Reset turn rate when starting drag
       console.log("📱 Mobile drag started");
     };
     
@@ -1311,6 +1311,8 @@ export function BabylonCanvas() {
       MC.isDragging = false;
       MC.hasDirection = false;
       MC.cameraRotation = 0; // Stop camera rotation
+      MC.yawRate = 0; // Reset turn rate
+      MC.previousYaw = 0; // Reset previous yaw
       console.log("📱 Mobile drag ended");
     };
     
@@ -1408,13 +1410,10 @@ export function BabylonCanvas() {
         // ========== MOBILE CONTROLS ==========
         // Rotation and movement are both based on drag direction
         
-        // Play forward animation when dragging
         const BLEND_PER_SEC = 4;
         const wStep = BLEND_PER_SEC * dt;
         
         if (MC.isDragging && MC.hasDirection) {
-          if (A.fwd) play(A.fwd, wStep);
-          
           // Calculate rotation to face the drag direction
           const targetDir = MC.targetDirection.clone().normalize();
           
@@ -1428,6 +1427,70 @@ export function BabylonCanvas() {
           
           // Calculate yaw (rotation around Y axis) from X and Z components
           const yaw = Math.atan2(targetDir.x, targetDir.z);
+          
+          // Initialize previousYaw on first frame with direction
+          if (MC.yawRate === 0 && MC.previousYaw === 0) {
+            MC.previousYaw = yaw;
+          }
+          
+          // Calculate yaw rate (how fast we're turning) for animation blending
+          const yawDelta = yaw - MC.previousYaw;
+          // Normalize angle difference to -PI to PI range
+          const normalizedDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
+          // Calculate turn rate (positive = right, negative = left)
+          const rawYawRate = normalizedDelta / dt;
+          
+          // Smooth the yaw rate with interpolation to avoid jitter
+          const smoothFactor = Math.min(1, dt * 5);
+          MC.yawRate += (rawYawRate - MC.yawRate) * smoothFactor;
+          
+          // Normalize yaw rate to -1 to 1 range (1 rad/s = significant turn)
+          const normalizedYawRate = BABYLON.Scalar.Clamp(MC.yawRate / 1.5, -1, 1);
+          
+          // Store current yaw for next frame
+          MC.previousYaw = yaw;
+          
+          // Calculate blend weights for animation
+          const absTurnRate = Math.abs(normalizedYawRate);
+          // When turning hard, favor turn animation
+          // When going straight, favor forward animation
+          const forwardWeight = 1 - absTurnRate; // 1 when straight, 0 when turning hard
+          const turnWeight = absTurnRate; // 0 when straight, 1 when turning hard
+          
+          // Proportional animation blending based on turn rate
+          if (A.fwd && A.L && A.R) {
+            // Determine which turn animation to use
+            const turnAnim = normalizedYawRate > 0 ? A.L : A.R; // Positive = right, negative = left
+            
+            // Apply blending using manual weight control
+            Object.values(A).forEach(g => {
+              if (!g) return;
+              
+              let w = (g as any).weight || 0;
+              
+              if (g === A.fwd) {
+                // Forward animation weight
+                w += wStep * (forwardWeight - w);
+                if (!g.isPlaying && forwardWeight > 0.1) {
+                  g.play(true);
+                }
+              } else if (g === turnAnim) {
+                // Active turn animation weight
+                w += wStep * (turnWeight - w);
+                if (!g.isPlaying && turnWeight > 0.1) {
+                  g.play(true);
+                }
+              } else {
+                // Fade out other animations
+                w -= wStep * w;
+                if (w < 0.01 && g.isPlaying) {
+                  g.stop();
+                }
+              }
+              
+              (g as any).weight = BABYLON.Scalar.Clamp(w, 0, 1);
+            });
+          }
           
           // Calculate pitch (rotation around X axis) from Y component
           const horizontalDist = Math.sqrt(targetDir.x * targetDir.x + targetDir.z * targetDir.z);
@@ -1455,15 +1518,19 @@ export function BabylonCanvas() {
           // Invert X axis (like desktop controls)
           dir.x *= -1;
           
-          const movement = dir.scale(S.speed * dt);
+          const MOBILE_SPEED_MULT = 1.5;
+          const movement = dir.scale(S.speed * dt * MOBILE_SPEED_MULT);
           controlTarget.position.addInPlace(movement);
           
           if (frameCount % 60 === 0) {
-            console.log("📱 Mobile - Target dir:", targetDir, "Yaw:", yaw, "Pitch:", pitch);
+            console.log("📱 Mobile - Yaw rate:", normalizedYawRate.toFixed(2), "Forward:", forwardWeight.toFixed(2), "Turn:", turnWeight.toFixed(2));
           }
         } else {
           // Idle when not dragging
           if (A.I) play(A.I, wStep);
+          // Reset yaw tracking
+          MC.yawRate = 0;
+          MC.previousYaw = 0;
         }
       } else {
         // ========== DESKTOP CONTROLS ==========
@@ -1722,13 +1789,14 @@ export function BabylonCanvas() {
 
     // Track state transitions
     const prevState = prevStateRef.current;
-    const isComingFromState4 = prevState === 3 && s === 2; // State 4 → State 3
-    const isComingFromState5 = prevState === 4 && s === 3; // State 5 → State 4
-    const isGoingToState4 = prevState === 2 && s === 3; // State 3 → State 4
-    const isGoingToState5 = prevState === 3 && s === 4; // State 4 → State 5
+    const isComingFromState3 = prevState === 3 && s === 2; // State 3 → State 2
+    const isComingFromState4 = prevState === 4 && s === 3; // State 4 → State 3
+    const isGoingToState3 = prevState === 2 && s === 3; // State 2 → State 3
+    const isGoingToState4 = prevState === 3 && s === 4; // State 3 → State 4
+    
 
-    // Handle logo visibility based on config with delay when coming from state 4
-    if (isComingFromState4 && sceneConfig.logoEnabled) {
+    // Handle logo visibility based on config with delay when coming from state 3
+    if (isComingFromState3 && sceneConfig.logoEnabled) {
       // Disable logo initially, enable after delay
       logosRoot.setEnabled(false);
       setTimeout(() => {
@@ -1782,8 +1850,8 @@ export function BabylonCanvas() {
     const easing = new BABYLON.CubicEase();
     easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
     
-    // Use config value for transform delay only when coming from state 4 to state 3
-    const transformDelay = isComingFromState4 ? (sceneConfig.transformAnimationDelay ?? 0) : 0;
+    // Use config value for transform delay only when coming from state 3 to state 2
+    const transformDelay = isComingFromState3 ? (sceneConfig.transformAnimationDelay ?? 0) : 0;
     
     animateTransform({
       target: root1,
@@ -1815,46 +1883,74 @@ export function BabylonCanvas() {
       }); */
     }
 
-    // Handle spaceship position animation between state 3 and state 4
+    // Handle spaceship position animation between state 2 and state 3
     const animShipRoot = spaceshipRootRef.current;
     if (animShipRoot) {
       const easing = new BABYLON.CubicEase();
       easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
       
-      // State 3 → State 4: Animate ship from behind camera to correct position
-      if (isGoingToState4) {
-        console.log("🚀 Animating ship from behind camera to position (0, -1.1, 0)");
+      // State 2 → State 3: Animate ship from behind camera to correct position
+      if (isGoingToState3) {
+        console.log("🚀 Animating ship from behind camera to position (0, -.7, 0)");
         animateTransform({
           target: animShipRoot,
           scene,
-          duration: 1, // 1.5 seconds
-          delay: 0, // Small delay
-          position: new BABYLON.Vector3(0, -.7, 0),
+          duration: 1,
+          delay: 0,
+          position: new BABYLON.Vector3(0, -1.5, 0),
           easing
         });
       }
       
-      // State 4 → State 3: Animate ship back behind camera
-      if (isComingFromState4) {
-        console.log("🚀 Animating ship back behind camera to position (0, -1.1, -20)");
+      // State 3 → State 2: Animate ship back behind camera
+      if (isComingFromState3) {
+        console.log("🚀 Animating ship back behind camera to position (0, -4, 20)");
         animateTransform({
           target: animShipRoot,
           scene,
-          duration: .5, // 1.2 seconds
+          duration: .5,
           delay: 0,
-          position: new BABYLON.Vector3(0, -.5, 20),
+          position: new BABYLON.Vector3(0, -4, 20),
+          easing
+        });
+      }
+
+      // State 2 → State 3: Animate ship from behind camera to correct position
+      if (isGoingToState4) {
+        console.log("🚀 Animating ship from behind camera to position (0, -.7, 0)");
+        animateTransform({
+          target: animShipRoot,
+          scene,
+          duration: 1,
+          delay: 0,
+          position: new BABYLON.Vector3(0, -0.7, 0),
+          easing
+        });
+      }
+      
+      // State 3 → State 2: Animate ship back behind camera
+      if (isComingFromState4) {
+        console.log("🚀 Animating ship back behind camera to position (0, -4, 20)");
+        animateTransform({
+          target: animShipRoot,
+          scene,
+          duration: .5,
+          delay: 0,
+          position: new BABYLON.Vector3(0, -1.5, 0),
           easing
         });
       }
     }
 
-    // Handle fog animation between state 4 and state 5
+
+
+    // Handle fog animation between state 3 and state 4
     const fogEasing = new BABYLON.CubicEase();
     fogEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
     
-    // State 4 → State 5: Animate fog end from 100 to 400
-    if (isGoingToState5) {
-      console.log("🌫️ Animating fog end from 100 to 400");
+    // State 3 → State 4: Animate fog end from 100 to 350
+    if (isGoingToState4) {
+      console.log("🌫️ Animating fog end from 100 to 350");
       animateFog({
         scene,
         duration: .3,
@@ -1864,24 +1960,23 @@ export function BabylonCanvas() {
       });
     }
     
-    // State 5 → State 4: Animate fog end back from 400 to 100
-    if (isComingFromState5) {
-      console.log("🌫️ Animating fog end from 400 back to 100");
+    // State 4 → State 3: Animate fog end back from 350 to 100
+    if (isComingFromState4) {
+      console.log("🌫️ Animating fog end from 350 back to 100");
       animateFog({
         scene,
-        duration: .3, // 1.5 seconds
+        duration: .3,
         delay: 0,
-        fogEnd: 4,
+        fogEnd: 100,
         //easing: fogEasing
       });
     }
 
-    // Reset ship and camera when coming from state 5 to state 4
-    if (isComingFromState5) {
+    // Reset ship and camera when coming from state 4 to state 3
+    if (isComingFromState4) {
       const shipToReset = spaceshipRef.current;
       const shipRootToReset = spaceshipRootRef.current;
       const pivotToReset = shipPivotRef.current;
-      const lookAtToReset = cameraLookAtRef.current;
       
       // Restore ship to initial saved state
       const controlTarget = shipRootToReset || shipToReset;
@@ -1897,28 +1992,25 @@ export function BabylonCanvas() {
       } else {
         console.warn("⚠️ No saved initial state found, resetting to defaults");
         if (controlTarget) {
-          controlTarget.position.set(0, -1.1, 0);
+          controlTarget.position.set(0, -.7, 0);
         }
       }
       
-      // Restore camera alpha rotation
+      // Restore camera alpha and beta rotation
       if (camera && initialState.cameraAlpha !== null) {
         camera.alpha = initialState.cameraAlpha;
         console.log("🔄 Restored camera alpha:", initialState.cameraAlpha);
+      }
+      if (camera && initialState.cameraBeta !== null) {
+        camera.beta = initialState.cameraBeta;
+        console.log("🔄 Restored camera beta:", initialState.cameraBeta);
       }
       
       // Reset ship pivot
       if (pivotToReset && pivotToReset.parent) {
         pivotToReset.setParent(null);
         pivotToReset.position.set(0, 0, 0);
-        console.log("🔄 Reset ship pivot (State 5 → State 4)");
-      }
-      
-      // Reset camera look-at target
-      if (lookAtToReset && lookAtToReset.parent) {
-        lookAtToReset.setParent(null);
-        lookAtToReset.position.set(0, 0, 0);
-        console.log("🔄 Reset cameraLookAt (State 5 → State 4)");
+        console.log("🔄 Reset ship pivot (State 4 → State 3)");
       }
       
       // Reset smoke emitter
@@ -1926,14 +2018,13 @@ export function BabylonCanvas() {
       if (smokeEmitter && smokeEmitter.parent) {
         smokeEmitter.parent = null;
         smokeEmitter.position.set(0, 0, 25);
-        console.log("🔄 Reset smoke emitter (State 5 → State 4)");
+        console.log("🔄 Reset smoke emitter (State 4 → State 3)");
       }
       
-      // Unlock camera from ship
-      if (camera && camera.lockedTarget === pivotToReset) {
-        camera.lockedTarget = null;
-        camera.setTarget(BABYLON.Vector3.Zero());
-        console.log("🔄 Unlocked camera from ship (State 5 → State 4)");
+      // Keep camera locked to shipPivot (don't unlock)
+      if (camera && !camera.lockedTarget) {
+        camera.lockedTarget = pivotToReset;
+        console.log("🔄 Ensuring camera stays locked to shipPivot");
       }
       
       // Reset control angles
@@ -2052,8 +2143,8 @@ export function BabylonCanvas() {
     // Handle camera controls - managed by navigation mode in a separate effect
     // (see useEffect below that watches navigationMode)
 
-    // Handle state 4 - rockring fade in (only once)
-    if (s === 3 && rockRing && !rockRingHasShownRef.current) { // State 4
+    // Handle state 3 - rockring fade in (only once)
+    if (s === 3 && rockRing && !rockRingHasShownRef.current) { // State 3
       rockRingHasShownRef.current = true;
       
       const fps = 60;
@@ -2108,13 +2199,13 @@ export function BabylonCanvas() {
       });
     }
 
-    if (s === 2) { // State 3 (S.state_3 = 2)
-      // State 3: Scale down logos, move them
+    if (s === 2) { // State 2 (index 2)
+      // State 2: Scale down logos, move them
       logosRoot.scaling.set(0.25, 0.25, 0.25);
       logosRoot.position.set(0, 1.25, 4);
       
-      // Fade in logos when coming from state 4
-      if (isComingFromState4) {
+      // Fade in logos when coming from state 3
+      if (isComingFromState3) {
         const logoModels = logoModelsRef.current;
         const currentLogoModel = logoModels[selectedLogoModel];
         
@@ -2187,8 +2278,8 @@ export function BabylonCanvas() {
         );
         planet.rotation = fromRotation;
         
-        // Use config value for material animation delay only when coming from state 4
-        const materialDelay = isComingFromState4 ? (sceneConfig.materialAnimationDelay ?? 0) * 1000 : 0;
+        // Use config value for material animation delay only when coming from state 3
+        const materialDelay = isComingFromState3 ? (sceneConfig.materialAnimationDelay ?? 0) * 1000 : 0;
         
         const animatePlanet = () => {
           // Enable planet with invisible material right before animation
@@ -2251,7 +2342,7 @@ export function BabylonCanvas() {
         }
       }
     } else {
-      // States 1, 2, 4: Normal logo size and position, fade out and hide planet
+      // States 0, 1, 3: Normal logo size and position, fade out and hide planet
       logosRoot.scaling.set(1, 1, 1);
       logosRoot.position.set(0, 0, 0);
       
@@ -2386,15 +2477,15 @@ export function BabylonCanvas() {
     }
   }, [selectedContinent]);
 
-  // Navigation mode effect - toggle camera controls based on mode in state 5
+  // Navigation mode effect - toggle camera controls based on mode in state 4
   useEffect(() => {
     const canvas = ref.current;
     const camera = cameraRef.current;
     if (!canvas || !camera) return;
 
-    // Only enable controls in state 5 with free mode
-    const inState5 = s === 4; // S.state_5 = 4
-    const shouldEnableControls = inState5 && navigationMode === 'free';
+    // Only enable controls in state 4 with free mode
+    const inState4 = s === 4; // State 4 (index 4)
+    const shouldEnableControls = inState4; // && navigationMode === 'free';
 
     if (shouldEnableControls) {
       // Re-add mouse wheel and pointer inputs for camera rotation/zoom

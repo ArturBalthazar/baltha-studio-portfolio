@@ -21,35 +21,39 @@ export const state2Config: StateConfig = {
     }
   },
   canvas: {
-    clickable: true,
-    nextState: 'state3',
+    clickable: false,
+    nextState: null,
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 20,
+        mobile: 24,
         desktop: 16
       },
       upperRadiusLimit: {
-        mobile: 20,
+        mobile: 24,
         desktop: 16
-      }
+      },
+      animationDuration: 0.8, // When coming from state 3
+      animationDelay: 0 // No delay when transitioning back from state 3
     },
     babylonScene: {
       logoEnabled: true,
-      planetEnabled: false,
+      planetEnabled: true,
       rockRingEnabled: false,
       spaceshipEnabled: false,
       particlesEnabled: false,
       portalsEnabled: false,
+      materialAnimationDelay: 0.4, // Delay after camera radius change from state 3
+      transformAnimationDelay: 0.4, // Delay after camera radius change from state 3
       rootTransform: {
-        mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
-        desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
+        mobile: { scale: 0.9, position: { x: 0, y: 0, z: 0 } },
+        desktop: { scale: 0.9, position: { x: 1, y: -0.3, z: 0 } }
       }
     }
   },
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "Whether it's integrating tools into an existing web ecosystem, ",
+    typingText: "building custom web applications and data visualizations, ",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

@@ -21,39 +21,37 @@ export const state3Config: StateConfig = {
     }
   },
   canvas: {
-    clickable: false,
-    nextState: null,
+    clickable: true,
+    nextState: 'state_5',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 24,
-        desktop: 16
+        mobile: 4,
+        desktop: 5
       },
       upperRadiusLimit: {
-        mobile: 24,
-        desktop: 16
+        mobile: 4,
+        desktop: 5
       },
-      animationDuration: 0.8, // When coming from state 4
-      animationDelay: 0 // No delay when transitioning back from state 4
+      animationDuration: 1.0, // Longer animation when zooming in
+      animationDelay: 0 // Delay before starting zoom
     },
     babylonScene: {
-      logoEnabled: true,
-      planetEnabled: true,
-      rockRingEnabled: false,
-      spaceshipEnabled: false,
-      particlesEnabled: false,
+      logoEnabled: false,
+      planetEnabled: false,
+      rockRingEnabled: true,
+      spaceshipEnabled: true,
+      particlesEnabled: true,
       portalsEnabled: false,
-      materialAnimationDelay: 0.4, // Delay after camera radius change from state 4
-      transformAnimationDelay: 0.4, // Delay after camera radius change from state 4
       rootTransform: {
-        mobile: { scale: 0.9, position: { x: 0, y: 0, z: 0 } },
-        desktop: { scale: 0.9, position: { x: 1, y: -0.3, z: 0 } }
+        mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
+        desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
       }
     }
   },
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "building custom web applications and data visualizations, ",
+    typingText: "or creating entire virtual worlds, we've got it covered! Ready to start?",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

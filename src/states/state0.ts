@@ -1,36 +1,36 @@
 import { StateConfig } from './types';
 
-export const state1Config: StateConfig = {
+export const state0Config: StateConfig = {
   header: {
-    showWelcomeText: false,
+    showWelcomeText: true,
     logoHeight: {
-      mobile: "h-5",
-      desktop: "md:h-7"
+      mobile: "h-6",
+      desktop: "md:h-9"
     },
     menuHeight: {
-      mobile: "h-5",
-      desktop: "md:h-7" 
+      mobile: "h-6",
+      desktop: "md:h-8"
     },
     padding: {
-      mobile: "py-3",
-      desktop: "md:py-4" 
+      mobile: "py-5",
+      desktop: "md:py-6"
     },
     horizontalPadding: {
       mobile: "px-6",
-      desktop: "md:px-10" 
+      desktop: "md:px-10"
     }
   },
   canvas: {
     clickable: true,
-    nextState: 'state3',
+    nextState: 'state_2',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 20,
-        desktop: 16
+        mobile: 16,
+        desktop: 9
       },
       upperRadiusLimit: {
-        mobile: 20,
-        desktop: 16
+        mobile: 16,
+        desktop: 9
       }
     },
     babylonScene: {
@@ -48,9 +48,9 @@ export const state1Config: StateConfig = {
   },
   content: {
     showOverlay: false,
-    showTypingText: true,
-    typingText: "Whether it's integrating tools into an existing web ecosystem, ",
-    showCustomizeBox: false,
+    showTypingText: false,
+    showCustomizeBox: true, // Present but hidden (opacity 0)
     customizeBoxVisible: false
   }
 };
+

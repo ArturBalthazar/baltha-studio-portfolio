@@ -4,36 +4,39 @@ export const state4Config: StateConfig = {
   header: {
     showWelcomeText: false,
     logoHeight: {
-      mobile: "h-5",
+      mobile: "h-6",
       desktop: "md:h-7"
     },
     menuHeight: {
-      mobile: "h-5",
-      desktop: "md:h-7" 
+      mobile: "h-6",
+      desktop: "md:h-7"
     },
     padding: {
-      mobile: "py-3",
-      desktop: "md:py-4" 
+      mobile: "py-0",
+      desktop: "md:py-0"
     },
     horizontalPadding: {
-      mobile: "px-6",
-      desktop: "md:px-10" 
-    }
+      mobile: "px-0",
+      desktop: "md:px-0"
+    },
+    transparentBackground: true, // No background in state 4
+    whiteIcons: true, // White icons/logo
+    collapsed: true // Collapse header to 0 height but keep icons visible
   },
   canvas: {
     clickable: true,
-    nextState: 'state_5',
+    nextState: 'state_6',
+    fullscreen: true, // Full screen canvas
+    roundedCorners: false, // No rounded corners in state 4
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 4,
-        desktop: 3
+        mobile: 2,
+        desktop: 5
       },
       upperRadiusLimit: {
-        mobile: 4,
-        desktop: 3
-      },
-      animationDuration: 1.0, // Longer animation when zooming in
-      animationDelay: 0 // Delay before starting zoom
+        mobile: 5,
+        desktop: 5
+      }
     },
     babylonScene: {
       logoEnabled: false,
@@ -41,7 +44,8 @@ export const state4Config: StateConfig = {
       rockRingEnabled: true,
       spaceshipEnabled: true,
       particlesEnabled: true,
-      portalsEnabled: false,
+      portalsEnabled: true, // Show portals in state 4
+      cameraControlsEnabled: false, // Will be dynamically toggled based on navigation mode
       rootTransform: {
         mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
@@ -50,9 +54,10 @@ export const state4Config: StateConfig = {
   },
   content: {
     showOverlay: false,
-    showTypingText: true,
-    typingText: "or creating entire virtual worlds, we've got it covered! Ready to start?",
+    showTypingText: false,
     showCustomizeBox: false,
-    customizeBoxVisible: false
+    customizeBoxVisible: false,
+    showBottomLeftControls: true, // Show info, audio, nav buttons
+    whiteBottomLabel: true // White "BALTHA STUDIO 2025" label
   }
 };
