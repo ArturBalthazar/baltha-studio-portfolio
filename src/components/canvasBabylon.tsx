@@ -1953,7 +1953,7 @@ export function BabylonCanvas() {
       console.log("🌫️ Animating fog end from 100 to 350");
       animateFog({
         scene,
-        duration: .3,
+        duration: .6,
         delay: 0,
         fogEnd: 350,
         //easing: fogEasing
