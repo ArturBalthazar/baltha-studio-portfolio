@@ -25,12 +25,12 @@ export const state4Config: StateConfig = {
     nextState: 'state_5',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 2,
-        desktop: 2
+        mobile: 4,
+        desktop: 3
       },
       upperRadiusLimit: {
-        mobile: 5,
-        desktop: 5
+        mobile: 4,
+        desktop: 3
       },
       animationDuration: 1.0, // Longer animation when zooming in
       animationDelay: 0 // Delay before starting zoom

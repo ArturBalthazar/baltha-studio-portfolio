@@ -30,12 +30,12 @@ export const state5Config: StateConfig = {
     roundedCorners: false, // No rounded corners in state 5
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 3,
+        mobile: 2,
         desktop: 2
       },
       upperRadiusLimit: {
         mobile: 5,
-        desktop: 5
+        desktop: 50
       }
     },
     babylonScene: {

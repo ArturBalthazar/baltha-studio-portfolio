@@ -184,6 +184,83 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
   }
 }
 
+// Universal fog animation function
+interface AnimateFogOptions {
+  scene: BABYLON.Scene;
+  duration: number; // in seconds
+  delay?: number; // delay before animation starts (in seconds)
+  fogStart?: number;
+  fogEnd?: number;
+  easing?: BABYLON.EasingFunction;
+  onComplete?: () => void;
+}
+
+function animateFog(options: AnimateFogOptions): void {
+  const { scene, duration, delay = 0, fogStart, fogEnd, easing, onComplete } = options;
+  
+  const executeAnimation = () => {
+    const fps = 60;
+    const totalFrames = fps * duration;
+    const animations: BABYLON.Animation[] = [];
+    
+    // Fog start animation
+    if (fogStart !== undefined) {
+      const currentFogStart = scene.fogStart;
+      const fogStartAnim = new BABYLON.Animation(
+        "fogStartAnim",
+        "fogStart",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      fogStartAnim.setKeys([
+        { frame: 0, value: currentFogStart },
+        { frame: totalFrames, value: fogStart }
+      ]);
+      if (easing) fogStartAnim.setEasingFunction(easing);
+      animations.push(fogStartAnim);
+    }
+    
+    // Fog end animation
+    if (fogEnd !== undefined) {
+      const currentFogEnd = scene.fogEnd;
+      const fogEndAnim = new BABYLON.Animation(
+        "fogEndAnim",
+        "fogEnd",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      fogEndAnim.setKeys([
+        { frame: 0, value: currentFogEnd },
+        { frame: totalFrames, value: fogEnd }
+      ]);
+      if (easing) fogEndAnim.setEasingFunction(easing);
+      animations.push(fogEndAnim);
+    }
+    
+    // Apply animations
+    if (animations.length > 0) {
+      scene.animations = animations;
+      scene.getEngine().scenes.forEach(s => {
+        if (s === scene) {
+          scene.getEngine().runRenderLoop(() => {});
+        }
+      });
+      scene.beginAnimation(scene, 0, totalFrames, false, 1, onComplete);
+    } else if (onComplete) {
+      onComplete();
+    }
+  };
+  
+  // Apply delay if specified
+  if (delay > 0) {
+    setTimeout(executeAnimation, delay * 1000);
+  } else {
+    executeAnimation();
+  }
+}
+
 export function BabylonCanvas() {
   const s = useUI((st) => st.state);
   const selectedLogoModel = useUI((st) => st.selectedLogoModel);
@@ -290,7 +367,7 @@ export function BabylonCanvas() {
     scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
     scene.fogColor = new BABYLON.Color3(13/255, 13/255, 38/255);
     scene.fogStart = 0;
-    scene.fogEnd = 800;
+    scene.fogEnd = 100;
 
     // Create camera pivot - camera will target this
     const shipPivot = new BABYLON.TransformNode("shipPivot", scene);
@@ -316,7 +393,7 @@ export function BabylonCanvas() {
     
     camera.inputs.clear();
     camera.panningSensibility = 0;
-    camera.fov = 1;
+    camera.fov = 1.2;
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
@@ -355,6 +432,10 @@ export function BabylonCanvas() {
     scene.environmentIntensity = 1.0;
     scene.imageProcessingConfiguration.exposure = 1.3;
     scene.imageProcessingConfiguration.contrast = 1.2;
+
+    const glowLayer = new BABYLON.GlowLayer("glow", scene);
+    glowLayer.intensity = .3;
+    glowLayer.isEnabled = false;
 
     // Soft fill
     const hemi = new BABYLON.HemisphericLight(
@@ -452,7 +533,7 @@ export function BabylonCanvas() {
     BABYLON.SceneLoader.ImportMesh(
       "",
       "/assets/models/",
-      "rockring.glb",
+      "rockring2.glb",
       scene,
       (meshes, particleSystems, skeletons, animationGroups) => {
         if (meshes.length) {
@@ -503,7 +584,8 @@ export function BabylonCanvas() {
           
           // Set position and scaling on shiproot
           console.log("📦 ShipRoot loaded at position:", shipRoot.position.clone());
-          shipRoot.position.set(0, -1.4, 0);
+          // Initially place ship behind camera, will animate to correct position when entering state 4
+          shipRoot.position.set(0, -1.1, 20);
           const s = shipRoot.scaling;
           shipRoot.scaling.set(Math.abs(s.x)*1.1, Math.abs(s.y)*1.1, Math.abs(s.z)*-1.1);
           shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
@@ -1133,7 +1215,7 @@ export function BabylonCanvas() {
         
         // Adjust camera beta (vertical angle) to look down at the ship from above
         // Beta of Math.PI/2 = horizontal, smaller values = looking down from above
-        camera.beta = Math.PI / 2.2; // Look down at about 82 degrees
+        camera.beta = Math.PI / 2.1; // Look down at about 82 degrees
         
         console.log("📷 Camera locked to shipPivot, viewing from above");
       }
@@ -1642,6 +1724,8 @@ export function BabylonCanvas() {
     const prevState = prevStateRef.current;
     const isComingFromState4 = prevState === 3 && s === 2; // State 4 → State 3
     const isComingFromState5 = prevState === 4 && s === 3; // State 5 → State 4
+    const isGoingToState4 = prevState === 2 && s === 3; // State 3 → State 4
+    const isGoingToState5 = prevState === 3 && s === 4; // State 4 → State 5
 
     // Handle logo visibility based on config with delay when coming from state 4
     if (isComingFromState4 && sceneConfig.logoEnabled) {
@@ -1731,6 +1815,67 @@ export function BabylonCanvas() {
       }); */
     }
 
+    // Handle spaceship position animation between state 3 and state 4
+    const animShipRoot = spaceshipRootRef.current;
+    if (animShipRoot) {
+      const easing = new BABYLON.CubicEase();
+      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+      
+      // State 3 → State 4: Animate ship from behind camera to correct position
+      if (isGoingToState4) {
+        console.log("🚀 Animating ship from behind camera to position (0, -1.1, 0)");
+        animateTransform({
+          target: animShipRoot,
+          scene,
+          duration: 1, // 1.5 seconds
+          delay: 0, // Small delay
+          position: new BABYLON.Vector3(0, -.7, 0),
+          easing
+        });
+      }
+      
+      // State 4 → State 3: Animate ship back behind camera
+      if (isComingFromState4) {
+        console.log("🚀 Animating ship back behind camera to position (0, -1.1, -20)");
+        animateTransform({
+          target: animShipRoot,
+          scene,
+          duration: .5, // 1.2 seconds
+          delay: 0,
+          position: new BABYLON.Vector3(0, -.5, 20),
+          easing
+        });
+      }
+    }
+
+    // Handle fog animation between state 4 and state 5
+    const fogEasing = new BABYLON.CubicEase();
+    fogEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+    
+    // State 4 → State 5: Animate fog end from 100 to 400
+    if (isGoingToState5) {
+      console.log("🌫️ Animating fog end from 100 to 400");
+      animateFog({
+        scene,
+        duration: .3,
+        delay: 0,
+        fogEnd: 350,
+        //easing: fogEasing
+      });
+    }
+    
+    // State 5 → State 4: Animate fog end back from 400 to 100
+    if (isComingFromState5) {
+      console.log("🌫️ Animating fog end from 400 back to 100");
+      animateFog({
+        scene,
+        duration: .3, // 1.5 seconds
+        delay: 0,
+        fogEnd: 4,
+        //easing: fogEasing
+      });
+    }
+
     // Reset ship and camera when coming from state 5 to state 4
     if (isComingFromState5) {
       const shipToReset = spaceshipRef.current;
@@ -1752,7 +1897,7 @@ export function BabylonCanvas() {
       } else {
         console.warn("⚠️ No saved initial state found, resetting to defaults");
         if (controlTarget) {
-          controlTarget.position.set(0, -1.4, 0);
+          controlTarget.position.set(0, -1.1, 0);
         }
       }
       
