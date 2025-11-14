@@ -282,6 +282,7 @@ export function BabylonCanvas() {
   const spaceshipRef = useRef<BABYLON.AbstractMesh | null>(null);
   const spaceshipRootRef = useRef<BABYLON.TransformNode | null>(null);
   const flameParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  const flameParticleSystem2Ref = useRef<BABYLON.ParticleSystem | null>(null);
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
@@ -311,20 +312,20 @@ export function BabylonCanvas() {
     pitch: 0,
     yawTarget: 0,
     pitchVel: 0,
-    observer: null as BABYLON.Nullable<BABYLON.Observer<BABYLON.Scene>>
+    observer: null as BABYLON.Nullable<BABYLON.Observer<BABYLON.Scene>>,
+    // Velocity smoothing (inertia/momentum)
+    velocity: new BABYLON.Vector3(0, 0, 0),
+    acceleration: 30, // How fast to accelerate to target speed
+    drag: 4 // How fast to decelerate when no input (higher = stops faster)
   });
   
   // Store initial ship state for restoration
   const shipInitialStateRef = useRef<{
     position: BABYLON.Vector3 | null;
     rotation: BABYLON.Quaternion | null;
-    cameraAlpha: number | null;
-    cameraBeta: number | null;
   }>({
     position: null,
-    rotation: null,
-    cameraAlpha: null,
-    cameraBeta: null
+    rotation: null
   });
   
   // Mobile control refs
@@ -396,6 +397,9 @@ export function BabylonCanvas() {
     camera.panningSensibility = 0;
     camera.fov = 1;
 
+    camera.minZ = 0.1;    // how close things can be before clipping
+    camera.maxZ = 15000;   // how far things can be seen
+
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
     const initialCameraConfig = config.canvas.babylonCamera;
@@ -415,7 +419,7 @@ export function BabylonCanvas() {
     // Create large invisible control sphere for mobile drag detection
     // Low poly: 16 horizontal segments, 8 vertical segments
     const controlSphere = BABYLON.MeshBuilder.CreateSphere("controlSphere", {
-      diameter: 2000, // Very large sphere
+      diameter: 20000, // Very large sphere
       segments: 8,    // Low poly count
       sideOrientation: BABYLON.Mesh.DOUBLESIDE
     }, scene);
@@ -608,7 +612,7 @@ export function BabylonCanvas() {
           spaceshipRef.current = spaceship; // Keep mesh reference for materials
           spaceshipRootRef.current = shipRoot; // This is what we control
           
-          // Create engine flame particle system
+          // Create engine flame particle systems (two flames with offset)
           const emitter = scene.getTransformNodeByName("engineFlame");
           if (emitter) {
             console.log("🔥 Found engineFlame emitter node");
@@ -616,10 +620,14 @@ export function BabylonCanvas() {
             emitter.rotation.x = BABYLON.Tools.ToRadians(152);
             emitter.rotation.z = BABYLON.Tools.ToRadians(25);
             
+            // Adjustable Z offset for second flame (positive = farther back in local space)
+            const FLAME_2_Z_OFFSET = 0.12;
+            
+            // ===== FIRST FLAME (original position) =====
             const flame = new BABYLON.ParticleSystem("engineFlamePS", 600, scene);
             flame.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
             flame.emitter = emitter as any; // TransformNode is valid emitter
-            flame.updateSpeed = 0.01;
+            flame.updateSpeed = .04;
             flame.minEmitPower = 0.02;
             flame.maxEmitPower = 0.05;
             flame.emitRate = 1000; // Start disabled, enable in free mode
@@ -632,12 +640,12 @@ export function BabylonCanvas() {
             flame.maxSize = 0.5;
             
             // Rotation randomness
-            flame.minInitialRotation = Math.PI * 1.9;
-            flame.maxInitialRotation = Math.PI * 2.1;
+            flame.minInitialRotation = Math.PI * 1;
+            flame.maxInitialRotation = Math.PI * 3;
             
             // Lifetime
-            flame.minLifeTime = 0.03;
-            flame.maxLifeTime = 0.1;
+            flame.minLifeTime = 0.1;
+            flame.maxLifeTime = 0.2;
             
             // Color & blend
             flame.gravity = new BABYLON.Vector3(0, 0, 0);
@@ -648,7 +656,40 @@ export function BabylonCanvas() {
             
             flame.start();
             flameParticleSystemRef.current = flame;
-            console.log("🔥 Engine flame particle system created and started");
+            console.log("🔥 Engine flame 1 particle system created and started");
+            
+            // ===== SECOND FLAME (offset in Z) =====
+            // Create a second emitter as child of the first emitter
+            const emitter2 = new BABYLON.TransformNode("engineFlame2", scene);
+            emitter2.parent = emitter;
+            emitter2.position.z = FLAME_2_Z_OFFSET; // Offset along local Z axis
+            
+            const flame2 = new BABYLON.ParticleSystem("engineFlamePS2", 600, scene);
+            flame2.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
+            flame2.emitter = emitter2 as any;
+            flame2.updateSpeed = .04;
+            flame2.minEmitPower = 0.02;
+            flame2.maxEmitPower = 0.05;
+            flame2.emitRate = 1000;
+            
+            flame2.particleEmitterType = new BABYLON.PointParticleEmitter();
+            
+            // Identical settings to first flame
+            flame2.minSize = 0.2;
+            flame2.maxSize = 0.5;
+            flame2.minInitialRotation = Math.PI * 1;
+            flame2.maxInitialRotation = Math.PI * 3;
+            flame2.minLifeTime = 0.1;
+            flame2.maxLifeTime = 0.2;
+            flame2.gravity = new BABYLON.Vector3(0, 0, 0);
+            flame2.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            flame2.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
+            flame2.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
+            flame2.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
+            
+            flame2.start();
+            flameParticleSystem2Ref.current = flame2;
+            console.log("🔥 Engine flame 2 particle system created and started at Z offset:", FLAME_2_Z_OFFSET);
           } else {
             console.warn("⚠️ engineFlame transform node not found in spaceship model");
           }
@@ -672,20 +713,45 @@ export function BabylonCanvas() {
     stars.emitter = starsEmitter;
     
     // Custom spawn function for stars with forbidden radius that follows shipRoot
-    const forbiddenRadius = 3000;
+    // EXACTLY matching the prototype's approach
+    const forbiddenRadius = 9000;
     const forbiddenRadiusSq = forbiddenRadius * forbiddenRadius;
     
-    stars.startPositionFunction = (worldMatrix, position) => {
-      // Get shipRoot position (will be set when ship is loaded)
+    // Debug counter for logging
+    let starSpawnCounter = 0;
+    
+    // This function will be called every time a particle spawns
+    // It needs to access the ship's CURRENT position at spawn time
+    stars.startPositionFunction = (worldMatrix, position, particle) => {
+      // Access shipRoot directly through the ref - gets current position at spawn time
       const shipRoot = spaceshipRootRef.current;
-      const shipPos = shipRoot ? shipRoot.position : BABYLON.Vector3.Zero();
+      if (!shipRoot) {
+        // If ship not loaded yet, spawn at origin
+        position.x = 0;
+        position.y = 0;
+        position.z = 0;
+        return;
+      }
+      
+      // Get live reference to ship position (same Vector3 object, updates as ship moves)
+      const shipPos = shipRoot.position;
+      
+      // Debug every 100 spawns
+      if (starSpawnCounter % 100 === 0) {
+        console.log(`⭐ Star spawn #${starSpawnCounter}, shipRoot.position:`, 
+          shipRoot.position.x.toFixed(2), 
+          shipRoot.position.y.toFixed(2), 
+          shipRoot.position.z.toFixed(2),
+          "| shipRoot name:", shipRoot.name);
+      }
+      starSpawnCounter++;
       
       let x, y, z;
       // Rejection sampling - keep generating until outside forbidden radius around ship
       do {
-        x = BABYLON.Scalar.RandomRange(-3500 + shipPos.x, 3500 + shipPos.x);
-        y = BABYLON.Scalar.RandomRange(-3500 + shipPos.y, 3500 + shipPos.y);
-        z = BABYLON.Scalar.RandomRange(-3500 + shipPos.z, 3500 + shipPos.z);
+        x = BABYLON.Scalar.RandomRange(10500  - shipRoot.position.x, -10500  - shipRoot.position.x);
+        y = BABYLON.Scalar.RandomRange(-10500  + shipRoot.position.y, 10500  + shipRoot.position.y);
+        z = BABYLON.Scalar.RandomRange(-10500  + shipRoot.position.z, 10500  + shipRoot.position.z);
       } while (
         (x - shipPos.x) * (x - shipPos.x) +
         (y - shipPos.y) * (y - shipPos.y) +
@@ -693,7 +759,7 @@ export function BabylonCanvas() {
         < forbiddenRadiusSq
       );
       
-      // Position relative to emitter (which follows the ship)
+      // Set absolute world position
       position.x = starsEmitter.position.x + x;
       position.y = starsEmitter.position.y + y;
       position.z = starsEmitter.position.z + z;
@@ -706,10 +772,10 @@ export function BabylonCanvas() {
     stars.addColorGradient(0.7, new BABYLON.Color4(1, 0.9, 0.7, 0.8));
     stars.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
     
-    stars.minSize = 20;
-    stars.maxSize = 50;
-    stars.minLifeTime = 10;
-    stars.maxLifeTime = 30;
+    stars.minSize = 60;
+    stars.maxSize = 150;
+    stars.minLifeTime = 3;
+    stars.maxLifeTime = 10;
     stars.emitRate = 0; // Start disabled
     
     stars.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
@@ -1103,11 +1169,12 @@ export function BabylonCanvas() {
     if (!shouldEnableControls) {
       console.log("🚀 Disabling controls - playing idle animation");
       
-      // Clear keys
+      // Clear keys and reset velocity
       S.keys = {};
       S.pitch = 0;
       S.yawTarget = 0;
       S.pitchVel = 0;
+      S.velocity.set(0, 0, 0); // Reset velocity when disabling controls
       
       // Play idle animation in guided mode if spaceship is loaded
       if (spaceship) {
@@ -1166,19 +1233,15 @@ export function BabylonCanvas() {
     // Get camera reference
     const camera = cameraRef.current;
     
-    // Save initial ship state for restoration when exiting free mode
-    if (!shipInitialStateRef.current.position || !shipInitialStateRef.current.rotation) {
-      shipInitialStateRef.current.position = controlTarget.position.clone();
-      shipInitialStateRef.current.rotation = controlTarget.rotationQuaternion.clone();
-      shipInitialStateRef.current.cameraAlpha = camera ? camera.alpha : null;
-      shipInitialStateRef.current.cameraBeta = camera ? camera.beta : null;
-      console.log("💾 Saved initial ship state:", {
-        position: shipInitialStateRef.current.position,
-        rotation: shipInitialStateRef.current.rotation,
-        cameraAlpha: shipInitialStateRef.current.cameraAlpha,
-        cameraBeta: shipInitialStateRef.current.cameraBeta
-      });
-    }
+      // Save initial ship state for restoration when exiting free mode
+      if (!shipInitialStateRef.current.position || !shipInitialStateRef.current.rotation) {
+        shipInitialStateRef.current.position = controlTarget.position.clone();
+        shipInitialStateRef.current.rotation = controlTarget.rotationQuaternion.clone();
+        console.log("💾 Saved initial ship state:", {
+          position: shipInitialStateRef.current.position,
+          rotation: shipInitialStateRef.current.rotation
+        });
+      }
     
     // Initialize control angles from current ship rotation (only on first enable)
     if (S.pitch === 0 && S.yawTarget === 0) {
@@ -1518,15 +1581,31 @@ export function BabylonCanvas() {
           // Invert X axis (like desktop controls)
           dir.x *= -1;
           
+          // Target velocity for mobile
           const MOBILE_SPEED_MULT = 1.5;
-          const movement = dir.scale(S.speed * dt * MOBILE_SPEED_MULT);
+          const targetVelocity = dir.scale(S.speed * MOBILE_SPEED_MULT);
+          
+          // Smooth velocity interpolation (acceleration)
+          S.velocity.x += (targetVelocity.x - S.velocity.x) * Math.min(1, dt * S.acceleration);
+          S.velocity.y += (targetVelocity.y - S.velocity.y) * Math.min(1, dt * S.acceleration);
+          S.velocity.z += (targetVelocity.z - S.velocity.z) * Math.min(1, dt * S.acceleration);
+          
+          const movement = S.velocity.scale(dt);
           controlTarget.position.addInPlace(movement);
           
           if (frameCount % 60 === 0) {
             console.log("📱 Mobile - Yaw rate:", normalizedYawRate.toFixed(2), "Forward:", forwardWeight.toFixed(2), "Turn:", turnWeight.toFixed(2));
           }
         } else {
-          // Idle when not dragging
+          // Idle when not dragging - apply drag to velocity
+          S.velocity.x += (0 - S.velocity.x) * Math.min(1, dt * S.drag);
+          S.velocity.y += (0 - S.velocity.y) * Math.min(1, dt * S.drag);
+          S.velocity.z += (0 - S.velocity.z) * Math.min(1, dt * S.drag);
+          
+          // Continue applying velocity even when not dragging (coasting)
+          const movement = S.velocity.scale(dt);
+          controlTarget.position.addInPlace(movement);
+          
           if (A.I) play(A.I, wStep);
           // Reset yaw tracking
           MC.yawRate = 0;
@@ -1574,11 +1653,14 @@ export function BabylonCanvas() {
         const wantSpeed = K["shift"] ? S.speed * S.speedK : S.speed;
         S.v += (wantSpeed - S.v) * Math.min(1, dt * 5);
         
-        // Movement
+        // Movement with velocity smoothing (inertia/momentum)
         const throttle = forwardKey && !brakeKey ? 1 :
                         forwardKey && brakeKey ? 0.5 : 0;
         
-        if (throttle) {
+        // Calculate target velocity direction
+        let targetVelocity = new BABYLON.Vector3(0, 0, 0);
+        
+        if (throttle > 0) {
           // Get forward direction (already includes pitch rotation for circular motion)
           const forwardVector = new BABYLON.Vector3(0, 0, 1);
           
@@ -1590,12 +1672,28 @@ export function BabylonCanvas() {
           // Invert X axis to fix left-right direction (like prototype)
           dir.x *= -1;
           
-          const movement = dir.scale(S.v * dt * throttle);
-          controlTarget.position.addInPlace(movement);
-          
-          if (frameCount % 60 === 0) {
-            console.log("🚀 Moving! Throttle:", throttle, "Speed:", S.v, "Movement:", movement);
-          }
+          // Target velocity in the forward direction
+          targetVelocity = dir.scale(S.v * 1.5 * throttle);
+        }
+        
+        // Smoothly interpolate current velocity toward target velocity
+        // When throttle > 0: accelerate toward target
+        // When throttle = 0: drag slows down to zero
+        const interpSpeed = throttle > 0 ? S.acceleration : S.drag;
+        S.velocity.x += (targetVelocity.x - S.velocity.x) * Math.min(1, dt * interpSpeed);
+        S.velocity.y += (targetVelocity.y - S.velocity.y) * Math.min(1, dt * interpSpeed);
+        S.velocity.z += (targetVelocity.z - S.velocity.z) * Math.min(1, dt * interpSpeed);
+        
+        // Apply velocity to position
+        const movement = S.velocity.scale(dt);
+        controlTarget.position.addInPlace(movement);
+        
+        if (frameCount % 60 === 0 && S.velocity.length() > 0.1) {
+          console.log("🚀 Moving! Position:", 
+            controlTarget.position.x.toFixed(2), 
+            controlTarget.position.y.toFixed(2), 
+            controlTarget.position.z.toFixed(2),
+            "Velocity:", S.velocity.length().toFixed(2));
         }
       }
     });
@@ -1996,14 +2094,11 @@ export function BabylonCanvas() {
         }
       }
       
-      // Restore camera alpha and beta rotation
-      if (camera && initialState.cameraAlpha !== null) {
-        camera.alpha = initialState.cameraAlpha;
-        console.log("🔄 Restored camera alpha:", initialState.cameraAlpha);
-      }
-      if (camera && initialState.cameraBeta !== null) {
-        camera.beta = initialState.cameraBeta;
-        console.log("🔄 Restored camera beta:", initialState.cameraBeta);
+      // Reset camera to initial default rotation (same as scene initialization)
+      if (camera) {
+        camera.alpha = -Math.PI * 1.5;
+        camera.beta = Math.PI / 2;
+        console.log("🔄 Reset camera to initial rotation - alpha:", camera.alpha, "beta:", camera.beta);
       }
       
       // Reset ship pivot
