@@ -119,14 +119,29 @@ interface AnimateCameraRadiusOptions {
   delay?: number; // delay before animation starts (in seconds)
   lowerRadiusLimit?: number;
   upperRadiusLimit?: number;
+  beta?: number;
+  alpha?: number;
   easing?: BABYLON.EasingFunction;
   onComplete?: () => void;
 }
 
 function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
-  const { camera, scene, duration, delay = 0, lowerRadiusLimit, upperRadiusLimit, easing, onComplete } = options;
+  const { camera, scene, duration, delay = 0, lowerRadiusLimit, upperRadiusLimit, beta, alpha, easing, onComplete } = options;
   
   const executeAnimation = () => {
+    console.log('🎥 [Camera Animation] Starting camera animation', {
+      currentLowerRadiusLimit: camera.lowerRadiusLimit,
+      currentUpperRadiusLimit: camera.upperRadiusLimit,
+      currentBeta: camera.beta,
+      currentAlpha: camera.alpha,
+      targetLowerRadiusLimit: lowerRadiusLimit,
+      targetUpperRadiusLimit: upperRadiusLimit,
+      targetBeta: beta,
+      targetAlpha: alpha,
+      duration,
+      delay
+    });
+
     const fps = 60;
     const totalFrames = fps * duration;
     const animations: BABYLON.Animation[] = [];
@@ -147,6 +162,7 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) lowerAnim.setEasingFunction(easing);
       animations.push(lowerAnim);
+      console.log('📐 [Camera Animation] Added lower radius limit animation:', currentLower, '→', lowerRadiusLimit);
     }
     
     // Upper radius limit animation
@@ -165,12 +181,59 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) upperAnim.setEasingFunction(easing);
       animations.push(upperAnim);
+      console.log('📐 [Camera Animation] Added upper radius limit animation:', currentUpper, '→', upperRadiusLimit);
+    }
+    
+    // Beta animation (vertical rotation)
+    if (beta !== undefined) {
+      const currentBeta = camera.beta;
+      const betaAnim = new BABYLON.Animation(
+        "betaAnim",
+        "beta",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      betaAnim.setKeys([
+        { frame: 0, value: currentBeta },
+        { frame: totalFrames, value: beta }
+      ]);
+      if (easing) betaAnim.setEasingFunction(easing);
+      animations.push(betaAnim);
+      console.log('🔄 [Camera Animation] Added beta animation:', currentBeta, '→', beta, `(${(beta * 180 / Math.PI).toFixed(1)}°)`);
+    }
+    
+    // Alpha animation (horizontal rotation)
+    if (alpha !== undefined) {
+      const currentAlpha = camera.alpha;
+      const alphaAnim = new BABYLON.Animation(
+        "alphaAnim",
+        "alpha",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+      alphaAnim.setKeys([
+        { frame: 0, value: currentAlpha },
+        { frame: totalFrames, value: alpha }
+      ]);
+      if (easing) alphaAnim.setEasingFunction(easing);
+      animations.push(alphaAnim);
+      console.log('🔄 [Camera Animation] Added alpha animation:', currentAlpha, '→', alpha, `(${(alpha * 180 / Math.PI).toFixed(1)}°)`);
     }
     
     // Apply animations
     if (animations.length > 0) {
       camera.animations = animations;
-      scene.beginAnimation(camera, 0, totalFrames, false, 1, onComplete);
+      scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
+        console.log('✅ [Camera Animation] Animation completed', {
+          finalLowerRadiusLimit: camera.lowerRadiusLimit,
+          finalUpperRadiusLimit: camera.upperRadiusLimit,
+          finalBeta: camera.beta,
+          finalAlpha: camera.alpha
+        });
+        if (onComplete) onComplete();
+      });
     } else if (onComplete) {
       onComplete();
     }
@@ -178,6 +241,7 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
   
   // Apply delay if specified
   if (delay > 0) {
+    console.log('⏱️ [Camera Animation] Delaying animation by', delay, 'seconds');
     setTimeout(executeAnimation, delay * 1000);
   } else {
     executeAnimation();
@@ -1809,15 +1873,32 @@ export function BabylonCanvas() {
     const scene = sceneRef.current;
     if (!camera || !scene) return;
 
+    console.log('🎬 [State Change] Camera update triggered for state:', s);
+
     const isMobile = window.innerWidth < 768; // md breakpoint
     const cameraConfig = config.canvas.babylonCamera;
     if (cameraConfig) {
       const lowerLimit = isMobile ? cameraConfig.lowerRadiusLimit.mobile : cameraConfig.lowerRadiusLimit.desktop;
       const upperLimit = isMobile ? cameraConfig.upperRadiusLimit.mobile : cameraConfig.upperRadiusLimit.desktop;
       
+      // Get beta and alpha from config if available
+      const targetBeta = cameraConfig.beta ? (isMobile ? cameraConfig.beta.mobile : cameraConfig.beta.desktop) : undefined;
+      const targetAlpha = cameraConfig.alpha ? (isMobile ? cameraConfig.alpha.mobile : cameraConfig.alpha.desktop) : undefined;
+      
+      console.log('📋 [Camera Config]', {
+        state: s,
+        isMobile,
+        lowerLimit,
+        upperLimit,
+        targetBeta,
+        targetAlpha,
+        betaDegrees: targetBeta ? (targetBeta * 180 / Math.PI).toFixed(1) : 'N/A',
+        alphaDegrees: targetAlpha ? (targetAlpha * 180 / Math.PI).toFixed(1) : 'N/A'
+      });
+      
       // Use config values for duration and delay, with fallbacks
       const duration = cameraConfig.animationDuration !== undefined ? cameraConfig.animationDuration : 0.4;
-      const delay = cameraConfig.animationDelay !== undefined ? cameraConfig.animationDelay : 0.2;
+      const delay = cameraConfig.animationDelay !== undefined ? cameraConfig.animationDelay : 0;
       
       const easing = new BABYLON.CubicEase();
       easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
@@ -1829,10 +1910,13 @@ export function BabylonCanvas() {
         delay,
         lowerRadiusLimit: lowerLimit,
         upperRadiusLimit: upperLimit,
+        beta: targetBeta,
+        alpha: targetAlpha,
         easing
       });
     } else {
       // Fallback values
+      console.warn('⚠️ [Camera Config] No camera config found, using fallback values');
       camera.lowerRadiusLimit = 18;
       camera.upperRadiusLimit = 18;
     }
@@ -1969,93 +2053,90 @@ export function BabylonCanvas() {
       }); */
     }
 
-    // Handle spaceship position animation between state 2 and state 3
+    // Handle spaceship position animation
+    // The current 'config' is already the destination state's blueprint
     const animShipRoot = spaceshipRootRef.current;
-    if (animShipRoot) {
+    if (animShipRoot && prevState !== s) {
       const easing = new BABYLON.CubicEase();
       easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
       
-      // State 2 → State 3: Animate ship from behind camera to correct position
-      if (isGoingToState3) {
-        console.log("🚀 Animating ship from behind camera to position (0, -.7, 0)");
+      // Get ship animation config from CURRENT state (destination state blueprint)
+      const shipConfig = sceneConfig?.shipAnimation;
+      
+      // If current state has ship animation config, animate to that position
+      if (shipConfig?.position) {
+        const pos = shipConfig.position;
+        const duration = shipConfig.duration ?? 1.0;
+        const delay = shipConfig.delay ?? 0;
+        
+        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}:`, {
+          targetPosition: pos,
+          duration,
+          delay,
+          fromState: prevState,
+          toState: s
+        });
+        
         animateTransform({
           target: animShipRoot,
           scene,
-          duration: 1,
-          delay: 0,
-          position: new BABYLON.Vector3(0, -1.5, 0),
+          duration,
+          delay,
+          position: new BABYLON.Vector3(pos.x, pos.y, pos.z),
           easing
         });
-      }
-      
-      // State 3 → State 2: Animate ship back behind camera
-      if (isComingFromState3) {
-        console.log("🚀 Animating ship back behind camera to position (0, -4, 20)");
+      } else {
+        // If no ship config, hide ship behind camera (for states without ship)
+        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}: No ship config, moving behind camera`);
         animateTransform({
           target: animShipRoot,
           scene,
-          duration: .5,
+          duration: 0.5,
           delay: 0,
           position: new BABYLON.Vector3(0, -4, 20),
           easing
         });
       }
+    }
 
-      // State 2 → State 3: Animate ship from behind camera to correct position
-      if (isGoingToState4) {
-        console.log("🚀 Animating ship from behind camera to position (0, -.7, 0)");
-        animateTransform({
-          target: animShipRoot,
-          scene,
-          duration: 1,
-          delay: 0,
-          position: new BABYLON.Vector3(0, -0.7, 0),
-          easing
-        });
-      }
+
+
+    // Handle fog animation
+    // The current 'config' is already the destination state's blueprint
+    if (prevState !== s) {
+      const fogEasing = new BABYLON.CubicEase();
+      fogEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
       
-      // State 3 → State 2: Animate ship back behind camera
-      if (isComingFromState4) {
-        console.log("🚀 Animating ship back behind camera to position (0, -4, 20)");
-        animateTransform({
-          target: animShipRoot,
+      // Get fog animation config from CURRENT state (destination state blueprint)
+      const fogConfig = sceneConfig?.fogAnimation;
+      
+      // If current state has fog config, animate to those settings
+      if (fogConfig && (fogConfig.fogEnd !== undefined || fogConfig.fogStart !== undefined)) {
+        const fogEnd = fogConfig.fogEnd;
+        const fogStart = fogConfig.fogStart;
+        const duration = fogConfig.duration ?? 0.6;
+        const delay = fogConfig.delay ?? 0;
+        
+        console.log(`🌫️ [Fog Animation] State ${prevState} → State ${s}:`, {
+          currentFogEnd: scene.fogEnd,
+          currentFogStart: scene.fogStart,
+          targetFogEnd: fogEnd,
+          targetFogStart: fogStart,
+          duration,
+          delay,
+          fromState: prevState,
+          toState: s
+        });
+        
+        animateFog({
           scene,
-          duration: .5,
-          delay: 0,
-          position: new BABYLON.Vector3(0, -1.5, 0),
-          easing
+          duration,
+          delay,
+          fogEnd,
+          fogStart,
+          //easing: fogEasing
         });
       }
-    }
-
-
-
-    // Handle fog animation between state 3 and state 4
-    const fogEasing = new BABYLON.CubicEase();
-    fogEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-    
-    // State 3 → State 4: Animate fog end from 100 to 350
-    if (isGoingToState4) {
-      console.log("🌫️ Animating fog end from 100 to 450");
-      animateFog({
-        scene,
-        duration: .6,
-        delay: 0,
-        fogEnd: 450,
-        //easing: fogEasing
-      });
-    }
-    
-    // State 4 → State 3: Animate fog end back from 350 to 100
-    if (isComingFromState4) {
-      console.log("🌫️ Animating fog end from 350 back to 100");
-      animateFog({
-        scene,
-        duration: .3,
-        delay: 0,
-        fogEnd: 100,
-        //easing: fogEasing
-      });
     }
 
     // Reset ship and camera when coming from state 4 to state 3

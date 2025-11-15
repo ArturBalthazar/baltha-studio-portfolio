@@ -23,8 +23,33 @@ export interface BabylonCameraConfig {
     mobile: number;
     desktop: number;
   };
-  animationDuration?: number; // Duration of camera radius animation in seconds
-  animationDelay?: number; // Delay before camera radius animation in seconds
+  beta?: {
+    mobile: number;
+    desktop: number;
+  };
+  alpha?: {
+    mobile: number;
+    desktop: number;
+  };
+  animationDuration?: number; // Duration of camera animation in seconds
+  animationDelay?: number; // Delay before camera animation in seconds
+}
+
+export interface ShipAnimationConfig {
+  position?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  duration?: number; // Duration of ship position animation in seconds
+  delay?: number; // Delay before ship position animation in seconds
+}
+
+export interface FogAnimationConfig {
+  fogStart?: number;
+  fogEnd?: number;
+  duration?: number; // Duration of fog animation in seconds
+  delay?: number; // Delay before fog animation in seconds
 }
 
 export interface BabylonTransform {
@@ -48,6 +73,8 @@ export interface BabylonSceneConfig {
   rootTransform: ResponsiveBabylonTransform;
   materialAnimationDelay?: number; // Delay before material animations in seconds
   transformAnimationDelay?: number; // Delay before transform animations in seconds
+  shipAnimation?: ShipAnimationConfig; // Ship position animation config
+  fogAnimation?: FogAnimationConfig; // Fog animation config
 }
 
 export interface CanvasConfig {

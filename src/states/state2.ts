@@ -22,7 +22,7 @@ export const state2Config: StateConfig = {
   },
   canvas: {
     clickable: false,
-    nextState: null,
+    nextState: 'state_3',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 24,
@@ -32,8 +32,16 @@ export const state2Config: StateConfig = {
         mobile: 24,
         desktop: 16
       },
-      animationDuration: 0.8, // When coming from state 3
-      animationDelay: 0 // No delay when transitioning back from state 3
+      beta: {
+        mobile: Math.PI / 2,
+        desktop: Math.PI / 2
+      },
+      alpha: {
+        mobile: -Math.PI * 1.5,
+        desktop: -Math.PI * 1.5
+      },
+      animationDuration: 0.8,
+      animationDelay: 0
     },
     babylonScene: {
       logoEnabled: true,

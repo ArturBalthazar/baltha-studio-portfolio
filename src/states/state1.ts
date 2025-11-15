@@ -22,7 +22,7 @@ export const state1Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state3',
+    nextState: 'state_2',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 20,
@@ -31,6 +31,14 @@ export const state1Config: StateConfig = {
       upperRadiusLimit: {
         mobile: 20,
         desktop: 16
+      },
+      beta: {
+        mobile: Math.PI / 2,
+        desktop: Math.PI / 2
+      },
+      alpha: {
+        mobile: -Math.PI * 1.5,
+        desktop: -Math.PI * 1.5
       }
     },
     babylonScene: {
