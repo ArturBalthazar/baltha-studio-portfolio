@@ -395,7 +395,13 @@ export function BabylonCanvas() {
     
     camera.inputs.clear();
     camera.panningSensibility = 0;
-    camera.fov = 1;
+    let camFov = 1;
+    if (isMobileRef.current) {
+      camFov = 1.15;
+    } else {
+      camFov = 1;
+    }
+    camera.fov = camFov;
 
     camera.minZ = 0.1;    // how close things can be before clipping
     camera.maxZ = 15000;   // how far things can be seen
@@ -735,23 +741,15 @@ export function BabylonCanvas() {
       
       // Get live reference to ship position (same Vector3 object, updates as ship moves)
       const shipPos = shipRoot.position;
-      
-      // Debug every 100 spawns
-      if (starSpawnCounter % 100 === 0) {
-        console.log(`⭐ Star spawn #${starSpawnCounter}, shipRoot.position:`, 
-          shipRoot.position.x.toFixed(2), 
-          shipRoot.position.y.toFixed(2), 
-          shipRoot.position.z.toFixed(2),
-          "| shipRoot name:", shipRoot.name);
-      }
+    
       starSpawnCounter++;
       
       let x, y, z;
       // Rejection sampling - keep generating until outside forbidden radius around ship
       do {
-        x = BABYLON.Scalar.RandomRange(10500  - shipRoot.position.x, -10500  - shipRoot.position.x);
-        y = BABYLON.Scalar.RandomRange(-10500  + shipRoot.position.y, 10500  + shipRoot.position.y);
-        z = BABYLON.Scalar.RandomRange(-10500  + shipRoot.position.z, 10500  + shipRoot.position.z);
+        x = BABYLON.Scalar.RandomRange(10500 - shipRoot.position.x, -10500 - shipRoot.position.x);
+        y = BABYLON.Scalar.RandomRange(-10500 + shipRoot.position.y, 10500 + shipRoot.position.y);
+        z = BABYLON.Scalar.RandomRange(-10500 + shipRoot.position.z, 10500 + shipRoot.position.z);
       } while (
         (x - shipPos.x) * (x - shipPos.x) +
         (y - shipPos.y) * (y - shipPos.y) +
@@ -764,6 +762,7 @@ export function BabylonCanvas() {
       position.y = starsEmitter.position.y + y;
       position.z = starsEmitter.position.z + z;
     };
+    
     
     // Color gradients for stars
     stars.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
@@ -1337,12 +1336,10 @@ export function BabylonCanvas() {
     // Keyboard listeners
     const handleKeyDown = (e: KeyboardEvent) => {
       S.keys[e.key.toLowerCase()] = true;
-      console.log("⌨️ Key down:", e.key);
     };
     
     const handleKeyUp = (e: KeyboardEvent) => {
       S.keys[e.key.toLowerCase()] = false;
-      console.log("⌨️ Key up:", e.key);
     };
     
     window.addEventListener('keydown', handleKeyDown);
@@ -1358,7 +1355,6 @@ export function BabylonCanvas() {
       if (!isMobileRef.current) return; // Only for mobile
       MC.isDragging = true;
       MC.yawRate = 0; // Reset turn rate when starting drag
-      console.log("📱 Mobile drag started");
     };
     
     const handlePointerMove = (e: PointerEvent) => {
@@ -1383,9 +1379,7 @@ export function BabylonCanvas() {
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerUp);
-    
-    console.log("✅ Spaceship controls ENABLED - " + (isMobileRef.current ? "Drag to move!" : "Press W to move forward!"));
-    
+        
     // Animation blending helper
     let lastPlayedAnim = "idle";
     const play = (target: BABYLON.AnimationGroup | undefined, step: number) => {
@@ -1393,7 +1387,6 @@ export function BabylonCanvas() {
       
       // Log when animation changes
       if (target.name !== lastPlayedAnim) {
-        console.log(`🎬 Switching to animation: ${target.name}`);
         lastPlayedAnim = target.name;
       }
       
@@ -1404,14 +1397,12 @@ export function BabylonCanvas() {
         if (g === target) {
           if (!g.isPlaying) {
             g.play(true);
-            console.log(`🎬 ▶️ Started playing: ${g.name}`);
           }
           w += step * (1 - w);
         } else {
           w -= step * w;
           if (w < 0.01 && g.isPlaying) {
             g.stop();
-            console.log(`🎬 ⏹️ Stopped: ${g.name}`);
           }
         }
         (g as any).weight = BABYLON.Scalar.Clamp(w, 0, 1);
@@ -1593,9 +1584,6 @@ export function BabylonCanvas() {
           const movement = S.velocity.scale(dt);
           controlTarget.position.addInPlace(movement);
           
-          if (frameCount % 60 === 0) {
-            console.log("📱 Mobile - Yaw rate:", normalizedYawRate.toFixed(2), "Forward:", forwardWeight.toFixed(2), "Turn:", turnWeight.toFixed(2));
-          }
         } else {
           // Idle when not dragging - apply drag to velocity
           S.velocity.x += (0 - S.velocity.x) * Math.min(1, dt * S.drag);
@@ -2048,12 +2036,12 @@ export function BabylonCanvas() {
     
     // State 3 → State 4: Animate fog end from 100 to 350
     if (isGoingToState4) {
-      console.log("🌫️ Animating fog end from 100 to 350");
+      console.log("🌫️ Animating fog end from 100 to 450");
       animateFog({
         scene,
         duration: .6,
         delay: 0,
-        fogEnd: 350,
+        fogEnd: 450,
         //easing: fogEasing
       });
     }
