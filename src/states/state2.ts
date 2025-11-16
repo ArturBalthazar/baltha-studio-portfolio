@@ -49,6 +49,7 @@ export const state2Config: StateConfig = {
       rockRingEnabled: false,
       spaceshipEnabled: false,
       particlesEnabled: false,
+      curveParticlesEnabled: false,
       portalsEnabled: false,
       materialAnimationDelay: 0.4, // Delay after camera radius change from state 3
       transformAnimationDelay: 0.4, // Delay after camera radius change from state 3

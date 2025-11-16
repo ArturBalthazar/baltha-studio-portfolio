@@ -350,6 +350,7 @@ export function BabylonCanvas() {
   const root1Ref = useRef<BABYLON.TransformNode | null>(null);
   const starsParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const smokeParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
+  const curveParticleSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const starsEmitterRef = useRef<BABYLON.Mesh | null>(null);
   const smokeEmitterRef = useRef<BABYLON.Mesh | null>(null);
   const prevStateRef = useRef<number>(s);
@@ -630,6 +631,92 @@ export function BabylonCanvas() {
             }
           });
           
+          // Find the Curve mesh and create particle effect
+          const curveMesh = meshes.find(m => m.name === "Curve");
+          if (curveMesh) {
+            console.log("🌟 Found Curve mesh in rockring2.glb");
+            
+            // Get vertices from the curve mesh
+            const positions = curveMesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+            if (positions) {
+              const vertexCount = positions.length / 3;
+              console.log(`🌟 Curve mesh has ${vertexCount} vertices`);
+              
+              // Store vertices in world space
+              const worldMatrix = curveMesh.getWorldMatrix();
+              const vertices: BABYLON.Vector3[] = [];
+              for (let i = 0; i < positions.length; i += 3) {
+                const localPos = new BABYLON.Vector3(positions[i], positions[i + 1], positions[i + 2]);
+                const worldPos = BABYLON.Vector3.TransformCoordinates(localPos, worldMatrix);
+                vertices.push(worldPos);
+              }
+              console.log(`🌟 Extracted ${vertices.length} vertices from Curve mesh`);
+              
+              // Create particle system for curve effect
+              const curveParticles = new BABYLON.ParticleSystem("curveParticles", 2000, scene);
+              curveParticles.particleTexture = new BABYLON.Texture("/assets/textures/floating_light.png", scene);
+              
+              // Use a dummy emitter (won't be used since we have custom start position)
+              const dummyEmitter = BABYLON.Mesh.CreateBox("curveEmitter", 0.01, scene);
+              dummyEmitter.visibility = 0;
+              dummyEmitter.position.set(0, 0, 0);
+              curveParticles.emitter = dummyEmitter;
+              
+              // Custom spawn function to place particles at random vertices with offset
+              curveParticles.startPositionFunction = (worldMatrix, position, particle) => {
+                // Pick a random vertex
+                const randomVertex = vertices[Math.floor(Math.random() * vertices.length)];
+                
+                // Add random offset for variation
+                const offsetRange = 5.0; // Adjust this to control spread around vertices
+                position.x = randomVertex.x + (Math.random() - 0.5) * offsetRange;
+                position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
+                position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
+              };
+              
+              // Particle size - visible but not huge
+              curveParticles.minSize = 4;
+              curveParticles.maxSize = 25;
+              
+              // Rotation randomness
+              curveParticles.minInitialRotation = 0;
+              curveParticles.maxInitialRotation = Math.PI * 2;
+              
+              // Lifetime
+              curveParticles.minLifeTime = 2.5;
+              curveParticles.maxLifeTime = 4.5;
+              
+              // Emit settings
+              curveParticles.emitRate = 350;
+              curveParticles.updateSpeed = 0.02;
+              
+              // Very slow gentle movement
+              curveParticles.minEmitPower = 0.01;
+              curveParticles.maxEmitPower = 0.05;
+              
+              curveParticles.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
+              curveParticles.addColorGradient(0.05, new BABYLON.Color4(.6, 0.6, 0.9, 0.4));
+              curveParticles.addColorGradient(0.4, new BABYLON.Color4(.8, 0.6, 0.8, 0.4));
+              curveParticles.addColorGradient(0.7, new BABYLON.Color4(.9, 0.5, 0.4, 0.2));
+              curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
+              
+              curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+              curveParticles.gravity = new BABYLON.Vector3(0, 1, 0);
+              
+              // Don't start automatically - will be controlled by state config
+              curveParticleSystemRef.current = curveParticles;
+              console.log("🌟 Curve particle system created (will start in state 4+)");
+            } else {
+              console.warn("⚠️ Curve mesh has no position data");
+            }
+            
+            // Hide the Curve mesh itself
+            curveMesh.isVisible = false;
+            console.log("🌟 Curve mesh hidden (only particles visible)");
+          } else {
+            console.warn("⚠️ Curve mesh not found in rockring2.glb");
+          }
+          
           rockRing.setEnabled(false); // Hidden by default, shown in state 3
           rockRingRef.current = rockRing;
         }
@@ -831,12 +918,7 @@ export function BabylonCanvas() {
       position.x = starsEmitter.position.x + x;
       position.y = starsEmitter.position.y + y;
       position.z = starsEmitter.position.z + z;
-      
-      // Debug log every 100 stars
-      if (starSpawnCounter % 100 === 0) {
-        const relDist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
-        console.log(`⭐ Star #${starSpawnCounter}: Ship at (${shipPos.x.toFixed(1)}, ${shipPos.y.toFixed(1)}, ${shipPos.z.toFixed(1)}), Relative (${relX.toFixed(1)}, ${relY.toFixed(1)}, ${relZ.toFixed(1)}), Rel distance: ${relDist.toFixed(1)} (min: ${forbiddenRadius})`);
-      }
+
     };
     
     
@@ -1352,7 +1434,7 @@ export function BabylonCanvas() {
       console.log("📷 Parenting shipPivot to shipRoot at center");
       shipPivot.setParent(controlTarget);
       // Different position for mobile vs desktop
-      const pivotY = isMobileRef.current ? .9 : 0.9;
+      const pivotY = isMobileRef.current ? 0.9 : 0.9;
       shipPivot.position.set(0, pivotY, 0);
       shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
       console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
@@ -1548,10 +1630,6 @@ export function BabylonCanvas() {
         camera.alpha -= MC.cameraRotation * rotationSpeed * dt;
       }
       
-      // Log every 60 frames (about once per second)
-      if (frameCount % 60 === 0 && Object.keys(K).length > 0) {
-        console.log("🎮 Active keys:", Object.keys(K).filter(k => K[k]));
-      }
       frameCount++;
       
       // Mobile vs Desktop controls
@@ -1770,14 +1848,7 @@ export function BabylonCanvas() {
         // Apply velocity to position
         const movement = S.velocity.scale(dt);
         controlTarget.position.addInPlace(movement);
-        
-        if (frameCount % 60 === 0 && S.velocity.length() > 0.1) {
-          console.log("🚀 Moving! Position:", 
-            controlTarget.position.x.toFixed(2), 
-            controlTarget.position.y.toFixed(2), 
-            controlTarget.position.z.toFixed(2),
-            "Velocity:", S.velocity.length().toFixed(2));
-        }
+
       }
     });
     
@@ -2088,6 +2159,20 @@ export function BabylonCanvas() {
         particlesHaveStartedRef.current = true;
       }
       // Once started, never turn them off (like background music and rockring)
+    }
+
+    // Handle curve particles - controlled by state config
+    const curveParticles = curveParticleSystemRef.current;
+    if (curveParticles) {
+      const shouldEnableCurveParticles = sceneConfig.curveParticlesEnabled || false;
+      
+      if (shouldEnableCurveParticles && !curveParticles.isStarted()) {
+        curveParticles.start();
+        console.log("🌟 Curve particles started (state 4+)");
+      } else if (!shouldEnableCurveParticles && curveParticles.isStarted()) {
+        curveParticles.stop();
+        console.log("🌟 Curve particles stopped (state 3 or less)");
+      }
     }
 
     // Handle portal visibility
@@ -2717,22 +2802,18 @@ export function BabylonCanvas() {
       const animDuration = cameraConfig?.animationDuration ?? 0.4;
       const animDelay = cameraConfig?.animationDelay ?? 0;
       const totalAnimTime = (animDuration + animDelay) * 1000; // Convert to ms
-      
-      console.log(`🎮 [Camera Controls] Delaying controls by ${totalAnimTime}ms to let animation complete`);
-      
+            
       // Wait for camera animation to complete before enabling controls
       const timeoutId = setTimeout(() => {
         camera.inputs.addMouseWheel();
         camera.inputs.addPointers();
         camera.attachControl(canvas, true);
-        console.log('🎮 [Camera Controls] Controls enabled');
       }, totalAnimTime);
       
       return () => clearTimeout(timeoutId);
     } else {
       camera.detachControl();
       camera.inputs.clear();
-      console.log('🎮 [Camera Controls] Controls disabled');
     }
   }, [s, navigationMode]);
 

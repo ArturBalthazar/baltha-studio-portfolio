@@ -49,6 +49,7 @@ export const state3Config: StateConfig = {
       rockRingEnabled: true,
       spaceshipEnabled: true,
       particlesEnabled: true,
+      curveParticlesEnabled: false,
       portalsEnabled: false,
       rootTransform: {
         mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },

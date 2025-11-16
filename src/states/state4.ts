@@ -54,6 +54,7 @@ export const state4Config: StateConfig = {
       rockRingEnabled: true,
       spaceshipEnabled: true,
       particlesEnabled: true,
+      curveParticlesEnabled: true, // Enable curve particles in state 4
       portalsEnabled: true, // Show portals in state 4
       cameraControlsEnabled: false, // Will be dynamically toggled based on navigation mode
       rootTransform: {

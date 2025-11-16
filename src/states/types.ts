@@ -75,6 +75,7 @@ export interface BabylonSceneConfig {
   rockRingEnabled: boolean;
   spaceshipEnabled: boolean;
   particlesEnabled: boolean;
+  curveParticlesEnabled?: boolean; // Enable curve particles on rockring (for state 4+)
   portalsEnabled?: boolean; // Show portals in the scene
   cameraControlsEnabled?: boolean; // Enable camera controls (for free mode in state 5)
   rootTransform: ResponsiveBabylonTransform;
