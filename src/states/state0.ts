@@ -22,7 +22,7 @@ export const state0Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_1',
+    nextState: 'state_2',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 16,
@@ -39,7 +39,9 @@ export const state0Config: StateConfig = {
       alpha: {
         mobile: -Math.PI * 1.5,
         desktop: -Math.PI * 1.5
-      }
+      },
+      animationDuration: 0.4, // Duration for ALL camera properties (radius, beta, alpha)
+      animationDelay: 0 // Delay before camera animation starts
     },
     babylonScene: {
       logoEnabled: true,

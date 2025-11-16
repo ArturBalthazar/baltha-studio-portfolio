@@ -41,6 +41,13 @@ export interface ShipAnimationConfig {
     y: number;
     z: number;
   };
+  // Responsive position (overrides position if provided)
+  mobile?: {
+    position: { x: number; y: number; z: number };
+  };
+  desktop?: {
+    position: { x: number; y: number; z: number };
+  };
   duration?: number; // Duration of ship position animation in seconds
   delay?: number; // Delay before ship position animation in seconds
 }

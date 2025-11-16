@@ -25,7 +25,7 @@ export const state4Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_5',
+    nextState: null,
     fullscreen: true, // Full screen canvas
     roundedCorners: false, // No rounded corners in state 4
     babylonCamera: {
@@ -44,7 +44,9 @@ export const state4Config: StateConfig = {
       alpha: {
         mobile: -Math.PI * 1.5,
         desktop: -Math.PI * 1.5
-      }
+      },
+      animationDuration: 1.0, // Duration for ALL camera properties (radius, beta, alpha)
+      animationDelay: 0 // Delay before camera animation starts
     },
     babylonScene: {
       logoEnabled: false,
@@ -59,7 +61,8 @@ export const state4Config: StateConfig = {
         desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
       },
       shipAnimation: {
-        position: { x: 0, y: -0.7, z: 0 },
+        desktop: { position: { x: 0, y: -1, z: 0 } },
+        mobile: { position: { x: 0, y: -1, z: 0 } },
         duration: 1.0,
         delay: 0
       },

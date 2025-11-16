@@ -370,8 +370,8 @@ export function BabylonCanvas() {
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 10,
-    speedK: 3,
+    speed: 20,
+    speedK: 2,
     v: 10,
     pitch: 0,
     yawTarget: 0,
@@ -783,8 +783,8 @@ export function BabylonCanvas() {
     stars.emitter = starsEmitter;
     
     // Custom spawn function for stars with forbidden radius that follows shipRoot
-    // EXACTLY matching the prototype's approach
-    const forbiddenRadius = 9000;
+    const forbiddenRadius = 3000;
+    const totalRadius = 3500;
     const forbiddenRadiusSq = forbiddenRadius * forbiddenRadius;
     
     // Debug counter for logging
@@ -809,22 +809,34 @@ export function BabylonCanvas() {
       starSpawnCounter++;
       
       let x, y, z;
+      let relX, relY, relZ;
+      
       // Rejection sampling - keep generating until outside forbidden radius around ship
       do {
-        x = BABYLON.Scalar.RandomRange(10500 - shipRoot.position.x, -10500 - shipRoot.position.x);
-        y = BABYLON.Scalar.RandomRange(-10500 + shipRoot.position.y, 10500 + shipRoot.position.y);
-        z = BABYLON.Scalar.RandomRange(-10500 + shipRoot.position.z, 10500 + shipRoot.position.z);
+        // Generate relative coordinates (before ship offset)
+        relX = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
+        relY = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
+        relZ = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
       } while (
-        (x - shipPos.x) * (x - shipPos.x) +
-        (y - shipPos.y) * (y - shipPos.y) +
-        (z - shipPos.z) * (z - shipPos.z)
-        < forbiddenRadiusSq
+        // Check distance in relative space (before ship offset applied)
+        relX * relX + relY * relY + relZ * relZ < forbiddenRadiusSq
       );
+      
+      // Apply ship offset with X inverted, Y and Z normal
+      x = relX - shipRoot.position.x;
+      y = relY + shipRoot.position.y;
+      z = relZ + shipRoot.position.z;
       
       // Set absolute world position
       position.x = starsEmitter.position.x + x;
       position.y = starsEmitter.position.y + y;
       position.z = starsEmitter.position.z + z;
+      
+      // Debug log every 100 stars
+      if (starSpawnCounter % 100 === 0) {
+        const relDist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+        console.log(`⭐ Star #${starSpawnCounter}: Ship at (${shipPos.x.toFixed(1)}, ${shipPos.y.toFixed(1)}, ${shipPos.z.toFixed(1)}), Relative (${relX.toFixed(1)}, ${relY.toFixed(1)}, ${relZ.toFixed(1)}), Rel distance: ${relDist.toFixed(1)} (min: ${forbiddenRadius})`);
+      }
     };
     
     
@@ -835,8 +847,8 @@ export function BabylonCanvas() {
     stars.addColorGradient(0.7, new BABYLON.Color4(1, 0.9, 0.7, 0.8));
     stars.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
     
-    stars.minSize = 60;
-    stars.maxSize = 150;
+    stars.minSize = 20;
+    stars.maxSize = 50;
     stars.minLifeTime = 3;
     stars.maxLifeTime = 10;
     stars.emitRate = 0; // Start disabled
@@ -1222,6 +1234,13 @@ export function BabylonCanvas() {
     
     console.log("🚀 Control state:", { inState4, navigationMode, shouldEnableControls });
     
+    // Get ship animation timing to delay controls until animation completes
+    const sceneConfig = config.canvas.babylonScene;
+    const shipConfig = sceneConfig?.shipAnimation;
+    const shipAnimDuration = shipConfig?.duration ?? 0;
+    const shipAnimDelay = shipConfig?.delay ?? 0;
+    const totalShipAnimTime = (shipAnimDuration + shipAnimDelay) * 1000; // Convert to ms
+    
     // Cleanup previous observer if exists
     if (S.observer) {
       scene.onBeforeRenderObservable.remove(S.observer);
@@ -1257,11 +1276,23 @@ export function BabylonCanvas() {
       return;
     }
     
-    // Enable controls in free mode
+    // Enable controls in free mode (with delay if ship is animating)
     if (!spaceship) {
       console.log("🚀 No spaceship found, cannot enable controls");
       return;
     }
+    
+    // Store handlers for cleanup (must be outside setTimeout)
+    let handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
+    let handleKeyUp: ((e: KeyboardEvent) => void) | null = null;
+    let handlePointerDown: ((e: PointerEvent) => void) | null = null;
+    let handlePointerMove: ((e: PointerEvent) => void) | null = null;
+    let handlePointerUp: ((e: PointerEvent) => void) | null = null;
+    
+    // Delay enabling controls until ship animation completes
+    console.log(`🚀 Delaying ship controls by ${totalShipAnimTime}ms to let ship animation complete`);
+    const controlsTimeoutId = setTimeout(() => {
+      console.log("🚀 Ship animation complete - enabling free mode controls");
     
     // Get shipRoot - this is required now
     let shipRoot = spaceshipRootRef.current;
@@ -1321,7 +1352,7 @@ export function BabylonCanvas() {
       console.log("📷 Parenting shipPivot to shipRoot at center");
       shipPivot.setParent(controlTarget);
       // Different position for mobile vs desktop
-      const pivotY = isMobileRef.current ? 1 : 0.7;
+      const pivotY = isMobileRef.current ? .9 : 0.9;
       shipPivot.position.set(0, pivotY, 0);
       shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
       console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
@@ -1398,11 +1429,11 @@ export function BabylonCanvas() {
     }
     
     // Keyboard listeners
-    const handleKeyDown = (e: KeyboardEvent) => {
+    handleKeyDown = (e: KeyboardEvent) => {
       S.keys[e.key.toLowerCase()] = true;
     };
     
-    const handleKeyUp = (e: KeyboardEvent) => {
+    handleKeyUp = (e: KeyboardEvent) => {
       S.keys[e.key.toLowerCase()] = false;
     };
     
@@ -1415,13 +1446,13 @@ export function BabylonCanvas() {
     // Mobile drag control handlers
     const MC = mobileControlRef.current;
     
-    const handlePointerDown = (e: PointerEvent) => {
+    handlePointerDown = (e: PointerEvent) => {
       if (!isMobileRef.current) return; // Only for mobile
       MC.isDragging = true;
       MC.yawRate = 0; // Reset turn rate when starting drag
     };
     
-    const handlePointerMove = (e: PointerEvent) => {
+    handlePointerMove = (e: PointerEvent) => {
       if (!isMobileRef.current || !MC.isDragging) return;
       
       // Just update pointer position - raycasting happens in render loop
@@ -1429,7 +1460,7 @@ export function BabylonCanvas() {
       MC.pointerY = e.clientY;
     };
     
-    const handlePointerUp = (e: PointerEvent) => {
+    handlePointerUp = (e: PointerEvent) => {
       if (!isMobileRef.current) return;
       MC.isDragging = false;
       MC.hasDirection = false;
@@ -1725,7 +1756,7 @@ export function BabylonCanvas() {
           dir.x *= -1;
           
           // Target velocity in the forward direction
-          targetVelocity = dir.scale(S.v * 1.5 * throttle);
+          targetVelocity = dir.scale(S.v * 1 * throttle);
         }
         
         // Smoothly interpolate current velocity toward target velocity
@@ -1750,24 +1781,39 @@ export function BabylonCanvas() {
       }
     });
     
+    }, totalShipAnimTime); // Close setTimeout
+    
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      clearTimeout(controlsTimeoutId);
       
-      // Clean up pointer event listeners (mobile control)
-      canvas.removeEventListener('pointerdown', handlePointerDown);
-      canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerup', handlePointerUp);
-      canvas.removeEventListener('pointercancel', handlePointerUp);
+      // Clean up keyboard listeners if they were added
+      if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
+      if (handleKeyUp) window.removeEventListener('keyup', handleKeyUp);
+      
+      // Clean up pointer event listeners (mobile control) if they were added
+      if (canvas) {
+        if (handlePointerDown) canvas.removeEventListener('pointerdown', handlePointerDown);
+        if (handlePointerMove) canvas.removeEventListener('pointermove', handlePointerMove);
+        if (handlePointerUp) {
+          canvas.removeEventListener('pointerup', handlePointerUp);
+          canvas.removeEventListener('pointercancel', handlePointerUp);
+        }
+      }
       
       if (S.observer) {
         scene.onBeforeRenderObservable.remove(S.observer);
         S.observer = null;
       }
       
-      // Stop animations
-      const groups = grab();
-      Object.values(groups).forEach(g => g?.stop?.());
+      // Stop animations if they exist
+      if (scene && scene.getAnimationGroupByName) {
+        const fwd = scene.getAnimationGroupByName("forward");
+        const brk = scene.getAnimationGroupByName("stop");
+        const L = scene.getAnimationGroupByName("turnRight");
+        const R = scene.getAnimationGroupByName("turnLeft");
+        const I = scene.getAnimationGroupByName("idle");
+        [fwd, brk, L, R, I].forEach(g => g?.stop?.());
+      }
       
     };
   }, [s, navigationMode]);
@@ -1920,7 +1966,7 @@ export function BabylonCanvas() {
       camera.lowerRadiusLimit = 18;
       camera.upperRadiusLimit = 18;
     }
-  }, [s, config.canvas.babylonCamera]); // Update only camera settings on state change
+  }, [s]); // Update only camera settings on state change
 
   // Switch between logo models when selection changes
   useEffect(() => {
@@ -2063,14 +2109,28 @@ export function BabylonCanvas() {
       // Get ship animation config from CURRENT state (destination state blueprint)
       const shipConfig = sceneConfig?.shipAnimation;
       
+      // Check for responsive positions (mobile/desktop)
+      let targetPos: { x: number; y: number; z: number } | undefined;
+      
+      if (shipConfig) {
+        // Check if we have mobile/desktop specific positions
+        if (isMobile && shipConfig.mobile?.position) {
+          targetPos = shipConfig.mobile.position;
+        } else if (!isMobile && shipConfig.desktop?.position) {
+          targetPos = shipConfig.desktop.position;
+        } else if (shipConfig.position) {
+          // Fall back to single position if no responsive versions
+          targetPos = shipConfig.position;
+        }
+      }
+      
       // If current state has ship animation config, animate to that position
-      if (shipConfig?.position) {
-        const pos = shipConfig.position;
-        const duration = shipConfig.duration ?? 1.0;
-        const delay = shipConfig.delay ?? 0;
+      if (targetPos) {
+        const duration = shipConfig?.duration ?? 1.0;
+        const delay = shipConfig?.delay ?? 0;
         
-        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}:`, {
-          targetPosition: pos,
+        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s} (${isMobile ? 'mobile' : 'desktop'}):`, {
+          targetPosition: targetPos,
           duration,
           delay,
           fromState: prevState,
@@ -2082,7 +2142,7 @@ export function BabylonCanvas() {
           scene,
           duration,
           delay,
-          position: new BABYLON.Vector3(pos.x, pos.y, pos.z),
+          position: new BABYLON.Vector3(targetPos.x, targetPos.y, targetPos.z),
           easing
         });
       } else {
@@ -2652,13 +2712,27 @@ export function BabylonCanvas() {
     const shouldEnableControls = inState4; // && navigationMode === 'free';
 
     if (shouldEnableControls) {
-      // Re-add mouse wheel and pointer inputs for camera rotation/zoom
-      camera.inputs.addMouseWheel();
-      camera.inputs.addPointers();
-      camera.attachControl(canvas, true);
+      // Get camera animation duration to delay enabling controls until animation completes
+      const cameraConfig = config.canvas.babylonCamera;
+      const animDuration = cameraConfig?.animationDuration ?? 0.4;
+      const animDelay = cameraConfig?.animationDelay ?? 0;
+      const totalAnimTime = (animDuration + animDelay) * 1000; // Convert to ms
+      
+      console.log(`🎮 [Camera Controls] Delaying controls by ${totalAnimTime}ms to let animation complete`);
+      
+      // Wait for camera animation to complete before enabling controls
+      const timeoutId = setTimeout(() => {
+        camera.inputs.addMouseWheel();
+        camera.inputs.addPointers();
+        camera.attachControl(canvas, true);
+        console.log('🎮 [Camera Controls] Controls enabled');
+      }, totalAnimTime);
+      
+      return () => clearTimeout(timeoutId);
     } else {
       camera.detachControl();
       camera.inputs.clear();
+      console.log('🎮 [Camera Controls] Controls disabled');
     }
   }, [s, navigationMode]);
 
