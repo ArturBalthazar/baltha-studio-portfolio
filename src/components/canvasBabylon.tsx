@@ -688,21 +688,23 @@ export function BabylonCanvas() {
                 position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
                 position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
               };
-              
-              // Particle size - visible but not huge
-              curveParticles.minSize = 2;
-              curveParticles.maxSize = 10;
-              
+              if (isMobileRef.current) {
+                // Particle size - visible but not huge
+                curveParticles.minSize = 2;
+                curveParticles.maxSize = 10;
+                curveParticles.emitRate = 150;
+              } else {
+                // Particle size - visible but not huge
+                curveParticles.minSize = 3;
+                curveParticles.maxSize = 15;
+                curveParticles.emitRate = 250;
+              }
               // Rotation randomness
               curveParticles.minInitialRotation = 0;
               curveParticles.maxInitialRotation = Math.PI * 2;
               
-              // Lifetime
               curveParticles.minLifeTime = 2.5;
               curveParticles.maxLifeTime = 4.5;
-              
-              // Emit settings
-              curveParticles.emitRate = 200;
               curveParticles.updateSpeed = 0.02;
               
               // Very slow gentle movement
@@ -716,7 +718,7 @@ export function BabylonCanvas() {
               curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
               
               curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-              curveParticles.gravity = new BABYLON.Vector3(0, 2, 0);
+              curveParticles.gravity = new BABYLON.Vector3(0, 1, 0);
               
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;
@@ -998,7 +1000,11 @@ export function BabylonCanvas() {
     smoke.maxEmitPower = 1.5;
     smoke.updateSpeed = 0.01;
     
-    smoke.start();
+    if (isMobileRef.current) {
+      smoke.stop();
+    } else {
+      smoke.start();
+    }
     smokeParticleSystemRef.current = smoke;
 
     // ========================
