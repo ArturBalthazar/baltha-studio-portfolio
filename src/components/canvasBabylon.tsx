@@ -386,7 +386,7 @@ export function BabylonCanvas() {
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 12,
+    speed: 14,
     speedK: 2,
     v: 10,
     pitch: 0,
@@ -668,7 +668,7 @@ export function BabylonCanvas() {
               console.log(`🌟 Extracted ${vertices.length} vertices from Curve mesh`);
               
               // Create particle system for curve effect
-              const curveParticles = new BABYLON.ParticleSystem("curveParticles", 2000, scene);
+              const curveParticles = new BABYLON.ParticleSystem("curveParticles", 1000, scene);
               curveParticles.particleTexture = new BABYLON.Texture("/assets/textures/floating_light.png", scene);
               
               // Use a dummy emitter (won't be used since we have custom start position)
@@ -690,8 +690,8 @@ export function BabylonCanvas() {
               };
               
               // Particle size - visible but not huge
-              curveParticles.minSize = 3;
-              curveParticles.maxSize = 15;
+              curveParticles.minSize = 2;
+              curveParticles.maxSize = 10;
               
               // Rotation randomness
               curveParticles.minInitialRotation = 0;
@@ -702,7 +702,7 @@ export function BabylonCanvas() {
               curveParticles.maxLifeTime = 4.5;
               
               // Emit settings
-              curveParticles.emitRate = 300;
+              curveParticles.emitRate = 200;
               curveParticles.updateSpeed = 0.02;
               
               // Very slow gentle movement
@@ -969,7 +969,7 @@ export function BabylonCanvas() {
     smokeEmitter.position.set(0, 0, 25);
     smokeEmitterRef.current = smokeEmitter;
     
-    const smoke = new BABYLON.ParticleSystem("smokeParticles", 120, scene);
+    const smoke = new BABYLON.ParticleSystem("smokeParticles", 60, scene);
     smoke.particleTexture = new BABYLON.Texture("/assets/textures/smoke_15.png", scene);
     smoke.emitter = smokeEmitter;
     
@@ -982,8 +982,8 @@ export function BabylonCanvas() {
     smoke.addColorGradient(0.8, new BABYLON.Color4(0.4, 0.25, 0.5, 0.08));
     smoke.addColorGradient(1.0, new BABYLON.Color4(0.3, 0.15, 0.4, 0));
     
-    smoke.minSize = 20;
-    smoke.maxSize = 50;
+    smoke.minSize = 30;
+    smoke.maxSize = 60;
     smoke.minLifeTime = 4;
     smoke.maxLifeTime = 10;
     smoke.emitRate = 0; // Start disabled
@@ -998,7 +998,7 @@ export function BabylonCanvas() {
     smoke.maxEmitPower = 1.5;
     smoke.updateSpeed = 0.01;
     
-    //smoke.start();
+    smoke.start();
     smokeParticleSystemRef.current = smoke;
 
     // ========================
@@ -2170,7 +2170,7 @@ export function BabylonCanvas() {
       // If particles should be enabled and haven't been started yet, start them
       if (sceneConfig.particlesEnabled && !particlesHaveStartedRef.current) {
         stars.emitRate = 100000;
-        smoke.emitRate = 10000;
+        smoke.emitRate = 5000;
         particlesHaveStartedRef.current = true;
       }
       // Once started, never turn them off (like background music and rockring)

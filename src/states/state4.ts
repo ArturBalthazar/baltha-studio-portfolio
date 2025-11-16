@@ -64,11 +64,11 @@ export const state4Config: StateConfig = {
       shipAnimation: {
         desktop: { position: { x: 0, y: -1, z: 0 } },
         mobile: { position: { x: 0, y: -1, z: 0 } },
-        duration: 1.0,
+        duration: 1,
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 450,
+        fogEnd: 400,
         duration: 0.6,
         delay: 0
       }
