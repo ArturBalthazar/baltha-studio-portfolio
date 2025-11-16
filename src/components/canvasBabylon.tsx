@@ -675,8 +675,8 @@ export function BabylonCanvas() {
               };
               
               // Particle size - visible but not huge
-              curveParticles.minSize = 4;
-              curveParticles.maxSize = 25;
+              curveParticles.minSize = 2;
+              curveParticles.maxSize = 12;
               
               // Rotation randomness
               curveParticles.minInitialRotation = 0;
@@ -687,7 +687,7 @@ export function BabylonCanvas() {
               curveParticles.maxLifeTime = 4.5;
               
               // Emit settings
-              curveParticles.emitRate = 350;
+              curveParticles.emitRate = 200;
               curveParticles.updateSpeed = 0.02;
               
               // Very slow gentle movement
@@ -701,7 +701,7 @@ export function BabylonCanvas() {
               curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
               
               curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-              curveParticles.gravity = new BABYLON.Vector3(0, 1, 0);
+              curveParticles.gravity = new BABYLON.Vector3(0, 2, 0);
               
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;
@@ -2171,7 +2171,8 @@ export function BabylonCanvas() {
         console.log("🌟 Curve particles started (state 4+)");
       } else if (!shouldEnableCurveParticles && curveParticles.isStarted()) {
         curveParticles.stop();
-        console.log("🌟 Curve particles stopped (state 3 or less)");
+        curveParticles.reset(); // Immediately kill all active particles
+        console.log("🌟 Curve particles stopped and reset (state 3 or less)");
       }
     }
 

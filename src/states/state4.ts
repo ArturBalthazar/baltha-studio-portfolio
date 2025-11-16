@@ -34,8 +34,8 @@ export const state4Config: StateConfig = {
         desktop: 5
       },
       upperRadiusLimit: {
-        mobile: 5,
-        desktop: 80
+        mobile: 20,
+        desktop: 50
       },
       beta: {
         mobile: Math.PI / 2.2,
