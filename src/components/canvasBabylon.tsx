@@ -125,6 +125,19 @@ interface AnimateCameraRadiusOptions {
   onComplete?: () => void;
 }
 
+// Helper function to normalize angle difference for shortest rotation path
+function normalizeAngleDifference(current: number, target: number): number {
+  // Calculate the difference
+  let diff = target - current;
+  
+  // Normalize to [-π, π] range for shortest path
+  while (diff > Math.PI) diff -= 2 * Math.PI;
+  while (diff < -Math.PI) diff += 2 * Math.PI;
+  
+  // Return the normalized target (current + shortest difference)
+  return current + diff;
+}
+
 function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
   const { camera, scene, duration, delay = 0, lowerRadiusLimit, upperRadiusLimit, beta, alpha, easing, onComplete } = options;
   
@@ -187,6 +200,7 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
     // Beta animation (vertical rotation)
     if (beta !== undefined) {
       const currentBeta = camera.beta;
+      const normalizedBeta = normalizeAngleDifference(currentBeta, beta);
       const betaAnim = new BABYLON.Animation(
         "betaAnim",
         "beta",
@@ -196,16 +210,17 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       );
       betaAnim.setKeys([
         { frame: 0, value: currentBeta },
-        { frame: totalFrames, value: beta }
+        { frame: totalFrames, value: normalizedBeta }
       ]);
       if (easing) betaAnim.setEasingFunction(easing);
       animations.push(betaAnim);
-      console.log('🔄 [Camera Animation] Added beta animation:', currentBeta, '→', beta, `(${(beta * 180 / Math.PI).toFixed(1)}°)`);
+      console.log('🔄 [Camera Animation] Added beta animation:', currentBeta, '→', normalizedBeta, `(target: ${beta}, normalized for shortest path)`);
     }
     
     // Alpha animation (horizontal rotation)
     if (alpha !== undefined) {
       const currentAlpha = camera.alpha;
+      const normalizedAlpha = normalizeAngleDifference(currentAlpha, alpha);
       const alphaAnim = new BABYLON.Animation(
         "alphaAnim",
         "alpha",
@@ -215,11 +230,11 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       );
       alphaAnim.setKeys([
         { frame: 0, value: currentAlpha },
-        { frame: totalFrames, value: alpha }
+        { frame: totalFrames, value: normalizedAlpha }
       ]);
       if (easing) alphaAnim.setEasingFunction(easing);
       animations.push(alphaAnim);
-      console.log('🔄 [Camera Animation] Added alpha animation:', currentAlpha, '→', alpha, `(${(alpha * 180 / Math.PI).toFixed(1)}°)`);
+      console.log('🔄 [Camera Animation] Added alpha animation:', currentAlpha, '→', normalizedAlpha, `(target: ${alpha}, normalized for shortest path)`);
     }
     
     // Apply animations
@@ -675,8 +690,8 @@ export function BabylonCanvas() {
               };
               
               // Particle size - visible but not huge
-              curveParticles.minSize = 2;
-              curveParticles.maxSize = 12;
+              curveParticles.minSize = 3;
+              curveParticles.maxSize = 15;
               
               // Rotation randomness
               curveParticles.minInitialRotation = 0;
@@ -687,7 +702,7 @@ export function BabylonCanvas() {
               curveParticles.maxLifeTime = 4.5;
               
               // Emit settings
-              curveParticles.emitRate = 200;
+              curveParticles.emitRate = 300;
               curveParticles.updateSpeed = 0.02;
               
               // Very slow gentle movement
@@ -695,9 +710,9 @@ export function BabylonCanvas() {
               curveParticles.maxEmitPower = 0.05;
               
               curveParticles.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
-              curveParticles.addColorGradient(0.05, new BABYLON.Color4(.6, 0.6, 0.9, 0.4));
-              curveParticles.addColorGradient(0.4, new BABYLON.Color4(.8, 0.6, 0.8, 0.4));
-              curveParticles.addColorGradient(0.7, new BABYLON.Color4(.9, 0.5, 0.4, 0.2));
+              curveParticles.addColorGradient(0.1, new BABYLON.Color4(.6, 0.6, 0.9, 0.3));
+              curveParticles.addColorGradient(0.5, new BABYLON.Color4(.8, 0.6, 0.8, 0.3));
+              curveParticles.addColorGradient(0.8, new BABYLON.Color4(.9, 0.5, 0.4, 0.15));
               curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
               
               curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
