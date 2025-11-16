@@ -386,7 +386,7 @@ export function BabylonCanvas() {
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 20,
+    speed: 12,
     speedK: 2,
     v: 10,
     pitch: 0,
@@ -830,7 +830,7 @@ export function BabylonCanvas() {
             flameParticleSystemRef.current = flame;
             console.log("🔥 Engine flame 1 particle system created and started");
             
-            // ===== SECOND FLAME (offset in Z) =====
+            /* // ===== SECOND FLAME (offset in Z) =====
             // Create a second emitter as child of the first emitter
             const emitter2 = new BABYLON.TransformNode("engineFlame2", scene);
             emitter2.parent = emitter;
@@ -861,7 +861,7 @@ export function BabylonCanvas() {
             
             flame2.start();
             flameParticleSystem2Ref.current = flame2;
-            console.log("🔥 Engine flame 2 particle system created and started at Z offset:", FLAME_2_Z_OFFSET);
+            console.log("🔥 Engine flame 2 particle system created and started at Z offset:", FLAME_2_Z_OFFSET); */
           } else {
             console.warn("⚠️ engineFlame transform node not found in spaceship model");
           }
@@ -998,7 +998,7 @@ export function BabylonCanvas() {
     smoke.maxEmitPower = 1.5;
     smoke.updateSpeed = 0.01;
     
-    smoke.start();
+    //smoke.start();
     smokeParticleSystemRef.current = smoke;
 
     // ========================
