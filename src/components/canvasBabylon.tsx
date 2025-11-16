@@ -479,7 +479,7 @@ export function BabylonCanvas() {
     if (isMobileRef.current) {
       camFov = 1.15;
     } else {
-      camFov = 1;
+      camFov = .85;
     }
     camera.fov = camFov;
 
@@ -683,7 +683,7 @@ export function BabylonCanvas() {
                 const randomVertex = vertices[Math.floor(Math.random() * vertices.length)];
                 
                 // Add random offset for variation
-                const offsetRange = 5.0; // Adjust this to control spread around vertices
+                const offsetRange = 10.0; // Adjust this to control spread around vertices
                 position.x = randomVertex.x + (Math.random() - 0.5) * offsetRange;
                 position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
                 position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
@@ -973,8 +973,8 @@ export function BabylonCanvas() {
     smoke.particleTexture = new BABYLON.Texture("/assets/textures/smoke_15.png", scene);
     smoke.emitter = smokeEmitter;
     
-    smoke.minEmitBox = new BABYLON.Vector3(-100, -15, 100);
-    smoke.maxEmitBox = new BABYLON.Vector3(100, 5, -100);
+    smoke.minEmitBox = new BABYLON.Vector3(-100, -17, 100);
+    smoke.maxEmitBox = new BABYLON.Vector3(100, 7, -100);
     
     // Color gradients for smoke
     smoke.addColorGradient(0.0, new BABYLON.Color4(0.40, 0.40, 0.88, 0));
@@ -982,8 +982,8 @@ export function BabylonCanvas() {
     smoke.addColorGradient(0.8, new BABYLON.Color4(0.4, 0.25, 0.5, 0.08));
     smoke.addColorGradient(1.0, new BABYLON.Color4(0.3, 0.15, 0.4, 0));
     
-    smoke.minSize = 15;
-    smoke.maxSize = 40;
+    smoke.minSize = 20;
+    smoke.maxSize = 50;
     smoke.minLifeTime = 4;
     smoke.maxLifeTime = 10;
     smoke.emitRate = 0; // Start disabled

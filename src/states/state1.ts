@@ -26,11 +26,11 @@ export const state1Config: StateConfig = {
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 20,
-        desktop: 16
+        desktop: 20
       },
       upperRadiusLimit: {
         mobile: 20,
-        desktop: 16
+        desktop: 20
       },
       beta: {
         mobile: Math.PI / 2,
