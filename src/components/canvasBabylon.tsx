@@ -386,7 +386,7 @@ export function BabylonCanvas() {
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 14,
+    speed: 12,
     speedK: 2,
     v: 10,
     pitch: 0,
@@ -690,13 +690,13 @@ export function BabylonCanvas() {
               };
               if (isMobileRef.current) {
                 // Particle size - visible but not huge
-                curveParticles.minSize = 2;
-                curveParticles.maxSize = 10;
+                curveParticles.minSize = 1;
+                curveParticles.maxSize = 5;
                 curveParticles.emitRate = 150;
               } else {
                 // Particle size - visible but not huge
-                curveParticles.minSize = 3;
-                curveParticles.maxSize = 15;
+                curveParticles.minSize = 2;
+                curveParticles.maxSize = 10;
                 curveParticles.emitRate = 250;
               }
               // Rotation randomness
@@ -2039,7 +2039,11 @@ export function BabylonCanvas() {
       const delay = cameraConfig.animationDelay !== undefined ? cameraConfig.animationDelay : 0;
       
       const easing = new BABYLON.CubicEase();
-      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+      if (s === 4) {
+        easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+      } else {
+        easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+      }
       
       animateCameraRadius({
         camera,

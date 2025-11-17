@@ -34,7 +34,7 @@ export function AudioManager() {
     if (!audio) return;
 
     // Once we reach state 4, mark audio as started (it will continue forever)
-    if (s >= S.state_4 && !audioHasStartedRef.current) {
+    if (s > S.state_4 && !audioHasStartedRef.current) {
       audioHasStartedRef.current = true;
     }
 

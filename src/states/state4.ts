@@ -45,7 +45,7 @@ export const state4Config: StateConfig = {
         mobile: -Math.PI * 1.5,
         desktop: -Math.PI * 1.5
       },
-      animationDuration: 1.0, // Duration for ALL camera properties (radius, beta, alpha)
+      animationDuration: 1.5, // Duration for ALL camera properties (radius, beta, alpha)
       animationDelay: 0 // Delay before camera animation starts
     },
     babylonScene: {
@@ -64,12 +64,12 @@ export const state4Config: StateConfig = {
       shipAnimation: {
         desktop: { position: { x: 0, y: -1, z: 0 } },
         mobile: { position: { x: 0, y: -1, z: 0 } },
-        duration: 1,
+        duration: .5,
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 400,
-        duration: 0.6,
+        fogEnd: 350,
+        duration: 2,
         delay: 0
       }
     }
