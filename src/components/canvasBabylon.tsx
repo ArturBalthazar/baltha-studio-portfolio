@@ -2490,7 +2490,7 @@ export function BabylonCanvas() {
       rockRing.setEnabled(true);
       if (rockRingAnimationGroups.length > 0) {
         const animGroup = rockRingAnimationGroups[0];
-        animGroup.start(false, 1.0, 1, 120);
+        animGroup.start(true, 1.7, 1, 1500);
       }
       
       // Gather materials from rockRing and its children
