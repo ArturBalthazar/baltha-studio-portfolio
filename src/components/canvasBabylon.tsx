@@ -690,14 +690,14 @@ export function BabylonCanvas() {
               };
               if (isMobileRef.current) {
                 // Particle size - visible but not huge
-                curveParticles.minSize = 1;
-                curveParticles.maxSize = 5;
-                curveParticles.emitRate = 150;
+                curveParticles.minSize = .5;
+                curveParticles.maxSize = 2.5;
+                curveParticles.emitRate = 200;
               } else {
                 // Particle size - visible but not huge
                 curveParticles.minSize = 2;
-                curveParticles.maxSize = 10;
-                curveParticles.emitRate = 250;
+                curveParticles.maxSize = 6;
+                curveParticles.emitRate = 600;
               }
               // Rotation randomness
               curveParticles.minInitialRotation = 0;
