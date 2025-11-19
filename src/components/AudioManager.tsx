@@ -33,7 +33,7 @@ export function AudioManager() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Once we reach state 4, mark audio as started (it will continue forever)
+    // Once we reach state 4 (index 4, S.state_4), mark audio as started (it will continue forever)
     if (s >= S.state_4 && !audioHasStartedRef.current) {
       audioHasStartedRef.current = true;
     }
@@ -45,7 +45,7 @@ export function AudioManager() {
       // If this is the first time starting, do a fade-in
       if (audio.paused) {
         audio.volume = 0; // Start from 0
-        
+
         // Use play() with catch to handle autoplay restrictions
         audio.play().catch((error) => {
           console.log("Audio autoplay prevented:", error);
@@ -59,7 +59,7 @@ export function AudioManager() {
         const fadeIn = () => {
           const elapsed = performance.now() - startTime;
           const progress = Math.min(elapsed / fadeInDuration, 1);
-          
+
           // Ease out cubic for smooth fade
           const eased = 1 - Math.pow(1 - progress, 3);
           audio.volume = targetVolume * eased;

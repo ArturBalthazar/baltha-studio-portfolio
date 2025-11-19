@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
 export enum S {
-  state_1 = 0,
+  state_0 = 0,
+  state_1,
   state_2,
   state_3,
   state_4,
@@ -9,8 +10,7 @@ export enum S {
   state_6,
   state_7,
   state_8,
-  state_9,
-  state_10
+  state_9
 }
 
 type UIState = {
@@ -31,7 +31,7 @@ type UIState = {
 };
 
 export const useUI = create<UIState>((set, get) => ({
-  state: S.state_1,
+  state: S.state_0,
   setState: (s) => set({ state: s }),
   next: () => set({ state: (get().state + 1) as S }),
   prev: () => set({ state: (get().state - 1) as S }),

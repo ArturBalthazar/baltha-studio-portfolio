@@ -17,7 +17,7 @@ export default function App() {
   const { setChatOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
-  
+
   const [chatVisible, setChatVisible] = React.useState(false); // For delayed removal
 
   // Sync chatVisible with chatOpen, but with delay on close
@@ -36,26 +36,26 @@ export default function App() {
       `Button ${index} clicked:`,
       config.content.overlayContent?.buttons[index]
     );
-    
-    // Handle state 2 button clicks - switch logo models
-    if (s === S.state_2) {
+
+    // Handle state 1 button clicks - switch logo models
+    if (s === S.state_1) {
       setSelectedLogoModel(index);
     }
-    
-    // Handle state 3 button clicks - rotate planet to continent
-    if (s === S.state_3) {
+
+    // Handle state 2 button clicks - rotate planet to continent
+    if (s === S.state_2) {
       setSelectedContinent(index);
     }
   };
 
   const handlePrevious = () => {
-    if (s > S.state_1) {
+    if (s > S.state_0) {
       useUI.getState().setState(s - 1);
     }
   };
 
   const handleNext = () => {
-    if (s < S.state_10) {
+    if (s < S.state_9) {
       useUI.getState().setState(s + 1);
     }
   };
@@ -64,7 +64,7 @@ export default function App() {
     <>
       {/* Global Audio Manager */}
       <AudioManager />
-      
+
       {/* Desktop: Full width layout, chat overlays on top */}
       <div
         className="h-[100dvh] min-h-[100svh] w-full overflow-hidden"
@@ -116,7 +116,7 @@ export default function App() {
               )}
 
               {/* Single resizing overlay box */}
-              {(s === S.state_2 || s === S.state_3 || s === S.state_4) && (
+              {(s === S.state_1 || s === S.state_2 || s === S.state_3) && (
                 <OverlayBox
                   visible={true}
                   currentState={s}
@@ -127,7 +127,7 @@ export default function App() {
               )}
 
               {/* Navigation buttons */}
-              {s > S.state_1 && (
+              {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
                   className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
@@ -141,7 +141,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_10 && (
+              {s < S.state_9 && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
@@ -156,7 +156,7 @@ export default function App() {
               )}
 
               {/* Mobile navigation buttons - bottom left and right corners */}
-              {s > S.state_1 && (
+              {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
                   className="absolute left-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
@@ -170,7 +170,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_10 && (
+              {s < S.state_9 && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
@@ -184,21 +184,21 @@ export default function App() {
                 </button>
               )}
 
-              {/* Bottom Left Controls (State 5+) */}
+              {/* Bottom Left Controls (State 4+) */}
               {config.content.showBottomLeftControls && (
-                <BottomLeftControls 
-                  visible={true} 
+                <BottomLeftControls
+                  visible={true}
                   delay={500}
-                  isState5={s === S.state_5}
+                  isState4={s === S.state_4}
                   chatOpen={chatOpen}
                   onChatToggle={() => setChatOpen(!chatOpen)}
                 />
               )}
             </CanvasFrame>
           </div>
-          
+
           {/* Bottom label */}
-          <div 
+          <div
             className={cx(
               "absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-20 text-xs font-mono tracking-wide transition-colors duration-500 select-none pointer-events-none",
               config.content.whiteBottomLabel ? "text-brand-white" : "text-brand-dark/70"
@@ -215,9 +215,9 @@ export default function App() {
         onClick={() => setChatOpen(!chatOpen)}
         className={cx(
           "fixed z-50 rounded-full",
-          // mobile (centered via right hack you used) - hidden in State 5
+          // mobile (centered via right hack you used) - hidden in State 4
           "bottom-[90px] -right-[50%] -translate-x-[25px]",
-          s === S.state_5 && "hidden sm:flex",
+          s === S.state_4 && "hidden sm:flex",
           // desktop: push farther right, small bottom tweak - always visible
           "sm:bottom-[70px] sm:-right-[100%] sm:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",
@@ -227,17 +227,17 @@ export default function App() {
           chatOpen ? "opacity-0" : "",
           chatOpen ? "w-[50px] h-[50px]" : "w-[50px] h-[50px]"
         )}
+        style={{
+          background: chatOpen
+            ? `rgba(255,255,255,0.233)`
+            : `radial-gradient(circle, transparent 30%, rgba(255,255,255,0.233) 70%)`,
+        }}
+        aria-label={chatOpen ? "Close chat" : "Open chat"}
+      >
+        <div
+          className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10 rounded-[35%] blur-[10px] opacity-100"
           style={{
-            background: chatOpen
-              ? `rgba(255,255,255,0.233)`
-              : `radial-gradient(circle, transparent 30%, rgba(255,255,255,0.233) 70%)`,
-          }}
-          aria-label={chatOpen ? "Close chat" : "Open chat"}
-        >
-            <div
-              className="absolute top-[2.5px] left-[2.5px] w-[45px] h-[45px] -z-10 rounded-[35%] blur-[10px] opacity-100"
-              style={{
-                background: `conic-gradient(
+            background: `conic-gradient(
                   from 0deg,
                   #9A92D2,
                   #7583ff,
@@ -245,17 +245,17 @@ export default function App() {
                   #FF99CC,
                   #9A92D2
                 )`,
-                animation: "rotateGlow 5s linear infinite",
-              }}
-            />
+            animation: "rotateGlow 5s linear infinite",
+          }}
+        />
 
-          <img
-            src={chatOpen ? "/assets/images/chatIcon.png" : "/assets/images/chatIcon.png"}
-            alt={chatOpen ? "Chat" : "Chat"}
-            className={chatOpen ? "w-[30px] h-[30px] mt-[5px]" : "w-[30px] h-[30px] mt-[5px]"}
-          />
-          <span className="sr-only">{chatOpen ? "Open chat" : "Open chat"}</span>
-        </button>
+        <img
+          src={chatOpen ? "/assets/images/chatIcon.png" : "/assets/images/chatIcon.png"}
+          alt={chatOpen ? "Chat" : "Chat"}
+          className={chatOpen ? "w-[30px] h-[30px] mt-[5px]" : "w-[30px] h-[30px] mt-[5px]"}
+        />
+        <span className="sr-only">{chatOpen ? "Open chat" : "Open chat"}</span>
+      </button>
 
       {/* Chat */}
       {chatVisible && <Chat onClose={() => setChatOpen(false)} />}

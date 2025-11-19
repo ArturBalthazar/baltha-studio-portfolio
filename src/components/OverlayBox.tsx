@@ -22,14 +22,14 @@ export function OverlayBox({
   transitionDuration = 1000,
 }: OverlayBoxProps) {
   const [showBox, setShowBox] = useState(false);
-  
+
   // Get global state
   const navigationMode = useUI((st) => st.navigationMode);
   const selectedLogoModel = useUI((st) => st.selectedLogoModel);
   const { setNavigationMode, setSelectedLogoModel } = useUI();
-  
+
   // State management for selected buttons
-  const [selectedState3Button, setSelectedState3Button] = useState(2); // Default to South America
+  const [selectedState2Button, setSelectedState2Button] = useState(2); // Default to South America
   const [selectedContinent, setSelectedContinent] = useState("Europe");
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function OverlayBox({
   }, [visible, delay]);
 
   // State-specific content definitions
-  const state2Content = {
+  const state1Content = {
     title: "Customize it",
     buttons: [
       { icon: "/assets/images/1st_default.png", label: "Baltha Logo", selected: selectedLogoModel === 0 },
@@ -53,19 +53,19 @@ export function OverlayBox({
   };
 
   const continentNames = ["Africa", "North America", "Europe", "South America", "Oceania", "Asia"];
-  const state3Content = {
+  const state2Content = {
     title: "Live Earth",
     buttons: [
-      { icon: "/assets/images/Africa.png", label: "Africa", selected: selectedState3Button === 0 },
-      { icon: "/assets/images/NorthAmerica.png", label: "North America", selected: selectedState3Button === 1 },
-      { icon: "/assets/images/Europe.png", label: "Europe", selected: selectedState3Button === 2 },
-      { icon: "/assets/images/SouthAmerica.png", label: "South America", selected: selectedState3Button === 3 },
-      { icon: "/assets/images/Oceania.png", label: "Oceania", selected: selectedState3Button === 4 },
-      { icon: "/assets/images/Asia.png", label: "Asia", selected: selectedState3Button === 5 },
+      { icon: "/assets/images/Africa.png", label: "Africa", selected: selectedState2Button === 0 },
+      { icon: "/assets/images/NorthAmerica.png", label: "North America", selected: selectedState2Button === 1 },
+      { icon: "/assets/images/Europe.png", label: "Europe", selected: selectedState2Button === 2 },
+      { icon: "/assets/images/SouthAmerica.png", label: "South America", selected: selectedState2Button === 3 },
+      { icon: "/assets/images/Oceania.png", label: "Oceania", selected: selectedState2Button === 4 },
+      { icon: "/assets/images/Asia.png", label: "Asia", selected: selectedState2Button === 5 },
     ],
   };
 
-  const state4Content = {
+  const state3Content = {
     title: "Navigation mode:",
     buttons: [
       { icon: "/assets/images/guided_mode.png", label: "Guided", selected: navigationMode === 'guided' },
@@ -75,19 +75,19 @@ export function OverlayBox({
 
   const getStateDimensions = (): OverlayBoxDimensions => {
     switch (currentState) {
-      case S.state_2:
+      case S.state_1:
         return {
           width: { mobile: "w-[95%]", desktop: "sm:w-[calc(20%+200px)]" },
           height: { mobile: "h-[50%]", desktop: "sm:h-[60%]" },
           transform: { mobile: "translate-y-[0%]", desktop: "sm:translate-y-[5%]" },
         };
-      case S.state_3:
+      case S.state_2:
         return {
           width: { mobile: "w-[95%]", desktop: "sm:w-[calc(90%-100px)]" },
           height: { mobile: "h-[70%]", desktop: "sm:h-[55%]" },
           transform: { mobile: "translate-y-[0%]", desktop: "sm:translate-y-[0%]" },
         };
-      case S.state_4:
+      case S.state_3:
         return {
           width: { mobile: "w-[95%]", desktop: "sm:w-[calc(15%+200px)]" },
           height: { mobile: "h-[35%]", desktop: "sm:h-[calc(20%+100px)]" },
@@ -106,18 +106,18 @@ export function OverlayBox({
   const getContentVisibility = (): StateContentVisibility => {
     return {
       state2: {
-        title: currentState === S.state_2,
-        buttons: currentState === S.state_2,
+        title: currentState === S.state_1,
+        buttons: currentState === S.state_1,
       },
       state3: {
-        title: currentState === S.state_3,
-        liveSignal: currentState === S.state_3,
-        windowControls: currentState === S.state_3,
-        buttons: currentState === S.state_3,
+        title: currentState === S.state_2,
+        liveSignal: currentState === S.state_2,
+        windowControls: currentState === S.state_2,
+        buttons: currentState === S.state_2,
       },
       state4: {
-        title: currentState === S.state_4,
-        buttons: currentState === S.state_4,
+        title: currentState === S.state_3,
+        buttons: currentState === S.state_3,
       },
     };
   };
@@ -127,21 +127,21 @@ export function OverlayBox({
 
   // Handle button clicks
   const handleInternalButtonClick = (index: number) => {
-    if (currentState === S.state_2) {
+    if (currentState === S.state_1) {
       setSelectedLogoModel(index);
-    } else if (currentState === S.state_3) {
-      setSelectedState3Button(index);
+    } else if (currentState === S.state_2) {
+      setSelectedState2Button(index);
       setSelectedContinent(continentNames[index]);
-    } else if (currentState === S.state_4) {
+    } else if (currentState === S.state_3) {
       // Update global navigation mode
       setNavigationMode(index === 0 ? 'guided' : 'free');
     }
-    
+
     // Also call the external handler if provided
     onButtonClick?.(index);
   };
 
-  if (currentState !== S.state_2 && currentState !== S.state_3 && currentState !== S.state_4) return null;
+  if (currentState !== S.state_1 && currentState !== S.state_2 && currentState !== S.state_3) return null;
 
   return (
     <div
@@ -195,27 +195,27 @@ export function OverlayBox({
 
         {/* MAIN CONTENT */}
         <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center pointer-events-none select-none">
-          
-          {/* STATE 2 CONTENT */}
+
+          {/* STATE 1 CONTENT */}
           <div
             className={cx(
               "absolute inset-4 flex flex-col text-center transition-opacity duration-500 select-none",
               visibility.state2.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
-            {/* State 2 Title */}
+            {/* State 1 Title */}
             <div className="mb-6 mt-0 text-center pointer-events-none">
               <div className="flex items-center justify-center gap-3">
-                <h2 className="font-[500] text-white text-3xl select-none">{state2Content.title}</h2>
+                <h2 className="font-[500] text-white text-3xl select-none">{state1Content.title}</h2>
               </div>
             </div>
 
-            {/* State 2 Buttons */}
+            {/* State 1 Buttons */}
             <div className="flex-1 flex flex-col justify-end pointer-events-none">
               <div className="flex justify-center gap-2 sm:gap-3">
-                {state2Content.buttons.map((button, index) => (
+                {state1Content.buttons.map((button, index) => (
                   <button
-                    key={`state2-${index}`}
+                    key={`state1-${index}`}
                     onClick={() => handleInternalButtonClick(index)}
                     className={cx(
                       "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0 aspect-square",
@@ -253,10 +253,10 @@ export function OverlayBox({
                     )}
                     <span className="relative z-10 text-white flex items-center justify-center">
                       {typeof button.icon === "string" &&
-                      (button.icon.endsWith(".png") ||
-                        button.icon.endsWith(".jpg") ||
-                        button.icon.endsWith(".jpeg") ||
-                        button.icon.endsWith(".svg")) ? (
+                        (button.icon.endsWith(".png") ||
+                          button.icon.endsWith(".jpg") ||
+                          button.icon.endsWith(".jpeg") ||
+                          button.icon.endsWith(".svg")) ? (
                         <img src={button.icon} alt={button.label} className="w-[80%] h-[80%] object-contain" />
                       ) : (
                         button.icon
@@ -268,14 +268,14 @@ export function OverlayBox({
             </div>
           </div>
 
-          {/* STATE 3 CONTENT */}
+          {/* STATE 2 CONTENT */}
           <div
             className={cx(
               "absolute inset-4 flex flex-col text-left transition-opacity duration-500 select-none",
               visibility.state3.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
-            {/* State 3 Title with Live Signal and Window Controls */}
+            {/* State 2 Title with Live Signal and Window Controls */}
             <div className="mb-1 -mt-2 text-left pointer-events-none">
               <div className="flex items-center justify-between select-none">
                 <div className="flex items-center gap-3">
@@ -285,7 +285,7 @@ export function OverlayBox({
                       visibility.state3.liveSignal ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <h2 className="font-[500] text-white text-lg">{state3Content.title}</h2>
+                  <h2 className="font-[500] text-white text-lg">{state2Content.title}</h2>
                 </div>
 
                 {/* Continent name in center */}
@@ -313,7 +313,7 @@ export function OverlayBox({
 
             {/* State 3 Content Layout */}
             <div className="flex-1 relative pointer-events-none">
-              
+
               {/* Graph - Mobile: top, Desktop: right side */}
               <div className={cx(
                 // Mobile: positioned at top
@@ -321,8 +321,8 @@ export function OverlayBox({
                 // Desktop: positioned on right side
                 "sm:top-[40%] sm:-translate-y-1/2 sm:right-4 sm:left-auto sm:w-[30%] sm:h-[60%]"
               )}>
-                <GraphComponent 
-                  continent={selectedContinent} 
+                <GraphComponent
+                  continent={selectedContinent}
                   className="w-full h-full"
                 />
               </div>
@@ -342,9 +342,9 @@ export function OverlayBox({
                     "sm:grid-cols-2 sm:w-auto sm:gap-3"
                   )}
                 >
-                  {state3Content.buttons.map((button, index) => (
+                  {state2Content.buttons.map((button, index) => (
                     <button
-                      key={`state3-${index}`}
+                      key={`state2-${index}`}
                       onClick={() => handleInternalButtonClick(index)}
                       className={cx(
                         // Mobile: fill cell as square
@@ -391,10 +391,10 @@ export function OverlayBox({
                       {/* icon / content */}
                       <span className="relative z-10 text-white flex items-center justify-center">
                         {typeof button.icon === "string" &&
-                        (button.icon.endsWith(".png") ||
-                          button.icon.endsWith(".jpg") ||
-                          button.icon.endsWith(".jpeg") ||
-                          button.icon.endsWith(".svg")) ? (
+                          (button.icon.endsWith(".png") ||
+                            button.icon.endsWith(".jpg") ||
+                            button.icon.endsWith(".jpeg") ||
+                            button.icon.endsWith(".svg")) ? (
                           <img src={button.icon} alt={button.label} className="w-[80%] h-[80%] object-contain" />
                         ) : (
                           button.icon
@@ -408,23 +408,23 @@ export function OverlayBox({
             </div>
           </div>
 
-          {/* STATE 4 CONTENT */}
+          {/* STATE 3 CONTENT */}
           <div
             className={cx(
               "absolute inset-4 flex flex-col text-center transition-opacity duration-500 select-none",
               visibility.state4.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
-            {/* State 4 Title */}
+            {/* State 3 Title */}
             <div className="mt-2 mb-2 text-center pointer-events-none">
-              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium select-none">{state4Content.title}</h2>
+              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium select-none">{state3Content.title}</h2>
             </div>
 
-            {/* State 4 Navigation Mode Buttons */}
+            {/* State 3 Navigation Mode Buttons */}
             <div className="flex-1 flex items-center justify-center pointer-events-none">
               <div className="flex gap-8 sm:gap-6">
-                {state4Content.buttons.map((button, index) => (
-                  <div key={`state4-${index}`} className="flex flex-col items-center gap-3 pointer-events-none">
+                {state3Content.buttons.map((button, index) => (
+                  <div key={`state3-${index}`} className="flex flex-col items-center gap-3 pointer-events-none">
                     <button
                       onClick={() => handleInternalButtonClick(index)}
                       className={cx(
@@ -469,7 +469,7 @@ export function OverlayBox({
                         <img src={button.icon} alt={button.label} className="w-[70%] h-[70%] object-contain" />
                       </span>
                     </button>
-                    
+
                     {/* Button Label */}
                     <span className="font-mono text-white text-sm sm:text-base select-none">{button.label}</span>
                   </div>

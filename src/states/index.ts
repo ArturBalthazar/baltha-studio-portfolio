@@ -21,16 +21,16 @@ const defaultConfig: StateConfig = {
 
 // State configuration mapping (now aligned with indices)
 const stateConfigs: Record<S, StateConfig> = {
-  [S.state_1]: state0Config, // State 1 = index 0
-  [S.state_2]: state1Config, // State 2 = index 1
-  [S.state_3]: state2Config, // State 3 = index 2
-  [S.state_4]: state3Config, // State 4 = index 3
-  [S.state_5]: state4Config, // State 5 = index 4
+  [S.state_0]: state0Config, // State 0 = index 0
+  [S.state_1]: state1Config, // State 1 = index 1
+  [S.state_2]: state2Config, // State 2 = index 2
+  [S.state_3]: state3Config, // State 3 = index 3
+  [S.state_4]: state4Config, // State 4 = index 4
+  [S.state_5]: defaultConfig,
   [S.state_6]: defaultConfig,
   [S.state_7]: defaultConfig,
   [S.state_8]: defaultConfig,
   [S.state_9]: defaultConfig,
-  [S.state_10]: defaultConfig,
 };
 
 export function getStateConfig(state: S): StateConfig {

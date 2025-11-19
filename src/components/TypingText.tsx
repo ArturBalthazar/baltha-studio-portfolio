@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface TypingTextProps {
   text: string;
@@ -7,41 +7,49 @@ interface TypingTextProps {
   className?: string;
 }
 
-export function TypingText({ 
-  text, 
-  startDelay = 500, 
-  typingSpeed = 25, 
-  className = "" 
+export function TypingText({
+  text,
+  startDelay = 0,
+  typingSpeed = 25,
+  className = ""
 }: TypingTextProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Reset when text changes
     setDisplayedText("");
     setIsTyping(false);
 
+    // Clear any existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     // Start typing after delay
-    const startTimeout = setTimeout(() => {
+    typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(true);
-      
+
       let index = 0;
       const typeCharacter = () => {
         if (index < text.length) {
           setDisplayedText(text.slice(0, index + 1));
           index++;
-          setTimeout(typeCharacter, typingSpeed);
+          typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
         } else {
           setIsTyping(false);
         }
       };
-      
+
       typeCharacter();
     }, startDelay);
 
     return () => {
-      clearTimeout(startTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, [text, startDelay, typingSpeed]);
 
@@ -57,10 +65,9 @@ export function TypingText({
   return (
     <div className={`font-mono pointer-events-none select-none ${className}`}>
       <span className="typing-content select-none">{displayedText}</span>
-      <span 
-        className={`inline-block transition-opacity duration-100 select-none ${
-          cursorVisible ? 'opacity-100' : 'opacity-0'
-        }`}
+      <span
+        className={`inline-block transition-opacity duration-100 select-none ${cursorVisible ? 'opacity-100' : 'opacity-0'
+          }`}
       >
         ▌
       </span>
