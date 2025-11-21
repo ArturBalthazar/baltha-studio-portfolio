@@ -1,4 +1,11 @@
 {
+    "redirects": [
+        {
+            "source": "/welcome",
+            "destination": "/connect",
+            "permanent": true
+        }
+    ],
     "rewrites": [
         {
             "source": "/(.*)",

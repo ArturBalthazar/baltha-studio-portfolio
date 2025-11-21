@@ -1,13 +1,13 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./app";
-import Welcome from "./Welcome";
+import Connect from "./Connect";
 import "./index.css";
 
 const path = window.location.pathname;
 
 createRoot(document.getElementById("root")!).render(
-  path.startsWith("/welcome") ? <Welcome /> : <App />
+  (path.startsWith("/connect") || path.startsWith("/welcome")) ? <Connect /> : <App />
 );
 
 function setAppVh() {
