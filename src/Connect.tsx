@@ -80,7 +80,7 @@ export default function Connect() {
 
     const links = [
         {
-            label: "Website",
+            label: "Baltha Studio",
             url: "https://baltha.studio",
             icon: "/assets/images/website.png",
             type: "link"
