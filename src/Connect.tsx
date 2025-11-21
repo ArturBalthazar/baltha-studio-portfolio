@@ -53,6 +53,31 @@ export default function Connect() {
         }
     }, [chatOpen]);
 
+    const handleInstagramClick = () => {
+        const webUrl = "https://instagram.com/baltha.studio";
+        const appUrl = "instagram://user?username=baltha.studio";
+
+        // Simple mobile detection
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            const start = Date.now();
+            // Try to open the app
+            window.location.href = appUrl;
+
+            // Fallback check
+            setTimeout(() => {
+                const end = Date.now();
+                // If the browser wasn't backgrounded (meaning app didn't open), open web url
+                if (end - start < 1500) {
+                    window.open(webUrl, '_blank');
+                }
+            }, 1000);
+        } else {
+            window.open(webUrl, '_blank');
+        }
+    };
+
     const links = [
         {
             label: "Website",
@@ -62,9 +87,10 @@ export default function Connect() {
         },
         {
             label: "Instagram",
-            url: "https://instagram.com/baltha.studio",
+            url: "#",
             icon: "/assets/images/instagram.png",
-            type: "link"
+            type: "action",
+            action: handleInstagramClick
         },
         {
             label: "WhatsApp",
