@@ -3,12 +3,14 @@ import cx from "classnames";
 import { Header } from "./components/header";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
+import { useUI, S } from "./state";
 
 // Typing Label Component
 const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
     const [displayedText, setDisplayedText] = useState("");
 
     useEffect(() => {
+        // Start immediately if delay is 0, otherwise wait
         const startTimeout = setTimeout(() => {
             let currentIndex = 0;
             const interval = setInterval(() => {
@@ -34,6 +36,12 @@ export default function Connect() {
     const [copied, setCopied] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
     const [chatVisible, setChatVisible] = useState(false);
+
+    // Force state 2 for smaller header sizing
+    const setState = useUI((st) => st.setState);
+    useEffect(() => {
+        setState(S.state_2);
+    }, [setState]);
 
     // Sync chatVisible with chatOpen, but with delay on close (copied from App.tsx)
     useEffect(() => {
@@ -119,7 +127,7 @@ export default function Connect() {
 
                             {/* Link Tree Content */}
                             <div className="w-full max-w-md p-6 flex flex-col items-center">
-                                <h2 className="font-sans text-white text-3xl font-medium mb-8 select-none">Connect</h2>
+                                <h2 className="font-sans text-white text-3xl font-medium mb-8 select-none">Let's connect!</h2>
 
                                 <div className="w-full flex flex-col gap-4">
                                     {links.map((link, index) => (
@@ -133,7 +141,7 @@ export default function Connect() {
                                                 }
                                             }}
                                             className={cx(
-                                                "group relative w-full h-16 rounded-bigButton border-2 border-white/30",
+                                                "group relative w-full h-16 rounded-bigButton border border-white/30",
                                                 "flex items-center justify-between px-6",
                                                 "transition-all duration-300 hover:scale-[1.02] hover:border-white/60",
                                                 "select-none bg-brand-white/00"
@@ -158,7 +166,8 @@ export default function Connect() {
                                                     <img src={link.icon} alt={link.label} className="w-full h-full object-contain" />
                                                 </span>
                                                 <span className="text-white text-lg font-thin font-mono tracking-wide">
-                                                    <TypingLabel text={link.label} delay={index * 150 + 300} />
+                                                    {/* Start typing immediately when button starts fading in */}
+                                                    <TypingLabel text={link.label} delay={index * 150} />
                                                 </span>
                                             </div>
                                         </button>

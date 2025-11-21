@@ -10,8 +10,6 @@ export default {
       },
       colors: {
         brand: {
-          ink: "#081529",
-          card: "#F4F2ED",
           purple: "#49408D",
           dark: "#081428",
           orange: "#FF8800",
