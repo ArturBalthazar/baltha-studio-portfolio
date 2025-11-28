@@ -25,7 +25,7 @@ export const state4Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: null,
+    nextState: 'state_5',
     fullscreen: true, // Full screen canvas
     roundedCorners: false, // No rounded corners in state 4
     babylonCamera: {

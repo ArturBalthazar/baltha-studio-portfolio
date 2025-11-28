@@ -70,7 +70,7 @@ export function BottomLeftControls({
             infoOpen && "glow-info"
           )}
           style={{
-            backgroundColor: 'rgba(255,255,255,0.0)'
+            backgroundColor: 'rgba(0, 0, 0, 0.2)'
           }}
           aria-label="Information"
         >
@@ -95,7 +95,7 @@ export function BottomLeftControls({
             "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]"
           )}
           style={{
-            backgroundColor: 'rgba(255,255,255,0.0)'
+            backgroundColor: 'rgba(0, 0, 0, 0.2)'
           }}
           aria-label={audioEnabled ? "Mute audio" : "Unmute audio"}
         >
@@ -119,7 +119,7 @@ export function BottomLeftControls({
             navigationMode
           )}
           style={{
-            backgroundColor: 'rgba(255,255,255,0.0)'
+            backgroundColor: 'rgba(0, 0, 0, 0.2)'
           }}
           aria-label={`Navigation mode: ${navigationMode}`}
         >
@@ -152,7 +152,7 @@ export function BottomLeftControls({
               "transition-all duration-[350ms]"
             )}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.3)',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
               left: navigationMode === 'guided' ? '4px' : 'calc(100% - 46px)',
               transitionTimingFunction: 'cubic-bezier(0.45, 0.2, 0.2, 1)'
             }}

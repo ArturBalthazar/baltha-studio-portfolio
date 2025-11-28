@@ -6,17 +6,22 @@ import { BabylonCanvas } from "./components/canvasBabylon";
 import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
 import { BottomLeftControls } from "./components/BottomLeftControls";
+import { BydCustomizer } from "./components/BydCustomizer";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { ConnectOverlay } from "./components/ConnectOverlay";
 
 export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
+  const bydCustomizerVisible = useUI((st) => st.bydCustomizerVisible);
   const { setChatOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
+
 
   const [chatVisible, setChatVisible] = React.useState(false); // For delayed removal
 
@@ -62,6 +67,7 @@ export default function App() {
 
   return (
     <>
+      <LoadingScreen />
       {/* Global Audio Manager */}
       <AudioManager />
 
@@ -141,7 +147,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_9 && (
+              {s < S.state_9 && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
@@ -170,7 +176,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_9 && (
+              {s < S.state_9 && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
@@ -193,6 +199,16 @@ export default function App() {
                   chatOpen={chatOpen}
                   onChatToggle={() => setChatOpen(!chatOpen)}
                 />
+              )}
+
+              {/* BYD Car Customizer */}
+              <BydCustomizer visible={bydCustomizerVisible} />
+
+              {/* Connect Overlay (State 5) */}
+              {config.content.showConnectOverlay && (
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                  <ConnectOverlay />
+                </div>
               )}
             </CanvasFrame>
           </div>

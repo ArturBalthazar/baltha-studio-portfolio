@@ -5,6 +5,7 @@ import { state1Config } from './state1';
 import { state2Config } from './state2';
 import { state3Config } from './state3';
 import { state4Config } from './state4';
+import { state5Config } from './state5';
 
 // Default config for states not yet defined
 const defaultConfig: StateConfig = {
@@ -26,7 +27,7 @@ const stateConfigs: Record<S, StateConfig> = {
   [S.state_2]: state2Config, // State 2 = index 2
   [S.state_3]: state3Config, // State 3 = index 3
   [S.state_4]: state4Config, // State 4 = index 4
-  [S.state_5]: defaultConfig,
+  [S.state_5]: state5Config,
   [S.state_6]: defaultConfig,
   [S.state_7]: defaultConfig,
   [S.state_8]: defaultConfig,

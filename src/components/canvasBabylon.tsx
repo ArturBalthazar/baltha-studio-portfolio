@@ -4,6 +4,8 @@ import "@babylonjs/loaders";
 import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 
+import { colorSettings, trimConfigs } from "./carConfig";
+
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
 // @ts-ignore - Type mismatch between babylon imports is non-breaking
@@ -422,6 +424,22 @@ export function BabylonCanvas() {
     yawRate: 0 // Current turn rate (-1 to 1, negative = left, positive = right)
   });
 
+  // BYD Car refs
+  const carRootRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const carMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const carAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const currentColorRef = useRef<string>("yellow");
+  const currentTrimRef = useRef<string>("lightBlue");
+  const interiorCameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
+  const isInteriorView = useUI((st) => st.isInteriorView);
+
+
+
+  // BYD Car customization configuration imported from shared file
+  // See carConfig.ts
+
+
+
   // Initialize scene once
   useEffect(() => {
     const canvas = ref.current;
@@ -520,7 +538,7 @@ export function BabylonCanvas() {
       scene
     );
     scene.environmentTexture = env;
-    scene.environmentIntensity = 1.0;
+    scene.environmentIntensity = .6;
     scene.imageProcessingConfiguration.exposure = 1.3;
     scene.imageProcessingConfiguration.contrast = 1.2;
 
@@ -551,7 +569,22 @@ export function BabylonCanvas() {
     // Load all logo models as children of logosRoot
     const modelFiles = ["logo.glb", "logo_chain.glb", "logo_cookie.glb", "logo_badge.glb"];
     const logoModels: BABYLON.AbstractMesh[] = [];
+
+    // Loading tracking
     let loadedCount = 0;
+    const totalAssets = 7; // 4 logos + planet + rockring + spaceship
+    const updateProgress = () => {
+      loadedCount++;
+      const progress = Math.min((loadedCount / totalAssets) * 100, 100);
+      useUI.getState().setLoadingProgress(progress);
+      if (loadedCount >= totalAssets) {
+        setTimeout(() => {
+          useUI.getState().setIsLoading(false);
+        }, 1000);
+      }
+    };
+
+    let loadedLogosCount = 0;
 
     modelFiles.forEach((filename, index) => {
       BABYLON.SceneLoader.ImportMesh(
@@ -569,7 +602,8 @@ export function BabylonCanvas() {
             root.setEnabled(index === 0);
             logoModels[index] = root;
             logoModelsRef.current = logoModels;
-            loadedCount++;
+            loadedLogosCount++;
+            updateProgress();
           }
         },
         undefined,
@@ -612,6 +646,7 @@ export function BabylonCanvas() {
             initialRotation.y += Math.PI; // Add the base PI offset
             planet.rotation = initialRotation;
           }
+          updateProgress();
         }
       },
       undefined,
@@ -645,6 +680,15 @@ export function BabylonCanvas() {
               mesh.material.backFaceCulling = false;
             }
           });
+
+          // Debug: Log all mesh names to find anchor_byd
+          console.log("🔍 Rockring meshes loaded:", meshes.map(m => m.name).join(", "));
+          const anchorByd = meshes.find(m => m.name === "anchor_byd");
+          console.log("🔍 anchor_byd found in rockring:", anchorByd ? "YES" : "NO");
+          if (anchorByd) {
+            console.log("🔍 anchor_byd position:", anchorByd.position);
+          }
+
 
           // Find the Curve mesh and create particle effect
           const curveMesh = meshes.find(m => m.name === "Curve");
@@ -736,6 +780,7 @@ export function BabylonCanvas() {
 
           rockRing.setEnabled(false); // Hidden by default, shown in state 3
           rockRingRef.current = rockRing;
+          updateProgress();
         }
       },
       undefined,
@@ -785,6 +830,7 @@ export function BabylonCanvas() {
           shipRoot.setEnabled(false); // Hidden by default, shown in state 3
           spaceshipRef.current = spaceship; // Keep mesh reference for materials
           spaceshipRootRef.current = shipRoot; // This is what we control
+          updateProgress();
 
           // Create engine flame particle systems (two flames with offset)
           const emitter = scene.getTransformNodeByName("engineFlame");
@@ -1259,6 +1305,282 @@ export function BabylonCanvas() {
         fpsCounter.textContent = `FPS: ${engine.getFps().toFixed(0)}`;
       }
     });
+
+    // Load BYD car asynchronously (doesn't block loading screen)
+    const loadBYDCarAsync = async () => {
+      console.log("🚗 Starting BYD car loading (async)...");
+
+      // Wait a bit to ensure rockring and other assets are loaded
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log("🚗 Waited 2s for scene to load, now loading car...");
+
+      const gltfPath = "/assets/models/byd/";
+      const carFile = "byd_seagull.gltf";
+
+      try {
+        // Load the car model as asset container
+        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(gltfPath, carFile, scene);
+        container.addAllToScene();
+
+        console.log("🚗 BYD car model loaded, processing meshes...");
+
+        if (!container.meshes.length) {
+          console.error("❌ No meshes found in BYD car model");
+          return;
+        }
+
+        // Get the root mesh (first mesh in the container)
+        const carRoot = container.meshes[0];
+        carRootRef.current = carRoot as any; // Store as AbstractMesh
+        console.log("🚗 Car root mesh:", carRoot.name);
+
+        // Setup ambient texture coordinates for ALL materials (including variants)
+        container.materials.forEach(mat => {
+          const pbrMat = mat as BABYLON.PBRMaterial;
+          if (pbrMat.ambientTexture) {
+            pbrMat.ambientTexture.coordinatesIndex = 1;
+          }
+        });
+
+        // Stop all animations
+        container.animationGroups.forEach(group => {
+          group.stop();
+          group.reset();
+        });
+
+        // Store all meshes (don't disable yet - set position first)
+        const carMeshes: BABYLON.AbstractMesh[] = [];
+        container.meshes.forEach(mesh => {
+          carMeshes.push(mesh);
+        });
+
+        carMeshesRef.current = carMeshes;
+
+        // Find the anchor_byd mesh from rockring
+        console.log("🚗 Searching for anchor_byd mesh...");
+        const anchorMesh = scene.getMeshByName("anchor_byd");
+        console.log("🚗 Anchor search result:", anchorMesh ? "FOUND" : "NOT FOUND");
+
+        if (anchorMesh) {
+          // Store anchor reference
+          carAnchorRef.current = anchorMesh;
+
+          // Position car root at anchor location
+          const anchorPos = anchorMesh.getAbsolutePosition();
+          carRoot.position.copyFrom(anchorPos);
+
+          // Apply rotation from anchor
+          // GLTF meshes use rotationQuaternion, so we must update that, not .rotation
+          if (!carRoot.rotationQuaternion) {
+            carRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          }
+
+          // Get absolute rotation from anchor and apply to car
+          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+          anchorWorldMatrix.decompose(undefined, carRoot.rotationQuaternion, undefined);
+
+          carRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+
+          // Create interior camera
+          if (!interiorCameraRef.current) {
+            const offset = new BABYLON.Vector3(0, 13, 0);
+            const rotatedOffset = offset.applyRotationQuaternion(carRoot.rotationQuaternion!);
+            const targetPos = anchorPos.add(rotatedOffset);
+
+            const iCam = new BABYLON.ArcRotateCamera(
+              "interiorCamera",
+              0,            // alpha
+              Math.PI / 2.2,  // beta
+              0,            // radius
+              targetPos,
+              scene
+            );
+            iCam.fov = 1.2;
+            iCam.minZ = 0.01;
+            iCam.lowerRadiusLimit = 0;
+            iCam.upperRadiusLimit = 0;
+
+            // Sync rotation with car/anchor
+            // We calculate heading from the anchor's forward vector to be robust against scaling/quaternions
+            const anchorForward = anchorMesh.forward;
+            const heading = Math.atan2(anchorForward.x, anchorForward.z);
+
+            // ArcRotateCamera alpha 0 looks down -X axis (in Babylon left-handed)
+            // We want to convert our heading (angle from +Z) to alpha
+            // Formula: alpha = -heading - Math.PI/2
+            iCam.alpha = -heading - Math.PI / 7.5;
+
+            interiorCameraRef.current = iCam;
+          }
+
+          // Hide the anchor mesh but keep it enabled for position tracking
+          anchorMesh.isVisible = false;
+
+          console.log(`🚗 BYD car positioned at anchor_byd: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
+          console.log(`🚗 Anchor mesh hidden but enabled for distance tracking`);
+        } else {
+          // Fallback to manual position if anchor not found
+          carRoot.position.set(131, -6.7, 50);
+          carRoot.scaling.set(1, 1, -1);
+          console.warn("⚠️ anchor_byd mesh not found, positioning car at (131, -6.7, 50)");
+          console.log(`🚗 Car root position after manual set: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
+        }
+
+        // Enable all meshes so the car is visible ONLY if state >= 4
+        const shouldBeVisible = useUI.getState().state >= 4;
+        carMeshes.forEach(mesh => {
+          mesh.setEnabled(shouldBeVisible);
+        });
+
+        console.log(`🚗 BYD car loaded successfully! ${carMeshes.length} meshes (enabled and visible)`);
+        console.log(`🚗 Final car root position: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
+
+        // Apply initial customization (yellow body, lightBlue trim)
+        setTimeout(() => {
+          customizeCar({ color: "yellow", trim: "lightBlue" });
+        }, 100);
+      } catch (error) {
+        console.error("❌ Error loading BYD car:", error);
+      }
+    };
+
+    // Customize car function
+    const customizeCar = ({ color, trim }: { color?: string; trim?: string } = {}) => {
+      if (!sceneRef.current) return null;
+
+      const carMaterial = sceneRef.current.getMaterialByName("Body_Paint") as BABYLON.PBRMaterial;
+      if (!carMaterial) {
+        console.warn("⚠️ Body_Paint material not found");
+        return null;
+      }
+
+      // Defaults (fall back to current)
+      let newColor = color ?? currentColorRef.current;
+      let newTrim = trim ?? currentTrimRef.current;
+
+      const colorProvided = color !== undefined;
+      const trimProvided = trim !== undefined;
+
+      // Sanity-check the names
+      const colorSetting = colorSettings[newColor as keyof typeof colorSettings];
+      if (!colorSetting) {
+        console.warn(`⚠️ Invalid color: ${newColor}`);
+        return null;
+      }
+
+      if (!trimConfigs[newTrim]) {
+        console.warn(`⚠️ Invalid trim: ${newTrim}`);
+        return null;
+      }
+
+      // If user picked a new trim, check if current color is allowed
+      if (trimProvided && !colorProvided) {
+        const chosenTrim = trimConfigs[newTrim];
+        if (!chosenTrim.allowed.includes(newColor)) {
+          // Auto-switch to first allowed color
+          newColor = chosenTrim.allowed[0];
+          console.log(`🎨 Trim ${newTrim} requires color change to ${newColor}`);
+        }
+      }
+
+      // If user picked a new color, check if current trim allows it
+      if (colorProvided && !trimProvided) {
+        const currentTrimConfig = trimConfigs[newTrim];
+        if (!currentTrimConfig.allowed.includes(newColor)) {
+          // Find a trim that allows this color
+          const compatibleTrim = Object.entries(trimConfigs).find(([_, cfg]) =>
+            cfg.allowed.includes(newColor)
+          );
+          if (compatibleTrim) {
+            newTrim = compatibleTrim[0];
+            console.log(`🎨 Color ${newColor} requires trim change to ${newTrim}`);
+          }
+        }
+      }
+
+      // Apply body paint color
+      const paint = colorSettings[newColor as keyof typeof colorSettings];
+      carMaterial.albedoColor = BABYLON.Color3.FromHexString(paint.hex);
+      carMaterial.metallic = paint.metallic;
+      carMaterial.roughness = paint.roughness;
+      if (carMaterial.sheen) {
+        carMaterial.sheen.intensity = paint.sheen;
+      }
+
+      // Apply trim-specific materials
+      const chosenTrim = trimConfigs[newTrim];
+      for (const [meshName, matName] of Object.entries(chosenTrim.materials)) {
+        const mesh = sceneRef.current.getMeshByName(meshName);
+        const mat = sceneRef.current.getMaterialByName(matName);
+        if (mesh && mat) {
+          mesh.material = mat;
+        }
+      }
+
+      // Update current state
+      currentColorRef.current = newColor;
+      currentTrimRef.current = newTrim;
+
+      console.log(`🎨 Applied customization: ${newColor} / ${newTrim}`);
+      return { finalColor: newColor, finalTrim: newTrim };
+    };
+
+    // Start loading the car asynchronously (doesn't affect loading screen)
+    loadBYDCarAsync();
+
+    // Register customizeCar callback in state so BydCustomizer can call it
+    useUI.getState().setBydCustomizeCallback(customizeCar);
+
+    // Distance-based visibility for BYD customizer panel
+    const VISIBILITY_DISTANCE = 70; // Show panel when within 100 meters
+
+    scene.onBeforeRenderObservable.add(() => {
+      // Early return if ship not loaded yet
+      if (!spaceshipRootRef.current) {
+        // console.log("⚠️ Ship not loaded yet, skipping distance check");
+        return;
+      }
+
+      // Use anchor position if available, otherwise use car position
+      let targetPosition: BABYLON.Vector3 | null = null;
+
+      if (carAnchorRef.current) {
+        targetPosition = carAnchorRef.current.getAbsolutePosition();
+      } else if (carRootRef.current) {
+        targetPosition = carRootRef.current.getAbsolutePosition();
+      }
+
+      if (!targetPosition) {
+        // console.log("⚠️ Car/anchor not loaded yet");
+        return;
+      }
+
+      // Calculate distance from SHIP to anchor/car (NOT camera!)
+      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
+      const distance = BABYLON.Vector3.Distance(shipPosition, targetPosition);
+
+      // Log distance occasionally for debugging
+      if (Math.random() < 0.016) {
+        console.log(`📏 SHIP distance to car: ${distance.toFixed(2)}m (threshold: ${VISIBILITY_DISTANCE}m)`);
+        console.log(`   Ship pos: (${shipPosition.x.toFixed(1)}, ${shipPosition.y.toFixed(1)}, ${shipPosition.z.toFixed(1)})`);
+        console.log(`   Car pos: (${targetPosition.x.toFixed(1)}, ${targetPosition.y.toFixed(1)}, ${targetPosition.z.toFixed(1)})`);
+      }
+
+      // Show/hide panel based on distance using state
+      const shouldBeVisible = distance <= VISIBILITY_DISTANCE;
+      const currentlyVisible = useUI.getState().bydCustomizerVisible;
+
+      if (shouldBeVisible && !currentlyVisible) {
+        useUI.getState().setBydCustomizerVisible(true);
+        console.log(`🚗 BYD customizer panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      } else if (!shouldBeVisible && currentlyVisible) {
+        useUI.getState().setBydCustomizerVisible(false);
+        console.log(`🚗 BYD customizer panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      }
+    });
+
+
+
 
 
     // Also react to window resizes (DPR changes)
@@ -2483,59 +2805,75 @@ export function BabylonCanvas() {
     // (see useEffect below that watches navigationMode)
 
     // Handle state 3 - rockring fade in (only once)
-    if (s === S.state_3 && rockRing && !rockRingHasShownRef.current) { // State 3
-      rockRingHasShownRef.current = true;
-
-      const fps = 60;
-      const duration = 1; // seconds
-      const totalFrames = fps * duration;
-
-      // Enable rockring and play animation
-      rockRing.setEnabled(true);
-      if (rockRingAnimationGroups.length > 0) {
-        const animGroup = rockRingAnimationGroups[0];
-        animGroup.start(true, 1.7, 1, 2000);
+    // Handle rockring visibility and animation (State 3+)
+    if (s >= S.state_3 && rockRing) {
+      // Ensure enabled
+      if (!rockRing.isEnabled()) {
+        rockRing.setEnabled(true);
       }
 
-      // Gather materials from rockRing and its children
-      const materials: BABYLON.Material[] = [];
-      rockRing.getChildMeshes().forEach(mesh => {
-        if (mesh.material) {
-          materials.push(mesh.material);
+      // Initial fade-in
+      if (!rockRingHasShownRef.current) {
+        rockRingHasShownRef.current = true;
+
+        const fps = 60;
+        const duration = 1; // seconds
+        const totalFrames = fps * duration;
+
+        // Play animation
+        if (rockRingAnimationGroups.length > 0) {
+          const animGroup = rockRingAnimationGroups[0];
+          animGroup.start(true, 1.7, 1, 2000);
         }
-      });
-      if (rockRing.material) {
-        materials.push(rockRing.material);
+
+        // Gather materials from rockRing and its children
+        const materials: BABYLON.Material[] = [];
+        rockRing.getChildMeshes().forEach(mesh => {
+          if (mesh.material) {
+            materials.push(mesh.material);
+          }
+        });
+        if (rockRing.material) {
+          materials.push(rockRing.material);
+        }
+
+        // Fade in animation for all materials
+        materials.forEach(material => {
+          material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+
+          const fromAlpha = 0.01;
+          const toAlpha = 1;
+          material.alpha = fromAlpha;
+
+          const alphaAnimation = new BABYLON.Animation(
+            "fadeAlpha",
+            "alpha",
+            fps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+
+          alphaAnimation.setKeys([
+            { frame: 0, value: fromAlpha },
+            { frame: totalFrames, value: toAlpha }
+          ]);
+
+          const easingAlpha = new BABYLON.CubicEase();
+          easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+          alphaAnimation.setEasingFunction(easingAlpha);
+
+          material.animations = [alphaAnimation];
+          scene.beginAnimation(material, 0, totalFrames, false);
+        });
+      } else {
+        // Ensure animation is playing if it stopped (e.g. switching back from state 4 to 3)
+        if (rockRingAnimationGroups.length > 0) {
+          const animGroup = rockRingAnimationGroups[0];
+          if (!animGroup.isPlaying) {
+            animGroup.start(true, 1.7, 1, 2000);
+          }
+        }
       }
-
-      // Fade in animation for all materials
-      materials.forEach(material => {
-        material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-
-        const fromAlpha = 0.01;
-        const toAlpha = 1;
-        material.alpha = fromAlpha;
-
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeAlpha",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-
-        alphaAnimation.setKeys([
-          { frame: 0, value: fromAlpha },
-          { frame: totalFrames, value: toAlpha }
-        ]);
-
-        const easingAlpha = new BABYLON.CubicEase();
-        easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        alphaAnimation.setEasingFunction(easingAlpha);
-
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames, false);
-      });
     }
 
     if (s === S.state_2) { // State 2 (index 2)
@@ -2846,6 +3184,42 @@ export function BabylonCanvas() {
       camera.inputs.clear();
     }
   }, [s, navigationMode]);
+
+  // Handle car visibility based on state
+  useEffect(() => {
+    if (carMeshesRef.current.length > 0) {
+      const shouldBeVisible = s >= 4; // S.state_4
+      carMeshesRef.current.forEach(mesh => mesh.setEnabled(shouldBeVisible));
+
+      // If car becomes hidden, exit interior view
+      if (!shouldBeVisible && useUI.getState().isInteriorView) {
+        useUI.getState().setIsInteriorView(false);
+      }
+    }
+  }, [s]);
+
+  // Handle interior view toggle
+  useEffect(() => {
+    if (!sceneRef.current || !interiorCameraRef.current || !cameraRef.current) return;
+
+    const glassMesh = sceneRef.current.getMeshByName("byd_glass");
+
+    if (isInteriorView) {
+      sceneRef.current.activeCamera = interiorCameraRef.current;
+      interiorCameraRef.current.attachControl(ref.current, true);
+      cameraRef.current.detachControl();
+
+      // Disable glass in interior view
+      if (glassMesh) glassMesh.setEnabled(false);
+    } else {
+      sceneRef.current.activeCamera = cameraRef.current;
+      cameraRef.current.attachControl(ref.current, true);
+      interiorCameraRef.current.detachControl();
+
+      // Enable glass in exterior view
+      if (glassMesh) glassMesh.setEnabled(true);
+    }
+  }, [isInteriorView]);
 
   return <canvas ref={ref} className="block w-full h-full" />;
 }

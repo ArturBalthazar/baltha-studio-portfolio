@@ -13,54 +13,87 @@
 }
 
 /* full-viewport root tied to visual viewport */
-html, body, #root {
+html,
+body,
+#root {
   height: var(--app-vh);
 }
 
 body {
   margin: 0;
-  overflow: clip; /* nicer than hidden with mobile bars */
+  overflow: clip;
+  /* nicer than hidden with mobile bars */
   background: url("/assets/brand/background.png") center / cover no-repeat;
-  user-select: none; /* Prevent text selection globally */
+  user-select: none;
+  /* Prevent text selection globally */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
 }
 
 @media (min-width: 768px) {
-  body { background-attachment: fixed; }
+  body {
+    background-attachment: fixed;
+  }
 }
 
-html, body { scroll-behavior: smooth; }
+html,
+body {
+  scroll-behavior: smooth;
+}
 
-.font-sans { font-family: var(--font-sans), system-ui, sans-serif; }
-.font-mono { font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace; }
+.font-sans {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes rotateGlow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse-rect {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scaleX(1) scaleY(1);
     opacity: 0.9;
   }
+
   50% {
-    transform: scaleX(.98) scaleY(.99); /* wider vertically */
+    transform: scaleX(.98) scaleY(.99);
+    /* wider vertically */
     opacity: 1;
   }
 }
 
 @keyframes glowPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5);
   }
@@ -77,4 +110,51 @@ html, body { scroll-behavior: smooth; }
 /* Nav toggle hover effect for the knob */
 .nav-toggle:hover .nav-knob {
   transform: translateY(-50%) scale(1.07);
+}
+
+/* Loading Screen Styles */
+#loading-screen {
+  background: linear-gradient(to bottom, #F4F2ED 0%, #F4F2ED 100%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.logo-top {
+  height: 60px;
+  display: block;
+  filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);
+}
+
+.logo-bottom {
+  height: 50px;
+  display: block;
+  filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);
+}
+
+.loading-bar-container {
+  width: 250px;
+  height: 6px;
+
+  background-color: #E5E3DE;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+
+.loading-bar {
+  width: 0%;
+  /* Controlled by JS */
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(to right, #EF8253, #C79FCC, #99A1E6);
+  transition: width 0.2s ease-out;
 }

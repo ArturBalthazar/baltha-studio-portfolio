@@ -28,6 +28,16 @@ type UIState = {
   setNavigationMode: (mode: 'guided' | 'free') => void;
   audioEnabled: boolean; // Global audio manager
   setAudioEnabled: (enabled: boolean) => void;
+  loadingProgress: number;
+  setLoadingProgress: (progress: number) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  bydCustomizerVisible: boolean; // BYD car customizer visibility
+  setBydCustomizerVisible: (visible: boolean) => void;
+  bydCustomizeCallback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null;
+  setBydCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
+  isInteriorView: boolean;
+  setIsInteriorView: (isInterior: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -44,5 +54,15 @@ export const useUI = create<UIState>((set, get) => ({
   navigationMode: 'guided', // Default to guided mode
   setNavigationMode: (mode) => set({ navigationMode: mode }),
   audioEnabled: true, // Audio on by default
-  setAudioEnabled: (enabled) => set({ audioEnabled: enabled })
+  setAudioEnabled: (enabled) => set({ audioEnabled: enabled }),
+  loadingProgress: 0,
+  setLoadingProgress: (progress) => set({ loadingProgress: progress }),
+  isLoading: true,
+  setIsLoading: (loading) => set({ isLoading: loading }),
+  bydCustomizerVisible: false, // BYD customizer hidden by default
+  setBydCustomizerVisible: (visible) => set({ bydCustomizerVisible: visible }),
+  bydCustomizeCallback: null,
+  setBydCustomizeCallback: (callback) => set({ bydCustomizeCallback: callback }),
+  isInteriorView: false,
+  setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior })
 }));
