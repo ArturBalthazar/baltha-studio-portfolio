@@ -16,7 +16,7 @@ export function BydCustomizer({
     onTrimSelect,
     onToggleView
 }: BydCustomizerProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [selectedColor, setSelectedColor] = useState("yellow");
     const [selectedTrim, setSelectedTrim] = useState("lightBlue");
     const bydCustomizeCallback = useUI((st) => st.bydCustomizeCallback);
@@ -42,6 +42,7 @@ export function BydCustomizer({
 
     const handleToggleView = () => {
         setIsInteriorView(!isInteriorView);
+        setIsExpanded(false);
         onToggleView?.();
     };
 

@@ -1655,7 +1655,7 @@ export function BabylonCanvas() {
 
     // Only enable controls in state 4 (index 4) with free mode
     const inState4 = s === S.state_4;
-    const shouldEnableControls = inState4 && navigationMode === 'free';
+    const shouldEnableControls = inState4 && navigationMode === 'free' && !isInteriorView;
 
     console.log("🚀 Control state:", { inState4, navigationMode, shouldEnableControls });
 
@@ -2234,7 +2234,7 @@ export function BabylonCanvas() {
       }
 
     };
-  }, [s, navigationMode]);
+  }, [s, navigationMode, isInteriorView]);
 
   // Drag rotation interaction
   useEffect(() => {

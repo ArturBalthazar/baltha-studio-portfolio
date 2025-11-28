@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUI } from '../state';
 
 export const LoadingScreen: React.FC = () => {
     const loadingProgress = useUI((state) => state.loadingProgress);
     const isLoading = useUI((state) => state.isLoading);
+    const [isVisible, setIsVisible] = useState(true);
+    const [isFadingOut, setIsFadingOut] = useState(false);
 
-    if (!isLoading) return null;
+    React.useEffect(() => {
+        if (!isLoading) {
+            setIsFadingOut(true);
+            const timer = setTimeout(() => {
+                setIsVisible(false);
+            }, 1000); // Wait for transition
+            return () => clearTimeout(timer);
+        } else {
+            setIsVisible(true);
+            setIsFadingOut(false);
+        }
+    }, [isLoading]);
+
+    if (!isVisible) return null;
 
     return (
-        <div id="loading-screen">
+        <div id="loading-screen" style={{ opacity: isFadingOut ? 0 : 1, pointerEvents: isFadingOut ? 'none' : 'auto' }}>
             <div className="logo-overlay">
                 <img
                     src="/assets/brand/vector/Baltha_Studio_Icon.svg"

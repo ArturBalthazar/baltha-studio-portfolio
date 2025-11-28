@@ -125,7 +125,7 @@ body {
   top: 0;
   left: 0;
   z-index: 9999;
-  transition: opacity 0.5s ease;
+  transition: opacity 1s ease;
 }
 
 .logo-top {
@@ -156,5 +156,6 @@ body {
   height: 100%;
   border-radius: 3px;
   background: linear-gradient(to right, #EF8253, #C79FCC, #99A1E6);
-  transition: width 0.2s ease-out;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(199, 159, 204, 0.6);
 }
