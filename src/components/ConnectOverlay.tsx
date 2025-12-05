@@ -126,7 +126,7 @@ export function ConnectOverlay() {
 
     return (
         <div className="w-full h-full relative overflow-hidden flex items-start justify-center pointer-events-none">
-            <div className="w-full max-w-xs p-6 flex flex-col items-center pointer-events-auto">
+            <div className="w-full md:max-w-sm max-w-xs p-6 flex flex-col items-center pointer-events-auto">
                 <h2 className="font-sans text-white text-3xl font-medium mb-8 select-none">Let's connect!</h2>
 
                 <div className="w-full flex flex-col gap-4">
@@ -141,7 +141,7 @@ export function ConnectOverlay() {
                                 }
                             }}
                             className={cx(
-                                "group relative w-full h-16 rounded-bigButton border border-white/30",
+                                "group relative w-full h-14 md:h-16 rounded-bigButton border border-white/30",
                                 "flex items-center justify-between px-5",
                                 "transition-all duration-300 hover:scale-[1.02] hover:border-white/60",
                                 "select-none bg-transparent"
@@ -183,7 +183,7 @@ export function ConnectOverlay() {
                             ref={emailButtonRef}
                             onClick={handleEmailClick}
                             className={cx(
-                                "group relative w-full h-16 flex items-center justify-between px-5 select-none rounded-bigButton transition-all duration-300",
+                                "group relative w-full h-14 md:h-16 flex items-center justify-between px-5 select-none rounded-bigButton transition-all duration-300",
                                 !emailExpanded && "hover:scale-[1.02] hover:border-white/60"
                             )}
                             style={emailButtonStyle}
@@ -225,7 +225,7 @@ export function ConnectOverlay() {
                                 />
 
                                 {/* Email address pill */}
-                                <div className="bg-brand-white rounded-lg py-2 px-4 mt-2 mb-3">
+                                <div className="bg-brand-white rounded-lg py-2 px-4 mt-2 mb-3 border-b border-brand-dark/40">
                                     <p className="text-brand-dark font-mono text-sm text-center tracking-tight">
                                         arturbalhazar@gmail.com
                                     </p>
