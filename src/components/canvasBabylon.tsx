@@ -538,7 +538,7 @@ export function BabylonCanvas() {
       scene
     );
     scene.environmentTexture = env;
-    scene.environmentIntensity = .6;
+    scene.environmentIntensity = .8;
     scene.imageProcessingConfiguration.exposure = 1.3;
     scene.imageProcessingConfiguration.contrast = 1.2;
 
@@ -1777,7 +1777,7 @@ export function BabylonCanvas() {
         console.log("📷 Parenting shipPivot to shipRoot at center");
         shipPivot.setParent(controlTarget);
         // Different position for mobile vs desktop
-        const pivotY = isMobileRef.current ? 0.9 : 0.9;
+        const pivotY = isMobileRef.current ? 1.17 : 0.9;
         shipPivot.position.set(0, pivotY, 0);
         shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
         console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
@@ -2429,6 +2429,7 @@ export function BabylonCanvas() {
     const prevState = prevStateRef.current;
     const isComingFromState3 = prevState === S.state_3 && s === S.state_2; // State 3 → State 2
     const isComingFromState4 = prevState === S.state_4 && s === S.state_3; // State 4 → State 3
+    const isComingFromState4ToState5 = prevState === S.state_4 && s === S.state_5; // State 4 → State 5
     const isGoingToState3 = prevState === S.state_2 && s === S.state_3; // State 2 → State 3
     const isGoingToState4 = prevState === S.state_3 && s === S.state_4; // State 3 → State 4
 
@@ -2636,8 +2637,8 @@ export function BabylonCanvas() {
       }
     }
 
-    // Reset ship and camera when coming from state 4 to state 3
-    if (isComingFromState4) {
+    // Reset ship and camera when coming from state 4 to state 3 or state 5
+    if (isComingFromState4 || isComingFromState4ToState5) {
       const shipToReset = spaceshipRef.current;
       const shipRootToReset = spaceshipRootRef.current;
       const pivotToReset = shipPivotRef.current;
@@ -2671,7 +2672,7 @@ export function BabylonCanvas() {
       if (pivotToReset && pivotToReset.parent) {
         pivotToReset.setParent(null);
         pivotToReset.position.set(0, 0, 0);
-        console.log("🔄 Reset ship pivot (State 4 → State 3)");
+        console.log("🔄 Reset ship pivot (State 4 → State 3/5)");
       }
 
       // Reset smoke emitter
@@ -2679,7 +2680,7 @@ export function BabylonCanvas() {
       if (smokeEmitter && smokeEmitter.parent) {
         smokeEmitter.parent = null;
         smokeEmitter.position.set(0, 0, 25);
-        console.log("🔄 Reset smoke emitter (State 4 → State 3)");
+        console.log("🔄 Reset smoke emitter (State 4 → State 3/5)");
       }
 
       // Keep camera locked to shipPivot (don't unlock)

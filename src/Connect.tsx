@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { Header } from "./components/header";
 import { Chat } from "./components/Chat";
@@ -32,16 +32,41 @@ const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
 };
 
 export default function Connect() {
-    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailExpanded, setEmailExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
     const [chatVisible, setChatVisible] = useState(false);
+    const emailButtonRef = useRef<HTMLButtonElement>(null);
 
     // Force state 2 for smaller header sizing
     const setState = useUI((st) => st.setState);
     useEffect(() => {
         setState(S.state_2);
     }, [setState]);
+
+    // Close email section when clicking anywhere outside the email button
+    useEffect(() => {
+        if (!emailExpanded) return;
+        
+        const handleClick = (e: MouseEvent) => {
+            // If click is on the email button itself, let the button's onClick handle it
+            if (emailButtonRef.current?.contains(e.target as Node)) {
+                return;
+            }
+            // Otherwise close
+            setEmailExpanded(false);
+        };
+
+        // Use timeout to avoid the current click from triggering close
+        const timeout = setTimeout(() => {
+            window.addEventListener('click', handleClick);
+        }, 0);
+        
+        return () => {
+            clearTimeout(timeout);
+            window.removeEventListener('click', handleClick);
+        };
+    }, [emailExpanded]);
 
     // Sync chatVisible with chatOpen, but with delay on close (copied from App.tsx)
     useEffect(() => {
@@ -98,20 +123,36 @@ export default function Connect() {
             icon: "/assets/images/whatsapp.png",
             type: "link"
         },
-        {
-            label: "Email",
-            url: "#",
-            icon: "/assets/images/email.png",
-            type: "action",
-            action: () => setEmailModalOpen(true)
-        },
     ];
 
-    const handleCopyEmail = () => {
+    const handleCopyEmail = (e: React.MouseEvent) => {
+        e.stopPropagation();
         navigator.clipboard.writeText("arturbalhazar@gmail.com");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    const handleSendEmail = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        window.location.href = "mailto:arturbalhazar@gmail.com";
+    };
+
+    const handleEmailClick = () => {
+        setEmailExpanded(prev => !prev);
+    };
+
+    // Button styles based on expanded state
+    const emailButtonStyle: React.CSSProperties = emailExpanded 
+        ? {
+            border: '1px solid rgba(255,255,255,0.6)',
+            transform: 'scale(1.02)',
+            backgroundColor: 'rgba(255,255,255,0.08)',
+        }
+        : {
+            border: '1px solid rgba(255,255,255,0.3)',
+            transform: 'scale(1)',
+            backgroundColor: 'transparent',
+        };
 
     return (
         <>
@@ -198,6 +239,86 @@ export default function Connect() {
                                             </div>
                                         </button>
                                     ))}
+
+                                    {/* Email Button with Expandable Section */}
+                                    <div
+                                        className="w-full"
+                                        style={{
+                                            animation: `fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                                            animationDelay: `${links.length * 0.15}s`,
+                                            opacity: 0,
+                                        }}
+                                    >
+                                        <button
+                                            ref={emailButtonRef}
+                                            onClick={handleEmailClick}
+                                            className={cx(
+                                                "group relative w-full h-16 flex items-center justify-between px-6 select-none rounded-bigButton transition-all duration-300",
+                                                !emailExpanded && "hover:scale-[1.02] hover:border-white/60"
+                                            )}
+                                            style={emailButtonStyle}
+                                        >
+                                            {/* Hover gradient - only show when NOT expanded */}
+                                            {!emailExpanded && (
+                                                <div
+                                                    className="absolute inset-0 rounded-bigButton opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                                                    style={{
+                                                        background: "linear-gradient(to right, rgba(180, 173, 230, 0.2), rgba(255, 181, 218, 0.1))",
+                                                    }}
+                                                />
+                                            )}
+                                            <div className="flex items-center gap-4 z-10">
+                                                <span className="text-2xl filter drop-shadow-md flex items-center justify-center w-10 h-10">
+                                                    <img src="/assets/images/email.png" alt="Email" className="w-full h-full object-contain" />
+                                                </span>
+                                                <span className="text-white text-lg font-thin font-mono tracking-wide">
+                                                    <TypingLabel text="Email" delay={links.length * 150} />
+                                                </span>
+                                            </div>
+                                        </button>
+
+                                        {/* Expanded Email Section */}
+                                        <div
+                                            className={cx(
+                                                "overflow-hidden transition-all duration-300 ease-out",
+                                                emailExpanded ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                                            )}
+                                        >
+                                            <div className="relative px-5 pb-5 pt-3">
+                                                {/* Triangle pointer */}
+                                                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-0 h-0"
+                                                    style={{
+                                                        borderLeft: '8px solid transparent',
+                                                        borderRight: '8px solid transparent',
+                                                        borderBottom: '8px solid rgba(255, 255, 255, 0.9)',
+                                                    }}
+                                                />
+
+                                                {/* Email address pill */}
+                                                <div className="bg-brand-white rounded-lg py-2.5 px-5 mt-2 mb-3">
+                                                    <p className="text-brand-dark font-mono text-sm text-center tracking-tight">
+                                                        arturbalhazar@gmail.com
+                                                    </p>
+                                                </div>
+
+                                                {/* Action buttons */}
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handleCopyEmail}
+                                                        className="flex-1 h-10 rounded-lg hover:bg-brand-dark/80 text-white text-sm font-medium transition-colors flex items-center justify-center font-mono border border-white/20"
+                                                    >
+                                                        {copied ? "Copied!" : "Copy"}
+                                                    </button>
+                                                    <button
+                                                        onClick={handleSendEmail}
+                                                        className="flex-1 h-10 rounded-lg hover:bg-brand-dark/80 text-white text-sm font-medium transition-colors flex items-center justify-center font-mono border border-white/20"
+                                                    >
+                                                        Send
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -262,43 +383,6 @@ export default function Connect() {
 
             {/* Chat Component */}
             {chatVisible && <Chat onClose={() => setChatOpen(false)} />}
-
-            {/* Email Modal */}
-            {emailModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-sm">
-                        <div className="relative rounded-canvas bg-[#081428]/90 backdrop-blur-md p-6 border border-white/20 shadow-2xl">
-                            <button
-                                onClick={() => setEmailModalOpen(false)}
-                                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
-                            >
-                                ✕
-                            </button>
-
-                            <h3 className="text-white text-xl font-medium mb-6 text-center font-sans">Contact Email</h3>
-
-                            <div className="bg-white/5 rounded-lg p-3 mb-6 text-center border border-white/10">
-                                <p className="text-white font-mono text-sm break-all">arturbalhazar@gmail.com</p>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={handleCopyEmail}
-                                    className="flex-1 h-12 rounded-bigButton bg-white/10 hover:bg-white/20 text-white font-medium transition-colors border border-white/10 flex items-center justify-center gap-2 font-mono"
-                                >
-                                    {copied ? "Copied!" : "Copy"}
-                                </button>
-                                <a
-                                    href="mailto:arturbalhazar@gmail.com"
-                                    className="flex-1 h-12 rounded-bigButton bg-brand-purple hover:bg-brand-purple/80 text-white font-medium transition-colors flex items-center justify-center font-mono"
-                                >
-                                    Open App
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }

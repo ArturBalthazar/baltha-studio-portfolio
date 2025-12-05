@@ -125,7 +125,7 @@ body {
   top: 0;
   left: 0;
   z-index: 9999;
-  transition: opacity 1s ease;
+  transition: opacity .3s ease;
 }
 
 .logo-top {

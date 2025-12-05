@@ -12,7 +12,7 @@ export const LoadingScreen: React.FC = () => {
             setIsFadingOut(true);
             const timer = setTimeout(() => {
                 setIsVisible(false);
-            }, 1000); // Wait for transition
+            }, 300); // Wait for transition
             return () => clearTimeout(timer);
         } else {
             setIsVisible(true);

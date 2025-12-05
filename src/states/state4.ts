@@ -63,7 +63,7 @@ export const state4Config: StateConfig = {
       },
       shipAnimation: {
         desktop: { position: { x: 0, y: -1, z: 0 } },
-        mobile: { position: { x: 0, y: -1, z: 0 } },
+        mobile: { position: { x: 0, y: -1.3, z: 0 } },
         duration: .5,
         delay: 0
       },
