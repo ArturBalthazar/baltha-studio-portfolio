@@ -38,6 +38,8 @@ type UIState = {
   setBydCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
   isInteriorView: boolean;
   setIsInteriorView: (isInterior: boolean) => void;
+  menuOpen: boolean;
+  setMenuOpen: (open: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -64,5 +66,7 @@ export const useUI = create<UIState>((set, get) => ({
   bydCustomizeCallback: null,
   setBydCustomizeCallback: (callback) => set({ bydCustomizeCallback: callback }),
   isInteriorView: false,
-  setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior })
+  setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior }),
+  menuOpen: false,
+  setMenuOpen: (open) => set({ menuOpen: open })
 }));

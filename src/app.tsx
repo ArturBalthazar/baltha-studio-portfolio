@@ -13,12 +13,14 @@ import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ConnectOverlay } from "./components/ConnectOverlay";
+import { NavigationMenu } from "./components/NavigationMenu";
 
 export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
+  const menuOpen = useUI((st) => st.menuOpen);
   const bydCustomizerVisible = useUI((st) => st.bydCustomizerVisible);
-  const { setChatOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
+  const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
 
@@ -108,6 +110,12 @@ export default function App() {
           >
             <CanvasFrame>
               <BabylonCanvas />
+              
+              {/* Navigation Menu Overlay */}
+              <NavigationMenu 
+                isOpen={menuOpen} 
+                onClose={() => setMenuOpen(false)} 
+              />
 
               {/* Typing text overlay - appears at top-left */}
               {config.content.showTypingText && config.content.typingText && (
@@ -136,7 +144,7 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
@@ -150,7 +158,7 @@ export default function App() {
               {s < S.state_9 && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
@@ -165,7 +173,7 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute left-4 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
@@ -179,7 +187,7 @@ export default function App() {
               {s < S.state_9 && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 z-30 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute right-4 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
@@ -216,7 +224,7 @@ export default function App() {
           {/* Bottom label */}
           <div
             className={cx(
-              "absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-20 text-xs font-mono tracking-wide transition-colors duration-500 select-none pointer-events-none",
+              "absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 z-50 text-xs font-mono tracking-wide transition-colors duration-500 select-none pointer-events-none",
               config.content.whiteBottomLabel ? "text-brand-white" : "text-brand-dark/70"
             )}
           >

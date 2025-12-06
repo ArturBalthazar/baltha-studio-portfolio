@@ -41,7 +41,7 @@ export function BottomLeftControls({
   return (
     <div
       className={cx(
-        "fixed z-30 flex items-center",
+        "fixed z-50 flex items-center",
         "transition-all duration-500 ease-in-out",
         // Mobile: State 4 uses full width centered, other states left-aligned
         isState4 ? "bottom-[40px] left-3 right-3 justify-center px-4" : "bottom-[90px] left-[30px]",
@@ -70,7 +70,7 @@ export function BottomLeftControls({
             infoOpen && "glow-info"
           )}
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.2)'
+            backgroundColor: '#08142830'
           }}
           aria-label="Information"
         >
@@ -95,7 +95,7 @@ export function BottomLeftControls({
             "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]"
           )}
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.2)'
+            backgroundColor: '#08142830'
           }}
           aria-label={audioEnabled ? "Mute audio" : "Unmute audio"}
         >
@@ -119,7 +119,7 @@ export function BottomLeftControls({
             navigationMode
           )}
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.2)'
+            backgroundColor: '#08142830'
           }}
           aria-label={`Navigation mode: ${navigationMode}`}
         >

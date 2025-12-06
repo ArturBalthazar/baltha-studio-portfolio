@@ -13,6 +13,20 @@ interface ChatProps {
   onClose?: () => void;
 }
 
+// Generate a unique session ID for this page load (resets on reload)
+const generateSessionId = () => {
+  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Store session ID at module level so it persists during the session but resets on page reload
+let sessionId: string | null = null;
+const getSessionId = () => {
+  if (!sessionId) {
+    sessionId = generateSessionId();
+  }
+  return sessionId;
+};
+
 export function Chat({ className = "", onClose }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -82,7 +96,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
       const response = await fetch(`${BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, userId: getSessionId() }),
       });
 
       if (!response.ok) throw new Error("Network response was not ok");

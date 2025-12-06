@@ -7,6 +7,8 @@ type Props = { showWelcome?: boolean };
 
 export function Header({ showWelcome = true }: Props) {
   const s = useUI((st) => st.state);
+  const menuOpen = useUI((st) => st.menuOpen);
+  const setMenuOpen = useUI((st) => st.setMenuOpen);
   const config = getStateConfig(s);
   const showWelcomeText = showWelcome && config.header.showWelcomeText;
   const isTransparent = config.header.transparentBackground;
@@ -60,21 +62,48 @@ export function Header({ showWelcome = true }: Props) {
           }}
           draggable={false}
         />
-        <img
-          src="/assets/images/menu.png"
-          alt="Menu"
-          className={cx(
-            "select-none transition-all duration-500 ease-in-out",
-            config.header.menuHeight.mobile,
-            config.header.menuHeight.desktop
-          )}
-          style={{
-            filter: isWhite 
-              ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
-              : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
-          }}
-          draggable={false}
-        />
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="cursor-pointer hover:scale-105 transition-transform duration-200 relative"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+        >
+          {/* Menu icon - fades out when menu opens */}
+          <img
+            src="/assets/images/menu.png"
+            alt="Menu"
+            className={cx(
+              "select-none transition-all duration-300 ease-in-out",
+              config.header.menuHeight.mobile,
+              config.header.menuHeight.desktop,
+              menuOpen ? "opacity-0 scale-75" : "opacity-100 scale-100"
+            )}
+            style={{
+              filter: isWhite 
+                ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
+                : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
+            }}
+            draggable={false}
+          />
+          {/* X icon - fades in with rotation when menu opens */}
+          <img
+            src="/assets/images/close.png"
+            alt="Close"
+            className={cx(
+              "absolute inset-0 select-none",
+              config.header.menuHeight.mobile,
+              config.header.menuHeight.desktop,
+              menuOpen ? "opacity-100 scale-100" : "opacity-0 scale-75"
+            )}
+            style={{
+              filter: isWhite 
+                ? 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)' 
+                : 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)',
+              transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'opacity 0.3s ease-out, transform 0.4s ease-out, scale 0.3s ease-out, filter 0.5s ease'
+            }}
+            draggable={false}
+          />
+        </button>
       </div>
 
       {/* big welcome text with smooth transitions */}
