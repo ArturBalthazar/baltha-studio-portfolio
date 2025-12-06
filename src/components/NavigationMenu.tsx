@@ -88,25 +88,25 @@ const MOBILE_POINTS: Point[] = [
     handleOutLength: 15
   },
   { 
-    x: 80, y: 20,
+    x: 75, y: 18,
     handleAngle: 90,       // Down-left axis
     handleInLength: 15,
     handleOutLength: 10
   },
   { 
-    x: 47, y: 30,
+    x: 47, y: 27,
     handleAngle: 200,        // Vertical
     handleInLength: 15,
-    handleOutLength: 20
+    handleOutLength: 30
   },
   { 
-    x: 40, y: 47,
+    x: 40, y: 44,
     handleAngle: -15,        // Down-right
     handleInLength: 15,
     handleOutLength: 12
   },
   { 
-    x: 70, y: 56,
+    x: 70, y: 52,
     handleAngle: 80,       // Down-left
     handleInLength: 15,
     handleOutLength: 12
@@ -115,11 +115,11 @@ const MOBILE_POINTS: Point[] = [
     x: 45, y: 64,
     handleAngle: 200,        // Vertical
     handleInLength: 12,
-    handleOutLength: 20
+    handleOutLength: 30
   },
   { 
-    x: 70, y: 80,
-    handleAngle: -10,       // Points up
+    x: 70, y: 77,
+    handleAngle: -20,       // Points up
     handleInLength: 50
   },
 ];

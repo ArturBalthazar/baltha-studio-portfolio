@@ -8,8 +8,8 @@ export const state3Config: StateConfig = {
       desktop: "md:h-7"
     },
     menuHeight: {
-      mobile: "h-5",
-      desktop: "md:h-7" 
+      mobile: "h-6",
+      desktop: "md:h-8" 
     },
     padding: {
       mobile: "py-3",
