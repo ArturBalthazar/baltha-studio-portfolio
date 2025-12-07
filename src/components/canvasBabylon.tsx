@@ -1530,8 +1530,8 @@ export function BabylonCanvas() {
     smoke.particleTexture = new BABYLON.Texture("/assets/textures/smoke_15.png", scene);
     smoke.emitter = smokeEmitter;
 
-    smoke.minEmitBox = new BABYLON.Vector3(-100, -17, 100);
-    smoke.maxEmitBox = new BABYLON.Vector3(100, 7, -100);
+    smoke.minEmitBox = new BABYLON.Vector3(-30, -5, 30);
+    smoke.maxEmitBox = new BABYLON.Vector3(30, 2, -30);
 
     // Color gradients for smoke
     smoke.addColorGradient(0.0, new BABYLON.Color4(0.40, 0.40, 0.88, 0));
@@ -1539,8 +1539,8 @@ export function BabylonCanvas() {
     smoke.addColorGradient(0.8, new BABYLON.Color4(0.4, 0.25, 0.5, 0.08));
     smoke.addColorGradient(1.0, new BABYLON.Color4(0.3, 0.15, 0.4, 0));
 
-    smoke.minSize = 30;
-    smoke.maxSize = 60;
+    smoke.minSize = 9;
+    smoke.maxSize = 18;
     smoke.minLifeTime = 4;
     smoke.maxLifeTime = 10;
     smoke.emitRate = 0; // Start disabled
@@ -2139,7 +2139,7 @@ export function BabylonCanvas() {
       const gamma = e.gamma || 0;
 
       // Convert to radians and apply subtle rotation
-      mouseRotationRef.current.x = (beta / 180) * .6;
+      // mouseRotationRef.current.x = (beta / 180) * .6;
       mouseRotationRef.current.y = (gamma / 90) * .6;
     };
 

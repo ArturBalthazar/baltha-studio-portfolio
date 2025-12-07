@@ -171,7 +171,7 @@ export default function App() {
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Previous state"
-                    className="w-12 h-12 rotate-180 pointer-events-none"
+                    className="w-14 h-14 rotate-180 pointer-events-none"
                   />
                 </button>
               )}
@@ -185,7 +185,7 @@ export default function App() {
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Next state"
-                    className="w-12 h-12 pointer-events-none"
+                    className="w-14 h-14 pointer-events-none"
                   />
                 </button>
               )}
@@ -194,13 +194,13 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute left-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-70 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Previous state"
-                    className="w-12 h-12 rotate-180 pointer-events-none"
+                    className="w-14 h-14 rotate-180 pointer-events-none"
                   />
                 </button>
               )}
@@ -208,13 +208,13 @@ export default function App() {
               {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute right-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-70 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
                     src="/assets/images/state_arrow.png"
                     alt="Next state"
-                    className="w-12 h-12 pointer-events-none"
+                    className="w-14 h-14 pointer-events-none"
                   />
                 </button>
               )}
