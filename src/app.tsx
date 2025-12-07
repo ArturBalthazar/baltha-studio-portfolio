@@ -55,15 +55,36 @@ export default function App() {
     }
   };
 
+  const navigationMode = useUI((st) => st.navigationMode);
+
   const handlePrevious = () => {
     if (s > S.state_0) {
-      useUI.getState().setState(s - 1);
+      // In free mode, from states 4-7, go back to state_3
+      // In guided mode, follow normal order
+      if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+        useUI.getState().setState(S.state_3);
+      } else if (s === S.state_final) {
+        // From final state, go to state_7 in guided mode, state_4 in free mode
+        if (navigationMode === 'guided') {
+          useUI.getState().setState(S.state_7);
+        } else {
+          useUI.getState().setState(S.state_4);
+        }
+      } else {
+        useUI.getState().setState(s - 1);
+      }
     }
   };
 
   const handleNext = () => {
-    if (s < S.state_9) {
-      useUI.getState().setState(s + 1);
+    if (s < S.state_final) {
+      // In free mode, from states 4-7, go directly to state_final
+      // In guided mode, follow normal order
+      if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+        useUI.getState().setState(S.state_final);
+      } else {
+        useUI.getState().setState(s + 1);
+      }
     }
   };
 
@@ -155,7 +176,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_9 && config.canvas.nextState !== null && (
+              {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
@@ -184,7 +205,7 @@ export default function App() {
                 </button>
               )}
 
-              {s < S.state_9 && config.canvas.nextState !== null && (
+              {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
                   className="absolute right-4 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-9 h-9 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
@@ -203,7 +224,7 @@ export default function App() {
                 <BottomLeftControls
                   visible={true}
                   delay={500}
-                  isState4={s === S.state_4}
+                  isState4={s >= S.state_4 && s <= S.state_7}
                   chatOpen={chatOpen}
                   onChatToggle={() => setChatOpen(!chatOpen)}
                 />
@@ -241,7 +262,7 @@ export default function App() {
           "fixed z-50 rounded-full",
           // mobile (centered via right hack you used) - hidden in State 4
           "bottom-[90px] -right-[50%] -translate-x-[25px]",
-          s === S.state_4 && "hidden sm:flex",
+          (s >= S.state_4 && s <= S.state_7) && "hidden sm:flex",
           // desktop: push farther right, small bottom tweak - always visible
           "sm:bottom-[70px] sm:-right-[100%] sm:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",

@@ -6,32 +6,21 @@ import { state2Config } from './state2';
 import { state3Config } from './state3';
 import { state4Config } from './state4';
 import { state5Config } from './state5';
-
-// Default config for states not yet defined
-const defaultConfig: StateConfig = {
-  header: {
-    showWelcomeText: false,
-    logoHeight: { mobile: "h-4", desktop: "md:h-5" },
-    menuHeight: { mobile: "h-4", desktop: "md:h-5" },
-    padding: { mobile: "py-3", desktop: "md:py-4" },
-    horizontalPadding: { mobile: "px-6", desktop: "md:px-10" }
-  },
-  canvas: { clickable: false, nextState: null },
-  content: { showOverlay: false, showTypingText: false, showCustomizeBox: false }
-};
+import { state6Config } from './state6';
+import { state7Config } from './state7';
+import { stateFinalConfig } from './stateFinal';
 
 // State configuration mapping (now aligned with indices)
 const stateConfigs: Record<S, StateConfig> = {
-  [S.state_0]: state0Config, // State 0 = index 0
-  [S.state_1]: state1Config, // State 1 = index 1
-  [S.state_2]: state2Config, // State 2 = index 2
-  [S.state_3]: state3Config, // State 3 = index 3
-  [S.state_4]: state4Config, // State 4 = index 4
-  [S.state_5]: state5Config,
-  [S.state_6]: defaultConfig,
-  [S.state_7]: defaultConfig,
-  [S.state_8]: defaultConfig,
-  [S.state_9]: defaultConfig,
+  [S.state_0]: state0Config, // State 0 = Welcome
+  [S.state_1]: state1Config, // State 1 = Logo selector
+  [S.state_2]: state2Config, // State 2 = Globe/continent
+  [S.state_3]: state3Config, // State 3 = Mode selection
+  [S.state_4]: state4Config, // State 4 = Car Customizer (or free explore)
+  [S.state_5]: state5Config, // State 5 = Musecraft Editor (guided mode only)
+  [S.state_6]: state6Config, // State 6 = Digital Dioramas (guided mode only)
+  [S.state_7]: state7Config, // State 7 = Petwheels (guided mode only)
+  [S.state_final]: stateFinalConfig, // Final state = Let's Connect
 };
 
 export function getStateConfig(state: S): StateConfig {

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import cx from "classnames";
+import { useUI, S } from "../state";
 
 interface Point {
   x: number;           // percentage (0-100)
@@ -24,8 +25,8 @@ interface MenuItem {
 
 const MENU_ITEMS: MenuItem[] = [
   { id: 'what-we-do', label: 'Welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
-  { id: 'car-customizer', label: 'Car\nCustomizer', icon: '/assets/images/car.png', pathPercent: 0.17 },
-  { id: 'musecraft', label: 'Musecraft\nEditor', icon: '/assets/images/musecraft-outline.png', pathPercent: 0.38 },
+  { id: 'car-customizer', label: 'Car\nCustomizer', icon: '/assets/images/car.png', pathPercent: 0.18 },
+  { id: 'musecraft', label: 'Musecraft\nEditor', icon: '/assets/images/musecraft-outline.png', pathPercent: 0.39 },
   { id: 'dioramas', label: 'Digital\nDioramas', icon: '/assets/images/diorama.png', pathPercent: 0.57 },
   { id: 'petwheels', label: 'Petwheels', icon: '/assets/images/dog.png', pathPercent: 0.76 },
   { id: 'connect', label: "Let's\nConnect!", icon: '/assets/images/connect.png', pathPercent: 1 },
@@ -36,44 +37,62 @@ const MENU_ITEMS: MenuItem[] = [
 // Angle reference: 0=right, 90=down, 180=left, 270=up
 const DESKTOP_POINTS: Point[] = [
   { 
-    x: 15, y: 35,
-    handleAngle: 100,        // Axis points down/up
-    handleOutLength: 10     // First point: only out handle
+    x: 20, y: 35,
+    handleAngle: 90,        // Axis points down/up
+    handleOutLength: 15     // First point: only out handle
   },
   { 
-    x: 25, y: 75,
-    handleAngle: -5,        // Axis at 45° diagonal
-    handleInLength: 20,
-    handleOutLength: 20
-  },
-  { 
-    x: 32, y: 45,
-    handleAngle: 230,         // Horizontal axis
+    x: 20, y: 50,
+    handleAngle: 90,        // Axis at 45° diagonal
     handleInLength: 15,
-    handleOutLength: 25
-  },
-  { 
-    x: 52, y: 40,
-    handleAngle: 110,        // Vertical axis
-    handleInLength: 25,
-    handleOutLength: 20
-  },
-  { 
-    x: 60, y: 75,
-    handleAngle: 0,       // Diagonal up-right axis
-    handleInLength: 10,
-    handleOutLength: 20
-  },
-  { 
-    x: 70, y: 45,
-    handleAngle: -100,         // Horizontal axis
-    handleInLength: 5,
     handleOutLength: 15
   },
   { 
-    x: 88, y: 47,
-    handleAngle: 85,       // Points left (in comes from right)
-    handleInLength: 21      // Last point: only in handle
+    x: 35, y: 50,
+    handleAngle: -90,         // Horizontal axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 35, y: 35,
+    handleAngle: -90,        // Vertical axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 50, y: 35,
+    handleAngle: 90,       // Diagonal up-right axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 50, y: 65,
+    handleAngle: 90,         // Horizontal axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 65, y: 65,
+    handleAngle: -90,         // Horizontal axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 65, y: 45,
+    handleAngle: -90,         // Horizontal axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 80, y: 45,
+    handleAngle: 90,         // Horizontal axis
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+  { 
+    x: 80, y: 60,
+    handleAngle: 90,       // Points left (in comes from right)
+    handleInLength: 15      // Last point: only in handle
   },
 ];
 
@@ -82,46 +101,83 @@ const DRAW_DURATION = 1.5;
 
 // Mobile points - vertical S-curve pattern (7 points)
 const MOBILE_POINTS: Point[] = [
+  // 1 — Top start
   { 
-    x: 35, y: 12,
-    handleAngle: -10,
+    x: 40, y: 15,
+    handleAngle: 0,      // Down
     handleOutLength: 15
   },
+
+  // 2 — Slight right
   { 
-    x: 75, y: 18,
-    handleAngle: 90,       // Down-left axis
+    x: 65, y: 15,
+    handleAngle: 0,      // Down
     handleInLength: 15,
-    handleOutLength: 10
+    handleOutLength: 15
   },
+
+  // 3 — Back left
   { 
-    x: 47, y: 27,
-    handleAngle: 200,        // Vertical
+    x: 65, y: 30,
+    handleAngle: 180,      // Down
     handleInLength: 15,
-    handleOutLength: 30
+    handleOutLength: 15
   },
+
+  // 4 — Slight right again
   { 
-    x: 40, y: 44,
-    handleAngle: -15,        // Down-right
+    x: 45, y: 30,
+    handleAngle: 180,      // Down
     handleInLength: 15,
-    handleOutLength: 12
+    handleOutLength: 15
   },
+
+  // 5 — Centered middle bounce
   { 
-    x: 70, y: 52,
-    handleAngle: 80,       // Down-left
+    x: 45, y: 45,
+    handleAngle: 0,      // Down
     handleInLength: 15,
-    handleOutLength: 12
+    handleOutLength: 15
   },
+
+  // 6 — Bigger sweep to the right
   { 
-    x: 45, y: 64,
-    handleAngle: 200,        // Vertical
-    handleInLength: 12,
-    handleOutLength: 30
+    x: 55, y: 45,
+    handleAngle: 0,      // Down
+    handleInLength: 15,
+    handleOutLength: 15
   },
+
+  // 7 — Bounce left again
   { 
-    x: 70, y: 77,
-    handleAngle: -20,       // Points up
-    handleInLength: 50
+    x: 55, y: 60,
+    handleAngle: 180,      // Down
+    handleInLength: 15,
+    handleOutLength: 15
   },
+
+  // 8 — Stabilize in center
+  { 
+    x: 30, y: 60,
+    handleAngle: 180,      // Down
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+
+  // 9 — Slight gentle right
+  { 
+    x: 30, y: 75,
+    handleAngle: 0,      // Down
+    handleInLength: 15,
+    handleOutLength: 15
+  },
+
+  // 10 — End point (bottom), no out handle
+  { 
+    x: 60, y: 75,
+    handleAngle: 0,      // Down
+    handleInLength: 15
+  }
 ];
 
 /**
@@ -220,7 +276,7 @@ const BULLET_BASE_SIZE = 8;
 const BULLET_EXPANDED_SIZE = 60;
 const BULLET_BASE_BLUR = 1;
 const BULLET_EXPANDED_BLUR = 20;
-const BULLET_PROXIMITY_THRESHOLD = 50; // Distance to start expanding
+const BULLET_PROXIMITY_THRESHOLD = 90; // Distance to start expanding
 const BULLET_LERP_SPEED = 0.12; // Smoothing factor (0-1, higher = faster)
 
 /**
@@ -670,7 +726,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
                 background: `radial-gradient(circle, rgba(8, 21, 41, .9) 0%, rgba(8, 21, 41, .9) 30%, rgba(8, 21, 41, 0) 70%)`,
                 opacity: isAnimating ? 1 : 0,
                 transition: `opacity 0.4s ease-out`,
-                transitionDelay: `${0.3 + index * 0.1}s`,
+                transitionDelay: `${index * 0.06}s`,
               }}
             />
           </div>
@@ -726,12 +782,38 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
               transform: 'translate(-50%, -50%)',
               opacity: isAnimating ? 1 : 0,
               transition: `opacity 0.4s ease-out, transform 0.3s ease-out`,
-              transitionDelay: `${0.4 + index * 0.12}s`,
+              transitionDelay: `${0.4 + index * 0.08}s`,
             }}
             onClick={(e) => {
               e.stopPropagation();
               console.log(`Clicked: ${item.label}`);
-              // TODO: Handle navigation
+              
+              // Map menu items to states
+              const stateMap: Record<string, S> = {
+                'what-we-do': S.state_0,      // Welcome
+                'car-customizer': S.state_4,   // Car Customizer
+                'musecraft': S.state_5,        // Musecraft
+                'dioramas': S.state_6,         // Dioramas
+                'petwheels': S.state_7,        // Petwheels
+                'connect': S.state_final,      // Connect
+              };
+              
+              const targetState = stateMap[item.id];
+              if (targetState !== undefined) {
+                // First, switch to guided mode if currently in free mode
+                const currentMode = useUI.getState().navigationMode;
+                if (currentMode === 'free') {
+                  useUI.getState().setNavigationMode('guided');
+                  console.log('🔄 [Menu] Switched to guided mode');
+                }
+                
+                // Then navigate to the target state
+                useUI.getState().setState(targetState);
+                console.log(`🚀 [Menu] Navigating to state: ${targetState}`);
+                
+                // Close the menu
+                onClose();
+              }
             }}
           >
             <img

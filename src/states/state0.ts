@@ -54,6 +54,16 @@ export const state0Config: StateConfig = {
       rootTransform: {
         mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
         desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
+      },
+      shipAnimation: {
+        position: { x: 0, y: -4, z: 20 }, // Ship behind camera (not visible in state 0)
+        duration: 2.0,
+        delay: 0
+      },
+      fogAnimation: {
+        fogEnd: 100, // Fog close (same as initial/state 3)
+        duration: 1.0,
+        delay: 0
       }
     }
   },

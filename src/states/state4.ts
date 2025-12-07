@@ -25,17 +25,17 @@ export const state4Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_5',
+    nextState: 'state_final', // In free mode goes to final, in guided mode logic overrides to state_5
     fullscreen: true, // Full screen canvas
     roundedCorners: false, // No rounded corners in state 4
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 2,
+        mobile: 4,
         desktop: 5
       },
       upperRadiusLimit: {
-        mobile: 20,
-        desktop: 50
+        mobile: 4,
+        desktop: 5
       },
       beta: {
         mobile: Math.PI / 2.2,

@@ -9,8 +9,7 @@ export enum S {
   state_5,
   state_6,
   state_7,
-  state_8,
-  state_9
+  state_final // Contact/Connect state - always the last destination
 }
 
 type UIState = {

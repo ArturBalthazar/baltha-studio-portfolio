@@ -342,6 +342,396 @@ function animateFog(options: AnimateFogOptions): void {
   }
 }
 
+// Anchor data structure for guided mode ship positions
+interface AnchorData {
+  position: BABYLON.Vector3;
+  rotation: BABYLON.Quaternion;
+  forward: BABYLON.Vector3;
+}
+
+// Guided mode bezier animation options
+interface AnimateShipAlongBezierOptions {
+  target: BABYLON.TransformNode;
+  scene: BABYLON.Scene;
+  camera: BABYLON.ArcRotateCamera | null;
+  canvas: HTMLCanvasElement | null;
+  startPosition: BABYLON.Vector3;
+  startForward: BABYLON.Vector3;
+  endPosition: BABYLON.Vector3;
+  endForward: BABYLON.Vector3;
+  startRotation: BABYLON.Quaternion;
+  endRotation: BABYLON.Quaternion;
+  duration?: number; // seconds, default 4.0
+  stateRadius?: number; // camera radius for zoomed-out view during travel
+  skipArrivalZoom?: boolean; // if true, don't zoom to 0 at arrival (for state_3/final)
+  skipArrivalHide?: boolean; // if true, don't hide ship at arrival (for state_3/final)
+  onComplete?: () => void;
+}
+
+// Duration for guided mode ship animations
+const GUIDED_SHIP_DURATION = 4.0;
+
+// Track current bezier animation to prevent stale callbacks from affecting visibility
+let currentBezierAnimationId = 0;
+
+/**
+ * Animates the ship along a cubic bezier curve from current position/rotation to target.
+ * The bezier curve is calculated at runtime based on start/end positions and forward directions.
+ * Control points are placed along the forward directions to create a smooth flight path.
+ */
+function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
+  // Increment animation ID - any previous animation's callbacks will now be stale
+  currentBezierAnimationId++;
+  const thisAnimationId = currentBezierAnimationId;
+  
+  const {
+    target,
+    scene,
+    camera,
+    startPosition,
+    startForward,
+    endPosition,
+    endForward,
+    startRotation,
+    endRotation,
+    duration = GUIDED_SHIP_DURATION,
+    onComplete
+  } = options;
+
+  // Make ship visible before departing (use visibility, not setEnabled, to keep particles working)
+  target.getChildMeshes().forEach(mesh => mesh.visibility = 1);
+  console.log("🚀 [Bezier Animation] Ship visible for departure");
+
+  // Calculate the distance between start and end for control point scaling
+  const distance = BABYLON.Vector3.Distance(startPosition, endPosition);
+  
+  // Control point distance is proportional to the total distance
+  // Using 1/3 of the distance creates a nice smooth curve
+  const controlPointDistance = distance * 0.4;
+
+  // Create cubic bezier control points:
+  // P0 = start position
+  // P1 = start position - startForward * controlPointDistance (ship continues in its facing direction)
+  // P2 = end position + endForward * controlPointDistance (approaches target aligned with its facing direction)
+  // P3 = end position
+  
+  const p0 = startPosition.clone();
+  const p1 = startPosition.subtract(startForward.scale(controlPointDistance));
+  const p2 = endPosition.add(endForward.scale(controlPointDistance));
+  const p3 = endPosition.clone();
+
+  console.log("🛸 [Bezier Animation] Starting curve animation:", {
+    p0: p0.toString(),
+    p1: p1.toString(),
+    p2: p2.toString(),
+    p3: p3.toString(),
+    distance,
+    duration
+  });
+
+  // Create a Babylon Curve3 from the bezier points
+  const bezierCurve = BABYLON.Curve3.CreateCubicBezier(p0, p1, p2, p3, 200);
+  const curvePoints = bezierCurve.getPoints();
+
+  // Animation parameters
+  const fps = 60;
+  const totalFrames = fps * duration;
+  const numKeyframes = 120; // Number of keyframes for smooth animation
+
+  // Asymmetric ease: moderate start, very smooth arrival
+  // Uses quadratic ease-in (faster start) but quintic ease-out (very smooth stop)
+  const smoothEase = (t: number): number => {
+    if (t < 0.5) {
+      // Quadratic ease-in: faster departure than quintic
+      return 2 * t * t;
+    } else {
+      // Quintic ease-out: very smooth arrival
+      return 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+  };
+
+  // Helper to interpolate position on the bezier curve at any parameter value
+  const sampleCurveAt = (param: number): BABYLON.Vector3 => {
+    const index = param * (curvePoints.length - 1);
+    const lowIndex = Math.floor(index);
+    const highIndex = Math.min(lowIndex + 1, curvePoints.length - 1);
+    const blend = index - lowIndex;
+    return BABYLON.Vector3.Lerp(curvePoints[lowIndex], curvePoints[highIndex], blend);
+  };
+
+  // Helper to get tangent at any parameter value
+  const getTangentAt = (param: number): BABYLON.Vector3 => {
+    const epsilon = 0.001;
+    const p1 = sampleCurveAt(Math.max(0, param - epsilon));
+    const p2 = sampleCurveAt(Math.min(1, param + epsilon));
+    return p2.subtract(p1).normalize();
+  };
+
+  // Create position animation that follows the bezier curve
+  const positionAnimation = new BABYLON.Animation(
+    "shipBezierPosition",
+    "position",
+    fps,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  // Create keyframes with LINEAR frame timing but EASED curve sampling
+  // This means: at 10% of animation time, we're at 3% of the curve (slow start)
+  //             at 90% of animation time, we're at 97% of the curve (slow end)
+  const positionKeys: { frame: number; value: BABYLON.Vector3 }[] = [];
+  for (let i = 0; i <= numKeyframes; i++) {
+    const t = i / numKeyframes; // Linear time progress (0 to 1)
+    const frame = t * totalFrames; // Linear frame timing
+    const curveParam = smoothEase(t); // Eased position along curve
+    const position = sampleCurveAt(curveParam);
+    positionKeys.push({ frame, value: position });
+  }
+  positionAnimation.setKeys(positionKeys);
+
+  // Create rotation animation using spherical linear interpolation (SLERP)
+  const rotationAnimation = new BABYLON.Animation(
+    "shipBezierRotation",
+    "rotationQuaternion",
+    fps,
+    BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  // Create keyframes for rotation with same eased curve sampling
+  const rotationKeys: { frame: number; value: BABYLON.Quaternion }[] = [];
+  
+  for (let i = 0; i <= numKeyframes; i++) {
+    const t = i / numKeyframes; // Linear time progress
+    const frame = t * totalFrames; // Linear frame timing
+    const curveParam = smoothEase(t); // Eased position along curve
+    
+    // Get tangent at this curve position for flight direction
+    const tangent = curveParam >= 0.999 ? endForward.clone() : getTangentAt(curveParam);
+    
+    // Create a rotation that faces along the tangent
+    const up = new BABYLON.Vector3(0, 1, 0);
+    const right = BABYLON.Vector3.Cross(up, tangent).normalize();
+    const correctedUp = BABYLON.Vector3.Cross(tangent, right).normalize();
+    
+    // Build rotation from tangent direction
+    const tangentRotation = BABYLON.Quaternion.FromLookDirectionLH(tangent, correctedUp);
+    
+    // Blend between tangent-following and target rotation
+    const blendFactor = Math.pow(curveParam, 1.5);
+    const interpolatedRotation = BABYLON.Quaternion.Slerp(tangentRotation, endRotation, blendFactor);
+    
+    rotationKeys.push({ frame, value: interpolatedRotation });
+  }
+  rotationAnimation.setKeys(rotationKeys);
+
+  // Easing for camera (defined here for use in camera animation below)
+  const easing = new BABYLON.CubicEase();
+  easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+
+  // Ensure target has a rotation quaternion
+  if (!target.rotationQuaternion) {
+    target.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
+      target.rotation.x,
+      target.rotation.y,
+      target.rotation.z
+    );
+  }
+
+  // Apply ship animations
+  target.animations = [positionAnimation, rotationAnimation];
+  
+  // Start ship animation
+  scene.beginAnimation(target, 0, totalFrames, false, 1, () => {
+    console.log("✅ [Bezier Animation] Ship animation complete at:", target.position.toString());
+    // Only hide ship if:
+    // 1. This animation is still current (not superseded)
+    // 2. skipArrivalHide is not set
+    // 3. Navigation mode is still 'guided' (user didn't switch to free during animation)
+    const currentNavMode = typeof useUI !== 'undefined' ? useUI.getState().navigationMode : 'guided';
+    const shouldHide = thisAnimationId === currentBezierAnimationId && 
+                       !options.skipArrivalHide && 
+                       currentNavMode === 'guided';
+    
+    if (shouldHide) {
+      target.getChildMeshes().forEach(mesh => mesh.visibility = 0);
+      console.log("🛬 [Bezier Animation] Ship hidden after arrival");
+    } else {
+      if (thisAnimationId !== currentBezierAnimationId) {
+        console.log("⏭️ [Bezier Animation] Skipping hide - animation was superseded");
+      } else if (options.skipArrivalHide) {
+        console.log("⏭️ [Bezier Animation] Skipping hide - skipArrivalHide is set");
+      } else if (currentNavMode !== 'guided') {
+        console.log("⏭️ [Bezier Animation] Skipping hide - switched to free mode");
+      }
+    }
+    if (onComplete) onComplete();
+  });
+
+  // Animate camera alpha/beta to smoothly transition viewing angle
+  if (camera) {
+    const startAlpha = camera.alpha;
+    const startBeta = camera.beta;
+    
+    // Calculate target alpha based on endForward direction
+    // Camera should be positioned "behind" the ship relative to its forward direction
+    // alpha = atan2(x, z) gives the angle, we want opposite direction (+PI)
+    const endAlpha = Math.atan2(-endForward.x, -endForward.z) - Math.PI / 2;
+    
+    // Target beta - slightly above horizontal for good viewing angle
+    // PI/2 = horizontal, smaller = looking down from above
+    const endBeta = Math.PI / 2.2; // About 81 degrees from vertical
+    
+    // Normalize alpha difference for shortest rotation path
+    let alphaDiff = endAlpha - startAlpha;
+    while (alphaDiff > Math.PI) alphaDiff -= 2 * Math.PI;
+    while (alphaDiff < -Math.PI) alphaDiff += 2 * Math.PI;
+    const normalizedEndAlpha = startAlpha + alphaDiff;
+    
+    console.log("📷 [Bezier Animation] Camera animation:", {
+      startAlpha: startAlpha.toFixed(3),
+      endAlpha: normalizedEndAlpha.toFixed(3),
+      startBeta: startBeta.toFixed(3),
+      endBeta: endBeta.toFixed(3)
+    });
+    
+    // Create camera alpha animation
+    const alphaAnimation = new BABYLON.Animation(
+      "cameraAlpha",
+      "alpha",
+      fps,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    alphaAnimation.setKeys([
+      { frame: 0, value: startAlpha },
+      { frame: totalFrames, value: normalizedEndAlpha }
+    ]);
+    alphaAnimation.setEasingFunction(easing);
+    
+    // Create camera beta animation
+    const betaAnimation = new BABYLON.Animation(
+      "cameraBeta",
+      "beta",
+      fps,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    betaAnimation.setKeys([
+      { frame: 0, value: startBeta },
+      { frame: totalFrames, value: endBeta }
+    ]);
+    betaAnimation.setEasingFunction(easing);
+    
+    // Apply and start camera animations
+    camera.animations = [alphaAnimation, betaAnimation];
+    scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
+      console.log("✅ [Bezier Animation] Camera animation complete");
+    });
+    
+    // Camera radius animation - triggered by PATH COMPLETION, not time
+    // Use beginDirectAnimation so it doesn't overwrite the alpha/beta animations
+    const stateRadius = options.stateRadius; // Zoom-out radius from state config
+    const arrivalRadius = 0; // Close-up radius for arrival
+    const radiusAnimDuration = duration * 0.25;
+    const radiusFps = 60;
+    const totalPathLength = bezierCurve.length();
+    
+    // Track which triggers have fired
+    let zoomOutTriggered = false;
+    let zoomInTriggered = false;
+    
+    // Path completion thresholds (adjustable)
+    const ZOOM_OUT_THRESHOLD = 0.001; // 5% of path
+    const ZOOM_IN_THRESHOLD = 0.85;  // 80% of path
+    
+    // Helper to calculate path completion (0 to 1)
+    const getPathCompletion = (): number => {
+      const currentPos = target.position;
+      const distanceFromStart = BABYLON.Vector3.Distance(startPosition, currentPos);
+      const distanceToEnd = BABYLON.Vector3.Distance(currentPos, endPosition);
+      const totalDist = distanceFromStart + distanceToEnd;
+      if (totalDist === 0) return 0;
+      return distanceFromStart / totalDist;
+    };
+    
+    // Observer to check path completion each frame
+    const pathObserver = scene.onBeforeRenderObservable.add(() => {
+      const completion = getPathCompletion();
+      
+      // Trigger zoom OUT at ~5% path completion
+      if (!zoomOutTriggered && completion >= ZOOM_OUT_THRESHOLD) {
+        zoomOutTriggered = true;
+        const currentRadius = camera.radius;
+        console.log(`🔭 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming out:`, currentRadius, "→", stateRadius);
+        
+        // Temporarily allow the radius range
+        camera.lowerRadiusLimit = 0;
+        camera.upperRadiusLimit = stateRadius;
+        
+        const zoomOutAnim = new BABYLON.Animation(
+          "bezierZoomOut",
+          "radius",
+          radiusFps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        const zoomOutEasing = new BABYLON.CubicEase();
+        zoomOutEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        zoomOutAnim.setEasingFunction(zoomOutEasing);
+        zoomOutAnim.setKeys([
+          { frame: 0, value: currentRadius },
+          { frame: radiusFps * radiusAnimDuration, value: stateRadius }
+        ]);
+        
+        scene.beginDirectAnimation(camera, [zoomOutAnim], 0, radiusFps * radiusAnimDuration, false, 1);
+      }
+      
+      // Trigger zoom IN at ~80% path completion (unless skipArrivalZoom is set)
+      if (!zoomInTriggered && completion >= ZOOM_IN_THRESHOLD) {
+        zoomInTriggered = true;
+        
+        if (options.skipArrivalZoom) {
+          console.log(`⏭️ [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Skipping arrival zoom (skipArrivalZoom is set)`);
+        } else {
+          const currentRadius = camera.radius;
+          console.log(`🔍 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming in:`, currentRadius, "→", arrivalRadius);
+          
+          // Allow zooming all the way in
+          camera.lowerRadiusLimit = 0;
+          
+          const zoomInAnim = new BABYLON.Animation(
+            "bezierZoomIn",
+            "radius",
+            radiusFps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          const zoomInEasing = new BABYLON.CubicEase();
+          zoomInEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+          zoomInAnim.setEasingFunction(zoomInEasing);
+          zoomInAnim.setKeys([
+            { frame: 0, value: currentRadius },
+            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
+          ]);
+          
+          scene.beginDirectAnimation(camera, [zoomInAnim], 0, radiusFps * radiusAnimDuration, false, 1);
+        }
+      }
+      
+      // Remove observer when both triggers have fired
+      if (zoomOutTriggered && zoomInTriggered) {
+        scene.onBeforeRenderObservable.remove(pathObserver);
+      }
+    });
+    
+    // Safety cleanup: remove observer after animation duration + buffer
+    setTimeout(() => {
+      scene.onBeforeRenderObservable.remove(pathObserver);
+    }, (duration + 1) * 1000);
+  }
+}
+
 export function BabylonCanvas() {
   const s = useUI((st) => st.state);
   const selectedLogoModel = useUI((st) => st.selectedLogoModel);
@@ -432,6 +822,10 @@ export function BabylonCanvas() {
   const currentTrimRef = useRef<string>("lightBlue");
   const interiorCameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
   const isInteriorView = useUI((st) => st.isInteriorView);
+
+  // Guided mode anchor data refs (position + rotation)
+  // Anchors are stored as { desktop1, desktop2, desktop3, desktop4, mobile1, mobile2, mobile3, mobile4 }
+  const anchorDataRef = useRef<Record<string, AnchorData>>({});
 
 
 
@@ -789,6 +1183,77 @@ export function BabylonCanvas() {
       }
     );
 
+    // Load anchors.glb for guided mode ship positions and rotations
+    BABYLON.SceneLoader.ImportMesh(
+      "",
+      "/assets/models/",
+      "anchors.glb",
+      scene,
+      (meshes) => {
+        console.log("⚓ Anchors loaded:", meshes.map(m => m.name).join(", "));
+        
+        // Extract positions and rotations from anchor meshes (desktop1-4, mobile1-4)
+        const anchorNames = ['desktop1', 'desktop2', 'desktop3', 'desktop4', 'mobile1', 'mobile2', 'mobile3', 'mobile4'];
+        anchorNames.forEach(name => {
+          const anchor = meshes.find(m => m.name === name);
+          if (anchor) {
+            // Get world position and flip Z coordinate
+            const rawPosition = anchor.getAbsolutePosition();
+            const position = new BABYLON.Vector3(
+              -rawPosition.x,
+              rawPosition.y,
+              rawPosition.z // Flip Z sign
+            );
+            
+            // Get rotation and add 90° to X
+            let rotX: number, rotY: number, rotZ: number;
+            if (anchor.rotationQuaternion) {
+              const euler = anchor.rotationQuaternion.toEulerAngles();
+              rotX = euler.x;
+              rotY = euler.y;
+              rotZ = euler.z;
+            } else {
+              rotX = anchor.rotation.x;
+              rotY = anchor.rotation.y;
+              rotZ = anchor.rotation.z;
+            }
+            
+            // Add 90° (PI/2) to X rotation
+            const rotation = BABYLON.Quaternion.FromEulerAngles(
+              rotX - Math.PI / 2,
+              rotY,
+              rotZ
+            );
+            
+            // Calculate forward direction from corrected rotation (local Z forward in world space)
+            const forward = new BABYLON.Vector3(0, 0, 1);
+            forward.rotateByQuaternionToRef(rotation, forward);
+            
+            anchorDataRef.current[name] = { position, rotation, forward };
+            console.log(`⚓ Anchor ${name}:`, { 
+              position: position.toString(), 
+              rotation: `x:${rotX + Math.PI/2}, y:${rotY}, z:${rotZ}`,
+              forward: forward.toString() 
+            });
+            
+            // Hide the anchor mesh
+            anchor.isVisible = false;
+          } else {
+            console.warn(`⚠️ Anchor mesh "${name}" not found in anchors.glb`);
+          }
+        });
+        
+        // Hide the root mesh as well
+        if (meshes[0]) {
+          meshes[0].setEnabled(false);
+        }
+      },
+      undefined,
+      (sceneOrMesh, message, exception) => {
+        console.error("anchors.glb load error:", message, exception);
+      }
+    );
+
     // Load spaceship2.glb
     BABYLON.SceneLoader.ImportMesh(
       "",
@@ -830,6 +1295,16 @@ export function BabylonCanvas() {
           shipRoot.setEnabled(false); // Hidden by default, shown in state 3
           spaceshipRef.current = spaceship; // Keep mesh reference for materials
           spaceshipRootRef.current = shipRoot; // This is what we control
+          
+          // Save the ORIGINAL ship state immediately for proper restoration
+          // This must happen BEFORE any bezier animations can change it
+          shipInitialStateRef.current.position = shipRoot.position.clone();
+          shipInitialStateRef.current.rotation = BABYLON.Quaternion.Identity();
+          console.log("💾 Saved ORIGINAL ship state on load:", {
+            position: shipInitialStateRef.current.position,
+            rotation: "Identity"
+          });
+          
           updateProgress();
 
           // Create engine flame particle systems (two flames with offset)
@@ -1653,11 +2128,11 @@ export function BabylonCanvas() {
     const ShipControls = shipControlsRef.current;
     const flame = flameParticleSystemRef.current;
 
-    // Only enable controls in state 4 (index 4) with free mode
-    const inState4 = s === S.state_4;
-    const shouldEnableControls = inState4 && navigationMode === 'free' && !isInteriorView;
+    // Only enable controls in states 4-7 with free mode
+    const inFreeExploreState = s >= S.state_4 && s <= S.state_7;
+    const shouldEnableControls = inFreeExploreState && navigationMode === 'free' && !isInteriorView;
 
-    console.log("🚀 Control state:", { inState4, navigationMode, shouldEnableControls });
+    console.log("🚀 Control state:", { inFreeExploreState, navigationMode, shouldEnableControls });
 
     // Get ship animation timing to delay controls until animation completes
     const sceneConfig = config.canvas.babylonScene;
@@ -1752,15 +2227,8 @@ export function BabylonCanvas() {
       // Get camera reference
       const camera = cameraRef.current;
 
-      // Save initial ship state for restoration when exiting free mode
-      if (!shipInitialStateRef.current.position || !shipInitialStateRef.current.rotation) {
-        shipInitialStateRef.current.position = controlTarget.position.clone();
-        shipInitialStateRef.current.rotation = controlTarget.rotationQuaternion.clone();
-        console.log("💾 Saved initial ship state:", {
-          position: shipInitialStateRef.current.position,
-          rotation: shipInitialStateRef.current.rotation
-        });
-      }
+      // Initial ship state is saved when ship loads - don't overwrite it here
+      // as the ship may have been rotated by bezier animation at this point
 
       // Initialize control angles from current ship rotation (only on first enable)
       if (ShipControls.pitch === 0 && ShipControls.yawTarget === 0) {
@@ -2427,9 +2895,12 @@ export function BabylonCanvas() {
 
     // Track state transitions
     const prevState = prevStateRef.current;
+    const wasInExploreState = prevState >= S.state_4 && prevState <= S.state_7; // Was in states 4-7
+    const isNowInExploreState = s >= S.state_4 && s <= S.state_7; // Is now in states 4-7
+    const isLeavingExploreState = wasInExploreState && !isNowInExploreState; // Leaving 4-7 to any non-explore state
     const isComingFromState3 = prevState === S.state_3 && s === S.state_2; // State 3 → State 2
-    const isComingFromState4 = prevState === S.state_4 && s === S.state_3; // State 4 → State 3
-    const isComingFromState4ToState5 = prevState === S.state_4 && s === S.state_5; // State 4 → State 5
+    const isComingFromExploreToState3 = wasInExploreState && s === S.state_3; // States 4-7 → State 3
+    const isGoingToStateFinal = s === S.state_final; // Any state → State Final
     const isGoingToState3 = prevState === S.state_2 && s === S.state_3; // State 2 → State 3
     const isGoingToState4 = prevState === S.state_3 && s === S.state_4; // State 3 → State 4
 
@@ -2540,6 +3011,9 @@ export function BabylonCanvas() {
     // Handle spaceship position animation
     // The current 'config' is already the destination state's blueprint
     const animShipRoot = spaceshipRootRef.current;
+    const animShipPivot = shipPivotRef.current;
+    const currentNavigationMode = useUI.getState().navigationMode;
+    
     if (animShipRoot && prevState !== s) {
       const easing = new BABYLON.CubicEase();
       easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
@@ -2547,53 +3021,214 @@ export function BabylonCanvas() {
       // Get ship animation config from CURRENT state (destination state blueprint)
       const shipConfig = sceneConfig?.shipAnimation;
 
-      // Check for responsive positions (mobile/desktop)
-      let targetPos: { x: number; y: number; z: number } | undefined;
-
-      if (shipConfig) {
-        // Check if we have mobile/desktop specific positions
-        if (isMobile && shipConfig.mobile?.position) {
-          targetPos = shipConfig.mobile.position;
-        } else if (!isMobile && shipConfig.desktop?.position) {
-          targetPos = shipConfig.desktop.position;
-        } else if (shipConfig.position) {
-          // Fall back to single position if no responsive versions
-          targetPos = shipConfig.position;
+      // For states 4-7, ensure shipPivot is parented to shipRoot so camera follows
+      const isEnteringExploreState = s >= S.state_4 && s <= S.state_7;
+      if (isEnteringExploreState && animShipPivot && animShipPivot.parent !== animShipRoot) {
+        console.log("📷 Parenting shipPivot to shipRoot for explore state");
+        animShipPivot.setParent(animShipRoot);
+        const pivotY = isMobile ? 1.17 : 0.9;
+        animShipPivot.position.set(0, pivotY, 0);
+        animShipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
+        
+        if (camera) {
+          camera.lockedTarget = animShipPivot;
         }
       }
 
-      // If current state has ship animation config, animate to that position
-      if (targetPos) {
-        const duration = shipConfig?.duration ?? 1.0;
-        const delay = shipConfig?.delay ?? 0;
-
-        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s} (${isMobile ? 'mobile' : 'desktop'}):`, {
-          targetPosition: targetPos,
-          duration,
-          delay,
-          fromState: prevState,
-          toState: s
+      // Check if coming FROM guided state (4-7) TO any non-explore state while in guided mode
+      // This includes state_0, state_1, state_2, state_3, and state_final
+      const isLeavingGuidedExploreState = currentNavigationMode === 'guided' &&
+                                           prevState >= S.state_4 && prevState <= S.state_7 &&
+                                           (s <= S.state_3 || s === S.state_final);
+      
+      // In guided mode for states 4-7, use bezier curve animation with anchor data
+      const isGuidedModeState = currentNavigationMode === 'guided' && 
+                                 s >= S.state_4 && s <= S.state_7;
+      
+      if (isLeavingGuidedExploreState) {
+        // Bezier animation from current position to destination state ship position
+        const startPosition = animShipRoot.position.clone();
+        
+        // Calculate current forward direction from ship rotation
+        let startForward = new BABYLON.Vector3(0, 0, 1);
+        if (animShipRoot.rotationQuaternion) {
+          startForward.rotateByQuaternionToRef(animShipRoot.rotationQuaternion, startForward);
+        }
+        
+        const startRotation = animShipRoot.rotationQuaternion?.clone() || BABYLON.Quaternion.Identity();
+        
+        // Get target position from state config (with fallbacks)
+        let targetPos = shipConfig?.position || { x: 0, y: -4, z: 20 }; // Default to behind camera
+        if (isMobile && shipConfig?.mobile?.position) {
+          targetPos = shipConfig.mobile.position;
+        } else if (!isMobile && shipConfig?.desktop?.position) {
+          targetPos = shipConfig.desktop.position;
+        }
+        
+        const endPosition = new BABYLON.Vector3(targetPos.x, targetPos.y, targetPos.z);
+        // End facing forward (identity rotation)
+        const endRotation = BABYLON.Quaternion.Identity();
+        const endForward = new BABYLON.Vector3(0, 0, 1);
+        
+        // Parent smoke emitter
+        const smokeEmitter = smokeEmitterRef.current;
+        if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
+          smokeEmitter.parent = animShipPivot;
+          console.log("💨 [Leaving Guided] Smoke emitter parented to shipPivot");
+        }
+        
+        // Camera radius for travel (use destination state's lower limit)
+        const cameraConfig = config.canvas.babylonCamera;
+        const stateRadius = isMobile 
+          ? cameraConfig?.lowerRadiusLimit?.mobile ?? 12 
+          : cameraConfig?.lowerRadiusLimit?.desktop ?? 12;
+        
+        // Determine state name for logging
+        const stateNames: Record<number, string> = {
+          [S.state_0]: 'state_0',
+          [S.state_1]: 'state_1', 
+          [S.state_2]: 'state_2',
+          [S.state_3]: 'state_3',
+          [S.state_final]: 'state_final'
+        };
+        
+        console.log(`⚓ [Leaving Guided] Bezier animation to ${stateNames[s] || `state_${s}`}:`, {
+          startPos: startPosition.toString(),
+          endPos: endPosition.toString(),
+          stateRadius
         });
-
-        animateTransform({
+        
+        // Use bezier with 2 second duration for leaving guided states
+        // Skip arrival zoom and hide since destination states should show ship normally (or have it hidden via state config)
+        animateShipAlongBezier({
           target: animShipRoot,
           scene,
-          duration,
-          delay,
-          position: new BABYLON.Vector3(targetPos.x, targetPos.y, targetPos.z),
-          easing
+          camera,
+          canvas: ref.current,
+          startPosition,
+          startForward,
+          endPosition,
+          endForward,
+          startRotation,
+          endRotation,
+          stateRadius,
+          duration: 2.0, // Shorter duration for exit transitions
+          skipArrivalZoom: true, // Don't zoom to 0
+          skipArrivalHide: true  // Don't hide ship (state config handles visibility)
         });
+      } else if (isGuidedModeState) {
+        // Map states to anchor indices (state_4 = anchor1, state_5 = anchor2, etc.)
+        const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, or 4
+        const anchorKey = isMobile ? `mobile${anchorIndex}` : `desktop${anchorIndex}`;
+        const anchorData = anchorDataRef.current[anchorKey];
+        
+        if (anchorData) {
+          // Get current ship position and forward direction
+          const startPosition = animShipRoot.position.clone();
+          
+          // Calculate current forward direction from ship rotation
+          let startForward = new BABYLON.Vector3(0, 0, 1); // Default forward
+          if (animShipRoot.rotationQuaternion) {
+            startForward.rotateByQuaternionToRef(animShipRoot.rotationQuaternion, startForward);
+          }
+          
+          // Get start rotation
+          const startRotation = animShipRoot.rotationQuaternion?.clone() || BABYLON.Quaternion.Identity();
+          
+          // Parent smoke emitter to shipPivot so it follows during guided mode animation
+          const smokeEmitter = smokeEmitterRef.current;
+          if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
+            smokeEmitter.parent = animShipPivot;
+            console.log("💨 [Guided Mode] Smoke emitter parented to shipPivot");
+          }
+          
+          // Get camera radius from state config for zoom-out during travel
+          const cameraConfig = config.canvas.babylonCamera;
+          const stateRadius = isMobile 
+            ? cameraConfig?.lowerRadiusLimit?.mobile ?? 24 
+            : cameraConfig?.lowerRadiusLimit?.desktop ?? 24;
+          
+          console.log(`⚓ [Guided Mode] Bezier animation to anchor ${anchorKey}:`, {
+            startPos: startPosition.toString(),
+            endPos: anchorData.position.toString(),
+            startForward: startForward.toString(),
+            endForward: anchorData.forward.toString(),
+            stateRadius
+          });
+          
+          // Use bezier curve animation with camera following
+          animateShipAlongBezier({
+            target: animShipRoot,
+            scene,
+            camera,
+            canvas: ref.current,
+            startPosition,
+            startForward,
+            endPosition: anchorData.position,
+            endForward: anchorData.forward,
+            startRotation,
+            endRotation: anchorData.rotation,
+            stateRadius
+          });
+        } else {
+          console.warn(`⚠️ Anchor ${anchorKey} not found, falling back to linear animation`);
+          // Fallback to linear animation if anchor data missing
+          const fallbackPos = shipConfig?.position || { x: 0, y: -1, z: 0 };
+          animateTransform({
+            target: animShipRoot,
+            scene,
+            duration: GUIDED_SHIP_DURATION,
+            delay: 0,
+            position: new BABYLON.Vector3(fallbackPos.x, fallbackPos.y, fallbackPos.z),
+            easing
+          });
+        }
       } else {
-        // If no ship config, hide ship behind camera (for states without ship)
-        console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}: No ship config, moving behind camera`);
-        animateTransform({
-          target: animShipRoot,
-          scene,
-          duration: 0.5,
-          delay: 0,
-          position: new BABYLON.Vector3(0, -4, 20),
-          easing
-        });
+        // Free mode or other states - use config positions with linear animation
+        let targetPos: { x: number; y: number; z: number } | undefined;
+        
+        if (shipConfig) {
+          if (isMobile && shipConfig.mobile?.position) {
+            targetPos = shipConfig.mobile.position;
+          } else if (!isMobile && shipConfig.desktop?.position) {
+            targetPos = shipConfig.desktop.position;
+          } else if (shipConfig.position) {
+            targetPos = shipConfig.position;
+          }
+        }
+
+        if (targetPos) {
+          const duration = shipConfig?.duration ?? 1.0;
+          const delay = shipConfig?.delay ?? 0;
+
+          console.log(`🚀 [Ship Animation] State ${prevState} → State ${s} (${isMobile ? 'mobile' : 'desktop'}, ${currentNavigationMode}):`, {
+            targetPosition: targetPos,
+            duration,
+            delay,
+            fromState: prevState,
+            toState: s
+          });
+
+          animateTransform({
+            target: animShipRoot,
+            scene,
+            duration,
+            delay,
+            position: new BABYLON.Vector3(targetPos.x, targetPos.y, targetPos.z),
+            easing
+          });
+        } else {
+          // If no ship config, hide ship behind camera (for states without ship)
+          console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}: No ship config, moving behind camera`);
+          animateTransform({
+            target: animShipRoot,
+            scene,
+            duration: 0.5,
+            delay: 0,
+            position: new BABYLON.Vector3(0, -4, 20),
+            easing
+          });
+        }
       }
     }
 
@@ -2637,28 +3272,31 @@ export function BabylonCanvas() {
       }
     }
 
-    // Reset ship and camera when coming from state 4 to state 3 or state 5
-    if (isComingFromState4 || isComingFromState4ToState5) {
+    // Reset ship and camera when leaving explore states (4-7) to ANY non-explore state
+    if (isLeavingExploreState) {
       const shipToReset = spaceshipRef.current;
       const shipRootToReset = spaceshipRootRef.current;
       const pivotToReset = shipPivotRef.current;
 
-      // Restore ship to initial saved state
+      // Restore ship to original state (Identity rotation, proper position)
       const controlTarget = shipRootToReset || shipToReset;
-      const initialState = shipInitialStateRef.current;
 
-      if (controlTarget && initialState.position && initialState.rotation) {
-        controlTarget.position.copyFrom(initialState.position);
-        controlTarget.rotationQuaternion = initialState.rotation.clone();
-        console.log("🔄 Restored ship to initial state:", {
-          position: initialState.position,
-          rotation: initialState.rotation
-        });
-      } else {
-        console.warn("⚠️ No saved initial state found, resetting to defaults");
-        if (controlTarget) {
+      if (controlTarget) {
+        // Always reset rotation to Identity - this is the correct "forward-facing" orientation
+        controlTarget.rotationQuaternion = BABYLON.Quaternion.Identity();
+        
+        // Reset position to a known good state for state 3
+        const initialPos = shipInitialStateRef.current.position;
+        if (initialPos) {
+          controlTarget.position.copyFrom(initialPos);
+        } else {
           controlTarget.position.set(0, -.7, 0);
         }
+        
+        console.log("🔄 Restored ship to original state:", {
+          position: controlTarget.position,
+          rotation: "Identity"
+        });
       }
 
       // Reset camera to initial default rotation (same as scene initialization)
@@ -2672,7 +3310,7 @@ export function BabylonCanvas() {
       if (pivotToReset && pivotToReset.parent) {
         pivotToReset.setParent(null);
         pivotToReset.position.set(0, 0, 0);
-        console.log("🔄 Reset ship pivot (State 4 → State 3/5)");
+        console.log("🔄 Reset ship pivot (leaving explore states)");
       }
 
       // Reset smoke emitter
@@ -2680,7 +3318,7 @@ export function BabylonCanvas() {
       if (smokeEmitter && smokeEmitter.parent) {
         smokeEmitter.parent = null;
         smokeEmitter.position.set(0, 0, 25);
-        console.log("🔄 Reset smoke emitter (State 4 → State 3/5)");
+        console.log("🔄 Reset smoke emitter (leaving explore states)");
       }
 
       // Keep camera locked to shipPivot (don't unlock)
@@ -3161,9 +3799,9 @@ export function BabylonCanvas() {
     const camera = cameraRef.current;
     if (!canvas || !camera) return;
 
-    // Only enable controls in state 4 with free mode
-    const inState4 = s === S.state_4; // State 4 (index 4)
-    const shouldEnableControls = inState4; // && navigationMode === 'free';
+    // Only enable controls in states 4-7 with free mode
+    const inFreeExploreState = s >= S.state_4 && s <= S.state_7;
+    const shouldEnableControls = inFreeExploreState; // && navigationMode === 'free';
 
     if (shouldEnableControls) {
       // Get camera animation duration to delay enabling controls until animation completes
@@ -3186,10 +3824,137 @@ export function BabylonCanvas() {
     }
   }, [s, navigationMode]);
 
+  // Handle navigation mode toggle - move ship to anchor when switching to guided mode in states 4-7
+  const prevNavigationModeRef = useRef<'guided' | 'free'>(navigationMode);
+  useEffect(() => {
+    const prevMode = prevNavigationModeRef.current;
+    const scene = sceneRef.current;
+    const shipPivot = shipPivotRef.current;
+    const shipRoot = spaceshipRootRef.current;
+    const camera = cameraRef.current;
+    
+    const isMobile = window.innerWidth < 768;
+    
+    // Switching from FREE to GUIDED mode in states 4-7
+    if (prevMode === 'free' && navigationMode === 'guided' && 
+        s >= S.state_4 && s <= S.state_7 && 
+        scene && shipPivot && shipRoot) {
+      
+      const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, or 4
+      const anchorKey = isMobile ? `mobile${anchorIndex}` : `desktop${anchorIndex}`;
+      const anchorData = anchorDataRef.current[anchorKey];
+      
+      if (anchorData) {
+        // Get current ship position and forward direction
+        const startPosition = shipRoot.position.clone();
+        
+        // Calculate current forward direction from ship rotation
+        let startForward = new BABYLON.Vector3(0, 0, 1); // Default forward
+        if (shipRoot.rotationQuaternion) {
+          startForward.rotateByQuaternionToRef(shipRoot.rotationQuaternion, startForward);
+        }
+        
+        // Get start rotation
+        const startRotation = shipRoot.rotationQuaternion?.clone() || BABYLON.Quaternion.Identity();
+        
+        // Ensure shipPivot is parented to shipRoot for camera following
+        if (shipPivot.parent !== shipRoot) {
+          console.log("📷 [Mode Toggle] Parenting shipPivot to shipRoot for guided mode animation");
+          shipPivot.setParent(shipRoot);
+          const pivotY = isMobile ? 1.17 : 0.9;
+          shipPivot.position.set(0, pivotY, 0);
+          shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          
+          if (camera) {
+            camera.lockedTarget = shipPivot;
+          }
+        }
+        
+        // Parent smoke emitter to shipPivot for guided mode too
+        const smokeEmitter = smokeEmitterRef.current;
+        if (smokeEmitter && smokeEmitter.parent !== shipPivot) {
+          smokeEmitter.parent = shipPivot;
+          console.log("💨 [Mode Toggle] Smoke emitter parented to shipPivot for guided mode");
+        }
+        
+        // Get camera radius from state config for zoom-out during travel
+        const cameraConfig = config.canvas.babylonCamera;
+        const stateRadius = isMobile 
+          ? cameraConfig?.lowerRadiusLimit?.mobile ?? 24 
+          : cameraConfig?.lowerRadiusLimit?.desktop ?? 24;
+        
+        console.log(`⚓ [Mode Toggle] Animating to anchor ${anchorKey}:`, {
+          startPos: startPosition.toString(),
+          endPos: anchorData.position.toString(),
+          stateRadius
+        });
+        
+        // Animate ship along bezier curve to anchor position
+        animateShipAlongBezier({
+          target: shipRoot,
+          scene,
+          camera,
+          canvas: ref.current,
+          startPosition,
+          startForward,
+          endPosition: anchorData.position,
+          endForward: anchorData.forward,
+          startRotation,
+          endRotation: anchorData.rotation,
+          stateRadius
+        });
+      } else {
+        console.warn(`⚠️ [Mode Toggle] Anchor ${anchorKey} not found`);
+      }
+    }
+    
+    // Switching from GUIDED to FREE mode in states 4-7
+    if (prevMode === 'guided' && navigationMode === 'free' && 
+        s >= S.state_4 && s <= S.state_7 && 
+        scene && camera) {
+      
+      // Restore ship visibility (it may have been hidden after guided mode arrival)
+      const shipRoot = spaceshipRootRef.current;
+      if (shipRoot) {
+        shipRoot.getChildMeshes().forEach(mesh => mesh.visibility = 1);
+        console.log("👁️ [Mode Toggle] Ship visibility restored for free mode");
+      }
+      
+      // Animate camera radius limits back to state values for free exploration
+      const cameraConfig = config.canvas.babylonCamera;
+      const lowerLimit = isMobile 
+        ? cameraConfig?.lowerRadiusLimit?.mobile ?? 2 
+        : cameraConfig?.lowerRadiusLimit?.desktop ?? 5;
+      const upperLimit = isMobile 
+        ? cameraConfig?.upperRadiusLimit?.mobile ?? 20 
+        : cameraConfig?.upperRadiusLimit?.desktop ?? 50;
+      
+      console.log(`🔓 [Mode Toggle] Restoring camera radius for free mode:`, {
+        lowerLimit,
+        upperLimit
+      });
+      
+      const radiusEasing = new BABYLON.CubicEase();
+      radiusEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+      
+      animateCameraRadius({
+        camera,
+        scene,
+        duration: 0.8,
+        lowerRadiusLimit: lowerLimit,
+        upperRadiusLimit: upperLimit,
+        easing: radiusEasing
+      });
+    }
+    
+    // Update previous mode ref
+    prevNavigationModeRef.current = navigationMode;
+  }, [navigationMode, s]);
+
   // Handle car visibility based on state
   useEffect(() => {
     if (carMeshesRef.current.length > 0) {
-      const shouldBeVisible = s >= 4; // S.state_4
+      const shouldBeVisible = s >= S.state_4 && s <= S.state_7; // States 4-7
       carMeshesRef.current.forEach(mesh => mesh.setEnabled(shouldBeVisible));
 
       // If car becomes hidden, exit interior view
