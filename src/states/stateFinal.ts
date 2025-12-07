@@ -61,7 +61,7 @@ export const stateFinalConfig: StateConfig = {
                 delay: 0
             },
             fogAnimation: {
-                fogEnd: 100,
+                fogEnd: 30,
                 duration: 0.5,
                 delay: 0
             }

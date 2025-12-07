@@ -382,6 +382,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
   // Bullet state - using refs for performance (avoid re-renders)
   const bulletRef = useRef<HTMLDivElement>(null);
   const [showBullet, setShowBullet] = useState(false);
+  const [curveAnimationDone, setCurveAnimationDone] = useState(false);
   const hasMouseRef = useRef(!isTouchDevice());
   const cachedPathPointsRef = useRef<{ x: number; y: number; length: number }[]>([]);
   const menuPositionsRef = useRef<{ x: number; y: number }[]>([]);
@@ -396,12 +397,14 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
       setShouldRender(true);
       setPathReady(false);
       setIsAnimating(false);
+      setCurveAnimationDone(false);
       // Reset dimensions to force recalculation
       setDimensions({ width: 0, height: 0 });
       setPathD("");
       setPathLength(0);
     } else {
       setIsAnimating(false);
+      setCurveAnimationDone(false);
       // Wait for close animation before unmounting
       const timer = setTimeout(() => {
         setShouldRender(false);
@@ -502,6 +505,16 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
     
     return () => clearTimeout(timer);
   }, [pathD, isOpen, isAnimating]);
+
+  // Set curveAnimationDone after the draw animation completes
+  useEffect(() => {
+    if (isAnimating) {
+      const timer = setTimeout(() => {
+        setCurveAnimationDone(true);
+      }, DRAW_DURATION * 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating]);
 
   // Calculate proximity scale for bullet (inline for performance)
   const getProximityScale = (bulletX: number, bulletY: number): number => {
@@ -763,6 +776,57 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
           />
         </div>
       )}
+      
+      {/* Mobile current state indicator - expanded bullet at current state's position */}
+      {isMobile && curveAnimationDone && (() => {
+        const currentState = useUI.getState().state;
+        // Map states to menu item indices
+        const stateToMenuIndex: Record<number, number> = {
+          [S.state_0]: 0,      // Welcome
+          [S.state_1]: 0,      // Show Welcome for states 1-3
+          [S.state_2]: 0,
+          [S.state_3]: 0,
+          [S.state_4]: 1,      // Car Customizer
+          [S.state_5]: 2,      // Musecraft
+          [S.state_6]: 3,      // Dioramas
+          [S.state_7]: 4,      // Petwheels
+          [S.state_final]: 5,  // Connect
+        };
+        const menuIndex = stateToMenuIndex[currentState];
+        const pos = menuPositions[menuIndex];
+        if (!pos) return null;
+        
+        return (
+          <div
+            className="absolute z-[18] pointer-events-none"
+            style={{
+              left: pos.x,
+              top: pos.y,
+              transform: 'translate(-50%, -50%)',
+              width: BULLET_EXPANDED_SIZE,
+              height: BULLET_EXPANDED_SIZE,
+              opacity: 0.9,
+              filter: `blur(${BULLET_EXPANDED_BLUR}px)`,
+              transition: 'all 0.4s ease-out',
+            }}
+          >
+            <div
+              className="w-full h-full rounded-full transition-all duration-300"
+              style={{
+                background: `conic-gradient(
+                  from 0deg,
+                  #9A92D2,
+                  #7583ff,
+                  #FF8800,
+                  #FF99CC,
+                  #9A92D2
+                )`,
+                animation: 'rotateGlow 3s linear infinite',
+              }}
+            />
+          </div>
+        );
+      })()}
 
       {/* Menu item buttons - z-20 (on top of bullet) */}
       {menuPositions.map((pos, index) => {
@@ -799,6 +863,16 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
               };
               
               const targetState = stateMap[item.id];
+              const currentState = useUI.getState().state;
+              
+              // If in state_final and clicking Welcome, reload the page
+              if (currentState === S.state_final && item.id === 'what-we-do') {
+                console.log('🔄 [Menu] Reloading page from state_final');
+                onClose();
+                window.location.reload();
+                return;
+              }
+              
               if (targetState !== undefined) {
                 // First, switch to guided mode if currently in free mode
                 const currentMode = useUI.getState().navigationMode;

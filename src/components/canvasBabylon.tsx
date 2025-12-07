@@ -362,9 +362,11 @@ interface AnimateShipAlongBezierOptions {
   startRotation: BABYLON.Quaternion;
   endRotation: BABYLON.Quaternion;
   duration?: number; // seconds, default 4.0
+  delay?: number; // delay before starting animation (seconds)
   stateRadius?: number; // camera radius for zoomed-out view during travel
   skipArrivalZoom?: boolean; // if true, don't zoom to 0 at arrival (for state_3/final)
   skipArrivalHide?: boolean; // if true, don't hide ship at arrival (for state_3/final)
+  flameParticles?: BABYLON.ParticleSystem | null; // flame particles to tie to ship visibility
   onComplete?: () => void;
 }
 
@@ -395,15 +397,31 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     startRotation,
     endRotation,
     duration = GUIDED_SHIP_DURATION,
+    delay = 0,
+    flameParticles,
     onComplete
   } = options;
 
-  // Make ship visible before departing (use visibility, not setEnabled, to keep particles working)
-  target.getChildMeshes().forEach(mesh => mesh.visibility = 1);
-  console.log("🚀 [Bezier Animation] Ship visible for departure");
+  // Function to execute the animation (may be delayed)
+  const executeAnimation = () => {
+    // Check if animation was superseded during delay
+    if (thisAnimationId !== currentBezierAnimationId) {
+      console.log("⏭️ [Bezier Animation] Skipping - animation superseded during delay");
+      return;
+    }
 
-  // Calculate the distance between start and end for control point scaling
-  const distance = BABYLON.Vector3.Distance(startPosition, endPosition);
+    // Make ship visible before departing (use visibility, not setEnabled, to keep particles working)
+    target.getChildMeshes().forEach(mesh => mesh.visibility = 1);
+    console.log("🚀 [Bezier Animation] Ship visible for departure");
+    
+    // Start flame particles when ship becomes visible
+    if (flameParticles && !flameParticles.isStarted()) {
+      flameParticles.start();
+      console.log("🔥 [Bezier Animation] Flame particles started");
+    }
+
+    // Calculate the distance between start and end for control point scaling
+    const distance = BABYLON.Vector3.Distance(startPosition, endPosition);
   
   // Control point distance is proportional to the total distance
   // Using 1/3 of the distance creates a nice smooth curve
@@ -556,6 +574,12 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     if (shouldHide) {
       target.getChildMeshes().forEach(mesh => mesh.visibility = 0);
       console.log("🛬 [Bezier Animation] Ship hidden after arrival");
+      
+      // Stop flame particles when hiding ship (they're tied together)
+      if (flameParticles && flameParticles.isStarted()) {
+        flameParticles.stop();
+        console.log("🔥 [Bezier Animation] Flame particles stopped");
+      }
     } else {
       if (thisAnimationId !== currentBezierAnimationId) {
         console.log("⏭️ [Bezier Animation] Skipping hide - animation was superseded");
@@ -643,7 +667,7 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     
     // Path completion thresholds (adjustable)
     const ZOOM_OUT_THRESHOLD = 0.001; // 5% of path
-    const ZOOM_IN_THRESHOLD = 0.85;  // 80% of path
+    const ZOOM_IN_THRESHOLD = 0.7;  // 80% of path
     
     // Helper to calculate path completion (0 to 1)
     const getPathCompletion = (): number => {
@@ -667,7 +691,7 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         
         // Temporarily allow the radius range
         camera.lowerRadiusLimit = 0;
-        camera.upperRadiusLimit = stateRadius;
+        camera.upperRadiusLimit = stateRadius ?? 24;
         
         const zoomOutAnim = new BABYLON.Animation(
           "bezierZoomOut",
@@ -730,6 +754,15 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       scene.onBeforeRenderObservable.remove(pathObserver);
     }, (duration + 1) * 1000);
   }
+  }; // End of executeAnimation function
+  
+  // Apply delay if specified, otherwise execute immediately
+  if (delay > 0) {
+    console.log(`⏱️ [Bezier Animation] Delaying animation by ${delay} seconds`);
+    setTimeout(executeAnimation, delay * 1000);
+  } else {
+    executeAnimation();
+  }
 }
 
 export function BabylonCanvas() {
@@ -778,7 +811,7 @@ export function BabylonCanvas() {
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 12,
+    speed: 6,
     speedK: 2,
     v: 10,
     pitch: 0,
@@ -875,7 +908,7 @@ export function BabylonCanvas() {
       "cam",
       -Math.PI * 1.5,
       Math.PI / 2,
-      24,
+      20,
       shipPivot.position,
       scene
     );
@@ -907,8 +940,8 @@ export function BabylonCanvas() {
       camera.lowerRadiusLimit = lowerLimit;
       camera.upperRadiusLimit = upperLimit;
     } else {
-      camera.lowerRadiusLimit = 18;
-      camera.upperRadiusLimit = 18;
+      camera.lowerRadiusLimit = 20;
+      camera.upperRadiusLimit = 20;
     }
 
     // Lock vertical FOV so height framing never squishes
@@ -950,7 +983,8 @@ export function BabylonCanvas() {
 
     // Create root hierarchy
     const root1 = new BABYLON.TransformNode("root1", scene);
-    root1.position.set(0, 0, 0);
+    root1.position.set(0, 0, 18);
+    root1.scaling.set(.15, .15, .15);
     root1Ref.current = root1;
 
     // Create logos root as child of root1
@@ -1121,20 +1155,20 @@ export function BabylonCanvas() {
                 const randomVertex = vertices[Math.floor(Math.random() * vertices.length)];
 
                 // Add random offset for variation
-                const offsetRange = 10.0; // Adjust this to control spread around vertices
-                position.x = randomVertex.x + (Math.random() - 0.5) * offsetRange;
-                position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
-                position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
+                const offsetRange = 3.0; // Adjust this to control spread around vertices
+                position.x = randomVertex.x + (Math.random() - 0.15) * offsetRange;
+                position.y = randomVertex.y + (Math.random() - 0.15) * offsetRange;
+                position.z = randomVertex.z + (Math.random() - 0.15) * offsetRange;
               };
               if (isMobileRef.current) {
                 // Particle size - visible but not huge
-                curveParticles.minSize = .5;
-                curveParticles.maxSize = 2.5;
+                curveParticles.minSize = .15;
+                curveParticles.maxSize = .75;
                 curveParticles.emitRate = 200;
               } else {
                 // Particle size - visible but not huge
-                curveParticles.minSize = 2;
-                curveParticles.maxSize = 6;
+                curveParticles.minSize = .6;
+                curveParticles.maxSize = 1.8;
                 curveParticles.emitRate = 600;
               }
               // Rotation randomness
@@ -1146,8 +1180,8 @@ export function BabylonCanvas() {
               curveParticles.updateSpeed = 0.02;
 
               // Very slow gentle movement
-              curveParticles.minEmitPower = 0.01;
-              curveParticles.maxEmitPower = 0.05;
+              curveParticles.minEmitPower = 0.003;
+              curveParticles.maxEmitPower = 0.015;
 
               curveParticles.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
               curveParticles.addColorGradient(0.1, new BABYLON.Color4(.6, 0.6, 0.9, 0.3));
@@ -1156,7 +1190,7 @@ export function BabylonCanvas() {
               curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
 
               curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-              curveParticles.gravity = new BABYLON.Vector3(0, 1, 0);
+              curveParticles.gravity = new BABYLON.Vector3(0, .3, 0);
 
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;
@@ -1858,7 +1892,7 @@ export function BabylonCanvas() {
 
           // Create interior camera
           if (!interiorCameraRef.current) {
-            const offset = new BABYLON.Vector3(0, 13, 0);
+            const offset = new BABYLON.Vector3(0, 3.9, .12);
             const rotatedOffset = offset.applyRotationQuaternion(carRoot.rotationQuaternion!);
             const targetPos = anchorPos.add(rotatedOffset);
 
@@ -2007,7 +2041,7 @@ export function BabylonCanvas() {
     useUI.getState().setBydCustomizeCallback(customizeCar);
 
     // Distance-based visibility for BYD customizer panel
-    const VISIBILITY_DISTANCE = 70; // Show panel when within 100 meters
+    const VISIBILITY_DISTANCE = 20; // Show panel when within 100 meters
 
     scene.onBeforeRenderObservable.add(() => {
       // Early return if ship not loaded yet
@@ -2321,32 +2355,31 @@ export function BabylonCanvas() {
         console.log("🔥 Flame emitter:", flame.emitter);
       }
 
-      // Keyboard listeners
-      handleKeyDown = (e: KeyboardEvent) => {
-        ShipControls.keys[e.key.toLowerCase()] = true;
-      };
+      // Keyboard listeners (commented out - using drag controls for both mobile and desktop)
+      // handleKeyDown = (e: KeyboardEvent) => {
+      //   ShipControls.keys[e.key.toLowerCase()] = true;
+      // };
 
-      handleKeyUp = (e: KeyboardEvent) => {
-        ShipControls.keys[e.key.toLowerCase()] = false;
-      };
+      // handleKeyUp = (e: KeyboardEvent) => {
+      //   ShipControls.keys[e.key.toLowerCase()] = false;
+      // };
 
-      window.addEventListener('keydown', handleKeyDown);
-      window.addEventListener('keyup', handleKeyUp);
+      // window.addEventListener('keydown', handleKeyDown);
+      // window.addEventListener('keyup', handleKeyUp);
 
-      canvas.tabIndex = 1;
-      canvas.focus();
+      // canvas.tabIndex = 1;
+      // canvas.focus();
 
-      // Mobile drag control handlers
+      // Drag control handlers (works for both mobile and desktop)
       const MC = mobileControlRef.current;
 
       handlePointerDown = (e: PointerEvent) => {
-        if (!isMobileRef.current) return; // Only for mobile
         MC.isDragging = true;
         MC.yawRate = 0; // Reset turn rate when starting drag
       };
 
       handlePointerMove = (e: PointerEvent) => {
-        if (!isMobileRef.current || !MC.isDragging) return;
+        if (!MC.isDragging) return;
 
         // Just update pointer position - raycasting happens in render loop
         MC.pointerX = e.clientX;
@@ -2354,13 +2387,12 @@ export function BabylonCanvas() {
       };
 
       handlePointerUp = (e: PointerEvent) => {
-        if (!isMobileRef.current) return;
         MC.isDragging = false;
         MC.hasDirection = false;
         MC.cameraRotation = 0; // Stop camera rotation
         MC.yawRate = 0; // Reset turn rate
         MC.previousYaw = 0; // Reset previous yaw
-        console.log("📱 Mobile drag ended");
+        console.log("🚀 Drag control ended");
       };
 
       canvas.addEventListener('pointerdown', handlePointerDown);
@@ -2407,8 +2439,8 @@ export function BabylonCanvas() {
         const dt = scene.getEngine().getDeltaTime() * 0.001;
         const K = ShipControls.keys;
 
-        // Mobile drag control: Update direction and edge rotation every frame
-        if (isMobileRef.current && MC.isDragging) {
+        // Drag control: Update direction and edge rotation every frame (works for both mobile and desktop)
+        if (MC.isDragging) {
           // Check if pointer is near screen edges (5% threshold)
           const screenWidth = window.innerWidth;
           const edgeThreshold = screenWidth * 0.1;
@@ -2443,10 +2475,10 @@ export function BabylonCanvas() {
 
         frameCount++;
 
-        // Mobile vs Desktop controls
-        if (isMobileRef.current) {
-          // ========== MOBILE CONTROLS ==========
-          // Rotation and movement are both based on drag direction
+        // Drag-based controls (unified for mobile and desktop)
+        // ========== DRAG CONTROLS ==========
+        // Rotation and movement are both based on drag direction
+        {
 
           const BLEND_PER_SEC = 4;
           const wStep = BLEND_PER_SEC * dt;
@@ -2587,96 +2619,97 @@ export function BabylonCanvas() {
             MC.yawRate = 0;
             MC.previousYaw = 0;
           }
-        } else {
-          // ========== DESKTOP CONTROLS ==========
-          // Yaw from A/D (D=right, A=left)
-          const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) -
-            ((K["a"] || K["arrowleft"]) ? 1 : 0);
-
-          // Pitch from Q/E with easing (E=up, Q=down)
-          const pitchIn = (K["q"] ? 1 : 0) - (K["e"] ? 1 : 0);
-          const targetPitchVel = pitchIn * PITCH_RATE;
-          ShipControls.pitchVel += (targetPitchVel - ShipControls.pitchVel) * Math.min(1, dt * SMOOTH);
-          ShipControls.pitch -= ShipControls.pitchVel * dt;
-
-          // Yaw accumulation from A/D
-          ShipControls.yawTarget -= turnIn * PITCH_RATE * dt;
-
-          // Ship orientation - ABSOLUTE rotation from accumulated angles (like prototype)
-          const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, ShipControls.yawTarget);
-          const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, ShipControls.pitch);
-          const qFinal = qYaw.multiply(qPitch);
-
-          // Apply rotation directly without Slerp for immediate response
-          controlTarget.rotationQuaternion = qFinal;
-
-          // Choose & blend animation
-          const BLEND_PER_SEC = 4;
-          const wStep = BLEND_PER_SEC * dt;
-
-          const forwardKey = K["w"] || K["arrowup"];
-          const brakeKey = K["s"] || K["arrowdown"];
-
-          if (A.fwd && A.brk && A.L && A.R && A.I) {
-            if (turnIn < 0) play(A.L, wStep);
-            else if (turnIn > 0) play(A.R, wStep);
-            else if (brakeKey) play(A.brk, wStep);
-            else if (forwardKey) play(A.fwd, wStep);
-            else play(A.I, wStep);
-          }
-
-          // Smooth Shift throttle
-          const wantSpeed = K["shift"] ? ShipControls.speed * ShipControls.speedK : ShipControls.speed;
-          ShipControls.v += (wantSpeed - ShipControls.v) * Math.min(1, dt * 5);
-
-          // Movement with velocity smoothing (inertia/momentum)
-          const throttle = forwardKey && !brakeKey ? 1 :
-            forwardKey && brakeKey ? 0.5 : 0;
-
-          // Calculate target velocity direction
-          let targetVelocity = new BABYLON.Vector3(0, 0, 0);
-
-          if (throttle > 0) {
-            // Get forward direction (already includes pitch rotation for circular motion)
-            const forwardVector = new BABYLON.Vector3(0, 0, 1);
-
-            const dir = BABYLON.Vector3.TransformNormal(
-              forwardVector,
-              controlTarget.getWorldMatrix()
-            ).normalize();
-
-            // Invert X axis to fix left-right direction (like prototype)
-            dir.x *= -1;
-
-            // Target velocity in the forward direction
-            targetVelocity = dir.scale(ShipControls.v * 1 * throttle);
-          }
-
-          // Smoothly interpolate current velocity toward target velocity
-          // When throttle > 0: accelerate toward target
-          // When throttle = 0: drag slows down to zero
-          const interpSpeed = throttle > 0 ? ShipControls.acceleration : ShipControls.drag;
-          ShipControls.velocity.x += (targetVelocity.x - ShipControls.velocity.x) * Math.min(1, dt * interpSpeed);
-          ShipControls.velocity.y += (targetVelocity.y - ShipControls.velocity.y) * Math.min(1, dt * interpSpeed);
-          ShipControls.velocity.z += (targetVelocity.z - ShipControls.velocity.z) * Math.min(1, dt * interpSpeed);
-
-          // Apply velocity to position
-          const movement = ShipControls.velocity.scale(dt);
-          controlTarget.position.addInPlace(movement);
-
         }
       });
+
+        // ========== DESKTOP WASD CONTROLS (commented out - using drag controls for both) ==========
+        // } else {
+        //   // Yaw from A/D (D=right, A=left)
+        //   const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) -
+        //     ((K["a"] || K["arrowleft"]) ? 1 : 0);
+
+        //   // Pitch from Q/E with easing (E=up, Q=down)
+        //   const pitchIn = (K["q"] ? 1 : 0) - (K["e"] ? 1 : 0);
+        //   const targetPitchVel = pitchIn * PITCH_RATE;
+        //   ShipControls.pitchVel += (targetPitchVel - ShipControls.pitchVel) * Math.min(1, dt * SMOOTH);
+        //   ShipControls.pitch -= ShipControls.pitchVel * dt;
+
+        //   // Yaw accumulation from A/D
+        //   ShipControls.yawTarget -= turnIn * PITCH_RATE * dt;
+
+        //   // Ship orientation - ABSOLUTE rotation from accumulated angles (like prototype)
+        //   const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, ShipControls.yawTarget);
+        //   const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, ShipControls.pitch);
+        //   const qFinal = qYaw.multiply(qPitch);
+
+        //   // Apply rotation directly without Slerp for immediate response
+        //   controlTarget.rotationQuaternion = qFinal;
+
+        //   // Choose & blend animation
+        //   const BLEND_PER_SEC = 4;
+        //   const wStep = BLEND_PER_SEC * dt;
+
+        //   const forwardKey = K["w"] || K["arrowup"];
+        //   const brakeKey = K["s"] || K["arrowdown"];
+
+        //   if (A.fwd && A.brk && A.L && A.R && A.I) {
+        //     if (turnIn < 0) play(A.L, wStep);
+        //     else if (turnIn > 0) play(A.R, wStep);
+        //     else if (brakeKey) play(A.brk, wStep);
+        //     else if (forwardKey) play(A.fwd, wStep);
+        //     else play(A.I, wStep);
+        //   }
+
+        //   // Smooth Shift throttle
+        //   const wantSpeed = K["shift"] ? ShipControls.speed * ShipControls.speedK : ShipControls.speed;
+        //   ShipControls.v += (wantSpeed - ShipControls.v) * Math.min(1, dt * 5);
+
+        //   // Movement with velocity smoothing (inertia/momentum)
+        //   const throttle = forwardKey && !brakeKey ? 1 :
+        //     forwardKey && brakeKey ? 0.5 : 0;
+
+        //   // Calculate target velocity direction
+        //   let targetVelocity = new BABYLON.Vector3(0, 0, 0);
+
+        //   if (throttle > 0) {
+        //     // Get forward direction (already includes pitch rotation for circular motion)
+        //     const forwardVector = new BABYLON.Vector3(0, 0, 1);
+
+        //     const dir = BABYLON.Vector3.TransformNormal(
+        //       forwardVector,
+        //       controlTarget.getWorldMatrix()
+        //     ).normalize();
+
+        //     // Invert X axis to fix left-right direction (like prototype)
+        //     dir.x *= -1;
+
+        //     // Target velocity in the forward direction
+        //     targetVelocity = dir.scale(ShipControls.v * 1 * throttle);
+        //   }
+
+        //   // Smoothly interpolate current velocity toward target velocity
+        //   // When throttle > 0: accelerate toward target
+        //   // When throttle = 0: drag slows down to zero
+        //   const interpSpeed = throttle > 0 ? ShipControls.acceleration : ShipControls.drag;
+        //   ShipControls.velocity.x += (targetVelocity.x - ShipControls.velocity.x) * Math.min(1, dt * interpSpeed);
+        //   ShipControls.velocity.y += (targetVelocity.y - ShipControls.velocity.y) * Math.min(1, dt * interpSpeed);
+        //   ShipControls.velocity.z += (targetVelocity.z - ShipControls.velocity.z) * Math.min(1, dt * interpSpeed);
+
+        //   // Apply velocity to position
+        //   const movement = ShipControls.velocity.scale(dt);
+        //   controlTarget.position.addInPlace(movement);
+        // }
 
     }, totalShipAnimTime); // Close setTimeout
 
     return () => {
       clearTimeout(controlsTimeoutId);
 
-      // Clean up keyboard listeners if they were added
-      if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
-      if (handleKeyUp) window.removeEventListener('keyup', handleKeyUp);
+      // Clean up keyboard listeners if they were added (commented out - using drag controls)
+      // if (handleKeyDown) window.removeEventListener('keydown', handleKeyDown);
+      // if (handleKeyUp) window.removeEventListener('keyup', handleKeyUp);
 
-      // Clean up pointer event listeners (mobile control) if they were added
+      // Clean up pointer event listeners (drag control) if they were added
       if (canvas) {
         if (handlePointerDown) canvas.removeEventListener('pointerdown', handlePointerDown);
         if (handlePointerMove) canvas.removeEventListener('pointermove', handlePointerMove);
@@ -2853,8 +2886,8 @@ export function BabylonCanvas() {
     } else {
       // Fallback values
       console.warn('⚠️ [Camera Config] No camera config found, using fallback values');
-      camera.lowerRadiusLimit = 18;
-      camera.upperRadiusLimit = 18;
+      camera.lowerRadiusLimit = 20;
+      camera.upperRadiusLimit = 20;
     }
   }, [s]); // Update only camera settings on state change
 
@@ -3080,8 +3113,8 @@ export function BabylonCanvas() {
         // Camera radius for travel (use destination state's lower limit)
         const cameraConfig = config.canvas.babylonCamera;
         const stateRadius = isMobile 
-          ? cameraConfig?.lowerRadiusLimit?.mobile ?? 12 
-          : cameraConfig?.lowerRadiusLimit?.desktop ?? 12;
+          ? cameraConfig?.lowerRadiusLimit?.mobile ?? 20 
+          : cameraConfig?.lowerRadiusLimit?.desktop ?? 20;
         
         // Determine state name for logging
         const stateNames: Record<number, string> = {
@@ -3114,7 +3147,8 @@ export function BabylonCanvas() {
           stateRadius,
           duration: 2.0, // Shorter duration for exit transitions
           skipArrivalZoom: true, // Don't zoom to 0
-          skipArrivalHide: true  // Don't hide ship (state config handles visibility)
+          skipArrivalHide: true, // Don't hide ship (state config handles visibility)
+          flameParticles: flameParticleSystemRef.current
         });
       } else if (isGuidedModeState) {
         // Map states to anchor indices (state_4 = anchor1, state_5 = anchor2, etc.)
@@ -3148,12 +3182,17 @@ export function BabylonCanvas() {
             ? cameraConfig?.lowerRadiusLimit?.mobile ?? 24 
             : cameraConfig?.lowerRadiusLimit?.desktop ?? 24;
           
+          // Add delay when entering explore states from state 3
+          const isEnteringFromState3 = prevState === S.state_3 && s === S.state_4;
+          const animDelay = isEnteringFromState3 ? 1.2 : 0;
+          
           console.log(`⚓ [Guided Mode] Bezier animation to anchor ${anchorKey}:`, {
             startPos: startPosition.toString(),
             endPos: anchorData.position.toString(),
             startForward: startForward.toString(),
             endForward: anchorData.forward.toString(),
-            stateRadius
+            stateRadius,
+            delay: animDelay
           });
           
           // Use bezier curve animation with camera following
@@ -3168,7 +3207,9 @@ export function BabylonCanvas() {
             endForward: anchorData.forward,
             startRotation,
             endRotation: anchorData.rotation,
-            stateRadius
+            stateRadius,
+            delay: animDelay,
+            flameParticles: flameParticleSystemRef.current
           });
         } else {
           console.warn(`⚠️ Anchor ${anchorKey} not found, falling back to linear animation`);
@@ -3359,6 +3400,13 @@ export function BabylonCanvas() {
         // Enable with invisible materials
         spaceshipMaterials.forEach(mat => mat.alpha = 0.01);
         spaceshipContainer.setEnabled(true);
+        
+        // Start flame particles when ship becomes visible (tied to ship visibility)
+        const flames = flameParticleSystemRef.current;
+        if (flames && !flames.isStarted()) {
+          flames.start();
+          console.log("🔥 [Spaceship Fade In] Flame particles started");
+        }
 
         // Fade in
         const fps = 60;
@@ -3436,6 +3484,13 @@ export function BabylonCanvas() {
         // Disable after fade completes
         setTimeout(() => {
           spaceshipContainer.setEnabled(false);
+          
+          // Stop flame particles when ship is hidden (tied to ship visibility)
+          const flames = flameParticleSystemRef.current;
+          if (flames && flames.isStarted()) {
+            flames.stop();
+            console.log("🔥 [Spaceship Fade Out] Flame particles stopped");
+          }
         }, duration * 1000);
       }
     }
@@ -3901,7 +3956,8 @@ export function BabylonCanvas() {
           endForward: anchorData.forward,
           startRotation,
           endRotation: anchorData.rotation,
-          stateRadius
+          stateRadius,
+          flameParticles: flameParticleSystemRef.current
         });
       } else {
         console.warn(`⚠️ [Mode Toggle] Anchor ${anchorKey} not found`);
@@ -3918,6 +3974,13 @@ export function BabylonCanvas() {
       if (shipRoot) {
         shipRoot.getChildMeshes().forEach(mesh => mesh.visibility = 1);
         console.log("👁️ [Mode Toggle] Ship visibility restored for free mode");
+        
+        // Start flame particles - they're tied to ship visibility
+        const flames = flameParticleSystemRef.current;
+        if (flames && !flames.isStarted()) {
+          flames.start();
+          console.log("🔥 [Mode Toggle] Flame particles started with ship visibility");
+        }
       }
       
       // Animate camera radius limits back to state values for free exploration
@@ -3926,8 +3989,8 @@ export function BabylonCanvas() {
         ? cameraConfig?.lowerRadiusLimit?.mobile ?? 2 
         : cameraConfig?.lowerRadiusLimit?.desktop ?? 5;
       const upperLimit = isMobile 
-        ? cameraConfig?.upperRadiusLimit?.mobile ?? 20 
-        : cameraConfig?.upperRadiusLimit?.desktop ?? 50;
+        ? cameraConfig?.upperRadiusLimit?.mobile ?? 2 
+        : cameraConfig?.upperRadiusLimit?.desktop ?? 5;
       
       console.log(`🔓 [Mode Toggle] Restoring camera radius for free mode:`, {
         lowerLimit,

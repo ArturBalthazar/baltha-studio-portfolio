@@ -52,8 +52,8 @@ export const state1Config: StateConfig = {
       curveParticlesEnabled: false,
       portalsEnabled: false,
       rootTransform: {
-        mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
-        desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
+        mobile: { scale: .15, position: { x: 0, y: 0, z: 17 } },
+        desktop: { scale: .15, position: { x: 0, y: 0, z: 17 } }
       },
       shipAnimation: {
         position: { x: 0, y: -4, z: 20 }, // Ship behind camera
@@ -61,7 +61,7 @@ export const state1Config: StateConfig = {
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 100,
+        fogEnd: 30,
         duration: 1.0,
         delay: 0
       }

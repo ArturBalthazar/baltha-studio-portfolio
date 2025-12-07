@@ -54,8 +54,8 @@ export const state2Config: StateConfig = {
       materialAnimationDelay: 0.4, // Delay after camera radius change from state 3
       transformAnimationDelay: 0.4, // Delay after camera radius change from state 3
       rootTransform: {
-        mobile: { scale: 0.9, position: { x: 0, y: 0, z: 0 } },
-        desktop: { scale: 0.9, position: { x: 1, y: -0.3, z: 0 } }
+        mobile: { scale: 0.135, position: { x: 0, y: 0, z: 17 } },
+        desktop: { scale: 0.135, position: { x: .15, y: -0.05, z: 17 } }
       },
       shipAnimation: {
         position: { x: 0, y: -4, z: 20 }, // Ship behind camera
@@ -63,7 +63,7 @@ export const state2Config: StateConfig = {
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 100,
+        fogEnd: 30,
         duration: 1.0,
         delay: 0
       }

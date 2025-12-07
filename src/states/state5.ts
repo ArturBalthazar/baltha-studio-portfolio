@@ -35,8 +35,8 @@ export const state5Config: StateConfig = {
         desktop: 5
       },
       upperRadiusLimit: {
-        mobile: 20,
-        desktop: 50
+        mobile: 4,
+        desktop: 5
       },
       beta: {
         mobile: Math.PI / 2.2,
@@ -69,7 +69,7 @@ export const state5Config: StateConfig = {
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 350,
+        fogEnd: 105,
         duration: 2,
         delay: 0
       }

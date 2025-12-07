@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
+import { useUI, S } from "../state";
 
 // Typing Label Component
 const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
@@ -28,6 +29,14 @@ export function ConnectOverlay() {
     const [emailExpanded, setEmailExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const emailButtonRef = useRef<HTMLButtonElement>(null);
+    const setState = useUI((st) => st.setState);
+    const setNavigationMode = useUI((st) => st.setNavigationMode);
+
+    const handleBalthaStudioClick = () => {
+        // Navigate to state0 (welcome) without reloading
+        setNavigationMode('guided');
+        setState(S.state_0);
+    };
 
     // Close email section when clicking anywhere outside the email button
     useEffect(() => {
@@ -94,7 +103,7 @@ export function ConnectOverlay() {
             url: "#",
             icon: "/assets/images/website.png",
             type: "action",
-            action: () => window.location.reload()
+            action: handleBalthaStudioClick
         },
         {
             label: "Instagram",

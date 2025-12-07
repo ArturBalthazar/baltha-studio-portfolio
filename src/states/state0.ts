@@ -4,11 +4,11 @@ export const state0Config: StateConfig = {
   header: {
     showWelcomeText: true,
     logoHeight: {
-      mobile: "h-6",
+      mobile: "h-7",
       desktop: "md:h-9"
     },
     menuHeight: {
-      mobile: "h-7",
+      mobile: "h-8",
       desktop: "md:h-9"
     },
     padding: {
@@ -25,12 +25,12 @@ export const state0Config: StateConfig = {
     nextState: 'state_2',
     babylonCamera: {
       lowerRadiusLimit: {
-        mobile: 16,
-        desktop: 12
+        mobile: 20,
+        desktop: 20
       },
       upperRadiusLimit: {
-        mobile: 16,
-        desktop: 12
+        mobile: 20,
+        desktop: 20
       },
       beta: {
         mobile: Math.PI / 2,
@@ -41,7 +41,7 @@ export const state0Config: StateConfig = {
         desktop: -Math.PI * 1.5
       },
       animationDuration: 0.4, // Duration for ALL camera properties (radius, beta, alpha)
-      animationDelay: 0 // Delay before camera animation starts
+      animationDelay: .1 // Delay before camera animation starts
     },
     babylonScene: {
       logoEnabled: true,
@@ -52,8 +52,8 @@ export const state0Config: StateConfig = {
       curveParticlesEnabled: false,
       portalsEnabled: false,
       rootTransform: {
-        mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },
-        desktop: { scale: 1.0, position: { x: 0, y: 0, z: 0 } }
+        mobile: { scale: .15, position: { x: 0, y: 0, z: 18 } },
+        desktop: { scale: .15, position: { x: 0, y: 0, z: 18 } }
       },
       shipAnimation: {
         position: { x: 0, y: -4, z: 20 }, // Ship behind camera (not visible in state 0)
@@ -61,7 +61,7 @@ export const state0Config: StateConfig = {
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 100, // Fog close (same as initial/state 3)
+        fogEnd: 30, // Fog close (same as initial/state 3)
         duration: 1.0,
         delay: 0
       }

@@ -1,6 +1,6 @@
 import React from "react";
 import cx from "classnames";
-import { useUI } from "../state";
+import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 
 type Props = { showWelcome?: boolean };
@@ -9,11 +9,26 @@ export function Header({ showWelcome = true }: Props) {
   const s = useUI((st) => st.state);
   const menuOpen = useUI((st) => st.menuOpen);
   const setMenuOpen = useUI((st) => st.setMenuOpen);
+  const setState = useUI((st) => st.setState);
+  const setNavigationMode = useUI((st) => st.setNavigationMode);
   const config = getStateConfig(s);
   const showWelcomeText = showWelcome && config.header.showWelcomeText;
   const isTransparent = config.header.transparentBackground;
   const isWhite = config.header.whiteIcons;
   const isCollapsed = config.header.collapsed;
+
+  const handleLogoClick = () => {
+    // Check if we're on the connect page
+    const path = window.location.pathname;
+    if (path.startsWith("/connect") || path.startsWith("/welcome")) {
+      // Navigate to root path which loads the main app at state0
+      window.location.href = "/";
+    } else {
+      // We're on the main app - go to state0
+      setNavigationMode('guided');
+      setState(S.state_0);
+    }
+  };
 
   return (
     <header
@@ -47,21 +62,27 @@ export function Header({ showWelcome = true }: Props) {
           isCollapsed && "absolute top-5 left-[30px] right-[30px] z-50"
         )}
       >
-        <img
-          src="/assets/brand/Baltha_Studio_Icon_Blue.png"
-          alt="Baltha Studio"
-          className={cx(
-            "select-none transition-all duration-500 ease-in-out",
-            config.header.logoHeight.mobile,
-            config.header.logoHeight.desktop
-          )}
-          style={{
-            filter: isWhite 
-              ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
-              : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
-          }}
-          draggable={false}
-        />
+        <button
+          onClick={handleLogoClick}
+          className="cursor-pointer hover:scale-105 transition-transform duration-200"
+          aria-label="Go to home"
+        >
+          <img
+            src="/assets/brand/Baltha_Studio_Icon_Blue.png"
+            alt="Baltha Studio"
+            className={cx(
+              "select-none transition-all duration-500 ease-in-out",
+              config.header.logoHeight.mobile,
+              config.header.logoHeight.desktop
+            )}
+            style={{
+              filter: isWhite 
+                ? 'invert(97%) sepia(3%) saturate(33%) hue-rotate(304deg) brightness(113%) contrast(89%)' 
+                : 'invert(3%) sepia(82%) saturate(500%) hue-rotate(201deg) brightness(102%) contrast(94%)'
+            }}
+            draggable={false}
+          />
+        </button>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="cursor-pointer hover:scale-105 transition-transform duration-200 relative"
