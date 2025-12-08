@@ -349,6 +349,388 @@ interface AnchorData {
   forward: BABYLON.Vector3;
 }
 
+// Atom indicator configuration and structure
+interface AtomIndicatorConfig {
+  scene: BABYLON.Scene;
+  position: BABYLON.Vector3;
+  idleRingRadius: number; // Small radius when model is hidden
+  expandedRingRadii: [number, number, number]; // Expanded radii for each ring when model visible
+  rotationSpeed: number; // Base rotation speed multiplier
+  flameScale?: number; // Scale of the flame particle effect (default 1.0)
+}
+
+interface AtomIndicator {
+  root: BABYLON.TransformNode;
+  rings: BABYLON.LinesMesh[];
+  flame: BABYLON.ParticleSystem;
+  ringAnimations: {
+    axis: BABYLON.Vector3;
+    speed: number;
+  }[];
+  isExpanded: boolean;
+  config: AtomIndicatorConfig;
+  // Methods
+  expand: (duration?: number) => void;
+  contract: (duration?: number) => void;
+  dispose: () => void;
+}
+
+/**
+ * Creates an atom indicator at the specified position.
+ * The atom consists of a flame particle effect in the center and 3 rotating rings.
+ */
+function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
+  const { scene, position, idleRingRadius, expandedRingRadii, rotationSpeed, flameScale = 1.0 } = config;
+
+  // Create root transform node
+  const root = new BABYLON.TransformNode("atomIndicator", scene);
+  root.position.copyFrom(position);
+
+  // Create a small invisible sphere to serve as emitter (particle systems need AbstractMesh, not TransformNode)
+  const emitterSphere = BABYLON.MeshBuilder.CreateSphere("atomEmitter", { diameter: 0.01 }, scene);
+  emitterSphere.parent = root;
+  emitterSphere.isVisible = false;
+
+  // Create flame particle system (smaller version of engine flame)
+  const flame = new BABYLON.ParticleSystem("atomFlame", 150, scene);
+  flame.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
+  flame.emitter = emitterSphere;
+  flame.updateSpeed = 0.04;
+  flame.minEmitPower = 0.01 * flameScale;
+  flame.maxEmitPower = 0.03 * flameScale;
+  flame.emitRate = 100;
+
+  // Sphere emitter for centered particles
+  const sphereEmitter = new BABYLON.SphereParticleEmitter(0.1 * flameScale);
+  sphereEmitter.radiusRange = 1;
+  flame.particleEmitterType = sphereEmitter;
+
+  // Size
+  flame.minSize = 0.15 * flameScale;
+  flame.maxSize = 0.4 * flameScale;
+
+  // Rotation
+  flame.minInitialRotation = 0;
+  flame.maxInitialRotation = Math.PI * 2;
+
+  // Lifetime
+  flame.minLifeTime = 0.15;
+  flame.maxLifeTime = 0.35;
+
+  flame.gravity = new BABYLON.Vector3(0, 0, 0);
+  flame.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+  flame.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
+  flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
+  flame.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
+  
+
+  flame.start();
+
+  // Create 3 rings with different orientations (line-based circles)
+  const rings: BABYLON.LinesMesh[] = [];
+
+  // Ring orientations (tilted at different angles like an atom)
+  const ringOrientations = [
+    { rotX: 0, rotY: 0, rotZ: 0 },
+    { rotX: Math.PI / 3, rotY: Math.PI / 4, rotZ: 0 },
+    { rotX: -Math.PI / 4, rotY: Math.PI / 3, rotZ: Math.PI / 6 }
+  ];
+
+  // Random rotation axes and speeds for each ring
+  const ringAnimations: { axis: BABYLON.Vector3; speed: number }[] = [];
+
+  for (let i = 0; i < 3; i++) {
+    // Create circle points (64 segments for smoothness)
+    const segments = 64;
+    const radius = idleRingRadius * (1 + i * 0.15); // Slightly different sizes
+    const points: BABYLON.Vector3[] = [];
+    
+    for (let j = 0; j <= segments; j++) {
+      const angle = (j / segments) * Math.PI * 2;
+      points.push(new BABYLON.Vector3(
+        Math.cos(angle) * radius,
+        0,
+        Math.sin(angle) * radius
+      ));
+    }
+
+    // Create line mesh for the ring
+    const ring = BABYLON.MeshBuilder.CreateLines(`atomRing${i}`, {
+      points: points,
+      updatable: true
+    }, scene);
+
+    ring.parent = root;
+    ring.color = new BABYLON.Color3(.7, .7, .7); // White color
+    ring.alpha = 0.2; // Semi-transparent
+
+    // Apply initial orientation
+    const orient = ringOrientations[i];
+    ring.rotation.set(orient.rotX, orient.rotY, orient.rotZ);
+
+    rings.push(ring);
+
+    // Random rotation axis and speed
+    ringAnimations.push({
+      axis: new BABYLON.Vector3(
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5
+      ).normalize(),
+      speed: (0.5 + Math.random() * 0.5) * rotationSpeed * (i % 2 === 0 ? 1 : -1)
+    });
+  }
+
+  // Animation observer for continuous ring rotation
+  const rotationObserver = scene.onBeforeRenderObservable.add(() => {
+    const deltaTime = scene.getEngine().getDeltaTime() / 1000;
+    rings.forEach((ring, i) => {
+      const anim = ringAnimations[i];
+      ring.rotate(anim.axis, anim.speed * deltaTime, BABYLON.Space.LOCAL);
+    });
+  });
+
+  // State tracking
+  let isExpanded = false;
+
+  // Expand rings and stop flame
+  const expand = (duration = 2) => {
+    if (isExpanded) return;
+    isExpanded = true;
+
+    const fps = 60;
+    const totalFrames = fps * duration;
+
+    // Stop flame particles
+    flame.stop();
+
+    // Animate each ring to its expanded size
+    rings.forEach((ring, i) => {
+      const targetDiameter = expandedRingRadii[i] / (idleRingRadius * (1 + i * 0.15));
+
+      const scaleAnim = new BABYLON.Animation(
+        `ringExpand${i}`,
+        "scaling",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+
+      scaleAnim.setKeys([
+        { frame: 0, value: ring.scaling.clone() },
+        { frame: totalFrames, value: new BABYLON.Vector3(targetDiameter, targetDiameter, targetDiameter) }
+      ]);
+
+      const easing = new BABYLON.CubicEase();
+      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+      scaleAnim.setEasingFunction(easing);
+
+      ring.animations = [scaleAnim];
+      scene.beginAnimation(ring, 0, totalFrames, false);
+    });
+  };
+
+  // Contract rings and start flame
+  const contract = (duration = 0.5) => {
+    if (!isExpanded) return;
+    isExpanded = false;
+
+    const fps = 60;
+    const totalFrames = fps * duration;
+
+    // Start flame particles
+    flame.start();
+
+    // Animate each ring back to idle size
+    rings.forEach((ring, i) => {
+      const targetScale = 1; // Back to original scale
+
+      const scaleAnim = new BABYLON.Animation(
+        `ringContract${i}`,
+        "scaling",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+
+      scaleAnim.setKeys([
+        { frame: 0, value: ring.scaling.clone() },
+        { frame: totalFrames, value: new BABYLON.Vector3(targetScale, targetScale, targetScale) }
+      ]);
+
+      const easing = new BABYLON.CubicEase();
+      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+      scaleAnim.setEasingFunction(easing);
+
+      ring.animations = [scaleAnim];
+      scene.beginAnimation(ring, 0, totalFrames, false);
+    });
+  };
+
+  // Dispose function
+  const dispose = () => {
+    scene.onBeforeRenderObservable.remove(rotationObserver);
+    flame.dispose();
+    emitterSphere.dispose();
+    rings.forEach(ring => ring.dispose());
+    root.dispose();
+  };
+
+  return {
+    root,
+    rings,
+    flame,
+    ringAnimations,
+    isExpanded,
+    config,
+    expand,
+    contract,
+    dispose
+  };
+}
+
+// Store original scales for models (set when models are loaded)
+const modelOriginalScales: Map<BABYLON.AbstractMesh, BABYLON.Vector3> = new Map();
+
+// Store original rotations for models (set when models are loaded, used for reset)
+const modelOriginalRotations: Map<BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
+
+/**
+ * Warms up the GPU for a model by rendering it at tiny scale for several frames.
+ * This pre-compiles shaders, uploads vertex/index buffers, and uploads textures to GPU VRAM.
+ * Without warmup, the first time a heavy model appears it causes a lag spike.
+ * @param rootMesh The root mesh of the model
+ * @param meshes All meshes of the model
+ * @param scene The Babylon scene
+ * @param warmupFrames Number of frames to render for warmup (default 10)
+ * @returns Promise that resolves when warmup is complete
+ */
+async function warmupModelForGPU(
+  rootMesh: BABYLON.AbstractMesh | null,
+  meshes: BABYLON.AbstractMesh[],
+  scene: BABYLON.Scene,
+  warmupFrames = 10
+): Promise<void> {
+  if (!rootMesh || meshes.length === 0) return;
+
+  console.log(`🔥 Starting GPU warmup for ${rootMesh.name} (${meshes.length} meshes)...`);
+
+  // Store original visibility state
+  const originalEnabled = meshes.map(m => m.isEnabled());
+  const originalVisibility = meshes.map(m => m.visibility);
+  const originalScale = rootMesh.scaling.clone();
+
+  // Set to tiny scale and low visibility - still renders through pipeline but nearly invisible
+  rootMesh.scaling.set(0.001, 0.001, 0.001);
+  meshes.forEach(mesh => {
+    mesh.setEnabled(true);
+    mesh.visibility = 0.01; // Very low but not zero - ensures it goes through render pipeline
+  });
+
+  // Wait for several render frames to ensure GPU processes everything
+  for (let i = 0; i < warmupFrames; i++) {
+    await new Promise<void>(resolve => {
+      scene.onAfterRenderObservable.addOnce(() => resolve());
+    });
+  }
+
+  // Restore original scale
+  rootMesh.scaling.copyFrom(originalScale);
+
+  // Restore original visibility states (usually hidden)
+  meshes.forEach((mesh, i) => {
+    mesh.visibility = originalVisibility[i];
+    mesh.setEnabled(originalEnabled[i]);
+  });
+
+  console.log(`✅ GPU warmup complete for ${rootMesh.name}`);
+}
+
+/**
+ * Shows or hides model using scale animation (scale up from near-zero or scale down to near-zero)
+ */
+function scaleModelMeshes(
+  rootMesh: BABYLON.AbstractMesh | null,
+  meshes: BABYLON.AbstractMesh[],
+  scene: BABYLON.Scene,
+  scaleIn: boolean,
+  duration = 1,
+  onComplete?: () => void
+) {
+  if (!rootMesh || meshes.length === 0) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  const fps = 60;
+  const totalFrames = fps * duration;
+  const nearZeroScale = 0.001;
+
+  // Get the original full scale (stored when model was loaded, or current if scaling out)
+  let fullScale: BABYLON.Vector3;
+  if (scaleIn) {
+    // When scaling in, use stored original scale or default to (1, 1, -1)
+    fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, -1);
+  } else {
+    // When scaling out, use current scale as the full scale and store it
+    fullScale = rootMesh.scaling.clone();
+    modelOriginalScales.set(rootMesh, fullScale);
+  }
+
+  // Calculate start and end scales
+  const startScale = scaleIn 
+    ? new BABYLON.Vector3(
+        nearZeroScale * Math.sign(fullScale.x),
+        nearZeroScale * Math.sign(fullScale.y),
+        nearZeroScale * Math.sign(fullScale.z)
+      )
+    : fullScale.clone();
+  
+  const endScale = scaleIn 
+    ? fullScale.clone()
+    : new BABYLON.Vector3(
+        nearZeroScale * Math.sign(fullScale.x),
+        nearZeroScale * Math.sign(fullScale.y),
+        nearZeroScale * Math.sign(fullScale.z)
+      );
+
+  // If scaling in, enable meshes first and set scale to near-zero
+  if (scaleIn) {
+    meshes.forEach(mesh => mesh.setEnabled(true));
+    rootMesh.scaling.copyFrom(startScale);
+  }
+
+  const scaleAnim = new BABYLON.Animation(
+    scaleIn ? "scaleInModel" : "scaleOutModel",
+    "scaling",
+    fps,
+    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+
+  scaleAnim.setKeys([
+    { frame: 0, value: startScale },
+    { frame: totalFrames, value: endScale }
+  ]);
+
+  const easing = new BABYLON.QuadraticEase();
+  easing.setEasingMode(scaleIn 
+    ? BABYLON.EasingFunction.EASINGMODE_EASEOUT 
+    : BABYLON.EasingFunction.EASINGMODE_EASEIN);
+  scaleAnim.setEasingFunction(easing);
+
+  rootMesh.animations = [scaleAnim];
+  scene.beginAnimation(rootMesh, 0, totalFrames, false, 1, () => {
+    // If scaling out, disable meshes after animation
+    if (!scaleIn) {
+      meshes.forEach(mesh => mesh.setEnabled(false));
+      // Reset scale to full for next time
+      rootMesh.scaling.copyFrom(fullScale);
+    }
+    if (onComplete) onComplete();
+  });
+}
+
 // Guided mode bezier animation options
 interface AnimateShipAlongBezierOptions {
   target: BABYLON.TransformNode;
@@ -375,6 +757,55 @@ const GUIDED_SHIP_DURATION = 4.0;
 
 // Track current bezier animation to prevent stale callbacks from affecting visibility
 let currentBezierAnimationId = 0;
+
+/**
+ * Sets the visibility of the ship and flame particles together.
+ * This ensures they are always in sync - either both visible or both hidden.
+ * NEVER toggle ship visibility without using this function!
+ */
+interface SetShipAndFlamesVisibilityOptions {
+  shipMeshes?: BABYLON.AbstractMesh[];
+  container?: BABYLON.TransformNode | BABYLON.AbstractMesh;
+  flameParticles: BABYLON.ParticleSystem | null | undefined;
+  visible: boolean;
+  method?: 'visibility' | 'enabled';
+  logContext?: string;
+}
+
+function setShipAndFlamesVisibility(options: SetShipAndFlamesVisibilityOptions): void {
+  const { shipMeshes, container, flameParticles, visible, method = 'visibility', logContext = '' } = options;
+  const ctx = logContext ? `[${logContext}] ` : '';
+
+  // Handle ship visibility
+  if (method === 'visibility' && shipMeshes) {
+    shipMeshes.forEach(mesh => mesh.visibility = visible ? 1 : 0);
+  } else if (method === 'enabled' && container) {
+    container.setEnabled(visible);
+    // Force world matrix update so flame emitter position is correct immediately
+    if (visible && 'computeWorldMatrix' in container) {
+      (container as BABYLON.TransformNode).computeWorldMatrix(true);
+    }
+  }
+
+  // Handle flame particles - ALWAYS in sync with ship
+  if (visible) {
+    if (flameParticles) {
+      const wasAlreadyStarted = flameParticles.isStarted();
+      // Always call start() when making visible - it's safe to call even if already started
+      flameParticles.start();
+      console.log(`🔥 ${ctx}Flame particles started (wasAlreadyStarted: ${wasAlreadyStarted})`);
+    } else {
+      console.warn(`⚠️ ${ctx}Flame particles ref is null/undefined!`);
+    }
+  } else {
+    if (flameParticles && flameParticles.isStarted()) {
+      flameParticles.stop();
+      console.log(`🔥 ${ctx}Flame particles stopped`);
+    }
+  }
+
+  console.log(visible ? `🚀 ${ctx}Ship and flames visible` : `🛬 ${ctx}Ship and flames hidden`);
+}
 
 /**
  * Animates the ship along a cubic bezier curve from current position/rotation to target.
@@ -410,22 +841,21 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       return;
     }
 
-    // Make ship visible before departing (use visibility, not setEnabled, to keep particles working)
-    target.getChildMeshes().forEach(mesh => mesh.visibility = 1);
-    console.log("🚀 [Bezier Animation] Ship visible for departure");
-    
-    // Start flame particles when ship becomes visible
-    if (flameParticles && !flameParticles.isStarted()) {
-      flameParticles.start();
-      console.log("🔥 [Bezier Animation] Flame particles started");
-    }
+    // Make ship and flames visible before departing
+    setShipAndFlamesVisibility({
+      shipMeshes: target.getChildMeshes(),
+      flameParticles,
+      visible: true,
+      method: 'visibility',
+      logContext: 'Bezier Animation'
+    });
 
     // Calculate the distance between start and end for control point scaling
     const distance = BABYLON.Vector3.Distance(startPosition, endPosition);
   
   // Control point distance is proportional to the total distance
   // Using 1/3 of the distance creates a nice smooth curve
-  const controlPointDistance = distance * 0.4;
+  const controlPointDistance = distance * .25;
 
   // Create cubic bezier control points:
   // P0 = start position
@@ -572,14 +1002,14 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
                        currentNavMode === 'guided';
     
     if (shouldHide) {
-      target.getChildMeshes().forEach(mesh => mesh.visibility = 0);
-      console.log("🛬 [Bezier Animation] Ship hidden after arrival");
-      
-      // Stop flame particles when hiding ship (they're tied together)
-      if (flameParticles && flameParticles.isStarted()) {
-        flameParticles.stop();
-        console.log("🔥 [Bezier Animation] Flame particles stopped");
-      }
+      // Hide ship and stop flames together
+      setShipAndFlamesVisibility({
+        shipMeshes: target.getChildMeshes(),
+        flameParticles,
+        visible: false,
+        method: 'visibility',
+        logContext: 'Bezier Animation'
+      });
     } else {
       if (thisAnimationId !== currentBezierAnimationId) {
         console.log("⏭️ [Bezier Animation] Skipping hide - animation was superseded");
@@ -597,14 +1027,25 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     const startAlpha = camera.alpha;
     const startBeta = camera.beta;
     
-    // Calculate target alpha based on endForward direction
-    // Camera should be positioned "behind" the ship relative to its forward direction
-    // alpha = atan2(x, z) gives the angle, we want opposite direction (+PI)
-    const endAlpha = Math.atan2(-endForward.x, -endForward.z) - Math.PI / 2;
+    // Extract camera angles from endRotation quaternion for proper alignment with all anchor rotations
+    // This avoids issues with high X rotations by working directly with the quaternion
+    const shipForward = new BABYLON.Vector3(0, 0, 1);
+    const shipUp = new BABYLON.Vector3(0, 1, 0);
+    shipForward.rotateByQuaternionToRef(endRotation, shipForward);
+    shipUp.rotateByQuaternionToRef(endRotation, shipUp);
     
-    // Target beta - slightly above horizontal for good viewing angle
-    // PI/2 = horizontal, smaller = looking down from above
-    const endBeta = Math.PI / 2.2; // About 81 degrees from vertical
+    // Calculate target alpha based on ship's forward direction (horizontal component)
+    // Camera should be positioned "behind" the ship relative to its forward direction
+    const endAlpha = Math.atan2(-shipForward.x, -shipForward.z) - Math.PI / 2;
+    
+    // Calculate target beta from ship's pitch (how much it's looking up/down)
+    // pitchAngle: positive = ship nose up, negative = ship nose down
+    const pitchAngle = Math.asin(Math.max(-1, Math.min(1, shipForward.y)));
+    // Base beta is PI/2 (horizontal), adjust based on ship's pitch
+    // When ship pitches down (negative pitch), camera should be more from above (lower beta)
+    // When ship pitches up (positive pitch), camera should be more from below (higher beta)
+    const baseBeta = Math.PI / 2; // Slightly above horizontal as default
+    const endBeta = Math.max(0.3, Math.min(Math.PI - 0.3, baseBeta - pitchAngle));
     
     // Normalize alpha difference for shortest rotation path
     let alphaDiff = endAlpha - startAlpha;
@@ -616,7 +1057,8 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       startAlpha: startAlpha.toFixed(3),
       endAlpha: normalizedEndAlpha.toFixed(3),
       startBeta: startBeta.toFixed(3),
-      endBeta: endBeta.toFixed(3)
+      endBeta: endBeta.toFixed(3),
+      shipPitch: BABYLON.Tools.ToDegrees(pitchAngle).toFixed(1) + "°"
     });
     
     // Create camera alpha animation
@@ -847,14 +1289,107 @@ export function BabylonCanvas() {
     yawRate: 0 // Current turn rate (-1 to 1, negative = left, positive = right)
   });
 
-  // BYD Car refs
+  // GEELY Car refs (anchor_1, state 4)
   const carRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const carMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
   const carAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const currentColorRef = useRef<string>("yellow");
+  const currentColorRef = useRef<string>("green");
   const currentTrimRef = useRef<string>("lightBlue");
   const interiorCameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
   const isInteriorView = useUI((st) => st.isInteriorView);
+
+  // Musecraft refs (anchor_2, state 5)
+  const musecraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const musecraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const musecraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+
+  // Dioramas refs (anchor_3, state 6)
+  const dioramasRootRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const dioramasMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const dioramasAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+
+  // Petwheels refs (anchor_4, state 7)
+  const petwheelsRootRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const petwheelsMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const petwheelsAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const petwheelsAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
+
+  // Atom indicators for each model anchor
+  const atomIndicatorsRef = useRef<{
+    atom1: AtomIndicator | null; // For GEELY car (anchor_1)
+    atom2: AtomIndicator | null; // For Musecraft (anchor_2)
+    atom3: AtomIndicator | null; // For Dioramas (anchor_3)
+    atom4: AtomIndicator | null; // For Petwheels (anchor_4)
+  }>({
+    atom1: null,
+    atom2: null,
+    atom3: null,
+    atom4: null
+  });
+
+  // Model visibility state (to track which models are currently shown/hidden)
+  const modelVisibilityRef = useRef<{
+    model1: boolean; // GEELY
+    model2: boolean; // Musecraft
+    model3: boolean; // Dioramas
+    model4: boolean; // Petwheels
+  }>({
+    model1: false,
+    model2: false,
+    model3: false,
+    model4: false
+  });
+
+  // Atom indicator configuration per model
+  const atomConfigRef = useRef({
+    // GEELY car - larger model
+    model1: {
+      idleRingRadius: 3,
+      expandedRingRadii: [8, 9, 10] as [number, number, number],
+      rotationSpeed: .3,
+      proximityDistance: 22, // Distance to trigger model visibility
+      flameScale: 3
+    },
+    // Musecraft
+    model2: {
+      idleRingRadius: 3,
+      expandedRingRadii: [7, 8, 10] as [number, number, number],
+      rotationSpeed: .3,
+      proximityDistance: 22,
+      flameScale: 3
+    },
+    // Dioramas
+    model3: {
+      idleRingRadius: 3,
+      expandedRingRadii: [7.5, 8, 8.5] as [number, number, number],
+      rotationSpeed: 0.3,
+      proximityDistance: 22,
+      flameScale: 3
+    },
+    // Petwheels
+    model4: {
+      idleRingRadius: 3,
+      expandedRingRadii: [5, 6, 8] as [number, number, number],
+      rotationSpeed: .3,
+      proximityDistance: 22,
+      flameScale: 3
+    }
+  });
+
+  // Guided mode arrival tracking for model rotation
+  const guidedModeArrivedRef = useRef(false);
+  const modelRotationRef = useRef({
+    isDragging: false,
+    lastX: 0,
+    lastY: 0,
+    baseRotationY: 0,
+    // X-axis peek rotation (springs back to 0)
+    peekRotationX: 0,
+    // Accumulated Y rotation (persists during drag)
+    accumulatedYRotation: 0,
+    // Store original quaternion for the model
+    originalQuaternion: null as BABYLON.Quaternion | null
+  });
 
   // Guided mode anchor data refs (position + rotation)
   // Anchors are stored as { desktop1, desktop2, desktop3, desktop4, mobile1, mobile2, mobile3, mobile4 }
@@ -862,7 +1397,7 @@ export function BabylonCanvas() {
 
 
 
-  // BYD Car customization configuration imported from shared file
+  // GEELY Car customization configuration imported from shared file
   // See carConfig.ts
 
 
@@ -1109,12 +1644,12 @@ export function BabylonCanvas() {
             }
           });
 
-          // Debug: Log all mesh names to find anchor_byd
+          // Debug: Log all mesh names to find anchor_1
           console.log("🔍 Rockring meshes loaded:", meshes.map(m => m.name).join(", "));
-          const anchorByd = meshes.find(m => m.name === "anchor_byd");
-          console.log("🔍 anchor_byd found in rockring:", anchorByd ? "YES" : "NO");
-          if (anchorByd) {
-            console.log("🔍 anchor_byd position:", anchorByd.position);
+          const anchor1 = meshes.find(m => m.name === "anchor_1");
+          console.log("🔍 anchor_1 found in rockring:", anchor1 ? "YES" : "NO");
+          if (anchor1) {
+            console.log("🔍 anchor_1 position:", anchor1.position);
           }
 
 
@@ -1239,34 +1774,33 @@ export function BabylonCanvas() {
               rawPosition.z // Flip Z sign
             );
             
-            // Get rotation and add 90° to X
-            let rotX: number, rotY: number, rotZ: number;
+            // Get rotation as quaternion directly - avoid Euler conversion to prevent gimbal lock
+            // when X rotation is near or above 90°
+            let originalRotation: BABYLON.Quaternion;
             if (anchor.rotationQuaternion) {
-              const euler = anchor.rotationQuaternion.toEulerAngles();
-              rotX = euler.x;
-              rotY = euler.y;
-              rotZ = euler.z;
+              originalRotation = anchor.rotationQuaternion.clone();
             } else {
-              rotX = anchor.rotation.x;
-              rotY = anchor.rotation.y;
-              rotZ = anchor.rotation.z;
+              originalRotation = BABYLON.Quaternion.FromEulerAngles(
+                anchor.rotation.x,
+                anchor.rotation.y,
+                anchor.rotation.z
+              );
             }
             
-            // Add 90° (PI/2) to X rotation
-            const rotation = BABYLON.Quaternion.FromEulerAngles(
-              rotX - Math.PI / 2,
-              rotY,
-              rotZ
-            );
+            // Apply -90° X rotation adjustment in local space using quaternion multiplication
+            // This avoids gimbal lock issues that occur when using Euler angle conversion
+            const xAdjustment = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, -Math.PI / 2);
+            const rotation = originalRotation.multiply(xAdjustment);
             
             // Calculate forward direction from corrected rotation (local Z forward in world space)
             const forward = new BABYLON.Vector3(0, 0, 1);
             forward.rotateByQuaternionToRef(rotation, forward);
             
             anchorDataRef.current[name] = { position, rotation, forward };
+            const eulerForLog = rotation.toEulerAngles();
             console.log(`⚓ Anchor ${name}:`, { 
               position: position.toString(), 
-              rotation: `x:${rotX + Math.PI/2}, y:${rotY}, z:${rotZ}`,
+              rotation: `x:${BABYLON.Tools.ToDegrees(eulerForLog.x).toFixed(1)}°, y:${BABYLON.Tools.ToDegrees(eulerForLog.y).toFixed(1)}°, z:${BABYLON.Tools.ToDegrees(eulerForLog.z).toFixed(1)}°`,
               forward: forward.toString() 
             });
             
@@ -1383,9 +1917,10 @@ export function BabylonCanvas() {
             flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
             flame.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
 
-            flame.start();
+            // DON'T start flames here - ship is hidden by default!
+            // Flames will be started by setShipAndFlamesVisibility when ship becomes visible
             flameParticleSystemRef.current = flame;
-            console.log("🔥 Engine flame 1 particle system created and started");
+            console.log("🔥 Engine flame particle system created (will start when ship becomes visible)");
 
             /* // ===== SECOND FLAME (offset in Z) =====
             // Create a second emitter as child of the first emitter
@@ -1750,8 +2285,8 @@ export function BabylonCanvas() {
     const portal1 = createPortal(
       new BABYLON.Vector3(40, 4, -50),
       6,
-      "portal_bydSeagull",
-      "BYD Car Visualizer"
+      "portal_geelySeagull",
+      "GEELY Car Visualizer"
     );
     portalsRef.current.push(portal1);
 
@@ -1815,26 +2350,26 @@ export function BabylonCanvas() {
       }
     });
 
-    // Load BYD car asynchronously (doesn't block loading screen)
-    const loadBYDCarAsync = async () => {
-      console.log("🚗 Starting BYD car loading (async)...");
+    // Load GEELY car asynchronously (doesn't block loading screen)
+    const loadGEELYCarAsync = async () => {
+      console.log("🚗 Starting GEELY car loading (async)...");
 
       // Wait a bit to ensure rockring and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 2000));
       console.log("🚗 Waited 2s for scene to load, now loading car...");
 
-      const gltfPath = "/assets/models/byd/";
-      const carFile = "byd_seagull.gltf";
+      const gltfPath = "/assets/models/geely/";
+      const carFile = "geelyEX2.gltf";
 
       try {
         // Load the car model as asset container
         const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(gltfPath, carFile, scene);
         container.addAllToScene();
 
-        console.log("🚗 BYD car model loaded, processing meshes...");
+        console.log("🚗 GEELY car model loaded, processing meshes...");
 
         if (!container.meshes.length) {
-          console.error("❌ No meshes found in BYD car model");
+          console.error("❌ No meshes found in GEELY car model");
           return;
         }
 
@@ -1865,9 +2400,9 @@ export function BabylonCanvas() {
 
         carMeshesRef.current = carMeshes;
 
-        // Find the anchor_byd mesh from rockring
-        console.log("🚗 Searching for anchor_byd mesh...");
-        const anchorMesh = scene.getMeshByName("anchor_byd");
+        // Find the anchor_1 mesh from anchors.glb
+        console.log("🚗 Searching for anchor_1 mesh...");
+        const anchorMesh = scene.getMeshByName("anchor_1");
         console.log("🚗 Anchor search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
         if (anchorMesh) {
@@ -1889,10 +2424,12 @@ export function BabylonCanvas() {
           anchorWorldMatrix.decompose(undefined, carRoot.rotationQuaternion, undefined);
 
           carRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+          modelOriginalScales.set(carRoot, carRoot.scaling.clone()); // Store original scale
+          modelOriginalRotations.set(carRoot, carRoot.rotationQuaternion.clone()); // Store original rotation
 
           // Create interior camera
           if (!interiorCameraRef.current) {
-            const offset = new BABYLON.Vector3(0, 3.9, .12);
+            const offset = new BABYLON.Vector3(0, 3.9, 0);
             const rotatedOffset = offset.applyRotationQuaternion(carRoot.rotationQuaternion!);
             const targetPos = anchorPos.add(rotatedOffset);
 
@@ -1917,7 +2454,7 @@ export function BabylonCanvas() {
             // ArcRotateCamera alpha 0 looks down -X axis (in Babylon left-handed)
             // We want to convert our heading (angle from +Z) to alpha
             // Formula: alpha = -heading - Math.PI/2
-            iCam.alpha = -heading - Math.PI / 7.5;
+            iCam.alpha = -heading - Math.PI*1.5;
 
             interiorCameraRef.current = iCam;
           }
@@ -1925,31 +2462,56 @@ export function BabylonCanvas() {
           // Hide the anchor mesh but keep it enabled for position tracking
           anchorMesh.isVisible = false;
 
-          console.log(`🚗 BYD car positioned at anchor_byd: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
+          console.log(`🚗 GEELY car positioned at anchor_1: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
           console.log(`🚗 Anchor mesh hidden but enabled for distance tracking`);
         } else {
           // Fallback to manual position if anchor not found
           carRoot.position.set(131, -6.7, 50);
           carRoot.scaling.set(1, 1, -1);
-          console.warn("⚠️ anchor_byd mesh not found, positioning car at (131, -6.7, 50)");
+          modelOriginalScales.set(carRoot, carRoot.scaling.clone()); // Store original scale
+          console.warn("⚠️ anchor_1 mesh not found, positioning car at (131, -6.7, 50)");
           console.log(`🚗 Car root position after manual set: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
         }
 
-        // Enable all meshes so the car is visible ONLY if state >= 4
-        const shouldBeVisible = useUI.getState().state >= 4;
-        carMeshes.forEach(mesh => {
-          mesh.setEnabled(shouldBeVisible);
-        });
+        // Warmup GPU for this model, then hide
+        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
+        await warmupModelForGPU(carRoot, carMeshes, scene, 50);
 
-        console.log(`🚗 BYD car loaded successfully! ${carMeshes.length} meshes (enabled and visible)`);
+        // Initially hide all meshes - proximity detection will show them
+        carMeshes.forEach(mesh => {
+          mesh.setEnabled(false);
+        });
+        modelVisibilityRef.current.model1 = false;
+
+        console.log(`🚗 GEELY car loaded successfully! ${carMeshes.length} meshes (warmed up & hidden)`);
         console.log(`🚗 Final car root position: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
 
-        // Apply initial customization (yellow body, lightBlue trim)
+        // Create atom indicator at anchor position
+        if (anchorMesh) {
+          const atomConfig = atomConfigRef.current.model1;
+          const atom = createAtomIndicator({
+            scene,
+            position: anchorMesh.getAbsolutePosition(),
+            idleRingRadius: atomConfig.idleRingRadius,
+            expandedRingRadii: atomConfig.expandedRingRadii,
+            rotationSpeed: atomConfig.rotationSpeed,
+            flameScale: atomConfig.flameScale
+          });
+          atomIndicatorsRef.current.atom1 = atom;
+          console.log("⚛️ Created atom indicator for GEELY car at anchor_1");
+          
+          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
+          if (s < S.state_4 || s > S.state_7) {
+            atom.root.setEnabled(false);
+          }
+        }
+
+        // Apply initial customization (green body, lightBlue trim)
         setTimeout(() => {
-          customizeCar({ color: "yellow", trim: "lightBlue" });
+          customizeCar({ color: "green", trim: "lightBlue" });
         }, 100);
       } catch (error) {
-        console.error("❌ Error loading BYD car:", error);
+        console.error("❌ Error loading GEELY car:", error);
       }
     };
 
@@ -1957,7 +2519,7 @@ export function BabylonCanvas() {
     const customizeCar = ({ color, trim }: { color?: string; trim?: string } = {}) => {
       if (!sceneRef.current) return null;
 
-      const carMaterial = sceneRef.current.getMaterialByName("Body_Paint") as BABYLON.PBRMaterial;
+      const carMaterial = sceneRef.current.getMaterialByName("body_paint") as BABYLON.PBRMaterial;
       if (!carMaterial) {
         console.warn("⚠️ Body_Paint material not found");
         return null;
@@ -2034,13 +2596,321 @@ export function BabylonCanvas() {
       return { finalColor: newColor, finalTrim: newTrim };
     };
 
-    // Start loading the car asynchronously (doesn't affect loading screen)
-    loadBYDCarAsync();
+    // Load Musecraft model asynchronously (anchor_2, state 5)
+    const loadMusecraftAsync = async () => {
+      console.log("🎨 Starting Musecraft loading (async)...");
 
-    // Register customizeCar callback in state so BydCustomizer can call it
-    useUI.getState().setBydCustomizeCallback(customizeCar);
+      // Wait a bit to ensure anchors and other assets are loaded
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      console.log("🎨 Loading musecraft.glb...");
 
-    // Distance-based visibility for BYD customizer panel
+      try {
+        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/musecraft/", "musecraft.glb", scene);
+        container.addAllToScene();
+
+        console.log("🎨 Musecraft model loaded, processing meshes...");
+
+        if (!container.meshes.length) {
+          console.error("❌ No meshes found in Musecraft model");
+          return;
+        }
+
+        const modelRoot = container.meshes[0];
+        musecraftRootRef.current = modelRoot as any;
+        console.log("🎨 Musecraft root mesh:", modelRoot.name);
+
+        // Stop all animations
+        container.animationGroups.forEach(group => {
+          group.stop();
+          group.reset();
+        });
+
+        // Store all meshes
+        const modelMeshes: BABYLON.AbstractMesh[] = [];
+        container.meshes.forEach(mesh => {
+          modelMeshes.push(mesh);
+        });
+
+        musecraftMeshesRef.current = modelMeshes;
+
+        // Find the anchor_2 mesh from anchors.glb
+        console.log("🎨 Searching for anchor_2 mesh...");
+        const anchorMesh = scene.getMeshByName("anchor_2");
+        console.log("🎨 Anchor_2 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
+
+        if (anchorMesh) {
+          musecraftAnchorRef.current = anchorMesh;
+
+          // Position model root at anchor location
+          const anchorPos = anchorMesh.getAbsolutePosition();
+          modelRoot.position.copyFrom(anchorPos);
+
+          // Apply rotation from anchor
+          if (!modelRoot.rotationQuaternion) {
+            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          }
+
+          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
+
+          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
+
+          anchorMesh.isVisible = false;
+
+          console.log(`🎨 Musecraft positioned at anchor_2: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
+          
+          // Create atom indicator at anchor position
+          const atomConfig = atomConfigRef.current.model2;
+          const atom = createAtomIndicator({
+            scene,
+            position: anchorMesh.getAbsolutePosition(),
+            idleRingRadius: atomConfig.idleRingRadius,
+            expandedRingRadii: atomConfig.expandedRingRadii,
+            rotationSpeed: atomConfig.rotationSpeed,
+            flameScale: atomConfig.flameScale
+          });
+          atomIndicatorsRef.current.atom2 = atom;
+          console.log("⚛️ Created atom indicator for Musecraft at anchor_2");
+          
+          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
+          if (s < S.state_4 || s > S.state_7) {
+            atom.root.setEnabled(false);
+          }
+        } else {
+          console.warn("⚠️ anchor_2 mesh not found for Musecraft");
+        }
+
+        // Warmup GPU for this model, then hide
+        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
+        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50);
+
+        // Initially hide all meshes - proximity detection will show them
+        modelMeshes.forEach(mesh => {
+          mesh.setEnabled(false);
+        });
+        modelVisibilityRef.current.model2 = false;
+
+        console.log(`🎨 Musecraft loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+      } catch (error) {
+        console.error("❌ Error loading Musecraft:", error);
+      }
+    };
+
+    // Load Dioramas model asynchronously (anchor_3, state 6)
+    const loadDioramasAsync = async () => {
+      console.log("🏛️ Starting Dioramas loading (async)...");
+
+      // Wait a bit to ensure anchors and other assets are loaded
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log("🏛️ Loading dioramas.glb...");
+
+      try {
+        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/dioramas/", "dioramas.gltf", scene);
+        container.addAllToScene();
+
+        console.log("🏛️ Dioramas model loaded, processing meshes...");
+
+        if (!container.meshes.length) {
+          console.error("❌ No meshes found in Dioramas model");
+          return;
+        }
+
+        const modelRoot = container.meshes[0];
+        dioramasRootRef.current = modelRoot as any;
+        console.log("🏛️ Dioramas root mesh:", modelRoot.name);
+
+        // Stop all animations
+        container.animationGroups.forEach(group => {
+          group.stop();
+          group.reset();
+        });
+
+        // Store all meshes
+        const modelMeshes: BABYLON.AbstractMesh[] = [];
+        container.meshes.forEach(mesh => {
+          modelMeshes.push(mesh);
+        });
+
+        dioramasMeshesRef.current = modelMeshes;
+
+        // Find the anchor_3 mesh from anchors.glb
+        console.log("🏛️ Searching for anchor_3 mesh...");
+        const anchorMesh = scene.getMeshByName("anchor_3");
+        console.log("🏛️ Anchor_3 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
+
+        if (anchorMesh) {
+          dioramasAnchorRef.current = anchorMesh;
+
+          // Position model root at anchor location
+          const anchorPos = anchorMesh.getAbsolutePosition();
+          modelRoot.position.copyFrom(anchorPos);
+
+          // Apply rotation from anchor
+          if (!modelRoot.rotationQuaternion) {
+            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          }
+
+          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
+
+          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
+
+          anchorMesh.isVisible = false;
+
+          console.log(`🏛️ Dioramas positioned at anchor_3: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
+          
+          // Create atom indicator at anchor position
+          const atomConfig = atomConfigRef.current.model3;
+          const atom = createAtomIndicator({
+            scene,
+            position: anchorMesh.getAbsolutePosition(),
+            idleRingRadius: atomConfig.idleRingRadius,
+            expandedRingRadii: atomConfig.expandedRingRadii,
+            rotationSpeed: atomConfig.rotationSpeed,
+            flameScale: atomConfig.flameScale
+          });
+          atomIndicatorsRef.current.atom3 = atom;
+          console.log("⚛️ Created atom indicator for Dioramas at anchor_3");
+          
+          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
+          if (s < S.state_4 || s > S.state_7) {
+            atom.root.setEnabled(false);
+          }
+        } else {
+          console.warn("⚠️ anchor_3 mesh not found for Dioramas");
+        }
+
+        // Warmup GPU for this model, then hide
+        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
+        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50); // More frames for heavy model
+
+        // Initially hide all meshes - proximity detection will show them
+        modelMeshes.forEach(mesh => {
+          mesh.setEnabled(false);
+        });
+        modelVisibilityRef.current.model3 = false;
+
+        console.log(`🏛️ Dioramas loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+      } catch (error) {
+        console.error("❌ Error loading Dioramas:", error);
+      }
+    };
+
+    // Load Petwheels model asynchronously (anchor_4, state 7)
+    const loadPetwheelsAsync = async () => {
+      console.log("🐾 Starting Petwheels loading (async)...");
+
+      // Wait a bit to ensure anchors and other assets are loaded
+      await new Promise(resolve => setTimeout(resolve, 3500));
+      console.log("🐾 Loading petwheels.glb...");
+
+      try {
+        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/petwheels/", "petwheels.gltf", scene);
+        container.addAllToScene();
+
+        console.log("🐾 Petwheels model loaded, processing meshes...");
+
+        if (!container.meshes.length) {
+          console.error("❌ No meshes found in Petwheels model");
+          return;
+        }
+
+        const modelRoot = container.meshes[0];
+        petwheelsRootRef.current = modelRoot as any;
+        console.log("🐾 Petwheels root mesh:", modelRoot.name);
+
+        // Store animation groups and stop them initially (will be started by proximity detection)
+        petwheelsAnimationGroupsRef.current = container.animationGroups;
+        console.log(`🐾 Found ${container.animationGroups.length} animation groups:`, container.animationGroups.map(g => g.name));
+        container.animationGroups.forEach(group => {
+          group.stop();
+          group.reset();
+        });
+
+        // Store all meshes
+        const modelMeshes: BABYLON.AbstractMesh[] = [];
+        container.meshes.forEach(mesh => {
+          modelMeshes.push(mesh);
+        });
+
+        petwheelsMeshesRef.current = modelMeshes;
+
+        // Find the anchor_4 mesh from anchors.glb
+        console.log("🐾 Searching for anchor_4 mesh...");
+        const anchorMesh = scene.getMeshByName("anchor_4");
+        console.log("🐾 Anchor_4 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
+
+        if (anchorMesh) {
+          petwheelsAnchorRef.current = anchorMesh;
+
+          // Position model root at anchor location
+          const anchorPos = anchorMesh.getAbsolutePosition();
+          modelRoot.position.copyFrom(anchorPos);
+
+          // Apply rotation from anchor
+          if (!modelRoot.rotationQuaternion) {
+            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          }
+
+          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
+
+          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
+
+          anchorMesh.isVisible = false;
+
+          console.log(`🐾 Petwheels positioned at anchor_4: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
+          
+          // Create atom indicator at anchor position
+          const atomConfig = atomConfigRef.current.model4;
+          const atom = createAtomIndicator({
+            scene,
+            position: anchorMesh.getAbsolutePosition(),
+            idleRingRadius: atomConfig.idleRingRadius,
+            expandedRingRadii: atomConfig.expandedRingRadii,
+            rotationSpeed: atomConfig.rotationSpeed,
+            flameScale: atomConfig.flameScale
+          });
+          atomIndicatorsRef.current.atom4 = atom;
+          console.log("⚛️ Created atom indicator for Petwheels at anchor_4");
+          
+          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
+          if (s < S.state_4 || s > S.state_7) {
+            atom.root.setEnabled(false);
+          }
+        } else {
+          console.warn("⚠️ anchor_4 mesh not found for Petwheels");
+        }
+
+        // Warmup GPU for this model, then hide
+        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
+        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50);
+
+        // Initially hide all meshes - proximity detection will show them
+        modelMeshes.forEach(mesh => {
+          mesh.setEnabled(false);
+        });
+        modelVisibilityRef.current.model4 = false;
+
+        console.log(`🐾 Petwheels loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+      } catch (error) {
+        console.error("❌ Error loading Petwheels:", error);
+      }
+    };
+
+    // Start loading all models asynchronously (doesn't affect loading screen)
+    loadGEELYCarAsync();
+    loadMusecraftAsync();
+    loadDioramasAsync();
+    loadPetwheelsAsync();
+
+    // Register customizeCar callback in state so GeelyCustomizer can call it
+    useUI.getState().setGeelyCustomizeCallback(customizeCar);
+
+    // Distance-based visibility for GEELY customizer panel
     const VISIBILITY_DISTANCE = 20; // Show panel when within 100 meters
 
     scene.onBeforeRenderObservable.add(() => {
@@ -2077,14 +2947,14 @@ export function BabylonCanvas() {
 
       // Show/hide panel based on distance using state
       const shouldBeVisible = distance <= VISIBILITY_DISTANCE;
-      const currentlyVisible = useUI.getState().bydCustomizerVisible;
+      const currentlyVisible = useUI.getState().geelyCustomizerVisible;
 
       if (shouldBeVisible && !currentlyVisible) {
-        useUI.getState().setBydCustomizerVisible(true);
-        console.log(`🚗 BYD customizer panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+        useUI.getState().setGeelyCustomizerVisible(true);
+        console.log(`🚗 GEELY customizer panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       } else if (!shouldBeVisible && currentlyVisible) {
-        useUI.getState().setBydCustomizerVisible(false);
-        console.log(`🚗 BYD customizer panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+        useUI.getState().setGeelyCustomizerVisible(false);
+        console.log(`🚗 GEELY customizer panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       }
     });
 
@@ -3195,6 +4065,9 @@ export function BabylonCanvas() {
             delay: animDelay
           });
           
+          // Mark as not arrived - ship is about to travel
+          guidedModeArrivedRef.current = false;
+          
           // Use bezier curve animation with camera following
           animateShipAlongBezier({
             target: animShipRoot,
@@ -3209,7 +4082,11 @@ export function BabylonCanvas() {
             endRotation: anchorData.rotation,
             stateRadius,
             delay: animDelay,
-            flameParticles: flameParticleSystemRef.current
+            flameParticles: flameParticleSystemRef.current,
+            onComplete: () => {
+              guidedModeArrivedRef.current = true;
+              console.log("🎯 Ship arrived at anchor - model rotation enabled");
+            }
           });
         } else {
           console.warn(`⚠️ Anchor ${anchorKey} not found, falling back to linear animation`);
@@ -3226,7 +4103,21 @@ export function BabylonCanvas() {
         }
       } else {
         // Free mode or other states - use config positions with linear animation
+        // In free mode, model rotation is always allowed (no guided travel)
+        if (currentNavigationMode === 'free') {
+          guidedModeArrivedRef.current = true;
+        }
+        
         let targetPos: { x: number; y: number; z: number } | undefined;
+        
+        // Parent smoke emitter to shipPivot so it follows in free mode too
+        if (isEnteringExploreState) {
+          const smokeEmitter = smokeEmitterRef.current;
+          if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
+            smokeEmitter.parent = animShipPivot;
+            console.log("💨 [Free Mode] Smoke emitter parented to shipPivot");
+          }
+        }
         
         if (shipConfig) {
           if (isMobile && shipConfig.mobile?.position) {
@@ -3315,6 +4206,9 @@ export function BabylonCanvas() {
 
     // Reset ship and camera when leaving explore states (4-7) to ANY non-explore state
     if (isLeavingExploreState) {
+      // Reset guided mode arrived flag
+      guidedModeArrivedRef.current = false;
+      
       const shipToReset = spaceshipRef.current;
       const shipRootToReset = spaceshipRootRef.current;
       const pivotToReset = shipPivotRef.current;
@@ -3383,6 +4277,15 @@ export function BabylonCanvas() {
     if (spaceshipContainer) {
       const shouldBeVisible = sceneConfig.spaceshipEnabled;
       const isCurrentlyVisible = spaceshipContainer.isEnabled();
+      const flames = flameParticleSystemRef.current;
+      const flamesRunning = flames ? flames.isStarted() : false;
+      
+      console.log(`🚀 [Spaceship Visibility Check] State ${prevState} → ${s}:`, {
+        shouldBeVisible,
+        isCurrentlyVisible,
+        flamesRunning,
+        hasFlamesRef: !!flames
+      });
 
       // Fade in when transitioning to state with spaceship enabled
       if (shouldBeVisible && !isCurrentlyVisible && spaceship) {
@@ -3397,16 +4300,15 @@ export function BabylonCanvas() {
           spaceshipMaterials.push(spaceship.material);
         }
 
-        // Enable with invisible materials
+        // Enable with invisible materials and start flames together
         spaceshipMaterials.forEach(mat => mat.alpha = 0.01);
-        spaceshipContainer.setEnabled(true);
-        
-        // Start flame particles when ship becomes visible (tied to ship visibility)
-        const flames = flameParticleSystemRef.current;
-        if (flames && !flames.isStarted()) {
-          flames.start();
-          console.log("🔥 [Spaceship Fade In] Flame particles started");
-        }
+        setShipAndFlamesVisibility({
+          container: spaceshipContainer,
+          flameParticles: flameParticleSystemRef.current,
+          visible: true,
+          method: 'enabled',
+          logContext: 'Spaceship Fade In'
+        });
 
         // Fade in
         const fps = 60;
@@ -3481,17 +4383,26 @@ export function BabylonCanvas() {
           });
         });
 
-        // Disable after fade completes
+        // Disable ship and stop flames after fade completes
         setTimeout(() => {
-          spaceshipContainer.setEnabled(false);
-          
-          // Stop flame particles when ship is hidden (tied to ship visibility)
-          const flames = flameParticleSystemRef.current;
-          if (flames && flames.isStarted()) {
-            flames.stop();
-            console.log("🔥 [Spaceship Fade Out] Flame particles stopped");
-          }
+          setShipAndFlamesVisibility({
+            container: spaceshipContainer,
+            flameParticles: flameParticleSystemRef.current,
+            visible: false,
+            method: 'enabled',
+            logContext: 'Spaceship Fade Out'
+          });
         }, duration * 1000);
+      }
+      
+      // SAFETY CHECK: Ensure flames are ALWAYS in sync with ship visibility
+      // This catches edge cases where state transitions might leave flames out of sync
+      else if (shouldBeVisible && isCurrentlyVisible) {
+        // Ship is visible and should be visible - ensure flames are running
+        const flames = flameParticleSystemRef.current;
+        if (flames) {
+          flames.start(); // Safe to call even if already started
+        }
       }
     }
 
@@ -3854,11 +4765,11 @@ export function BabylonCanvas() {
     const camera = cameraRef.current;
     if (!canvas || !camera) return;
 
-    // Only enable controls in states 4-7 with free mode
-    const inFreeExploreState = s >= S.state_4 && s <= S.state_7;
-    const shouldEnableControls = inFreeExploreState; // && navigationMode === 'free';
+    // Only enable controls in states 4-7
+    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const isGuidedMode = navigationMode === 'guided';
 
-    if (shouldEnableControls) {
+    if (inExploreState) {
       // Get camera animation duration to delay enabling controls until animation completes
       const cameraConfig = config.canvas.babylonCamera;
       const animDuration = cameraConfig?.animationDuration ?? 0.4;
@@ -3867,9 +4778,17 @@ export function BabylonCanvas() {
 
       // Wait for camera animation to complete before enabling controls
       const timeoutId = setTimeout(() => {
-        camera.inputs.addMouseWheel();
-        camera.inputs.addPointers();
-        camera.attachControl(canvas, true);
+        if (isGuidedMode) {
+          // In guided mode: only enable mouse wheel for zoom, no pointer rotation
+          camera.inputs.clear();
+          camera.inputs.addMouseWheel();
+          camera.attachControl(canvas, true);
+        } else {
+          // In free mode: enable all controls
+          camera.inputs.addMouseWheel();
+          camera.inputs.addPointers();
+          camera.attachControl(canvas, true);
+        }
       }, totalAnimTime);
 
       return () => clearTimeout(timeoutId);
@@ -3877,6 +4796,179 @@ export function BabylonCanvas() {
       camera.detachControl();
       camera.inputs.clear();
     }
+  }, [s, navigationMode]);
+
+  // Model rotation in guided mode - rotate model on Y axis freely, X axis with spring-back
+  useEffect(() => {
+    const canvas = ref.current;
+    const scene = sceneRef.current;
+    if (!canvas || !scene) return;
+
+    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const isGuidedMode = navigationMode === 'guided';
+
+    // Only enable model rotation in guided mode during explore states
+    if (!inExploreState || !isGuidedMode) {
+      return;
+    }
+
+    // Get the current model based on state
+    const getCurrentModel = () => {
+      switch (s) {
+        case S.state_4: return carRootRef.current;
+        case S.state_5: return musecraftRootRef.current;
+        case S.state_6: return dioramasRootRef.current;
+        case S.state_7: return petwheelsRootRef.current;
+        default: return null;
+      }
+    };
+
+    // Max peek angle in radians (~30 degrees)
+    const maxPeekAngle = Math.PI / 12;
+    // Resistance factor - higher = more resistance at extremes
+    const resistanceFactor = 6;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      // Disable rotation in interior view
+      if (useUI.getState().isInteriorView) {
+        return;
+      }
+      
+      // Only allow rotation if ship has arrived
+      if (!guidedModeArrivedRef.current) {
+        console.log("🔄 Model rotation blocked - ship still traveling");
+        return;
+      }
+
+      const model = getCurrentModel();
+      if (!model) return;
+
+      modelRotationRef.current.isDragging = true;
+      modelRotationRef.current.lastX = e.clientX;
+      modelRotationRef.current.lastY = e.clientY;
+      
+      // Store original quaternion if not already stored
+      if (!modelRotationRef.current.originalQuaternion && model.rotationQuaternion) {
+        modelRotationRef.current.originalQuaternion = model.rotationQuaternion.clone();
+      }
+
+      canvas.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!modelRotationRef.current.isDragging) return;
+      if (!guidedModeArrivedRef.current) return;
+      if (useUI.getState().isInteriorView) return;
+
+      const model = getCurrentModel();
+      const camera = cameraRef.current;
+      if (!model || !model.rotationQuaternion || !camera) return;
+
+      const deltaX = e.clientX - modelRotationRef.current.lastX;
+      const deltaY = e.clientY - modelRotationRef.current.lastY;
+      const rotationSpeed = 0.005; // Radians per pixel
+
+      // Y axis rotation - free rotation around world Y axis, accumulates
+      const deltaYRotation = -deltaX * rotationSpeed;
+      modelRotationRef.current.accumulatedYRotation += deltaYRotation;
+
+      // X axis rotation with resistance - use camera's right vector so it tilts toward/away from camera
+      const currentPeek = modelRotationRef.current.peekRotationX;
+      // Calculate resistance: 1 at center, approaches infinity at maxPeekAngle
+      const normalizedPeek = Math.abs(currentPeek) / maxPeekAngle;
+      const resistance = 1 + Math.pow(normalizedPeek, 2) * resistanceFactor;
+      
+      // Apply resistance to X rotation (negative deltaY because dragging down = look at top)
+      const deltaXRotation = (-deltaY * rotationSpeed) / resistance;
+      let newPeekX = currentPeek + deltaXRotation;
+      
+      // Soft clamp to max peek angle
+      newPeekX = Math.max(-maxPeekAngle, Math.min(maxPeekAngle, newPeekX));
+      modelRotationRef.current.peekRotationX = newPeekX;
+
+      // Get camera right vector for tilt axis (perpendicular to view direction, horizontal)
+      const cameraRight = camera.getDirection(BABYLON.Axis.X);
+      // Project to horizontal plane to keep tilt axis horizontal
+      cameraRight.y = 0;
+      cameraRight.normalize();
+
+      // Build the final rotation: original * Y rotation * X peek (around camera right)
+      const originalQuat = modelRotationRef.current.originalQuaternion || BABYLON.Quaternion.Identity();
+      const yRotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, modelRotationRef.current.accumulatedYRotation);
+      const xPeekRotation = BABYLON.Quaternion.RotationAxis(cameraRight, newPeekX);
+      
+      // Apply: original orientation, then Y spin, then tilt toward camera
+      model.rotationQuaternion = xPeekRotation.multiply(yRotation.multiply(originalQuat));
+
+      modelRotationRef.current.lastX = e.clientX;
+      modelRotationRef.current.lastY = e.clientY;
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (modelRotationRef.current.isDragging) {
+        modelRotationRef.current.isDragging = false;
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    };
+
+    // Spring-back animation for X-axis peek rotation
+    let springAnimationFrame: number | null = null;
+    const springBack = () => {
+      if (modelRotationRef.current.isDragging) {
+        springAnimationFrame = requestAnimationFrame(springBack);
+        return;
+      }
+
+      const currentPeek = modelRotationRef.current.peekRotationX;
+      if (Math.abs(currentPeek) < 0.001) {
+        modelRotationRef.current.peekRotationX = 0;
+        springAnimationFrame = requestAnimationFrame(springBack);
+        return;
+      }
+
+      // Spring constant - higher = faster return
+      const springStrength = 0.02;
+      const newPeek = currentPeek * (1 - springStrength);
+      modelRotationRef.current.peekRotationX = newPeek;
+
+      // Update model rotation
+      const model = getCurrentModel();
+      const camera = cameraRef.current;
+      if (model && model.rotationQuaternion && camera) {
+        // Get camera right vector for tilt axis
+        const cameraRight = camera.getDirection(BABYLON.Axis.X);
+        cameraRight.y = 0;
+        cameraRight.normalize();
+
+        const originalQuat = modelRotationRef.current.originalQuaternion || BABYLON.Quaternion.Identity();
+        const yRotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, modelRotationRef.current.accumulatedYRotation);
+        const xPeekRotation = BABYLON.Quaternion.RotationAxis(cameraRight, newPeek);
+        model.rotationQuaternion = xPeekRotation.multiply(yRotation.multiply(originalQuat));
+      }
+
+      springAnimationFrame = requestAnimationFrame(springBack);
+    };
+
+    // Start spring-back animation loop
+    springAnimationFrame = requestAnimationFrame(springBack);
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
+      if (springAnimationFrame) {
+        cancelAnimationFrame(springAnimationFrame);
+      }
+      // Reset peek rotation when leaving
+      modelRotationRef.current.peekRotationX = 0;
+      modelRotationRef.current.originalQuaternion = null;
+    };
   }, [s, navigationMode]);
 
   // Handle navigation mode toggle - move ship to anchor when switching to guided mode in states 4-7
@@ -3944,6 +5036,9 @@ export function BabylonCanvas() {
           stateRadius
         });
         
+        // Mark as not arrived - ship is about to travel
+        guidedModeArrivedRef.current = false;
+        
         // Animate ship along bezier curve to anchor position
         animateShipAlongBezier({
           target: shipRoot,
@@ -3957,7 +5052,11 @@ export function BabylonCanvas() {
           startRotation,
           endRotation: anchorData.rotation,
           stateRadius,
-          flameParticles: flameParticleSystemRef.current
+          flameParticles: flameParticleSystemRef.current,
+          onComplete: () => {
+            guidedModeArrivedRef.current = true;
+            console.log("🎯 Ship arrived at anchor - model rotation enabled");
+          }
         });
       } else {
         console.warn(`⚠️ [Mode Toggle] Anchor ${anchorKey} not found`);
@@ -3969,18 +5068,19 @@ export function BabylonCanvas() {
         s >= S.state_4 && s <= S.state_7 && 
         scene && camera) {
       
-      // Restore ship visibility (it may have been hidden after guided mode arrival)
+      // In free mode, no travel animation so model rotation is always allowed
+      guidedModeArrivedRef.current = true;
+      
+      // Restore ship and flames visibility (they may have been hidden after guided mode arrival)
       const shipRoot = spaceshipRootRef.current;
       if (shipRoot) {
-        shipRoot.getChildMeshes().forEach(mesh => mesh.visibility = 1);
-        console.log("👁️ [Mode Toggle] Ship visibility restored for free mode");
-        
-        // Start flame particles - they're tied to ship visibility
-        const flames = flameParticleSystemRef.current;
-        if (flames && !flames.isStarted()) {
-          flames.start();
-          console.log("🔥 [Mode Toggle] Flame particles started with ship visibility");
-        }
+        setShipAndFlamesVisibility({
+          shipMeshes: shipRoot.getChildMeshes(),
+          flameParticles: flameParticleSystemRef.current,
+          visible: true,
+          method: 'visibility',
+          logContext: 'Mode Toggle'
+        });
       }
       
       // Animate camera radius limits back to state values for free exploration
@@ -4014,26 +5114,188 @@ export function BabylonCanvas() {
     prevNavigationModeRef.current = navigationMode;
   }, [navigationMode, s]);
 
-  // Handle car visibility based on state
+  // Proximity-based model visibility with atom indicators
+  // Models are shown/hidden based on ship distance to their anchors
+  // When hidden: atom indicator shows (flame + rotating rings)
+  // When close: model fades in, atom expands and flame stops
   useEffect(() => {
-    if (carMeshesRef.current.length > 0) {
-      const shouldBeVisible = s >= S.state_4 && s <= S.state_7; // States 4-7
-      carMeshesRef.current.forEach(mesh => mesh.setEnabled(shouldBeVisible));
+    const scene = sceneRef.current;
+    if (!scene) return;
 
-      // If car becomes hidden, exit interior view
-      if (!shouldBeVisible && useUI.getState().isInteriorView) {
+    // Only run proximity detection in explore states (4-7)
+    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    if (!inExploreState) {
+      // Hide all models, contract and hide all atoms when not in explore states
+      const atoms = atomIndicatorsRef.current;
+      const visibility = modelVisibilityRef.current;
+
+      // Contract all atoms that are expanded and hide them
+      if (atoms.atom1) {
+        if (atoms.atom1.isExpanded) atoms.atom1.contract();
+        atoms.atom1.root.setEnabled(false);
+      }
+      if (atoms.atom2) {
+        if (atoms.atom2.isExpanded) atoms.atom2.contract();
+        atoms.atom2.root.setEnabled(false);
+      }
+      if (atoms.atom3) {
+        if (atoms.atom3.isExpanded) atoms.atom3.contract();
+        atoms.atom3.root.setEnabled(false);
+      }
+      if (atoms.atom4) {
+        if (atoms.atom4.isExpanded) atoms.atom4.contract();
+        atoms.atom4.root.setEnabled(false);
+      }
+
+      // Hide all models
+      if (visibility.model1 && carMeshesRef.current.length > 0) {
+        carMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        visibility.model1 = false;
+      }
+      if (visibility.model2 && musecraftMeshesRef.current.length > 0) {
+        musecraftMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        visibility.model2 = false;
+      }
+      if (visibility.model3 && dioramasMeshesRef.current.length > 0) {
+        dioramasMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        visibility.model3 = false;
+      }
+      if (visibility.model4 && petwheelsMeshesRef.current.length > 0) {
+        petwheelsMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        visibility.model4 = false;
+      }
+
+      // Exit interior view if active
+      if (useUI.getState().isInteriorView) {
         useUI.getState().setIsInteriorView(false);
       }
+      return;
     }
+
+    // In explore states - enable all atoms (they'll show contracted state by default)
+    const atoms = atomIndicatorsRef.current;
+    if (atoms.atom1) atoms.atom1.root.setEnabled(true);
+    if (atoms.atom2) atoms.atom2.root.setEnabled(true);
+    if (atoms.atom3) atoms.atom3.root.setEnabled(true);
+    if (atoms.atom4) atoms.atom4.root.setEnabled(true);
+
+    // Proximity check function for a single model
+    const checkModelProximity = (
+      modelKey: 'model1' | 'model2' | 'model3' | 'model4',
+      rootRef: React.MutableRefObject<BABYLON.AbstractMesh | null>,
+      meshesRef: React.MutableRefObject<BABYLON.AbstractMesh[]>,
+      anchorRef: React.MutableRefObject<BABYLON.AbstractMesh | null>,
+      atomKey: 'atom1' | 'atom2' | 'atom3' | 'atom4'
+    ) => {
+      const shipRoot = spaceshipRootRef.current;
+      if (!shipRoot) return;
+
+      const modelRoot = rootRef.current;
+      const meshes = meshesRef.current;
+      const anchor = anchorRef.current;
+      const atom = atomIndicatorsRef.current[atomKey];
+      const config = atomConfigRef.current[modelKey];
+      const visibility = modelVisibilityRef.current;
+
+      if (meshes.length === 0 || !anchor || !modelRoot) return;
+
+      // Calculate distance from ship to anchor
+      const shipPos = shipRoot.getAbsolutePosition();
+      const anchorPos = anchor.getAbsolutePosition();
+      const distance = BABYLON.Vector3.Distance(shipPos, anchorPos);
+
+      const isCurrentlyVisible = visibility[modelKey];
+      const shouldBeVisible = distance <= config.proximityDistance;
+
+      // Transition to visible
+      if (shouldBeVisible && !isCurrentlyVisible) {
+        visibility[modelKey] = true;
+        console.log(`⚛️ Ship within range of ${modelKey} (${distance.toFixed(1)}m) - showing model`);
+
+        // Expand atom (stops flame, enlarges rings)
+        if (atom) {
+          atom.expand(0.6);
+        }
+
+        // Scale in model
+        scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => {
+          console.log(`✨ ${modelKey} scale in complete`);
+        });
+
+        // Start petwheels animation when model becomes visible
+        if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
+          petwheelsAnimationGroupsRef.current.forEach(group => {
+            group.play(true); // Play in loop
+            console.log(`🐾 Started animation: ${group.name}`);
+          });
+        }
+      }
+      // Transition to hidden
+      else if (!shouldBeVisible && isCurrentlyVisible) {
+        visibility[modelKey] = false;
+        console.log(`⚛️ Ship left range of ${modelKey} (${distance.toFixed(1)}m) - hiding model`);
+
+        // Stop petwheels animation when model becomes hidden
+        if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
+          petwheelsAnimationGroupsRef.current.forEach(group => {
+            group.stop();
+            group.reset();
+            console.log(`🐾 Stopped animation: ${group.name}`);
+          });
+        }
+
+        // Contract atom (starts flame, shrinks rings)
+        if (atom) {
+          atom.contract(0.6);
+        }
+
+        // Scale out model
+        scaleModelMeshes(modelRoot, meshes, scene, false, 2, () => {
+          console.log(`✨ ${modelKey} scale out complete`);
+          // Exit interior view if this was the car
+          if (modelKey === 'model1' && useUI.getState().isInteriorView) {
+            useUI.getState().setIsInteriorView(false);
+          }
+        });
+      }
+    };
+
+    // Create proximity check observer
+    const proximityObserver = scene.onBeforeRenderObservable.add(() => {
+      // Check each model's proximity
+      checkModelProximity('model1', carRootRef, carMeshesRef, carAnchorRef, 'atom1');
+      checkModelProximity('model2', musecraftRootRef, musecraftMeshesRef, musecraftAnchorRef, 'atom2');
+      checkModelProximity('model3', dioramasRootRef, dioramasMeshesRef, dioramasAnchorRef, 'atom3');
+      checkModelProximity('model4', petwheelsRootRef, petwheelsMeshesRef, petwheelsAnchorRef, 'atom4');
+    });
+
+    return () => {
+      scene.onBeforeRenderObservable.remove(proximityObserver);
+    };
   }, [s]);
 
   // Handle interior view toggle
   useEffect(() => {
     if (!sceneRef.current || !interiorCameraRef.current || !cameraRef.current) return;
 
-    const glassMesh = sceneRef.current.getMeshByName("byd_glass");
+    const glassMesh = sceneRef.current.getMeshByName("glass");
 
     if (isInteriorView) {
+      // Reset car rotation to original when entering interior view
+      const carRoot = carRootRef.current;
+      if (carRoot && carRoot.rotationQuaternion) {
+        const originalRotation = modelOriginalRotations.get(carRoot);
+        if (originalRotation) {
+          // Reset all rotation state immediately
+          modelRotationRef.current.accumulatedYRotation = 0;
+          modelRotationRef.current.peekRotationX = 0;
+          modelRotationRef.current.originalQuaternion = null;
+          modelRotationRef.current.isDragging = false;
+          // Apply original rotation instantly
+          carRoot.rotationQuaternion.copyFrom(originalRotation);
+        }
+      }
+
       sceneRef.current.activeCamera = interiorCameraRef.current;
       interiorCameraRef.current.attachControl(ref.current, true);
       cameraRef.current.detachControl();

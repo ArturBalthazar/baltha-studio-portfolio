@@ -72,15 +72,15 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"byd_aggregated_1"
+			"name":"geely_aggregated_1"
 		},
 		{
 			"mesh":1,
-			"name":"byd_aggregated_2"
+			"name":"geely_aggregated_2"
 		},
 		{
 			"mesh":2,
-			"name":"byd_atlas_dark",
+			"name":"geely_atlas_dark",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -94,7 +94,7 @@
 		},
 		{
 			"mesh":3,
-			"name":"byd_atlas_metallic",
+			"name":"geely_atlas_metallic",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -108,7 +108,7 @@
 		},
 		{
 			"mesh":4,
-			"name":"byd_black_piano",
+			"name":"geely_black_piano",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -122,59 +122,59 @@
 		},
 		{
 			"mesh":5,
-			"name":"byd_body"
+			"name":"geely_body"
 		},
 		{
 			"mesh":6,
-			"name":"byd_buttons"
+			"name":"geely_buttons"
 		},
 		{
 			"mesh":7,
-			"name":"byd_carpet"
+			"name":"geely_carpet"
 		},
 		{
 			"mesh":8,
-			"name":"byd_ceiling"
+			"name":"geely_ceiling"
 		},
 		{
 			"mesh":9,
-			"name":"byd_color_atlas_02"
+			"name":"geely_color_atlas_02"
 		},
 		{
 			"mesh":10,
-			"name":"byd_emissiveGlow"
+			"name":"geely_emissiveGlow"
 		},
 		{
 			"mesh":11,
-			"name":"byd_glass"
+			"name":"geely_glass"
 		},
 		{
 			"mesh":12,
-			"name":"byd_leather_01"
+			"name":"geely_leather_01"
 		},
 		{
 			"mesh":13,
-			"name":"byd_leather_02"
+			"name":"geely_leather_02"
 		},
 		{
 			"mesh":14,
-			"name":"byd_leather_03"
+			"name":"geely_leather_03"
 		},
 		{
 			"mesh":15,
-			"name":"byd_leather_04"
+			"name":"geely_leather_04"
 		},
 		{
 			"mesh":16,
-			"name":"byd_leather_05"
+			"name":"geely_leather_05"
 		},
 		{
 			"mesh":17,
-			"name":"byd_leather_06"
+			"name":"geely_leather_06"
 		},
 		{
 			"mesh":18,
-			"name":"byd_leather_black_02",
+			"name":"geely_leather_black_02",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -188,7 +188,7 @@
 		},
 		{
 			"mesh":19,
-			"name":"byd_leather_black_03",
+			"name":"geely_leather_black_03",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -202,7 +202,7 @@
 		},
 		{
 			"mesh":20,
-			"name":"byd_leather_black_04",
+			"name":"geely_leather_black_04",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -216,7 +216,7 @@
 		},
 		{
 			"mesh":21,
-			"name":"byd_leather_black_06",
+			"name":"geely_leather_black_06",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -230,7 +230,7 @@
 		},
 		{
 			"mesh":22,
-			"name":"byd_leather_dark_blue",
+			"name":"geely_leather_dark_blue",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -244,7 +244,7 @@
 		},
 		{
 			"mesh":23,
-			"name":"byd_leather_dark_blue_wheel",
+			"name":"geely_leather_dark_blue_wheel",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -258,7 +258,7 @@
 		},
 		{
 			"mesh":24,
-			"name":"byd_leather_light_blue_05",
+			"name":"geely_leather_light_blue_05",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -272,7 +272,7 @@
 		},
 		{
 			"mesh":25,
-			"name":"byd_leather_light_blue_06",
+			"name":"geely_leather_light_blue_06",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -286,7 +286,7 @@
 		},
 		{
 			"mesh":26,
-			"name":"byd_leather_perforated_blue",
+			"name":"geely_leather_perforated_blue",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -300,7 +300,7 @@
 		},
 		{
 			"mesh":27,
-			"name":"byd_leather_perforated_dark_blue",
+			"name":"geely_leather_perforated_dark_blue",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -314,7 +314,7 @@
 		},
 		{
 			"mesh":28,
-			"name":"byd_leather_perforated_red",
+			"name":"geely_leather_perforated_red",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -328,7 +328,7 @@
 		},
 		{
 			"mesh":29,
-			"name":"byd_leather_pink_03",
+			"name":"geely_leather_pink_03",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -342,7 +342,7 @@
 		},
 		{
 			"mesh":30,
-			"name":"byd_leather_pink_05",
+			"name":"geely_leather_pink_05",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -356,7 +356,7 @@
 		},
 		{
 			"mesh":31,
-			"name":"byd_leather_pink_06",
+			"name":"geely_leather_pink_06",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -370,11 +370,11 @@
 		},
 		{
 			"mesh":32,
-			"name":"byd_lights"
+			"name":"geely_lights"
 		},
 		{
 			"mesh":33,
-			"name":"byd_metal_paint",
+			"name":"geely_metal_paint",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -388,7 +388,7 @@
 		},
 		{
 			"mesh":34,
-			"name":"byd_metallic_black",
+			"name":"geely_metallic_black",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -402,7 +402,7 @@
 		},
 		{
 			"mesh":35,
-			"name":"byd_metallic_blue",
+			"name":"geely_metallic_blue",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -416,7 +416,7 @@
 		},
 		{
 			"mesh":36,
-			"name":"byd_metallic_pink",
+			"name":"geely_metallic_pink",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -430,19 +430,19 @@
 		},
 		{
 			"mesh":37,
-			"name":"byd_metallic_plastic_01"
+			"name":"geely_metallic_plastic_01"
 		},
 		{
 			"mesh":38,
-			"name":"byd_metallic_plastic_02"
+			"name":"geely_metallic_plastic_02"
 		},
 		{
 			"mesh":39,
-			"name":"byd_metallic_plastic_03"
+			"name":"geely_metallic_plastic_03"
 		},
 		{
 			"mesh":40,
-			"name":"byd_orange",
+			"name":"geely_orange",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -456,7 +456,7 @@
 		},
 		{
 			"mesh":41,
-			"name":"byd_pink",
+			"name":"geely_pink",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -470,31 +470,31 @@
 		},
 		{
 			"mesh":42,
-			"name":"byd_plastic_detail"
+			"name":"geely_plastic_detail"
 		},
 		{
 			"mesh":43,
-			"name":"byd_plastic_pattern"
+			"name":"geely_plastic_pattern"
 		},
 		{
 			"mesh":44,
-			"name":"byd_plastic_skin"
+			"name":"geely_plastic_skin"
 		},
 		{
 			"mesh":45,
-			"name":"byd_shadow"
+			"name":"geely_shadow"
 		},
 		{
 			"mesh":46,
-			"name":"byd_steering_wheel"
+			"name":"geely_steering_wheel"
 		},
 		{
 			"mesh":47,
-			"name":"byd_stitches"
+			"name":"geely_stitches"
 		},
 		{
 			"mesh":48,
-			"name":"byd_stitches_orange",
+			"name":"geely_stitches_orange",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -508,7 +508,7 @@
 		},
 		{
 			"mesh":49,
-			"name":"byd_stitches_pink",
+			"name":"geely_stitches_pink",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -522,7 +522,7 @@
 		},
 		{
 			"mesh":50,
-			"name":"byd_stitches_yellow",
+			"name":"geely_stitches_green",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -536,7 +536,7 @@
 		},
 		{
 			"mesh":51,
-			"name":"byd_yellow",
+			"name":"geely_green",
 			"scale":[
 				0.008168119937181473,
 				0.008168119937181473,
@@ -591,7 +591,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_atlas_dark",
+			"name":"geely_atlas_dark",
 			"normalTexture":{
 				"index":6
 			},
@@ -613,7 +613,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_atlas_metallic",
+			"name":"geely_atlas_metallic",
 			"normalTexture":{
 				"index":8
 			},
@@ -634,7 +634,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_black_piano",
+			"name":"geely_black_piano",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.014348294585943222,
@@ -783,7 +783,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_black_02",
+			"name":"geely_leather_black_02",
 			"normalTexture":{
 				"index":26
 			},
@@ -800,7 +800,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_black_03",
+			"name":"geely_leather_black_03",
 			"normalTexture":{
 				"index":29
 			},
@@ -817,7 +817,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_black_04",
+			"name":"geely_leather_black_04",
 			"normalTexture":{
 				"index":32
 			},
@@ -834,7 +834,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_black_06",
+			"name":"geely_leather_black_06",
 			"normalTexture":{
 				"index":35
 			},
@@ -851,7 +851,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_dark_blue",
+			"name":"geely_leather_dark_blue",
 			"normalTexture":{
 				"index":38
 			},
@@ -868,7 +868,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_dark_blue_wheel",
+			"name":"geely_leather_dark_blue_wheel",
 			"normalTexture":{
 				"index":41
 			},
@@ -885,7 +885,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_light_blue_05",
+			"name":"geely_leather_light_blue_05",
 			"normalTexture":{
 				"index":44
 			},
@@ -902,7 +902,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_light_blue_06",
+			"name":"geely_leather_light_blue_06",
 			"normalTexture":{
 				"index":47
 			},
@@ -919,7 +919,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_perforated_blue",
+			"name":"geely_leather_perforated_blue",
 			"normalTexture":{
 				"index":50
 			},
@@ -936,7 +936,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_perforated_dark_blue",
+			"name":"geely_leather_perforated_dark_blue",
 			"normalTexture":{
 				"index":53
 			},
@@ -953,7 +953,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_perforated_red",
+			"name":"geely_leather_perforated_red",
 			"normalTexture":{
 				"index":56
 			},
@@ -970,7 +970,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_pink_03",
+			"name":"geely_leather_pink_03",
 			"normalTexture":{
 				"index":59
 			},
@@ -987,7 +987,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_pink_05",
+			"name":"geely_leather_pink_05",
 			"normalTexture":{
 				"index":62
 			},
@@ -1004,7 +1004,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_leather_pink_06",
+			"name":"geely_leather_pink_06",
 			"normalTexture":{
 				"index":65
 			},
@@ -1047,7 +1047,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_metal_paint",
+			"name":"geely_metal_paint",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.3104622960090637,
@@ -1069,7 +1069,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_metallic_black",
+			"name":"geely_metallic_black",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.0379343181848526,
@@ -1091,7 +1091,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_metallic_blue",
+			"name":"geely_metallic_blue",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.23162421584129333,
@@ -1113,7 +1113,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_metallic_pink",
+			"name":"geely_metallic_pink",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.6061292886734009,
@@ -1135,7 +1135,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_orange",
+			"name":"geely_orange",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.6062158346176147,
@@ -1157,7 +1157,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_pink",
+			"name":"geely_pink",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.5345371961593628,
@@ -1238,7 +1238,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"byd_plastic_skin_wheel",
+			"name":"geely_plastic_skin_wheel",
 			"normalTexture":{
 				"index":77
 			},
@@ -1300,7 +1300,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_stitches_orange",
+			"name":"geely_stitches_orange",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.6062158346176147,
@@ -1325,7 +1325,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_stitches_pink",
+			"name":"geely_stitches_pink",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.536632776260376,
@@ -1350,7 +1350,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_stitches_yellow",
+			"name":"geely_stitches_green",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.5530903935432434,
@@ -1374,7 +1374,7 @@
 					"ior":1.4500000476837158
 				}
 			},
-			"name":"byd_yellow",
+			"name":"geely_green",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.5323193073272705,
@@ -1935,7 +1935,7 @@
 			]
 		},
 		{
-			"name":"byd.001",
+			"name":"geely.001",
 			"primitives":[
 				{
 					"attributes":{
@@ -1968,7 +1968,7 @@
 			]
 		},
 		{
-			"name":"byd.005",
+			"name":"geely.005",
 			"primitives":[
 				{
 					"attributes":{
@@ -2719,18 +2719,18 @@
 		},
 		{
 			"mimeType":"image/png",
-			"name":"BYD-Rough-Plastic_Normal-2_jpg",
-			"uri":"BYD-Rough-Plastic_Normal-2_jpg.png"
+			"name":"GEELY-Rough-Plastic_Normal-2_jpg",
+			"uri":"GEELY-Rough-Plastic_Normal-2_jpg.png"
 		},
 		{
 			"mimeType":"image/png",
-			"name":"mk_plastic_skin-BYD-Rough-Plastic_Roughness-2",
-			"uri":"mk_plastic_skin-BYD-Rough-Plastic_Roughness-2.png"
+			"name":"mk_plastic_skin-GEELY-Rough-Plastic_Roughness-2",
+			"uri":"mk_plastic_skin-GEELY-Rough-Plastic_Roughness-2.png"
 		},
 		{
 			"mimeType":"image/png",
-			"name":"mk_steering_wheel-BYD-Rough-Plastic_Roughness-2",
-			"uri":"mk_steering_wheel-BYD-Rough-Plastic_Roughness-2.png"
+			"name":"mk_steering_wheel-GEELY-Rough-Plastic_Roughness-2",
+			"uri":"mk_steering_wheel-GEELY-Rough-Plastic_Roughness-2.png"
 		},
 		{
 			"mimeType":"image/png",
@@ -6255,7 +6255,7 @@
 	"buffers":[
 		{
 			"byteLength":18440720,
-			"uri":"byd_seagull.bin"
+			"uri":"geely_seagull.bin"
 		}
 	]
 }

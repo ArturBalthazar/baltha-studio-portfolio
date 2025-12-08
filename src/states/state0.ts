@@ -40,8 +40,8 @@ export const state0Config: StateConfig = {
         mobile: -Math.PI * 1.5,
         desktop: -Math.PI * 1.5
       },
-      animationDuration: 0.4, // Duration for ALL camera properties (radius, beta, alpha)
-      animationDelay: .1 // Delay before camera animation starts
+      animationDuration: 0.01, // Duration for ALL camera properties (radius, beta, alpha)
+      animationDelay: .01 // Delay before camera animation starts
     },
     babylonScene: {
       logoEnabled: true,
@@ -57,12 +57,12 @@ export const state0Config: StateConfig = {
       },
       shipAnimation: {
         position: { x: 0, y: -4, z: 20 }, // Ship behind camera (not visible in state 0)
-        duration: 2.0,
+        duration: .01,
         delay: 0
       },
       fogAnimation: {
         fogEnd: 30, // Fog close (same as initial/state 3)
-        duration: 1.0,
+        duration: 1,
         delay: 0
       }
     }

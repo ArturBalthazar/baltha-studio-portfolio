@@ -31,10 +31,10 @@ type UIState = {
   setLoadingProgress: (progress: number) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  bydCustomizerVisible: boolean; // BYD car customizer visibility
-  setBydCustomizerVisible: (visible: boolean) => void;
-  bydCustomizeCallback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null;
-  setBydCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
+  geelyCustomizerVisible: boolean; // GEELY car customizer visibility
+  setGeelyCustomizerVisible: (visible: boolean) => void;
+  geelyCustomizeCallback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null;
+  setGeelyCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
   isInteriorView: boolean;
   setIsInteriorView: (isInterior: boolean) => void;
   menuOpen: boolean;
@@ -60,10 +60,10 @@ export const useUI = create<UIState>((set, get) => ({
   setLoadingProgress: (progress) => set({ loadingProgress: progress }),
   isLoading: true,
   setIsLoading: (loading) => set({ isLoading: loading }),
-  bydCustomizerVisible: false, // BYD customizer hidden by default
-  setBydCustomizerVisible: (visible) => set({ bydCustomizerVisible: visible }),
-  bydCustomizeCallback: null,
-  setBydCustomizeCallback: (callback) => set({ bydCustomizeCallback: callback }),
+  geelyCustomizerVisible: false, // GEELY customizer hidden by default
+  setGeelyCustomizerVisible: (visible) => set({ geelyCustomizerVisible: visible }),
+  geelyCustomizeCallback: null,
+  setGeelyCustomizeCallback: (callback) => set({ geelyCustomizeCallback: callback }),
   isInteriorView: false,
   setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior }),
   menuOpen: false,

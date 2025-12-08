@@ -6,7 +6,7 @@ import { BabylonCanvas } from "./components/canvasBabylon";
 import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
 import { BottomLeftControls } from "./components/BottomLeftControls";
-import { BydCustomizer } from "./components/BydCustomizer";
+import { GeelyCustomizer } from "./components/GeelyCustomizer";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
@@ -19,8 +19,9 @@ export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
   const menuOpen = useUI((st) => st.menuOpen);
-  const bydCustomizerVisible = useUI((st) => st.bydCustomizerVisible);
-  const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent } = useUI();
+  const geelyCustomizerVisible = useUI((st) => st.geelyCustomizerVisible);
+  const isInteriorView = useUI((st) => st.isInteriorView);
+  const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent, setIsInteriorView } = useUI();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
 
@@ -59,6 +60,11 @@ export default function App() {
 
   const handlePrevious = () => {
     if (s > S.state_0) {
+      // Exit interior view when navigating in guided mode
+      if (navigationMode === 'guided' && isInteriorView) {
+        setIsInteriorView(false);
+      }
+      
       // In free mode, from states 4-7, go back to state_3
       // In guided mode, follow normal order
       if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
@@ -78,6 +84,11 @@ export default function App() {
 
   const handleNext = () => {
     if (s < S.state_final) {
+      // Exit interior view when navigating in guided mode
+      if (navigationMode === 'guided' && isInteriorView) {
+        setIsInteriorView(false);
+      }
+      
       // In free mode, from states 4-7, go directly to state_final
       // In guided mode, follow normal order
       if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
@@ -194,7 +205,7 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-70 pointer-events-auto select-none"
+                  className="absolute left-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
@@ -208,7 +219,7 @@ export default function App() {
               {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-70 pointer-events-auto select-none"
+                  className="absolute right-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img
@@ -230,8 +241,8 @@ export default function App() {
                 />
               )}
 
-              {/* BYD Car Customizer */}
-              <BydCustomizer visible={bydCustomizerVisible} />
+              {/* GEELY Car Customizer */}
+              <GeelyCustomizer visible={geelyCustomizerVisible} />
 
               {/* Connect Overlay (State 5) */}
               {config.content.showConnectOverlay && (

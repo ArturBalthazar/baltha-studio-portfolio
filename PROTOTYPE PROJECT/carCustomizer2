@@ -1,7 +1,7 @@
 class CustomLogic {
     static inspector = {
         // UI Buttons - Exterior Colors
-        colorYellowBtn: { type: "uiElement", label: "Color: Yellow" },
+        colorGreenBtn: { type: "uiElement", label: "Color: Green" },
         colorWhiteBtn: { type: "uiElement", label: "Color: White" },
         colorBlackBtn: { type: "uiElement", label: "Color: Black" },
         colorPinkBtn: { type: "uiElement", label: "Color: Pink" },
@@ -45,7 +45,7 @@ class CustomLogic {
 
         // Define color and trim configurations
         this._colorSettings = {
-            yellow: { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
+            green: { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
             white: { hex: "#E5DDC9", metallic: 0.2, roughness: 0.2, sheen: 1 },
             black: { hex: "#000000", metallic: 0.7, roughness: 0.2, sheen: 0.2 },
             pink: { hex: "#E8BDE1", metallic: 0.18, roughness: 0.2, sheen: 1 }
@@ -53,59 +53,59 @@ class CustomLogic {
 
         this._trimConfigs = {
             lightBlue: {
-                allowed: ["yellow"],
+                allowed: ["green"],
                 materials: {
-                    byd_leather_02: "byd_leather_black_02",
-                    byd_leather_03: "byd_leather_black_03",
-                    byd_leather_04: "byd_leather_perforated_blue",
-                    byd_leather_05: "byd_leather_light_blue_05",
-                    byd_leather_06: "byd_leather_light_blue_06",
-                    byd_metallic_plastic_01: "byd_metal_paint",
-                    byd_metallic_plastic_02: "byd_metallic_blue",
-                    byd_metallic_plastic_03: "byd_yellow",
-                    byd_steering_wheel: "byd_plastic_skin_wheel",
-                    byd_buttons: "byd_atlas_metallic",
-                    byd_stitches: "byd_stitches_yellow"
+                    geely_leather_02: "geely_leather_black_02",
+                    geely_leather_03: "geely_leather_black_03",
+                    geely_leather_04: "geely_leather_perforated_blue",
+                    geely_leather_05: "geely_leather_light_blue_05",
+                    geely_leather_06: "geely_leather_light_blue_06",
+                    geely_metallic_plastic_01: "geely_metal_paint",
+                    geely_metallic_plastic_02: "geely_metallic_blue",
+                    geely_metallic_plastic_03: "geely_green",
+                    geely_steering_wheel: "geely_plastic_skin_wheel",
+                    geely_buttons: "geely_atlas_metallic",
+                    geely_stitches: "geely_stitches_green"
                 }
             },
             pink: {
                 allowed: ["white", "pink"],
                 materials: {
-                    byd_leather_02: "byd_leather_black_02",
-                    byd_leather_03: "byd_leather_pink_03",
-                    byd_leather_04: "byd_leather_black_04",
-                    byd_leather_05: "byd_leather_pink_05",
-                    byd_leather_06: "byd_leather_pink_06",
-                    byd_metallic_plastic_01: "byd_metal_paint",
-                    byd_metallic_plastic_02: "byd_metallic_pink",
-                    byd_metallic_plastic_03: "byd_pink",
-                    byd_steering_wheel: "byd_plastic_skin_wheel",
-                    byd_buttons: "byd_atlas_metallic",
-                    byd_stitches: "byd_stitches_pink"
+                    geely_leather_02: "geely_leather_black_02",
+                    geely_leather_03: "geely_leather_pink_03",
+                    geely_leather_04: "geely_leather_black_04",
+                    geely_leather_05: "geely_leather_pink_05",
+                    geely_leather_06: "geely_leather_pink_06",
+                    geely_metallic_plastic_01: "geely_metal_paint",
+                    geely_metallic_plastic_02: "geely_metallic_pink",
+                    geely_metallic_plastic_03: "geely_pink",
+                    geely_steering_wheel: "geely_plastic_skin_wheel",
+                    geely_buttons: "geely_atlas_metallic",
+                    geely_stitches: "geely_stitches_pink"
                 }
             },
             darkBlue: {
                 allowed: ["white", "black"],
                 materials: {
-                    byd_leather_02: "byd_leather_perforated_dark_blue",
-                    byd_leather_03: "byd_leather_black_03",
-                    byd_leather_04: "byd_leather_perforated_red",
-                    byd_leather_05: "byd_leather_dark_blue",
-                    byd_leather_06: "byd_leather_black_06",
-                    byd_metallic_plastic_01: "byd_black_piano",
-                    byd_metallic_plastic_02: "byd_metallic_black",
-                    byd_metallic_plastic_03: "byd_orange",
-                    byd_steering_wheel: "byd_leather_dark_blue_wheel",
-                    byd_buttons: "byd_atlas_dark",
-                    byd_stitches: "byd_stitches_orange"
+                    geely_leather_02: "geely_leather_perforated_dark_blue",
+                    geely_leather_03: "geely_leather_black_03",
+                    geely_leather_04: "geely_leather_perforated_red",
+                    geely_leather_05: "geely_leather_dark_blue",
+                    geely_leather_06: "geely_leather_black_06",
+                    geely_metallic_plastic_01: "geely_black_piano",
+                    geely_metallic_plastic_02: "geely_metallic_black",
+                    geely_metallic_plastic_03: "geely_orange",
+                    geely_steering_wheel: "geely_leather_dark_blue_wheel",
+                    geely_buttons: "geely_atlas_dark",
+                    geely_stitches: "geely_stitches_orange"
                 }
             }
         };
 
         // Internal state
         this._mode = "exterior"; // "exterior" or "interior"
-        this._currentColor = "yellow"; // default color
-        this._currentTrim = "lightBlue"; // default trim aligned with yellow
+        this._currentColor = "green"; // default color
+        this._currentTrim = "lightBlue"; // default trim aligned with green
         this._ui = {}; // cache UI controls
         this._uiHandlers = []; // for cleanup
         this._buttonDisabled = new WeakMap(); // UI enabled map
@@ -131,7 +131,7 @@ class CustomLogic {
         }
 
         // Resolve UI elements
-        this._ui.colorYellowBtn = await ctx.getUIElement?.(p.colorYellowBtn);
+        this._ui.colorGreenBtn = await ctx.getUIElement?.(p.colorGreenBtn);
         this._ui.colorWhiteBtn = await ctx.getUIElement?.(p.colorWhiteBtn);
         this._ui.colorBlackBtn = await ctx.getUIElement?.(p.colorBlackBtn);
         this._ui.colorPinkBtn = await ctx.getUIElement?.(p.colorPinkBtn);
@@ -230,7 +230,7 @@ class CustomLogic {
         };
 
         // Exterior color clicks
-        addClick(this._ui.colorYellowBtn, () => this._onColorClicked("yellow"));
+        addClick(this._ui.colorGreenBtn, () => this._onColorClicked("green"));
         addClick(this._ui.colorWhiteBtn, () => this._onColorClicked("white"));
         addClick(this._ui.colorBlackBtn, () => this._onColorClicked("black"));
         addClick(this._ui.colorPinkBtn, () => this._onColorClicked("pink"));
@@ -270,12 +270,12 @@ class CustomLogic {
 
     _refreshButtonStates() {
         // Based on mode and current selections, enable/disable UI buttons
-        const allColors = ["yellow", "white", "black", "pink"];
+        const allColors = ["green", "white", "black", "pink"];
         const allTrims = ["lightBlue", "pink", "darkBlue"];
 
         // Map color/trims to UI refs
         const colorToUI = {
-            yellow: this._ui.colorYellowBtn,
+            green: this._ui.colorGreenBtn,
             white: this._ui.colorWhiteBtn,
             black: this._ui.colorBlackBtn,
             pink: this._ui.colorPinkBtn

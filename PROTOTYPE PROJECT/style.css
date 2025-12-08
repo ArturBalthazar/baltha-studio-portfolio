@@ -1525,7 +1525,7 @@ Container for both graphs
 
 .nav-toggle:hover .nav-knob{ transform: translateY(-50%) scale(1.07); }
   
-#byd-customizer-panel {
+#geely-customizer-panel {
     position: absolute;
     top: 20%;
     left: 30px;

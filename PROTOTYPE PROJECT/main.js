@@ -40,15 +40,15 @@ let shipOriginalPose = null;
 let pivotFreeLocalPos = null;
 let pivotFreeLocalRot = null;
 
-/* BYD Car */
+/* GEELY Car */
 let carRoot = null;
 let carMeshes = null;
-let currentColor = "yellow";
+let currentColor = "green";
 let currentTrim = "lightBlue";
 let rotationEnabled = false;
 let isInteriorView = false;
 const colorSettings = {
-    yellow:  { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
+    green:  { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
     white:   { hex: "#E5DDC9", metallic: 0.2, roughness: 0.2, sheen: 1 },
     black:   { hex: "#000000", metallic: 0.7, roughness: 0.2, sheen: 0.2 },
     pink:    { hex: "#E8BDE1", metallic: 0.18, roughness: 0.2, sheen: 1 }
@@ -56,51 +56,51 @@ const colorSettings = {
 
 const trimConfigs = {
     lightBlue: {
-        allowed: ["yellow"],
+        allowed: ["green"],
         materials: {
-            byd_leather_02: "byd_leather_black_02",
-            byd_leather_03: "byd_leather_black_03",
-            byd_leather_04: "byd_leather_perforated_blue",
-            byd_leather_05: "byd_leather_light_blue_05",
-            byd_leather_06: "byd_leather_light_blue_06",
-            byd_metallic_plastic_01: "byd_metal_paint",
-            byd_metallic_plastic_02: "byd_metallic_blue",
-            byd_metallic_plastic_03: "byd_yellow",
-            byd_steering_wheel: "byd_plastic_skin_wheel",
-            byd_buttons: "byd_atlas_metallic",
-            byd_stitches: "byd_stitches_yellow"
+            geely_leather_02: "geely_leather_black_02",
+            geely_leather_03: "geely_leather_black_03",
+            geely_leather_04: "geely_leather_perforated_blue",
+            geely_leather_05: "geely_leather_light_blue_05",
+            geely_leather_06: "geely_leather_light_blue_06",
+            geely_metallic_plastic_01: "geely_metal_paint",
+            geely_metallic_plastic_02: "geely_metallic_blue",
+            geely_metallic_plastic_03: "geely_green",
+            geely_steering_wheel: "geely_plastic_skin_wheel",
+            geely_buttons: "geely_atlas_metallic",
+            geely_stitches: "geely_stitches_green"
         }
     },
     pink: {
         allowed: ["white", "pink"],
         materials: {
-            byd_leather_02: "byd_leather_black_02",
-            byd_leather_03: "byd_leather_pink_03",
-            byd_leather_04: "byd_leather_black_04",
-            byd_leather_05: "byd_leather_pink_05",
-            byd_leather_06: "byd_leather_pink_06",
-            byd_metallic_plastic_01: "byd_metal_paint",
-            byd_metallic_plastic_02: "byd_metallic_pink",
-            byd_metallic_plastic_03: "byd_pink",
-            byd_steering_wheel: "byd_plastic_skin_wheel",
-            byd_buttons: "byd_atlas_metallic",
-            byd_stitches: "byd_stitches_pink"
+            geely_leather_02: "geely_leather_black_02",
+            geely_leather_03: "geely_leather_pink_03",
+            geely_leather_04: "geely_leather_black_04",
+            geely_leather_05: "geely_leather_pink_05",
+            geely_leather_06: "geely_leather_pink_06",
+            geely_metallic_plastic_01: "geely_metal_paint",
+            geely_metallic_plastic_02: "geely_metallic_pink",
+            geely_metallic_plastic_03: "geely_pink",
+            geely_steering_wheel: "geely_plastic_skin_wheel",
+            geely_buttons: "geely_atlas_metallic",
+            geely_stitches: "geely_stitches_pink"
         }
     },
     darkBlue: {
         allowed: ["white", "black"],
         materials: {
-            byd_leather_02: "byd_leather_perforated_dark_blue",
-            byd_leather_03: "byd_leather_black_03",
-            byd_leather_04: "byd_leather_perforated_red",
-            byd_leather_05: "byd_leather_dark_blue",
-            byd_leather_06: "byd_leather_black_06",
-            byd_metallic_plastic_01: "byd_black_piano",
-            byd_metallic_plastic_02: "byd_metallic_black",
-            byd_metallic_plastic_03: "byd_orange",
-            byd_steering_wheel: "byd_leather_dark_blue_wheel",
-            byd_buttons: "byd_atlas_dark",
-            byd_stitches: "byd_stitches_orange"
+            geely_leather_02: "geely_leather_perforated_dark_blue",
+            geely_leather_03: "geely_leather_black_03",
+            geely_leather_04: "geely_leather_perforated_red",
+            geely_leather_05: "geely_leather_dark_blue",
+            geely_leather_06: "geely_leather_black_06",
+            geely_metallic_plastic_01: "geely_black_piano",
+            geely_metallic_plastic_02: "geely_metallic_black",
+            geely_metallic_plastic_03: "geely_orange",
+            geely_steering_wheel: "geely_leather_dark_blue_wheel",
+            geely_buttons: "geely_atlas_dark",
+            geely_stitches: "geely_stitches_orange"
         }
     }
 };
@@ -125,7 +125,7 @@ let portalInfoSystem = null;
 let defaultPortalMesh = null;
 let babylonEditorPortal = null;
 let atlasflowPortal = null;
-let bydSeagullPortal = null;
+let geelySeagullPortal = null;
 let fdaPortal = null;
 let warpEffect = null;
 let warpEffectAttached = false;
@@ -133,7 +133,7 @@ let currentScene = "main";
 let previousScene = null;
 const ENV_ROOTS = {
     main    : null,   // the space scene with the ship – set below
-    byd     : null,   // filled when BYD finishes loading
+    geely     : null,   // filled when GEELY finishes loading
     atlasflow    : null,   // fill when you load atlasflow
     editor : null    // fill when you load editor
 };
@@ -182,7 +182,7 @@ const menuIcon = document.querySelector(".menu-button");
 const portalOverlay = document.getElementById('portal-info-overlay');
 const continentButtons = document.querySelectorAll('#continent-buttons-1 button, #continent-buttons-2 button');
 const btnElements = document.querySelectorAll('.custom-btn');
-const carConfigurator = document.getElementById('byd-customizer-panel');
+const carConfigurator = document.getElementById('geely-customizer-panel');
 const viewCarBtn = document.getElementById("toggle-view-btn");
 const viewCarBtnImg = viewCarBtn.querySelector("img");
 const whiteFade = document.getElementById("white-fade-overlay");
@@ -1047,11 +1047,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         
         // Load additional assets in background (as requested)
         idle(async () => {
-            await loadBYDCarAsync(scene);
-            ENV_ROOTS.byd = carRoot;
-            customizeCar({ color: "yellow", trim: "lightBlue" });
+            await loadGEELYCarAsync(scene);
+            ENV_ROOTS.geely = carRoot;
+            customizeCar({ color: "green", trim: "lightBlue" });
             rotateObject(carRoot);
-            console.log("BYD loaded in background");
+            console.log("GEELY loaded in background");
         });
 /*         idle(async () => {
             await loadatlasflowAsync(scene);
@@ -1731,13 +1731,13 @@ function createScene() {
                 radius: 6
             });
         
-            portalInfo.set(bydSeagullPortal, {
-                sceneKey: "byd",
-                logo  : "./assets/images/byd_logo.png",
-                title : "BYD Car Visualizer (Demo)",
+            portalInfo.set(geelySeagullPortal, {
+                sceneKey: "geely",
+                logo  : "./assets/images/geely_logo.png",
+                title : "GEELY Car Visualizer (Demo)",
                 html  : `
                     <p>A 3D car visualizer I built with Babylon.js, showcasing the Seagull model in a fully interactive web experience.</p>
-                    <img src="./assets/textures/bydSeagull-All.png">
+                    <img src="./assets/textures/geelySeagull-All.png">
                     <p>This demo highlights real-time rendering, optimized GLB assets, material switching, and smooth navigation directly in the browser. It demonstrates how WebGL can bring automotive products online in a highly engaging and accessible way.</p>
                 `,
                 radius: 6
@@ -2013,9 +2013,9 @@ async function loadatlasflowAsync(scene, onProgress = () => {}) {
     }
 }
 
-async function loadBYDCarAsync(scene, onProgress = () => {}) {
-    const gltfPath = "./assets/models/byd/";
-    const carFile = "byd_seagull.gltf"; // changed to .gltf
+async function loadGEELYCarAsync(scene, onProgress = () => {}) {
+    const gltfPath = "./assets/models/geely/";
+    const carFile = "geely_seagull.gltf"; // changed to .gltf
 
     carRoot = new BABYLON.TransformNode("carRoot", scene);
     carMeshes = [];
@@ -2056,7 +2056,7 @@ async function loadBYDCarAsync(scene, onProgress = () => {}) {
     carRoot.position.set(0, 0, 0);
     carRoot.scaling.set(1, 1, -1);
 
-    ENV_ROOTS.byd = carRoot;
+    ENV_ROOTS.geely = carRoot;
 
     onProgress(1);
 
@@ -2265,7 +2265,7 @@ function initPortalInfoSystem({
             closeOverlay();
             infoSound.currentTime = 0.13;
             infoSound.play();
-            if (currentScene == "byd") {
+            if (currentScene == "geely") {
                 carConfigurator.style.opacity = 1;
                 carConfigurator.style.zIndex = "9";
             }
@@ -2276,7 +2276,7 @@ function initPortalInfoSystem({
         if (currentScene !== "main") {
             const portalMesh = [...meta.entries()].find(([_, data]) => data.sceneKey === currentScene)?.[0];
             if (portalMesh) openOverlay(portalMesh);
-            if (currentScene == "byd") {
+            if (currentScene == "geely") {
                 carConfigurator.style.opacity = 0;
                 carConfigurator.style.zIndex = "-10";
             }
@@ -2440,7 +2440,7 @@ function activateEnvironment(key) {
             root.meshes.forEach(m => m.setEnabled(on));
         }
 
-        if (name === 'byd' && on) {
+        if (name === 'geely' && on) {
             camera.fov = 0.47;
             camera.alpha = BABYLON.Tools.ToRadians(-50);
             camera.beta = BABYLON.Tools.ToRadians(80);
@@ -2512,7 +2512,7 @@ function activateEnvironment(key) {
             camera.upperBetaLimit = null;
             camera.lowerBetaLimit = null;
             camera.lowerRadiusLimit = camera.upperRadiusLimit = guidedMode ? 0 : 4;
-            if (previousScene === 'byd') {
+            if (previousScene === 'geely') {
                 camera.alpha = guidedPoints.find(p => p.id === 7).alpha;
                 camera.beta  = guidedPoints.find(p => p.id === 7).beta;
                 if (!guidedMode) {
@@ -2568,7 +2568,7 @@ function openPortalInfoAfterReturn() {
         attempts++;
         
         // Get all portals and find which one we're facing
-        const allPortals = [bydSeagullPortal, atlasflowPortal, fdaPortal, babylonEditorPortal].filter(p => p);
+        const allPortals = [geelySeagullPortal, atlasflowPortal, fdaPortal, babylonEditorPortal].filter(p => p);
         
         if (allPortals.length === 0) {
             if (attempts < maxAttempts) {
@@ -2689,8 +2689,8 @@ function fadeMaterial(show, durationInSeconds, material) {
 
 function updatePortals(isVisible) {
 
-    if (!bydSeagullPortal) {
-        bydSeagullPortal = createPortal({
+    if (!geelySeagullPortal) {
+        geelySeagullPortal = createPortal({
             scene,
             engine,
             camera,
@@ -2700,15 +2700,15 @@ function updatePortals(isVisible) {
             teleportPosition: new BABYLON.Vector3(-1.8, .7, -4),
             iblUrl: "./assets/textures/environment7.env",
             portalRadius: 6,
-            name: "bydSeagull",
-            title: "BYD Car Visualizer",
-            texturePath: "./assets/textures/bydSeagull.png",
-            onEnter: () => activateEnvironment('byd')
+            name: "geelySeagull",
+            title: "GEELY Car Visualizer",
+            texturePath: "./assets/textures/geelySeagull.png",
+            onEnter: () => activateEnvironment('geely')
         });
     }
-    bydSeagullPortal.setEnabled(isVisible);
-    const bydSeagullPortalMaterial = bydSeagullPortal.material;
-    fadeMaterial(isVisible, 4, bydSeagullPortalMaterial);
+    geelySeagullPortal.setEnabled(isVisible);
+    const geelySeagullPortalMaterial = geelySeagullPortal.material;
+    fadeMaterial(isVisible, 4, geelySeagullPortalMaterial);
 
     if (!atlasflowPortal) {
         atlasflowPortal = createPortal({
