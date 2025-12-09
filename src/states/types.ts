@@ -78,6 +78,7 @@ export interface BabylonSceneConfig {
   curveParticlesEnabled?: boolean; // Enable curve particles on rockring (for state 4+)
   portalsEnabled?: boolean; // Show portals in the scene
   cameraControlsEnabled?: boolean; // Enable camera controls (for free mode in state 5)
+  rockRingTrigger?: boolean; // If true, triggers rockring fade-in (once triggered, stays for all future states)
   rootTransform: ResponsiveBabylonTransform;
   materialAnimationDelay?: number; // Delay before material animations in seconds
   transformAnimationDelay?: number; // Delay before transform animations in seconds
@@ -88,6 +89,7 @@ export interface BabylonSceneConfig {
 export interface CanvasConfig {
   clickable: boolean;
   nextState: string | null;
+  previousState?: string | null; // Previous state for backwards navigation
   babylonCamera?: BabylonCameraConfig;
   babylonScene?: BabylonSceneConfig;
   fullscreen?: boolean; // For state 5 - expand to 100% width and height

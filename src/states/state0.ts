@@ -22,7 +22,8 @@ export const state0Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_2',
+    nextState: 'state_3',
+    previousState: null, // No previous state from state 0
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 20,
@@ -51,6 +52,7 @@ export const state0Config: StateConfig = {
       particlesEnabled: false,
       curveParticlesEnabled: false,
       portalsEnabled: false,
+      rockRingTrigger: true, // Trigger rockring fade-in here (stays for all future states)
       rootTransform: {
         mobile: { scale: .15, position: { x: 0, y: 0, z: 18 } },
         desktop: { scale: .15, position: { x: 0, y: 0, z: 18 } }

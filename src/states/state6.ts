@@ -26,7 +26,8 @@ export const state6Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_final', // In free mode goes to final, in guided mode logic overrides to state_7
+    nextState: 'state_7', // In free mode goes to final, in guided mode logic overrides to state_7
+    previousState: 'state_5',
     fullscreen: true,
     roundedCorners: false,
     babylonCamera: {

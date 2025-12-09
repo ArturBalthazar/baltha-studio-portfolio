@@ -23,6 +23,7 @@ export const state2Config: StateConfig = {
   canvas: {
     clickable: false,
     nextState: 'state_3',
+    previousState: 'state_1',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 21,

@@ -1368,10 +1368,10 @@ export function BabylonCanvas() {
     },
     // Petwheels
     model4: {
-      idleRingRadius: 3,
+      idleRingRadius: 2,
       expandedRingRadii: [5, 6, 8] as [number, number, number],
       rotationSpeed: .3,
-      proximityDistance: 22,
+      proximityDistance: 17,
       flameScale: 3
     }
   });
@@ -1431,7 +1431,7 @@ export function BabylonCanvas() {
     scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
     scene.fogColor = new BABYLON.Color3(13 / 255, 13 / 255, 38 / 255);
     scene.fogStart = 0;
-    scene.fogEnd = 100;
+    scene.fogEnd = 30;
 
     // Create camera pivot - camera will target this
     const shipPivot = new BABYLON.TransformNode("shipPivot", scene);
@@ -1741,9 +1741,67 @@ export function BabylonCanvas() {
             console.warn("⚠️ Curve mesh not found in rockring2.glb");
           }
 
-          rockRing.setEnabled(false); // Hidden by default, shown in state 3
+          rockRing.setEnabled(false); // Hidden by default, triggered by rockRingTrigger in state config
           rockRingRef.current = rockRing;
           updateProgress();
+          
+          // Check if current state has rockRingTrigger - if so, trigger fade-in immediately after load
+          const currentState = useUI.getState().state;
+          const currentConfig = getStateConfig(currentState);
+          if (currentConfig.canvas.babylonScene?.rockRingTrigger && !rockRingHasShownRef.current) {
+            rockRingHasShownRef.current = true;
+            rockRing.setEnabled(true);
+            
+            const fps = 60;
+            const duration = 1; // seconds
+            const totalFrames = fps * duration;
+
+            // Play animation
+            if (animationGroups && animationGroups.length > 0) {
+              animationGroups[0].start(true, 1.7, 1, 2000);
+            }
+
+            // Gather materials from rockRing and its children
+            const materials: BABYLON.Material[] = [];
+            rockRing.getChildMeshes().forEach(mesh => {
+              if (mesh.material) {
+                materials.push(mesh.material);
+              }
+            });
+            if (rockRing.material) {
+              materials.push(rockRing.material);
+            }
+
+            // Fade in animation for all materials
+            materials.forEach(mat => {
+              mat.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+              const fromAlpha = 0.01;
+              const toAlpha = 1;
+              mat.alpha = fromAlpha;
+
+              const alphaAnimation = new BABYLON.Animation(
+                "fadeAlpha",
+                "alpha",
+                fps,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+              );
+
+              alphaAnimation.setKeys([
+                { frame: 0, value: fromAlpha },
+                { frame: totalFrames, value: toAlpha }
+              ]);
+
+              const easingAlpha = new BABYLON.CubicEase();
+              easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+              alphaAnimation.setEasingFunction(easingAlpha);
+
+              mat.animations = [alphaAnimation];
+              scene.beginAnimation(mat, 0, totalFrames, false);
+            });
+            
+            console.log("🎸 Rockring triggered on load (state has rockRingTrigger: true)");
+          }
         }
       },
       undefined,
@@ -4052,9 +4110,10 @@ export function BabylonCanvas() {
             ? cameraConfig?.lowerRadiusLimit?.mobile ?? 24 
             : cameraConfig?.lowerRadiusLimit?.desktop ?? 24;
           
-          // Add delay when entering explore states from state 3
-          const isEnteringFromState3 = prevState === S.state_3 && s === S.state_4;
-          const animDelay = isEnteringFromState3 ? 1.2 : 0;
+          // Add delay when entering state 4 from any state EXCEPT states 5, 6, 7
+          const isEnteringState4 = s === S.state_4;
+          const isComingFromExploreStates = prevState === S.state_5 || prevState === S.state_6 || prevState === S.state_7;
+          const animDelay = (isEnteringState4 && !isComingFromExploreStates) ? 1.2 : 0;
           
           console.log(`⚓ [Guided Mode] Bezier animation to anchor ${anchorKey}:`, {
             startPos: startPosition.toString(),
@@ -4409,16 +4468,17 @@ export function BabylonCanvas() {
     // Handle camera controls - managed by navigation mode in a separate effect
     // (see useEffect below that watches navigationMode)
 
-    // Handle state 3 - rockring fade in (only once)
-    // Handle rockring visibility and animation (State 3+)
-    if (s >= S.state_3 && rockRing) {
+    // Handle rockring visibility and animation (triggered by rockRingTrigger in state config)
+    // Once triggered, rockring stays visible for all future states
+    const shouldTriggerRockRing = config.canvas.babylonScene?.rockRingTrigger === true;
+    if ((shouldTriggerRockRing || rockRingHasShownRef.current) && rockRing) {
       // Ensure enabled
       if (!rockRing.isEnabled()) {
         rockRing.setEnabled(true);
       }
 
-      // Initial fade-in
-      if (!rockRingHasShownRef.current) {
+      // Initial fade-in (only once, when first triggered)
+      if (!rockRingHasShownRef.current && shouldTriggerRockRing) {
         rockRingHasShownRef.current = true;
 
         const fps = 60;
@@ -4470,8 +4530,8 @@ export function BabylonCanvas() {
           material.animations = [alphaAnimation];
           scene.beginAnimation(material, 0, totalFrames, false);
         });
-      } else {
-        // Ensure animation is playing if it stopped (e.g. switching back from state 4 to 3)
+      } else if (rockRingHasShownRef.current) {
+        // Ensure animation is playing if it stopped (e.g. navigating between states after trigger)
         if (rockRingAnimationGroups.length > 0) {
           const animGroup = rockRingAnimationGroups[0];
           if (!animGroup.isPlaying) {

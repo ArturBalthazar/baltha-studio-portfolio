@@ -58,44 +58,75 @@ export default function App() {
 
   const navigationMode = useUI((st) => st.navigationMode);
 
+  // Helper to convert state string names to S enum values
+  const stateNameToEnum = (name: string): S | null => {
+    const stateMap: Record<string, S> = {
+      'state_0': S.state_0,
+      'state_1': S.state_1,
+      'state_2': S.state_2,
+      'state_3': S.state_3,
+      'state_4': S.state_4,
+      'state_5': S.state_5,
+      'state_6': S.state_6,
+      'state_7': S.state_7,
+      'state_final': S.state_final,
+    };
+    return stateMap[name] ?? null;
+  };
+
   const handlePrevious = () => {
+    // Exit interior view when navigating
+    if (navigationMode === 'guided' && isInteriorView) {
+      setIsInteriorView(false);
+    }
+    
+    // In free mode, from states 4-7, go back to state_3
+    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+      useUI.getState().setState(S.state_3);
+      return;
+    }
+    
+    // Use config's previousState if defined
+    const previousStateName = config.canvas.previousState;
+    if (previousStateName) {
+      const targetState = stateNameToEnum(previousStateName);
+      if (targetState !== null) {
+        useUI.getState().setState(targetState);
+        return;
+      }
+    }
+    
+    // Fallback: go to previous state numerically
     if (s > S.state_0) {
-      // Exit interior view when navigating in guided mode
-      if (navigationMode === 'guided' && isInteriorView) {
-        setIsInteriorView(false);
-      }
-      
-      // In free mode, from states 4-7, go back to state_3
-      // In guided mode, follow normal order
-      if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
-        useUI.getState().setState(S.state_3);
-      } else if (s === S.state_final) {
-        // From final state, go to state_7 in guided mode, state_4 in free mode
-        if (navigationMode === 'guided') {
-          useUI.getState().setState(S.state_7);
-        } else {
-          useUI.getState().setState(S.state_4);
-        }
-      } else {
-        useUI.getState().setState(s - 1);
-      }
+      useUI.getState().setState(s - 1);
     }
   };
 
   const handleNext = () => {
+    // Exit interior view when navigating
+    if (navigationMode === 'guided' && isInteriorView) {
+      setIsInteriorView(false);
+    }
+    
+    // In free mode, from states 4-7, go directly to state_final
+    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+      useUI.getState().setState(S.state_final);
+      return;
+    }
+    
+    // Use config's nextState if defined
+    const nextStateName = config.canvas.nextState;
+    if (nextStateName) {
+      const targetState = stateNameToEnum(nextStateName);
+      if (targetState !== null) {
+        useUI.getState().setState(targetState);
+        return;
+      }
+    }
+    
+    // Fallback: go to next state numerically
     if (s < S.state_final) {
-      // Exit interior view when navigating in guided mode
-      if (navigationMode === 'guided' && isInteriorView) {
-        setIsInteriorView(false);
-      }
-      
-      // In free mode, from states 4-7, go directly to state_final
-      // In guided mode, follow normal order
-      if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
-        useUI.getState().setState(S.state_final);
-      } else {
-        useUI.getState().setState(s + 1);
-      }
+      useUI.getState().setState(s + 1);
     }
   };
 

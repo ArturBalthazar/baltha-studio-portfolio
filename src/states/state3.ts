@@ -23,6 +23,7 @@ export const state3Config: StateConfig = {
   canvas: {
     clickable: true,
     nextState: 'state_4',
+    previousState: 'state_0',
     babylonCamera: {
       lowerRadiusLimit: {
         mobile: 4,
@@ -40,7 +41,7 @@ export const state3Config: StateConfig = {
         mobile: -Math.PI * 1.5,
         desktop: -Math.PI * 1.5
       },
-      animationDuration: 1.0, // Longer animation when zooming in
+      animationDuration: 2, // Longer animation when zooming in
       animationDelay: 0 // Delay before starting zoom
     },
     babylonScene: {
@@ -57,12 +58,12 @@ export const state3Config: StateConfig = {
       },
       shipAnimation: {
         position: { x: 0, y: -1.5, z: 0 },
-        duration: 1.0,
+        duration: 2.0,
         delay: 0
       },
       fogAnimation: {
-        fogEnd: 30,
-        duration: 0.5,
+        fogEnd: 65,
+        duration: 2,
         delay: 0
       }
     }
@@ -70,7 +71,7 @@ export const state3Config: StateConfig = {
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "or creating entire virtual worlds, we've got it covered! Ready to start?",
+    typingText: "Welcome to Baltha Studio! How would you like to explore our world?",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

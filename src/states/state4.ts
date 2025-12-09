@@ -25,7 +25,8 @@ export const state4Config: StateConfig = {
   },
   canvas: {
     clickable: true,
-    nextState: 'state_final', // In free mode goes to final, in guided mode logic overrides to state_5
+    nextState: 'state_5', // In free mode goes to final, in guided mode logic overrides to state_5
+    previousState: 'state_3',
     fullscreen: true, // Full screen canvas
     roundedCorners: false, // No rounded corners in state 4
     babylonCamera: {

@@ -27,6 +27,7 @@ export const state7Config: StateConfig = {
   canvas: {
     clickable: true,
     nextState: 'state_final',
+    previousState: 'state_6',
     fullscreen: true,
     roundedCorners: false,
     babylonCamera: {
