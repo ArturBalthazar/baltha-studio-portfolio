@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
-import { trimConfigs } from "./carConfig";
 
 interface GeelyCustomizerProps {
     visible: boolean;
@@ -16,173 +15,212 @@ export function GeelyCustomizer({
     onTrimSelect,
     onToggleView
 }: GeelyCustomizerProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
+    // Mobile expand states
+    const [isExpanded, setIsExpanded] = useState(true); // Start expanded
+    const [isBodyColorExpanded, setIsBodyColorExpanded] = useState(true); // Body Color starts expanded
+    const [isVersionExpanded, setIsVersionExpanded] = useState(false); // Version starts collapsed
+
+    // Save/restore states for interior view toggle
+    const savedExpandStatesRef = useRef<{
+        isExpanded: boolean;
+        isBodyColorExpanded: boolean;
+        isVersionExpanded: boolean;
+    } | null>(null);
+
     const [selectedColor, setSelectedColor] = useState("green");
-    const [selectedTrim, setSelectedTrim] = useState("lightBlue");
+    const [selectedVersion, setSelectedVersion] = useState("max"); // Default to EX2 MAX
+
     const geelyCustomizeCallback = useUI((st) => st.geelyCustomizeCallback);
     const isInteriorView = useUI((st) => st.isInteriorView);
     const setIsInteriorView = useUI((st) => st.setIsInteriorView);
 
-    // Helper to check if color/trim is allowed
-    const isColorAllowed = (color: string) => {
+    // Handle interior view changes - save/restore expand states
+    useEffect(() => {
         if (isInteriorView) {
-            // Interior: Color must be allowed by current trim
-            return trimConfigs[selectedTrim]?.allowed.includes(color);
+            // Entering interior view - save current states and collapse everything
+            savedExpandStatesRef.current = {
+                isExpanded,
+                isBodyColorExpanded,
+                isVersionExpanded
+            };
+            setIsExpanded(false);
+            setIsBodyColorExpanded(false);
+            setIsVersionExpanded(false);
+        } else if (savedExpandStatesRef.current) {
+            // Leaving interior view - restore saved states
+            setIsExpanded(savedExpandStatesRef.current.isExpanded);
+            setIsBodyColorExpanded(savedExpandStatesRef.current.isBodyColorExpanded);
+            setIsVersionExpanded(savedExpandStatesRef.current.isVersionExpanded);
+            savedExpandStatesRef.current = null;
         }
-        return true; // Exterior: All colors allowed
-    };
+    }, [isInteriorView]);
 
-    const isTrimAllowed = (trim: string) => {
-        if (!isInteriorView) {
-            // Exterior: Trim must allow current color
-            return trimConfigs[trim]?.allowed.includes(selectedColor);
+    // Reset to expanded when visible becomes true (approaching the car)
+    useEffect(() => {
+        if (visible && !isInteriorView) {
+            setIsExpanded(true);
+            setIsBodyColorExpanded(true);
+            setIsVersionExpanded(false);
         }
-        return true; // Interior: All trims allowed
-    };
+    }, [visible]);
 
     const handleToggleView = () => {
         setIsInteriorView(!isInteriorView);
-        setIsExpanded(false);
         onToggleView?.();
     };
 
     const handleColorClick = (color: string) => {
-        if (!isColorAllowed(color)) return;
-
         setSelectedColor(color);
         onColorSelect?.(color);
 
-        // Auto-switch trim if in exterior mode and current trim becomes invalid
-        if (!isInteriorView) {
-            const validTrims = Object.keys(trimConfigs).filter(t => trimConfigs[t].allowed.includes(color));
-            if (!validTrims.includes(selectedTrim)) {
-                const nextTrim = validTrims[0];
-                if (nextTrim) {
-                    setSelectedTrim(nextTrim);
-                    onTrimSelect?.(nextTrim);
-                    // Call callback with BOTH
-                    if (geelyCustomizeCallback) {
-                        geelyCustomizeCallback({ color, trim: nextTrim });
-                    }
-                    return;
-                }
-            }
-        }
-
-        // Call callback
         if (geelyCustomizeCallback) {
             geelyCustomizeCallback({ color });
         }
     };
 
-    const handleTrimClick = (trim: string) => {
-        if (!isTrimAllowed(trim)) return;
-
-        setSelectedTrim(trim);
-        onTrimSelect?.(trim);
+    const handleVersionClick = (version: string) => {
+        setSelectedVersion(version);
+        onTrimSelect?.(version);
 
         if (geelyCustomizeCallback) {
-            geelyCustomizeCallback({ trim });
+            geelyCustomizeCallback({ trim: version });
         }
     };
 
-    // if (!visible) return null;
+    // Mobile section toggle handlers - mutually exclusive
+    const handleBodyColorToggle = () => {
+        if (isBodyColorExpanded) {
+            setIsBodyColorExpanded(false);
+        } else {
+            setIsBodyColorExpanded(true);
+            setIsVersionExpanded(false); // Collapse version when expanding body color
+        }
+    };
+
+    const handleVersionToggle = () => {
+        if (isVersionExpanded) {
+            setIsVersionExpanded(false);
+        } else {
+            setIsVersionExpanded(true);
+            setIsBodyColorExpanded(false); // Collapse body color when expanding version
+        }
+    };
 
     return (
         <>
             {/* Desktop: Left side panel */}
             <div className={cx(
-                "hidden md:flex absolute top-[50%] translate-y-[-50%] left-16 max-w-[400px]",
+                "hidden md:flex absolute top-[50%] translate-y-[-50%] left-16 w-[320px]",
                 "flex-col rounded-xl overflow-hidden",
-                "bg-[rgba(12,20,40,0.6)] backdrop-blur-sm",
-                "border-2 border-white/30",
+                "bg-[rgba(12,20,40,0.75)] backdrop-blur-lg",
+                "border border-white/30",
                 "transition-all duration-500",
                 visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10 pointer-events-none"
             )}>
-                <div className="flex flex-col gap-3 p-5 pt-4 overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-white/40">
-                    <h2 className="font-sans text-3xl font-semibold text-white">Customize your GEELY</h2>
+                <div className="flex flex-col gap-4 p-5 overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-white/40">
+                    {/* Header */}
+                    <h2 className="font-sans text-2xl font-semibold text-white">Customize your GEELY</h2>
 
-                    <div className="h-px bg-white/50 w-full" />
+                    <div className="h-px bg-white/40 -mt-2 w-full" />
 
                     {/* Body Color */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center font-mono text-base font-light text-white">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center font-mono text-sm font-light text-white/90">
                             <span>Body Color</span>
                         </div>
-                        <div className="flex gap-2.5">
+                        <div className="flex gap-2">
                             {["green", "gray", "white", "silver"].map((color) => (
                                 <button
                                     key={color}
                                     onClick={() => handleColorClick(color)}
                                     className={cx(
-                                        "relative bg-transparent border border-white/50 rounded-lg p-0",
-                                        "cursor-pointer transition-transform duration-200 hover:scale-105",
-                                        "h-16 aspect-square",
-                                        !isColorAllowed(color) && "opacity-30 cursor-not-allowed grayscale hover:scale-100"
+                                        "relative border border-white/50 rounded-lg p-0 cursor-pointer",
+                                        "transition-all duration-200 hover:scale-105 hover:border-white/80",
+                                        "h-14 w-full aspect-square",
+                                        selectedColor === color
+                                            ? "bg-gradient-to-t from-[rgba(180,173,230,0.3)] to-[rgba(255,181,218,0.15)]"
+                                            : "bg-transparent"
                                     )}
-                                    disabled={!isColorAllowed(color)}
                                 >
                                     <img
                                         src={`/assets/images/body_${color}.png`}
                                         alt={color}
                                         className="w-full h-full object-contain rounded-lg"
                                     />
+
                                     {selectedColor === color && (
-                                        <div className="absolute inset-0 border border-white rounded-lg shadow-[0_0_5px_1px_rgba(255,255,255,0.6)] pointer-events-none" />
+                                        <div className="absolute inset-0 border-1 border-white rounded-lg shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] pointer-events-none" />
                                     )}
                                 </button>
+
                             ))}
                         </div>
                     </div>
 
-                    <div className="h-px bg-white/50 w-full" />
+                    <div className="h-px bg-white/40 w-full" />
 
-                    {/* Interior Trims */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center font-mono text-base font-light text-white">
+                    {/* Version */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center font-mono text-sm font-light text-white/90">
                             <span>Version</span>
                         </div>
-                        <div className="flex gap-2.5">
+                        <div className="flex gap-3">
                             {["pro", "max"].map((version) => {
                                 const label = version === "pro" ? "EX2 PRO" : "EX2 MAX";
+                                const isSelected = selectedVersion === version;
 
                                 return (
-                                <button
-                                    key={version}
-                                    //onClick={() => handleTrimClick(version)}
-                                    className={cx(
-                                    "relative bg-transparent border border-white/50 rounded-lg",
-                                    "cursor-pointer transition-transform duration-200 hover:scale-[1.02]",
-                                    "w-full h-14 flex items-center justify-center select-none"
-                                    )}
-                                >
-                                    <span className="text-white text-xl font-medium tracking-wide">
-                                    {label}
-                                    </span>
-
-                                    {selectedTrim === version && (
-                                    <div className="absolute inset-0 border border-white rounded-lg shadow-[0_0_5px_1px_rgba(255,255,255,0.6)] pointer-events-none" />
-                                    )}
-                                </button>
+                                    <button
+                                        key={version}
+                                        onClick={() => handleVersionClick(version)}
+                                        className={cx(
+                                            "relative rounded-lg overflow-hidden",
+                                            "cursor-pointer transition-all duration-200 hover:scale-[1.02]",
+                                            "flex-1 h-12 flex items-center justify-center select-none",
+                                            !isSelected && "border border-white/50 hover:border-white/80"
+                                        )}
+                                    >
+                                        {/* Selected state: gradient + halo + crisp border */}
+                                        {isSelected && (
+                                            <>
+                                                <div
+                                                    className="absolute inset-0 rounded-lg"
+                                                    style={{
+                                                        background: "linear-gradient(to top, rgba(180, 173, 230, 0.3), rgba(255, 181, 218, 0.15))"
+                                                    }}
+                                                />
+                                                <div
+                                                    className="pointer-events-none absolute inset-0 rounded-lg border border-white"
+                                                    style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                                                    aria-hidden
+                                                />
+                                                <div
+                                                    className="pointer-events-none absolute inset-0 rounded-lg border border-white/70"
+                                                    aria-hidden
+                                                />
+                                            </>
+                                        )}
+                                        <span className="text-white text-lg font-medium tracking-wide relative z-10">
+                                            {label}
+                                        </span>
+                                    </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    <div className="h-px bg-white/50 w-full" />
-
-
+                    <div className="h-px bg-white/40 w-full" />
 
                     {/* Interior View Button */}
                     <button
                         onClick={handleToggleView}
                         className={cx(
                             "flex items-center justify-center gap-2.5",
-                            "font-sans font-medium text-xl text-white",
+                            "font-sans font-medium text-lg text-white",
                             "bg-transparent border border-white/60 rounded-lg",
-                            "py-2.5 px-4",
+                            "py-3 px-4",
                             "cursor-pointer transition-all duration-200",
-                            "hover:shadow-[0_0_5px_1px_rgba(255,255,255,0.6)]"
+                            "hover:border-white hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.3)]"
                         )}
                     >
                         <img
@@ -199,15 +237,14 @@ export function GeelyCustomizer({
             <div className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
                 "flex flex-col rounded-xl overflow-hidden",
-                "bg-[rgba(12,20,40,0.6)] backdrop-blur-sm",
+                "bg-[rgba(12,20,40,0.6)] backdrop-blur-lg",
                 "border-2 border-white/30",
                 "transition-all duration-300",
-                isExpanded ? "max-h-[70vh]" : "max-h-[60px]",
                 visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10 pointer-events-none"
             )}>
                 {/* Mobile Header - Always visible */}
                 <div
-                    className="flex items-center justify-between p-4 pt-2 pb-1 cursor-pointer"
+                    className="flex items-center justify-between p-4 pt-3 pb-2 cursor-pointer"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
                     <h2 className="font-sans text-xl font-semibold text-white">Customize your GEELY</h2>
@@ -223,86 +260,132 @@ export function GeelyCustomizer({
 
                 {/* Mobile Content - Hidden when collapsed */}
                 {isExpanded && (
-                    <div className="flex flex-col gap-4 px-3 pb-3 overflow-y-auto">
-                        <div className="h-px bg-white w-full" />
+                    <div className="flex flex-col px-3 pb-3 overflow-y-auto">
+                        <div className="h-px bg-white/50 w-full" />
 
-                        {/* Body Color */}
-                        <div className="flex flex-col gap-2">
-                            <div className="-mt-2 flex justify-between items-center font-mono text-sm font-light text-white">
-                                <span>Body Color</span>
+                        {/* Body Color Section - Collapsible */}
+                        <div className="flex flex-col">
+                            <div
+                                className="flex justify-between items-center py-3 cursor-pointer"
+                                onClick={handleBodyColorToggle}
+                            >
+                                <span className="font-mono text-sm font-light text-white">Body Color</span>
+                                <img
+                                    src="/assets/images/state_arrow.png"
+                                    alt="Expand"
+                                    className={cx(
+                                        "w-5 h-3 transition-transform duration-300",
+                                        isBodyColorExpanded ? "-rotate-90" : "rotate-90"
+                                    )}
+                                />
                             </div>
-                            <div className="flex gap-2 flex-wrap">
-                                {["green", "gray", "white", "silver"].map((color) => (
-                                    <button
-                                        key={color}
-                                        onClick={() => handleColorClick(color)}
-                                        disabled={!isColorAllowed(color)}
-                                        className={cx(
-                                            "relative flex justify-center items-center bg-transparent border border-white/50 rounded-lg p-0",
-                                            "cursor-pointer transition-transform duration-200 hover:scale-105",
-                                            "h-12 flex-1 min-w-[60px]",
-                                            !isColorAllowed(color) && "opacity-30 cursor-not-allowed grayscale hover:scale-100"
-                                        )}
-                                    >
-                                        <img
-                                            src={`/assets/images/body_${color}.png`}
-                                            alt={color}
-                                            className="w-[100%] h-[100%] object-contain rounded-lg"
-                                        />
-                                        {selectedColor === color && (
-                                            <div className="absolute inset-0 border border-white rounded-lg shadow-[0_0_5px_1px_rgba(255,255,255,0.6)] pointer-events-none" />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
+                            {isBodyColorExpanded && (
+                                <div className="flex gap-2 flex-wrap pb-3">
+                                    {["green", "gray", "white", "silver"].map((color) => (
+                                        <button
+                                            key={color}
+                                            onClick={() => handleColorClick(color)}
+                                            className={cx(
+                                                "relative flex justify-center items-center border border-white/50 rounded-lg p-0",
+                                                "cursor-pointer transition-all duration-200 hover:scale-105 hover:border-white/80",
+                                                "h-12 flex-1 min-w-[60px]",
+                                                selectedColor === color
+                                                    ? "bg-gradient-to-t from-[rgba(180,173,230,0.4)] to-[rgba(255,181,218,0.2)]"
+                                                    : "bg-transparent"
+                                            )}
+                                        >
+                                            <img
+                                                src={`/assets/images/body_${color}.png`}
+                                                alt={color}
+                                                className="w-[100%] h-[100%] object-contain rounded-lg"
+                                            />
+
+                                            {selectedColor === color && (
+                                                <div className="absolute inset-0 border-1 border-white rounded-lg shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] pointer-events-none" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="h-px bg-white w-full" />
+                        <div className="h-px bg-white/50 w-full" />
 
-                        {/* Version */}
-                        <div className="flex flex-col gap-2">
-                            <div className="-mt-2 flex justify-between items-center font-mono text-sm font-light text-white">
-                                <span>Version</span>
+                        {/* Version Section - Collapsible */}
+                        <div className="flex flex-col">
+                            <div
+                                className="flex justify-between items-center py-3 cursor-pointer"
+                                onClick={handleVersionToggle}
+                            >
+                                <span className="font-mono text-sm font-light text-white">Version</span>
+                                <img
+                                    src="/assets/images/state_arrow.png"
+                                    alt="Expand"
+                                    className={cx(
+                                        "w-5 h-3 transition-transform duration-300",
+                                        isVersionExpanded ? "-rotate-90" : "rotate-90"
+                                    )}
+                                />
                             </div>
-                            <div className="flex gap-2.5 flex-wrap">
-                                {["pro", "max"].map((version) => {
-                                    const label = version === "pro" ? "EX2 PRO" : "EX2 MAX";
+                            {isVersionExpanded && (
+                                <div className="flex gap-2.5 flex-wrap pb-3">
+                                    {["pro", "max"].map((version) => {
+                                        const label = version === "pro" ? "EX2 PRO" : "EX2 MAX";
+                                        const isSelected = selectedVersion === version;
 
-                                    return (
-                                    <button
-                                        key={version}
-                                        //onClick={() => handleTrimClick(version)}
-                                        className={cx(
-                                        "relative bg-transparent border border-white/50 rounded-lg",
-                                        "cursor-pointer transition-transform duration-200 hover:scale-[1.02]",
-                                        "flex-1 min-w-[100px] h-12 flex items-center justify-center select-none"
-                                        )}
-                                    >
-                                        <span className="text-white text-lg font-medium tracking-wide">
-                                        {label}
-                                        </span>
-
-                                        {selectedTrim === version && (
-                                        <div className="absolute inset-0 border border-white rounded-lg shadow-[0_0_5px_1px_rgba(255,255,255,0.6)] pointer-events-none" />
-                                        )}
-                                    </button>
-                                    );
-                                })}
-                            </div>
+                                        return (
+                                            <button
+                                                key={version}
+                                                onClick={() => handleVersionClick(version)}
+                                                className={cx(
+                                                    "relative rounded-lg overflow-hidden",
+                                                    "cursor-pointer transition-all duration-200 hover:scale-[1.02]",
+                                                    "flex-1 min-w-[100px] h-12 flex items-center justify-center select-none",
+                                                    !isSelected && "border border-white/50 hover:border-white/80"
+                                                )}
+                                            >
+                                                {/* Selected state: gradient + halo + crisp border */}
+                                                {isSelected && (
+                                                    <>
+                                                        <div
+                                                            className="absolute inset-0 rounded-lg"
+                                                            style={{
+                                                                background: "linear-gradient(to top, rgba(180, 173, 230, 0.4), rgba(255, 181, 218, 0.2))"
+                                                            }}
+                                                        />
+                                                        <div
+                                                            className="pointer-events-none absolute inset-0 rounded-lg border border-white"
+                                                            style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                                                            aria-hidden
+                                                        />
+                                                        <div
+                                                            className="pointer-events-none absolute inset-0 rounded-lg border border-white/70"
+                                                            aria-hidden
+                                                        />
+                                                    </>
+                                                )}
+                                                <span className="text-white text-lg font-medium tracking-wide relative z-10">
+                                                    {label}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="h-px bg-white w-full" />
+                        <div className="h-px bg-white/50 w-full" />
 
                         {/* Interior View Button */}
                         <button
                             onClick={handleToggleView}
                             className={cx(
-                                "flex items-center justify-center gap-2.5",
+                                "flex items-center justify-center gap-2.5 mt-3",
                                 "font-sans font-medium text-base text-white",
                                 "bg-transparent border border-white/60 rounded-lg",
-                                "py-2 px-3",
+                                "py-2.5 px-3",
                                 "cursor-pointer transition-all duration-200",
-                                "hover:shadow-[0_0_5px_1px_rgba(255,255,255,0.6)]"
+                                "hover:border-white hover:shadow-[0_0_8px_2px_rgba(255,255,255,0.3)]"
                             )}
                         >
                             <img
@@ -315,7 +398,6 @@ export function GeelyCustomizer({
                     </div>
                 )}
             </div>
-
         </>
     );
 }

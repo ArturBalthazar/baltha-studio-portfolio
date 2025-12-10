@@ -25,8 +25,9 @@ export function OverlayBox({
 
   // Get global state
   const navigationMode = useUI((st) => st.navigationMode);
+  const audioEnabled = useUI((st) => st.audioEnabled);
   const selectedLogoModel = useUI((st) => st.selectedLogoModel);
-  const { setNavigationMode, setSelectedLogoModel } = useUI();
+  const { setNavigationMode, setAudioEnabled, setSelectedLogoModel } = useUI();
 
   // State management for selected buttons
   const [selectedState2Button, setSelectedState2Button] = useState(2); // Default to South America
@@ -66,7 +67,7 @@ export function OverlayBox({
   };
 
   const state3Content = {
-    title: "Navigation mode:",
+    title: "Navigation",
     buttons: [
       { icon: "/assets/images/guided_mode.png", label: "Guided", selected: navigationMode === 'guided' },
       { icon: "/assets/images/free_mode.png", label: "Free", selected: navigationMode === 'free' },
@@ -89,8 +90,8 @@ export function OverlayBox({
         };
       case S.state_3:
         return {
-          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(15%+200px)]" },
-          height: { mobile: "h-[35%]", desktop: "sm:h-[calc(20%+100px)]" },
+          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(20%+200px)]" },
+          height: { mobile: "h-[28%]", desktop: "sm:h-[calc(20%+100px)]" },
           transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[calc(60%-100px)]" },
         };
       default:
@@ -139,6 +140,12 @@ export function OverlayBox({
 
     // Also call the external handler if provided
     onButtonClick?.(index);
+  };
+
+  // Handle audio toggle
+  const handleAudioToggle = () => {
+    setAudioEnabled(!audioEnabled);
+    console.log('Audio:', !audioEnabled ? 'OFF' : 'ON');
   };
 
   if (currentState !== S.state_1 && currentState !== S.state_2 && currentState !== S.state_3) return null;
@@ -237,11 +244,11 @@ export function OverlayBox({
                           className="absolute inset-0 rounded-bigButton"
                           style={{
                             background:
-                              "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.52))",
+                              "linear-gradient(to top,rgba(180, 173, 230, 0.4),rgba(255, 181, 218, 0.2))",
                           }}
                         />
                         <div
-                          className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
+                          className="pointer-events-none absolute inset-0 rounded-bigButton border-[1px] border-white"
                           style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                           aria-hidden
                         />
@@ -373,11 +380,11 @@ export function OverlayBox({
                             className="absolute inset-0 rounded-bigButton"
                             style={{
                               background:
-                                "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.52))",
+                                "linear-gradient(to top,rgba(180, 173, 230, 0.4),rgba(255, 181, 218, 0.2))",
                             }}
                           />
                           <div
-                            className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-[1px] border-white"
                             style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                             aria-hidden
                           />
@@ -415,66 +422,136 @@ export function OverlayBox({
               visibility.state4.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
-            {/* State 3 Title */}
-            <div className="mt-2 mb-2 text-center pointer-events-none">
-              <h2 className="font-sans text-white text-2xl sm:text-3xl font-medium select-none">{state3Content.title}</h2>
-            </div>
+            {/* State 3 Content Layout - Navigation Mode and Audio side by side */}
+            <div className="flex-1 flex items-center justify-center gap-8 sm:gap-12 pointer-events-none">
 
-            {/* State 3 Navigation Mode Buttons */}
-            <div className="flex-1 flex items-center justify-center pointer-events-none">
-              <div className="flex gap-8 sm:gap-6">
-                {state3Content.buttons.map((button, index) => (
-                  <div key={`state3-${index}`} className="flex flex-col items-center gap-3 pointer-events-none">
-                    <button
-                      onClick={() => handleInternalButtonClick(index)}
-                      className={cx(
-                        "relative w-16 h-16 sm:w-16 sm:h-16 rounded-bigButton border-0",
-                        "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
-                        visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
-                      )}
-                      title={button.label}
-                    >
-                      {/* non-selected subtle outline */}
-                      {!button.selected && (
+              {/* Navigation Mode Section */}
+              <div className="flex flex-col items-center gap-2 pointer-events-none">
+                {/* Navigation Mode Title */}
+                <h2 className="font-sans text-white text-xl sm:text-2xl font-medium select-none mb-2">{state3Content.title}</h2>
+
+                {/* Navigation Mode Buttons */}
+                <div className="flex gap-4 sm:gap-6">
+                  {state3Content.buttons.map((button, index) => (
+                    <div key={`state3-${index}`} className="flex flex-col items-center gap-2 pointer-events-none">
+                      <button
+                        onClick={() => handleInternalButtonClick(index)}
+                        className={cx(
+                          "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0",
+                          "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
+                          visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
+                        )}
+                        title={button.label}
+                      >
+                        {/* non-selected subtle outline */}
+                        {!button.selected && (
+                          <div
+                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
+                            aria-hidden
+                          />
+                        )}
+
+                        {/* selected state: gradient + halo line + crisp line */}
+                        {button.selected && (
+                          <>
+                            <div
+                              className="absolute inset-0 rounded-bigButton"
+                              style={{
+                                background:
+                                  "linear-gradient(to top,rgba(180, 173, 230, 0.4),rgba(255, 181, 218, 0.2))",
+                              }}
+                            />
+                            <div
+                              className="pointer-events-none absolute inset-0 rounded-bigButton border-[1px] border-white"
+                              style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
+                              aria-hidden
+                            />
+                            <div
+                              className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/70"
+                              aria-hidden
+                            />
+                          </>
+                        )}
+
+                        {/* icon / content */}
+                        <span className="relative z-10 text-white flex items-center justify-center">
+                          <img src={button.icon} alt={button.label} className="w-[70%] h-[70%] object-contain" />
+                        </span>
+                      </button>
+
+                      {/* Button Label */}
+                      <span className="font-mono text-white text-sm sm:text-base select-none">{button.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vertical Divider */}
+              <div className="h-24 w-px bg-white/20" />
+
+              {/* Audio Section */}
+              <div className="flex flex-col items-center gap-2 pointer-events-none">
+                {/* Audio Title */}
+                <h2 className="font-sans text-white text-xl sm:text-2xl font-medium select-none mb-2">Audio</h2>
+
+                {/* Audio Toggle Button */}
+                <div className="flex flex-col items-center gap-2 pointer-events-none">
+                  <button
+                    onClick={handleAudioToggle}
+                    className={cx(
+                      "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0",
+                      "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
+                      visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
+                    )}
+                    title={audioEnabled ? "Turn audio off" : "Turn audio on"}
+                  >
+                    {/* non-selected (audio off) subtle outline */}
+                    {!audioEnabled && (
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
+                        aria-hidden
+                      />
+                    )}
+
+                    {/* selected state (audio on): gradient + halo line + crisp line */}
+                    {audioEnabled && (
+                      <>
                         <div
-                          className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
+                          className="absolute inset-0 rounded-bigButton"
+                          style={{
+                            background:
+                              "linear-gradient(to top,rgba(180, 173, 230, 0.4),rgba(255, 181, 218, 0.2))",
+                          }}
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0 rounded-bigButton border-[1px] border-white"
+                          style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
                           aria-hidden
                         />
-                      )}
+                        <div
+                          className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/70"
+                          aria-hidden
+                        />
+                      </>
+                    )}
 
-                      {/* selected state: gradient + halo line + crisp line */}
-                      {button.selected && (
-                        <>
-                          <div
-                            className="absolute inset-0 rounded-bigButton"
-                            style={{
-                              background:
-                                "linear-gradient(to top,rgba(180, 173, 230, 0.76),rgba(255, 181, 218, 0.38))",
-                            }}
-                          />
-                          <div
-                            className="pointer-events-none absolute inset-0 rounded-bigButton border-[3px] border-white"
-                            style={{ filter: "blur(2px)", transform: "scale(1.02)", transformOrigin: "center" }}
-                            aria-hidden
-                          />
-                          <div
-                            className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/70"
-                            aria-hidden
-                          />
-                        </>
-                      )}
+                    {/* Audio icon */}
+                    <span className="relative z-10 text-white flex items-center justify-center">
+                      <img
+                        src={audioEnabled ? "/assets/images/audio_on.png" : "/assets/images/audio_off.png"}
+                        alt={audioEnabled ? "Audio On" : "Audio Off"}
+                        className="w-[70%] h-[70%] object-contain"
+                      />
+                    </span>
+                  </button>
 
-                      {/* icon / content */}
-                      <span className="relative z-10 text-white flex items-center justify-center">
-                        <img src={button.icon} alt={button.label} className="w-[70%] h-[70%] object-contain" />
-                      </span>
-                    </button>
-
-                    {/* Button Label */}
-                    <span className="font-mono text-white text-sm sm:text-base select-none">{button.label}</span>
-                  </div>
-                ))}
+                  {/* Audio Label */}
+                  <span className="font-mono text-white/0 text-sm sm:text-base select-none">
+                    {audioEnabled ? "On" : "Off"}
+                  </span>
+                </div>
               </div>
+
             </div>
           </div>
 

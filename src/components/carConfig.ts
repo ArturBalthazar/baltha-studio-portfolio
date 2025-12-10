@@ -1,8 +1,8 @@
 export const colorSettings = {
-    green: { hex: "#6e7c6a", metallic: 0.5, roughness: 0.2, sheen: 1 },
-    white: { hex: "#b3afa4", metallic: 0.5, roughness: 0.2, sheen: 1 },
-    gray: { hex: "#212122", metallic: 0.8, roughness: 0.2, sheen: 0.2 },
-    silver: { hex: "#696978", metallic: .8, roughness: 0.2, sheen: 1 }
+    green: { hex: "#455342", metallic: 0.5, roughness: 0.2, sheen: 1 },
+    white: { hex: "#838383", metallic: 0.2, roughness: 0.2, sheen: 1 },
+    gray: { hex: "#19191a", metallic: 0.8, roughness: 0.2, sheen: 0.2 },
+    silver: { hex: "#61616e", metallic: .8, roughness: 0.2, sheen: 1 }
 };
 
 export const trimConfigs: Record<string, { allowed: string[]; materials: Record<string, string> }> = {

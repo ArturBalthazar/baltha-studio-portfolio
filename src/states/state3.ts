@@ -9,15 +9,15 @@ export const state3Config: StateConfig = {
     },
     menuHeight: {
       mobile: "h-6",
-      desktop: "md:h-8" 
+      desktop: "md:h-8"
     },
     padding: {
       mobile: "py-3",
-      desktop: "md:py-4" 
+      desktop: "md:py-4"
     },
     horizontalPadding: {
       mobile: "px-6",
-      desktop: "md:px-10" 
+      desktop: "md:px-10"
     }
   },
   canvas: {
@@ -71,7 +71,7 @@ export const state3Config: StateConfig = {
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "Welcome to Baltha Studio! How would you like to explore our world?",
+    typingText: "Welcome to Baltha Studio! Select a navigation style to continue...",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }
