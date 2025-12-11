@@ -142,7 +142,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
                 </div>
 
                 {/* Fixed Footer - Arrows and dots */}
-                <div className="flex-shrink-0 px-5 py-4 border-t border-white/20">
+                <div className="flex-shrink-0 px-5 py-2 border-t border-white/20">
                     <div className="flex items-center justify-center gap-4">
                         <button
                             onClick={handlePrevious}
@@ -253,7 +253,7 @@ function MobileDioramasPanel({
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
-            style={{ maxHeight: "calc(100% - 180px)" }}
+            style={{ maxHeight: "calc(38%)" }}
         >
             {/* Mobile Header - Always visible, Title left-aligned */}
             < div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2" >
@@ -328,7 +328,7 @@ function MobileDioramasPanel({
                         </div>
 
                         {/* Fixed Footer - Arrows and dots */}
-                        <div className="flex-shrink-0 px-3 py-3 border-t border-white/20">
+                        <div className="flex-shrink-0 px-3 py-1 border-t border-white/20">
                             <div className="flex items-center justify-center gap-3">
                                 <button
                                     onClick={onPrevious}

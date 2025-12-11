@@ -133,7 +133,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
-            style={{ maxHeight: "calc(100% - 180px)" }}
+            style={{ maxHeight: "calc(35%)" }}
         >
             {/* Mobile Header - Always visible, Title left-aligned */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
