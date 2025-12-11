@@ -196,6 +196,11 @@ export function OverlayBox({
           }}
           aria-hidden
         />
+        {/* BACKDROP BLUR LAYER */}
+        <div
+          className="absolute inset-0 rounded-canvas backdrop-blur-sm bg-brand-dark/5 pointer-events-none"
+          aria-hidden
+        />
 
         {/* CRISP stroke on top */}
         <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45 select-none" aria-hidden />

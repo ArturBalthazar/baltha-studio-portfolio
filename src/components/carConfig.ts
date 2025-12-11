@@ -1,5 +1,5 @@
 export const colorSettings = {
-    green: { hex: "#455342", metallic: 0.5, roughness: 0.2, sheen: 1 },
+    green: { hex: "#455342", metallic: 0.3, roughness: 0.2, sheen: 1 },
     white: { hex: "#838383", metallic: 0.2, roughness: 0.2, sheen: 1 },
     gray: { hex: "#19191a", metallic: 0.8, roughness: 0.2, sheen: 0.2 },
     silver: { hex: "#61616e", metallic: .8, roughness: 0.2, sheen: 1 }

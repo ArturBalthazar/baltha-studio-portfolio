@@ -594,7 +594,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
 }
 
 // Store original scales for models (set when models are loaded)
-const modelOriginalScales: Map<BABYLON.AbstractMesh, BABYLON.Vector3> = new Map();
+const modelOriginalScales: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Vector3> = new Map();
 
 // Store original rotations for models (set when models are loaded, used for reset)
 const modelOriginalRotations: Map<BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
@@ -654,7 +654,7 @@ async function warmupModelForGPU(
  * Shows or hides model using scale animation (scale up from near-zero or scale down to near-zero)
  */
 function scaleModelMeshes(
-  rootMesh: BABYLON.AbstractMesh | null,
+  rootMesh: BABYLON.TransformNode | BABYLON.AbstractMesh | null,
   meshes: BABYLON.AbstractMesh[],
   scene: BABYLON.Scene,
   scaleIn: boolean,
@@ -1284,6 +1284,7 @@ export function BabylonCanvas() {
   const controlSphereRef = useRef<BABYLON.Mesh | null>(null);
   const mobileControlRef = useRef({
     isDragging: false,
+    isRightClick: false, // Right-click allows camera rotation without movement
     targetDirection: new BABYLON.Vector3(0, 0, 1), // Default forward
     hasDirection: false,
     cameraRotation: 0, // -1 for left, 0 for none, 1 for right
@@ -1301,16 +1302,27 @@ export function BabylonCanvas() {
   const currentTrimRef = useRef<string>("lightBlue");
   const interiorCameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
   const isInteriorView = useUI((st) => st.isInteriorView);
+  const selectedDioramaModel = useUI((st) => st.selectedDioramaModel);
 
   // Musecraft refs (anchor_2, state 5)
   const musecraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const musecraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
   const musecraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
 
-  // Dioramas refs (anchor_3, state 6)
-  const dioramasRootRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const dioramasMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+
+  // Dioramas refs (anchor_3, state 6) - Multiple models with shared parent
+  const dioramasRootRef = useRef<BABYLON.TransformNode | null>(null); // Parent root for all dioramas
+  const dioramasMeshesRef = useRef<BABYLON.AbstractMesh[]>([]); // All meshes from all diorama models
   const dioramasAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  // Individual diorama model refs: [0]=sesc-museum, [1]=sesc-island, [2]=dioramas
+  const dioramaModelsRef = useRef<{
+    roots: (BABYLON.AbstractMesh | null)[];
+    meshes: BABYLON.AbstractMesh[][];
+  }>({
+    roots: [null, null, null],
+    meshes: [[], [], []]
+  });
+
 
   // Petwheels refs (anchor_4, state 7)
   const petwheelsRootRef = useRef<BABYLON.AbstractMesh | null>(null);
@@ -2811,102 +2823,153 @@ export function BabylonCanvas() {
       }
     };
 
-    // Load Dioramas model asynchronously (anchor_3, state 6)
+    // Load Dioramas models asynchronously (anchor_3, state 6)
+    // Loads 3 separate models: sesc-museum.glb, sesc-island.glb, dioramas.gltf
     const loadDioramasAsync = async () => {
       console.log("🏛️ Starting Dioramas loading (async)...");
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 3000));
-      console.log("🏛️ Loading dioramas.glb...");
+
+      const dioramaFiles = [
+        { name: "sesc-museum", file: "sesc-museum.glb" },
+        { name: "sesc-island", file: "sesc-island.glb" },
+        { name: "dioramas", file: "dioramas.gltf" }
+      ];
 
       try {
-        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/dioramas/", "dioramas.gltf", scene);
-        container.addAllToScene();
-
-        console.log("🏛️ Dioramas model loaded, processing meshes...");
-
-        if (!container.meshes.length) {
-          console.error("❌ No meshes found in Dioramas model");
-          return;
-        }
-
-        const modelRoot = container.meshes[0];
-        dioramasRootRef.current = modelRoot as any;
-        console.log("🏛️ Dioramas root mesh:", modelRoot.name);
-
-        // Stop all animations
-        container.animationGroups.forEach(group => {
-          group.stop();
-          group.reset();
-        });
-
-        // Store all meshes
-        const modelMeshes: BABYLON.AbstractMesh[] = [];
-        container.meshes.forEach(mesh => {
-          modelMeshes.push(mesh);
-        });
-
-        dioramasMeshesRef.current = modelMeshes;
-
-        // Find the anchor_3 mesh from anchors.glb
+        // Find the anchor_3 mesh first
         console.log("🏛️ Searching for anchor_3 mesh...");
         const anchorMesh = scene.getMeshByName("anchor_3");
         console.log("🏛️ Anchor_3 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
-        if (anchorMesh) {
-          dioramasAnchorRef.current = anchorMesh;
-
-          // Position model root at anchor location
-          const anchorPos = anchorMesh.getAbsolutePosition();
-          modelRoot.position.copyFrom(anchorPos);
-
-          // Apply rotation from anchor
-          if (!modelRoot.rotationQuaternion) {
-            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-          }
-
-          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
-          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
-
-          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
-          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
-
-          anchorMesh.isVisible = false;
-
-          console.log(`🏛️ Dioramas positioned at anchor_3: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
-
-          // Create atom indicator at anchor position
-          const atomConfig = atomConfigRef.current.model3;
-          const atom = createAtomIndicator({
-            scene,
-            position: anchorMesh.getAbsolutePosition(),
-            idleRingRadius: atomConfig.idleRingRadius,
-            expandedRingRadii: atomConfig.expandedRingRadii,
-            rotationSpeed: atomConfig.rotationSpeed,
-            flameScale: atomConfig.flameScale
-          });
-          atomIndicatorsRef.current.atom3 = atom;
-          console.log("⚛️ Created atom indicator for Dioramas at anchor_3");
-
-          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
-          if (s < S.state_4 || s > S.state_7) {
-            atom.root.setEnabled(false);
-          }
-        } else {
+        if (!anchorMesh) {
           console.warn("⚠️ anchor_3 mesh not found for Dioramas");
+          return;
         }
 
-        // Warmup GPU for this model, then hide
-        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
-        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50); // More frames for heavy model
+        dioramasAnchorRef.current = anchorMesh;
+        anchorMesh.isVisible = false;
+
+        // Create parent root TransformNode for all diorama models
+        const dioramasRoot = new BABYLON.TransformNode("dioramasRoot", scene);
+        dioramasRootRef.current = dioramasRoot;
+
+        // Position and rotate the parent root at anchor location
+        const anchorPos = anchorMesh.getAbsolutePosition();
+        dioramasRoot.position.copyFrom(anchorPos);
+
+        // Apply rotation from anchor
+        if (!dioramasRoot.rotationQuaternion) {
+          dioramasRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+        }
+        const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+        anchorWorldMatrix.decompose(undefined, dioramasRoot.rotationQuaternion, undefined);
+
+        dioramasRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+        modelOriginalScales.set(dioramasRoot as any, dioramasRoot.scaling.clone()); // Store original scale
+
+        console.log(`🏛️ Dioramas root positioned at anchor_3: (${dioramasRoot.position.x.toFixed(2)}, ${dioramasRoot.position.y.toFixed(2)}, ${dioramasRoot.position.z.toFixed(2)})`);
+
+        // Create atom indicator at anchor position
+        const atomConfig = atomConfigRef.current.model3;
+        const atom = createAtomIndicator({
+          scene,
+          position: anchorMesh.getAbsolutePosition(),
+          idleRingRadius: atomConfig.idleRingRadius,
+          expandedRingRadii: atomConfig.expandedRingRadii,
+          rotationSpeed: atomConfig.rotationSpeed,
+          flameScale: atomConfig.flameScale
+        });
+        atomIndicatorsRef.current.atom3 = atom;
+        console.log("⚛️ Created atom indicator for Dioramas at anchor_3");
+
+        // Hide atom if not in explore states (4-7)
+        if (s < S.state_4 || s > S.state_7) {
+          atom.root.setEnabled(false);
+        }
+
+        // Load each diorama model
+        const allMeshes: BABYLON.AbstractMesh[] = [];
+
+        for (let i = 0; i < dioramaFiles.length; i++) {
+          const { name, file } = dioramaFiles[i];
+          console.log(`🏛️ Loading ${name} (${file})...`);
+
+          try {
+            const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+              "/assets/models/dioramas/",
+              file,
+              scene
+            );
+            container.addAllToScene();
+
+            console.log(`🏛️ ${name} loaded with ${container.meshes.length} meshes`);
+
+            if (!container.meshes.length) {
+              console.error(`❌ No meshes found in ${name}`);
+              continue;
+            }
+
+            // Get the root mesh of this model
+            const modelRoot = container.meshes[0];
+            dioramaModelsRef.current.roots[i] = modelRoot;
+
+            // Reset model's local position/rotation since parent handles it
+            modelRoot.position.set(0, 0, 0);
+            if (!modelRoot.rotationQuaternion) {
+              modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+            modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
+            modelRoot.scaling.set(1, 1, 1);
+
+            // Parent this model to the shared dioramas root
+            modelRoot.parent = dioramasRoot;
+
+            // Stop all animations
+            container.animationGroups.forEach(group => {
+              group.stop();
+              group.reset();
+            });
+
+            // Store meshes for this model
+            const modelMeshes: BABYLON.AbstractMesh[] = [];
+            container.meshes.forEach(mesh => {
+              modelMeshes.push(mesh);
+              allMeshes.push(mesh);
+              // IMPORTANT: Hide immediately to prevent visibility flash before warmup
+              mesh.setEnabled(false);
+            });
+            dioramaModelsRef.current.meshes[i] = modelMeshes;
+
+            console.log(`🏛️ ${name} parented to dioramasRoot (hidden)`);
+          } catch (modelError) {
+            console.error(`❌ Error loading ${name}:`, modelError);
+          }
+        }
+
+        // Store all meshes combined
+        dioramasMeshesRef.current = allMeshes;
+
+        // Warmup GPU for all models
+        for (let i = 0; i < dioramaModelsRef.current.roots.length; i++) {
+          const root = dioramaModelsRef.current.roots[i];
+          const meshes = dioramaModelsRef.current.meshes[i];
+          if (root && meshes.length > 0) {
+            await warmupModelForGPU(root, meshes, scene, 30);
+          }
+        }
 
         // Initially hide all meshes - proximity detection will show them
-        modelMeshes.forEach(mesh => {
+        allMeshes.forEach(mesh => {
           mesh.setEnabled(false);
         });
         modelVisibilityRef.current.model3 = false;
 
-        console.log(`🏛️ Dioramas loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+        // Show only the first model (index 0) by default when becoming visible
+        // This is handled by the model switching effect
+
+        console.log(`🏛️ Dioramas loaded successfully! Total ${allMeshes.length} meshes across ${dioramaFiles.length} models`);
       } catch (error) {
         console.error("❌ Error loading Dioramas:", error);
       }
@@ -3072,6 +3135,59 @@ export function BabylonCanvas() {
       }
     });
 
+    // Distance-based visibility for Dioramas panel
+    const DIORAMAS_VISIBILITY_DISTANCE = 20; // Same threshold as GEELY
+
+    scene.onBeforeRenderObservable.add(() => {
+      // Early return if ship or dioramas anchor not loaded yet
+      if (!spaceshipRootRef.current || !dioramasAnchorRef.current) {
+        return;
+      }
+
+      // Calculate distance from SHIP to dioramas anchor
+      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
+      const dioramasPosition = dioramasAnchorRef.current.getAbsolutePosition();
+      const distance = BABYLON.Vector3.Distance(shipPosition, dioramasPosition);
+
+      // Show/hide dioramas panel based on distance using state
+      const shouldBeVisible = distance <= DIORAMAS_VISIBILITY_DISTANCE;
+      const currentlyVisible = useUI.getState().dioramasPanelVisible;
+
+      if (shouldBeVisible && !currentlyVisible) {
+        useUI.getState().setDioramasPanelVisible(true);
+        console.log(`🏛️ Dioramas panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      } else if (!shouldBeVisible && currentlyVisible) {
+        useUI.getState().setDioramasPanelVisible(false);
+        console.log(`🏛️ Dioramas panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      }
+    });
+
+    // Distance-based visibility for Petwheels panel
+    const PETWHEELS_VISIBILITY_DISTANCE = 20; // Same threshold as others
+
+    scene.onBeforeRenderObservable.add(() => {
+      // Early return if ship or petwheels anchor not loaded yet
+      if (!spaceshipRootRef.current || !petwheelsAnchorRef.current) {
+        return;
+      }
+
+      // Calculate distance from SHIP to petwheels anchor
+      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
+      const petwheelsPosition = petwheelsAnchorRef.current.getAbsolutePosition();
+      const distance = BABYLON.Vector3.Distance(shipPosition, petwheelsPosition);
+
+      // Show/hide petwheels panel based on distance using state
+      const shouldBeVisible = distance <= PETWHEELS_VISIBILITY_DISTANCE;
+      const currentlyVisible = useUI.getState().petwheelsPanelVisible;
+
+      if (shouldBeVisible && !currentlyVisible) {
+        useUI.getState().setPetwheelsPanelVisible(true);
+        console.log(`🐾 Petwheels panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      } else if (!shouldBeVisible && currentlyVisible) {
+        useUI.getState().setPetwheelsPanelVisible(false);
+        console.log(`🐾 Petwheels panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      }
+    });
 
 
 
@@ -3206,6 +3322,7 @@ export function BabylonCanvas() {
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
     let handlePointerMove: ((e: PointerEvent) => void) | null = null;
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
+    let handleContextMenu: ((e: Event) => void) | null = null;
 
     // Delay enabling controls until ship animation completes
     console.log(`🚀 Delaying ship controls by ${totalShipAnimTime}ms to let ship animation complete`);
@@ -3357,9 +3474,19 @@ export function BabylonCanvas() {
       // Drag control handlers (works for both mobile and desktop)
       const MC = mobileControlRef.current;
 
+      // Prevent context menu on right-click so we can use it for camera rotation
+      handleContextMenu = (e: Event) => {
+        e.preventDefault();
+      };
+
       handlePointerDown = (e: PointerEvent) => {
         MC.isDragging = true;
+        MC.isRightClick = e.button === 2; // Right-click = camera rotation only, no movement
         MC.yawRate = 0; // Reset turn rate when starting drag
+        // Update pointer position immediately so edge detection works on first frame
+        MC.pointerX = e.clientX;
+        MC.pointerY = e.clientY;
+        console.log(`🖱️ Pointer down: button=${e.button}, isRightClick=${MC.isRightClick}, pos=(${e.clientX}, ${e.clientY})`);
       };
 
       handlePointerMove = (e: PointerEvent) => {
@@ -3372,13 +3499,17 @@ export function BabylonCanvas() {
 
       handlePointerUp = (e: PointerEvent) => {
         MC.isDragging = false;
+        MC.isRightClick = false;
         MC.hasDirection = false;
         MC.cameraRotation = 0; // Stop camera rotation
         MC.yawRate = 0; // Reset turn rate
         MC.previousYaw = 0; // Reset previous yaw
+        // Clear side trigger visual effect when drag ends
+        useUI.getState().setSideTrigger(null);
         console.log("🚀 Drag control ended");
       };
 
+      canvas.addEventListener('contextmenu', handleContextMenu);
       canvas.addEventListener('pointerdown', handlePointerDown);
       canvas.addEventListener('pointermove', handlePointerMove);
       canvas.addEventListener('pointerup', handlePointerUp);
@@ -3425,29 +3556,36 @@ export function BabylonCanvas() {
 
         // Drag control: Update direction and edge rotation every frame (works for both mobile and desktop)
         if (MC.isDragging) {
-          // Check if pointer is near screen edges (5% threshold)
+          // Check if pointer is near screen edges (10% threshold)
           const screenWidth = window.innerWidth;
-          const edgeThreshold = screenWidth * 0.1;
+          const edgeThreshold = isMobileRef.current ? screenWidth * 0.1 : screenWidth * 0.20;
 
           if (MC.pointerX < edgeThreshold) {
             MC.cameraRotation = -1; // Rotate left
+            useUI.getState().setSideTrigger('left'); // Update side trigger visual
           } else if (MC.pointerX > screenWidth - edgeThreshold) {
             MC.cameraRotation = 1; // Rotate right
+            useUI.getState().setSideTrigger('right'); // Update side trigger visual
           } else {
             MC.cameraRotation = 0; // No edge rotation
+            useUI.getState().setSideTrigger(null); // Clear side trigger visual
           }
 
-          // Raycast from current pointer position to control sphere
-          const pickInfo = scene.pick(MC.pointerX, MC.pointerY, (mesh) => mesh === controlSphereRef.current);
+          // Only capture forward direction on left-click (not right-click)
+          // Right-click allows camera rotation without moving the ship
+          if (!MC.isRightClick) {
+            // Raycast from current pointer position to control sphere
+            const pickInfo = scene.pick(MC.pointerX, MC.pointerY, (mesh) => mesh === controlSphereRef.current);
 
-          if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
-            // Get direction from ship to picked point on sphere
-            const shipPos = controlTarget.getAbsolutePosition();
-            const targetPoint = pickInfo.pickedPoint;
-            const direction = targetPoint.subtract(shipPos).normalize();
+            if (pickInfo && pickInfo.hit && pickInfo.pickedPoint) {
+              // Get direction from ship to picked point on sphere
+              const shipPos = controlTarget.getAbsolutePosition();
+              const targetPoint = pickInfo.pickedPoint;
+              const direction = targetPoint.subtract(shipPos).normalize();
 
-            MC.targetDirection = direction;
-            MC.hasDirection = true;
+              MC.targetDirection = direction;
+              MC.hasDirection = true;
+            }
           }
         }
 
@@ -3695,6 +3833,7 @@ export function BabylonCanvas() {
 
       // Clean up pointer event listeners (drag control) if they were added
       if (canvas) {
+        if (handleContextMenu) canvas.removeEventListener('contextmenu', handleContextMenu);
         if (handlePointerDown) canvas.removeEventListener('pointerdown', handlePointerDown);
         if (handlePointerMove) canvas.removeEventListener('pointermove', handlePointerMove);
         if (handlePointerUp) {
@@ -3728,6 +3867,8 @@ export function BabylonCanvas() {
     if (!canvas) return;
 
     const handlePointerDown = (e: PointerEvent) => {
+      // Only trigger on left-click to avoid conflicts with ship controls right-click
+      if (e.button !== 0) return;
       isDraggingRef.current = true;
       lastDragPosRef.current = { x: e.clientX, y: e.clientY };
       canvas.setPointerCapture(e.pointerId);
@@ -5298,7 +5439,7 @@ export function BabylonCanvas() {
     // Proximity check function for a single model
     const checkModelProximity = (
       modelKey: 'model1' | 'model2' | 'model3' | 'model4',
-      rootRef: React.MutableRefObject<BABYLON.AbstractMesh | null>,
+      rootRef: React.MutableRefObject<BABYLON.TransformNode | BABYLON.AbstractMesh | null>,
       meshesRef: React.MutableRefObject<BABYLON.AbstractMesh[]>,
       anchorRef: React.MutableRefObject<BABYLON.AbstractMesh | null>,
       atomKey: 'atom1' | 'atom2' | 'atom3' | 'atom4'
@@ -5333,10 +5474,59 @@ export function BabylonCanvas() {
           atom.expand(0.6);
         }
 
-        // Scale in model
-        scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => {
-          console.log(`✨ ${modelKey} scale in complete`);
-        });
+        // Special handling for model3 (dioramas) - only show selected model
+        if (modelKey === 'model3') {
+          const selectedIndex = useUI.getState().selectedDioramaModel;
+          const dioramaModels = dioramaModelsRef.current;
+
+          // Show only the selected diorama model
+          for (let i = 0; i < dioramaModels.roots.length; i++) {
+            const dioramaRoot = dioramaModels.roots[i];
+            const dioramaMeshes = dioramaModels.meshes[i];
+
+            if (!dioramaRoot || dioramaMeshes.length === 0) continue;
+
+            if (i === selectedIndex) {
+              // Show selected model with scale animation
+              dioramaRoot.scaling.set(0.001, 0.001, 0.001);
+              dioramaMeshes.forEach(m => m.setEnabled(true));
+
+              const fps = 60;
+              const duration = 2;
+              const totalFrames = fps * duration;
+
+              const scaleAnim = new BABYLON.Animation(
+                "dioramaScaleIn",
+                "scaling",
+                fps,
+                BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+              );
+
+              scaleAnim.setKeys([
+                { frame: 0, value: new BABYLON.Vector3(0.001, 0.001, 0.001) },
+                { frame: totalFrames, value: new BABYLON.Vector3(1, 1, 1) }
+              ]);
+
+              const easing = new BABYLON.QuadraticEase();
+              easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+              scaleAnim.setEasingFunction(easing);
+
+              dioramaRoot.animations = [scaleAnim];
+              scene.beginAnimation(dioramaRoot, 0, totalFrames, false, 1, () => {
+                console.log(`✨ diorama ${i} scale in complete`);
+              });
+            } else {
+              // Keep other models hidden
+              dioramaMeshes.forEach(m => m.setEnabled(false));
+            }
+          }
+        } else {
+          // Standard scale in for other models
+          scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => {
+            console.log(`✨ ${modelKey} scale in complete`);
+          });
+        }
 
         // Start petwheels animation when model becomes visible
         if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
@@ -5427,6 +5617,67 @@ export function BabylonCanvas() {
       if (glassMesh) glassMesh.setEnabled(true);
     }
   }, [isInteriorView]);
+
+  // Handle diorama model switching
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    const dioramaModels = dioramaModelsRef.current;
+    const isModelVisible = modelVisibilityRef.current.model3;
+
+    // Only switch models if the dioramas are currently visible
+    if (!isModelVisible) return;
+
+    console.log(`🏛️ Switching to diorama model ${selectedDioramaModel}`);
+
+    // For each diorama model
+    for (let i = 0; i < dioramaModels.roots.length; i++) {
+      const modelRoot = dioramaModels.roots[i];
+      const modelMeshes = dioramaModels.meshes[i];
+
+      if (!modelRoot || modelMeshes.length === 0) continue;
+
+      if (i === selectedDioramaModel) {
+        // Show selected model with scale-up animation
+        // First set scale to near-zero
+        modelRoot.scaling.set(0.001, 0.001, 0.001);
+        modelMeshes.forEach(mesh => mesh.setEnabled(true));
+
+        // Animate scale up quickly
+        const fps = 60;
+        const duration = 0.3; // Quick animation
+        const totalFrames = fps * duration;
+
+        const scaleAnim = new BABYLON.Animation(
+          "dioramaScaleIn",
+          "scaling",
+          fps,
+          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+
+        scaleAnim.setKeys([
+          { frame: 0, value: new BABYLON.Vector3(0.001, 0.001, 0.001) },
+          { frame: totalFrames, value: new BABYLON.Vector3(1, 1, 1) }
+        ]);
+
+        const easing = new BABYLON.QuadraticEase();
+        easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        scaleAnim.setEasingFunction(easing);
+
+        modelRoot.animations = [scaleAnim];
+        scene.beginAnimation(modelRoot, 0, totalFrames, false);
+
+        console.log(`🏛️ Showing diorama model ${i} with animation`);
+      } else {
+        // Hide other models instantly
+        modelMeshes.forEach(mesh => mesh.setEnabled(false));
+        modelRoot.scaling.set(1, 1, 1); // Reset scale for when it's shown again
+        console.log(`🏛️ Hiding diorama model ${i}`);
+      }
+    }
+  }, [selectedDioramaModel]);
 
   return <canvas ref={ref} className="block w-full h-full" />;
 }

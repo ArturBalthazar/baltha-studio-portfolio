@@ -7,6 +7,8 @@ import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
 import { BottomLeftControls } from "./components/BottomLeftControls";
 import { GeelyCustomizer } from "./components/GeelyCustomizer";
+import { DioramasPanel } from "./components/DioramasPanel";
+import { PetwheelsPanel } from "./components/PetwheelsPanel";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
@@ -14,12 +16,15 @@ import { getStateConfig } from "./states";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ConnectOverlay } from "./components/ConnectOverlay";
 import { NavigationMenu } from "./components/NavigationMenu";
+import { SideTriggerOverlay } from "./components/SideTriggerOverlay";
 
 export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
   const menuOpen = useUI((st) => st.menuOpen);
   const geelyCustomizerVisible = useUI((st) => st.geelyCustomizerVisible);
+  const dioramasPanelVisible = useUI((st) => st.dioramasPanelVisible);
+  const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
   const isInteriorView = useUI((st) => st.isInteriorView);
   const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent, setIsInteriorView } = useUI();
   const config = getStateConfig(s);
@@ -79,13 +84,13 @@ export default function App() {
     if (navigationMode === 'guided' && isInteriorView) {
       setIsInteriorView(false);
     }
-    
+
     // In free mode, from states 4-7, go back to state_3
     if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
       useUI.getState().setState(S.state_3);
       return;
     }
-    
+
     // Use config's previousState if defined
     const previousStateName = config.canvas.previousState;
     if (previousStateName) {
@@ -95,7 +100,7 @@ export default function App() {
         return;
       }
     }
-    
+
     // Fallback: go to previous state numerically
     if (s > S.state_0) {
       useUI.getState().setState(s - 1);
@@ -107,13 +112,13 @@ export default function App() {
     if (navigationMode === 'guided' && isInteriorView) {
       setIsInteriorView(false);
     }
-    
+
     // In free mode, from states 4-7, go directly to state_final
     if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
       useUI.getState().setState(S.state_final);
       return;
     }
-    
+
     // Use config's nextState if defined
     const nextStateName = config.canvas.nextState;
     if (nextStateName) {
@@ -123,7 +128,7 @@ export default function App() {
         return;
       }
     }
-    
+
     // Fallback: go to next state numerically
     if (s < S.state_final) {
       useUI.getState().setState(s + 1);
@@ -135,6 +140,9 @@ export default function App() {
       <LoadingScreen />
       {/* Global Audio Manager */}
       <AudioManager />
+
+      {/* Side Trigger Overlay - visual effect when at screen edge during ship control */}
+      <SideTriggerOverlay />
 
       {/* Desktop: Full width layout, chat overlays on top */}
       <div
@@ -173,11 +181,11 @@ export default function App() {
           >
             <CanvasFrame>
               <BabylonCanvas />
-              
+
               {/* Navigation Menu Overlay */}
-              <NavigationMenu 
-                isOpen={menuOpen} 
-                onClose={() => setMenuOpen(false)} 
+              <NavigationMenu
+                isOpen={menuOpen}
+                onClose={() => setMenuOpen(false)}
               />
 
               {/* Typing text overlay - appears at top-left */}
@@ -187,7 +195,7 @@ export default function App() {
                     text={config.content.typingText}
                     startDelay={500}
                     typingSpeed={25}
-                    className="text-brand-white text-base md:text-2xl"
+                    className="text-brand-white text-lg md:text-2xl"
                   />
                 </div>
               )}
@@ -274,6 +282,12 @@ export default function App() {
 
               {/* GEELY Car Customizer */}
               <GeelyCustomizer visible={geelyCustomizerVisible} />
+
+              {/* Dioramas Panel */}
+              <DioramasPanel visible={dioramasPanelVisible} />
+
+              {/* Petwheels Panel */}
+              <PetwheelsPanel visible={petwheelsPanelVisible} />
 
               {/* Connect Overlay (State 5) */}
               {config.content.showConnectOverlay && (

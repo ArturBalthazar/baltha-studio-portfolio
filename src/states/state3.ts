@@ -71,7 +71,7 @@ export const state3Config: StateConfig = {
   content: {
     showOverlay: false,
     showTypingText: true,
-    typingText: "Welcome to Baltha Studio! Select a navigation style to continue...",
+    typingText: "Welcome to Baltha Studio! Select a navigation mode to continue...",
     showCustomizeBox: false,
     customizeBoxVisible: false
   }

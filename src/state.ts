@@ -39,6 +39,14 @@ type UIState = {
   setIsInteriorView: (isInterior: boolean) => void;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
+  sideTrigger: 'left' | 'right' | null; // Which side trigger is active for visual effect
+  setSideTrigger: (side: 'left' | 'right' | null) => void;
+  dioramasPanelVisible: boolean; // Dioramas panel visibility
+  setDioramasPanelVisible: (visible: boolean) => void;
+  selectedDioramaModel: number; // 0=sesc-museum, 1=sesc-island, 2=dioramas
+  setSelectedDioramaModel: (index: number) => void;
+  petwheelsPanelVisible: boolean; // Petwheels panel visibility
+  setPetwheelsPanelVisible: (visible: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -67,5 +75,13 @@ export const useUI = create<UIState>((set, get) => ({
   isInteriorView: false,
   setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior }),
   menuOpen: false,
-  setMenuOpen: (open) => set({ menuOpen: open })
+  setMenuOpen: (open) => set({ menuOpen: open }),
+  sideTrigger: null,
+  setSideTrigger: (side) => set({ sideTrigger: side }),
+  dioramasPanelVisible: false, // Dioramas panel hidden by default
+  setDioramasPanelVisible: (visible) => set({ dioramasPanelVisible: visible }),
+  selectedDioramaModel: 0, // Default to first model (sesc-museum)
+  setSelectedDioramaModel: (index) => set({ selectedDioramaModel: index }),
+  petwheelsPanelVisible: false, // Petwheels panel hidden by default
+  setPetwheelsPanelVisible: (visible) => set({ petwheelsPanelVisible: visible })
 }));

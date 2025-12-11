@@ -101,7 +101,7 @@ export function ConnectOverlay() {
         {
             label: "Baltha Studio",
             url: "#",
-            icon: "/assets/images/website.png",
+            icon: "/assets/brand/baltha-studio-1.png",
             type: "action",
             action: handleBalthaStudioClick
         },

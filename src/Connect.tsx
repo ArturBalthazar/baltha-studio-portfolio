@@ -107,7 +107,7 @@ export default function Connect() {
         {
             label: "Baltha Studio",
             url: "https://baltha.studio",
-            icon: "/assets/images/website.png",
+            icon: "/assets/brand/baltha-studio-1.png",
             type: "link"
         },
         {
