@@ -8,6 +8,14 @@ export const LoadingScreen: React.FC = () => {
     const [isFadingOut, setIsFadingOut] = useState(false);
 
     React.useEffect(() => {
+        // Hide the static HTML loading screen when React takes over
+        const staticScreen = document.getElementById('static-loading-screen');
+        if (staticScreen) {
+            staticScreen.style.display = 'none';
+        }
+    }, []);
+
+    React.useEffect(() => {
         if (!isLoading) {
             setIsFadingOut(true);
             const timer = setTimeout(() => {

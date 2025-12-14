@@ -1,38 +1,105 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <link rel="icon" type="image/png" href="/assets/brand/Baltha_Studio_Icon_favicon_01.png" />
 
-    <title>Baltha Studio</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="icon" type="image/png" href="/assets/brand/Baltha_Studio_Icon_favicon_01.png" />
 
-    <!-- Adobe Fonts (Ballinger Mono / Ballinger Condensed) -->
-    <link rel="stylesheet" href="https://use.typekit.net/uou6yju.css" />
+  <title>Baltha Studio</title>
 
-    <script type="module" src="/src/main.tsx"></script>
-    
-    <style>
-      #fpsCounter {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        padding: 4px 8px;
-        background: rgba(0, 0, 0, 0.35);
-        color: #fff;
-        font-size: 14px;
-        font-family: monospace;
-        border-radius: 4px;
-        z-index: 999999;
-        pointer-events: none;
+  <!-- Adobe Fonts (Ballinger Mono / Ballinger Condensed) -->
+  <link rel="stylesheet" href="https://use.typekit.net/uou6yju.css" />
+
+  <script type="module" src="/src/main.tsx"></script>
+
+  <style>
+    /* Critical styles - loads immediately to prevent flash */
+    body {
+      background-color: #F4F2ED !important;
+      /* Brand white - shows first */
+      margin: 0;
+    }
+
+    .landscape-blocker {
+      display: none !important;
+      /* Hidden by default, CSS media query overrides */
+    }
+
+    @media screen and (max-width: 768px) and (orientation: landscape) {
+      .landscape-blocker {
+        display: flex !important;
       }
-    </style>
-  </head>
+    }
 
-  <body class="min-h-screen antialiased">
-    <div id="root"></div>
+    #fpsCounter {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.35);
+      color: #fff;
+      font-size: 14px;
+      font-family: monospace;
+      border-radius: 4px;
+      z-index: 999999;
+      pointer-events: none;
+    }
+  </style>
+</head>
 
-    <!-- FPS Overlay -->
-    <div id="fpsCounter">FPS: --</div>
-  </body>
+<body class="min-h-screen antialiased" style="background-color: #F4F2ED;">
+  <!-- Static Loading Screen - shows immediately before React mounts -->
+  <div id="static-loading-screen" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #F4F2ED 0%, #F4F2ED 100%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  ">
+    <img src="/assets/brand/vector/Baltha_Studio_Icon.svg" alt="Loading"
+      style="height: 60px; filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);" />
+    <div style="
+      width: 250px;
+      height: 6px;
+      background-color: #E5E3DE;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 24px 0;
+    ">
+      <div style="
+        width: 10%;
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(to right, #EF8253, #C79FCC, #99A1E6);
+        box-shadow: 0 0 15px rgba(199, 159, 204, 0.6);
+      "></div>
+    </div>
+    <img src="/assets/brand/vector/Baltha_Studio_Text_Sign.svg" alt="Baltha Studio"
+      style="height: 50px; filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);" />
+  </div>
+
+  <div id="root"></div>
+
+  <!-- Landscape Blocker Overlay -->
+  <div class="landscape-blocker">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+      stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+      <path d="M12 18h.01" />
+    </svg>
+    <h2>Rotate Your Device</h2>
+    <p>Please rotate your phone to portrait mode for the best experience</p>
+  </div>
+
+  <!-- FPS Overlay -->
+  <!--<div id="fpsCounter">FPS: --</div>-->
+</body>
+
 </html>

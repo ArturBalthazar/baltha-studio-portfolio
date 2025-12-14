@@ -149,7 +149,7 @@ export function GeelyCustomizer({
                                     />
 
                                     {selectedColor === color && (
-                                        <div className="absolute inset-0 border-1 border-white rounded-lg shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] pointer-events-none" />
+                                        <div className="absolute inset-0 border-1 border-white rounded-lg pointer-events-none" />
                                     )}
                                 </button>
 
@@ -301,7 +301,7 @@ export function GeelyCustomizer({
                                             />
 
                                             {selectedColor === color && (
-                                                <div className="absolute inset-0 border-1 border-white rounded-lg shadow-[0_0_8px_2px_rgba(255,255,255,0.5)] pointer-events-none" />
+                                                <div className="absolute inset-0 border-1 border-white rounded-lg pointer-events-none" />
                                             )}
                                         </button>
                                     ))}

@@ -47,12 +47,11 @@ export const state0Config: StateConfig = {
     babylonScene: {
       logoEnabled: true,
       planetEnabled: false,
-      rockRingEnabled: false,
+      rockRingEnabled: true, // Rockring shown from start (no fade animation)
       spaceshipEnabled: false,
       particlesEnabled: false,
       curveParticlesEnabled: false,
       portalsEnabled: false,
-      rockRingTrigger: true, // Trigger rockring fade-in here (stays for all future states)
       rootTransform: {
         mobile: { scale: .15, position: { x: 0, y: 0, z: 18 } },
         desktop: { scale: .15, position: { x: 0, y: 0, z: 18 } }
@@ -76,4 +75,3 @@ export const state0Config: StateConfig = {
     customizeBoxVisible: false
   }
 };
-

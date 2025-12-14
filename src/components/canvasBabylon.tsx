@@ -1133,12 +1133,14 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         if (!zoomOutTriggered && completion >= ZOOM_OUT_THRESHOLD) {
           zoomOutTriggered = true;
           const currentRadius = camera.radius;
-          console.log(`🔭 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming out:`, currentRadius, "→", stateRadius);
+          const targetRadius = stateRadius ?? 24;
+          console.log(`🔭 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming out:`, currentRadius, "→", targetRadius);
 
-          // Temporarily allow the radius range
+          // Allow the transition
           camera.lowerRadiusLimit = 0;
-          camera.upperRadiusLimit = stateRadius ?? 24;
+          camera.upperRadiusLimit = targetRadius;
 
+          // Animate radius
           const zoomOutAnim = new BABYLON.Animation(
             "bezierZoomOut",
             "radius",
@@ -1151,10 +1153,38 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
           zoomOutAnim.setEasingFunction(zoomOutEasing);
           zoomOutAnim.setKeys([
             { frame: 0, value: currentRadius },
-            { frame: radiusFps * radiusAnimDuration, value: stateRadius }
+            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
           ]);
 
-          scene.beginDirectAnimation(camera, [zoomOutAnim], 0, radiusFps * radiusAnimDuration, false, 1);
+          // Animate lowerRadiusLimit to lock zoom during travel
+          const lowerLimitAnim = new BABYLON.Animation(
+            "bezierLowerLimit",
+            "lowerRadiusLimit",
+            radiusFps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          lowerLimitAnim.setEasingFunction(zoomOutEasing);
+          lowerLimitAnim.setKeys([
+            { frame: 0, value: currentRadius },
+            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+          ]);
+
+          // Animate upperRadiusLimit to lock zoom during travel
+          const upperLimitAnim = new BABYLON.Animation(
+            "bezierUpperLimit",
+            "upperRadiusLimit",
+            radiusFps,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+          );
+          upperLimitAnim.setEasingFunction(zoomOutEasing);
+          upperLimitAnim.setKeys([
+            { frame: 0, value: currentRadius },
+            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+          ]);
+
+          scene.beginDirectAnimation(camera, [zoomOutAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1);
         }
 
         // Trigger zoom IN at ~80% path completion (unless skipArrivalZoom is set)
@@ -1165,11 +1195,15 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
             console.log(`⏭️ [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Skipping arrival zoom (skipArrivalZoom is set)`);
           } else {
             const currentRadius = camera.radius;
+            const currentLowerLimit = camera.lowerRadiusLimit ?? currentRadius;
+            const currentUpperLimit = camera.upperRadiusLimit ?? currentRadius;
             console.log(`🔍 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming in:`, currentRadius, "→", arrivalRadius);
 
             // Allow zooming all the way in
             camera.lowerRadiusLimit = 0;
+            camera.upperRadiusLimit = currentRadius; // Will be animated down
 
+            // Animate radius
             const zoomInAnim = new BABYLON.Animation(
               "bezierZoomIn",
               "radius",
@@ -1185,7 +1219,35 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
               { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
             ]);
 
-            scene.beginDirectAnimation(camera, [zoomInAnim], 0, radiusFps * radiusAnimDuration, false, 1);
+            // Animate lowerRadiusLimit to lock zoom during arrival
+            const lowerLimitAnim = new BABYLON.Animation(
+              "bezierLowerLimitIn",
+              "lowerRadiusLimit",
+              radiusFps,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            lowerLimitAnim.setEasingFunction(zoomInEasing);
+            lowerLimitAnim.setKeys([
+              { frame: 0, value: currentLowerLimit },
+              { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
+            ]);
+
+            // Animate upperRadiusLimit to lock zoom during arrival
+            const upperLimitAnim = new BABYLON.Animation(
+              "bezierUpperLimitIn",
+              "upperRadiusLimit",
+              radiusFps,
+              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            upperLimitAnim.setEasingFunction(zoomInEasing);
+            upperLimitAnim.setKeys([
+              { frame: 0, value: currentUpperLimit },
+              { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
+            ]);
+
+            scene.beginDirectAnimation(camera, [zoomInAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1);
           }
         }
 
@@ -1227,7 +1289,7 @@ export function BabylonCanvas() {
   const planetMaterialRef = useRef<BABYLON.Material | null>(null);
   const rockRingRef = useRef<BABYLON.AbstractMesh | null>(null);
   const rockRingAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
-  const rockRingHasShownRef = useRef(false);
+  const rockRingAnimationStartedRef = useRef(false); // Track if rockring animation has started (only in state 4+)
   const particlesHaveStartedRef = useRef(false); // Track if particles have been started
   const spaceshipRef = useRef<BABYLON.AbstractMesh | null>(null);
   const spaceshipRootRef = useRef<BABYLON.TransformNode | null>(null);
@@ -1405,6 +1467,31 @@ export function BabylonCanvas() {
     accumulatedYRotation: 0,
     // Store original quaternion for the model
     originalQuaternion: null as BABYLON.Quaternion | null
+  });
+
+  // Model zoom state - moves model along axis from anchor to ship pivot when scrolling
+  // Toggle-based: zoom in moves to a % of distance, zoom out returns to default
+  const modelZoomRef = useRef({
+    // Whether each model is currently zoomed in (true) or at default position (false)
+    isZoomedIn: {
+      model1: false,
+      model2: false,
+      model3: false,
+      model4: false
+    } as Record<string, boolean>,
+    // Original positions for each model (set when model loads or when entering guided mode)
+    originalPositions: {
+      model1: null as BABYLON.Vector3 | null,
+      model2: null as BABYLON.Vector3 | null,
+      model3: null as BABYLON.Vector3 | null,
+      model4: null as BABYLON.Vector3 | null
+    } as Record<string, BABYLON.Vector3 | null>,
+    // Percentage of anchor-to-ship distance to move model when zoomed in (0.3 = 30% closer)
+    zoomedInPercent: 0.3,
+    // Animation duration in seconds
+    animationDuration: 0.5,
+    // Track if animation is in progress to prevent rapid toggling
+    isAnimating: false
   });
 
   // Guided mode anchor data refs (position + rotation)
@@ -1775,8 +1862,8 @@ export function BabylonCanvas() {
           rockRingRef.current = rockRing;
           updateProgress();
 
-          // ===== GPU WARMUP: Enable rockring with alpha 0 to force shader compilation =====
-          // This prevents GPU delays when rockring first appears on homepage
+          // ===== GPU WARMUP: Enable rockring with alpha 0 briefly to force shader compilation =====
+          // This prevents GPU delays when rockring first appears
 
           // Gather all materials from rockRing and its children
           const materials: BABYLON.Material[] = [];
@@ -1808,63 +1895,19 @@ export function BabylonCanvas() {
             if (warmupFrames >= warmupFrameCount) {
               scene.onAfterRenderObservable.remove(warmupObserver);
 
-              // GPU warmup complete - now decide visibility based on state
+              // GPU warmup complete - show rockring normally (no fade animation)
+              materials.forEach(mat => {
+                mat.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
+                mat.alpha = 1;
+              });
+
+              // Rockring is now ready - set enabled based on current state config
               const currentState = useUI.getState().state;
               const currentConfig = getStateConfig(currentState);
-              const shouldTrigger = currentConfig.canvas.babylonScene?.rockRingTrigger && !rockRingHasShownRef.current;
+              const shouldBeEnabled = currentConfig.canvas.babylonScene?.rockRingEnabled === true;
+              rockRing.setEnabled(shouldBeEnabled);
 
-              if (shouldTrigger) {
-                // State has rockRingTrigger - animate from alpha 0 to 1
-                rockRingHasShownRef.current = true;
-
-                const fps = 60;
-                const duration = 1; // seconds
-                const totalFrames = fps * duration;
-
-                // Play animation
-                if (animationGroups && animationGroups.length > 0) {
-                  animationGroups[0].start(true, 1.7, 1, 2000);
-                }
-
-                // Fade in animation for all materials (from 0 to 1)
-                materials.forEach(mat => {
-                  mat.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-                  const fromAlpha = 0.01;
-                  const toAlpha = 1;
-                  mat.alpha = fromAlpha;
-
-                  const alphaAnimation = new BABYLON.Animation(
-                    "fadeAlpha",
-                    "alpha",
-                    fps,
-                    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-                    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-                  );
-
-                  alphaAnimation.setKeys([
-                    { frame: 0, value: fromAlpha },
-                    { frame: totalFrames, value: toAlpha }
-                  ]);
-
-                  const easingAlpha = new BABYLON.CubicEase();
-                  easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-                  alphaAnimation.setEasingFunction(easingAlpha);
-
-                  mat.animations = [alphaAnimation];
-                  scene.beginAnimation(mat, 0, totalFrames, false);
-                });
-
-                console.log("🎸 Rockring GPU warmup complete - triggering fade-in (state has rockRingTrigger: true)");
-              } else {
-                // No trigger needed - disable rockring but keep materials ready
-                rockRing.setEnabled(false);
-                // Reset materials for future fade-in
-                materials.forEach(mat => {
-                  mat.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-                  mat.alpha = 1;
-                });
-                console.log("🎸 Rockring GPU warmup complete - hiding until triggered");
-              }
+              console.log("🎸 Rockring GPU warmup complete - shown normally (enabled:", shouldBeEnabled, ")");
 
               // Mark GPU warmup as complete (allows loading screen to finish)
               markRockringGPUReady();
@@ -2562,12 +2605,16 @@ export function BabylonCanvas() {
             const iCam = new BABYLON.ArcRotateCamera(
               "interiorCamera",
               0,            // alpha
-              Math.PI / 2.2,  // beta
+              Math.PI / 2.5,  // beta
               0,            // radius
               targetPos,
               scene
             );
-            iCam.fov = 1.2;
+            if (isMobile) {
+              iCam.fov = 1.8;
+            } else {
+              iCam.fov = 1.2;
+            }
             iCam.minZ = 0.01;
             iCam.lowerRadiusLimit = 0;
             iCam.upperRadiusLimit = 0;
@@ -4665,75 +4712,24 @@ export function BabylonCanvas() {
     // Handle camera controls - managed by navigation mode in a separate effect
     // (see useEffect below that watches navigationMode)
 
-    // Handle rockring visibility and animation (triggered by rockRingTrigger in state config)
-    // Once triggered, rockring stays visible for all future states
-    const shouldTriggerRockRing = config.canvas.babylonScene?.rockRingTrigger === true;
-    if ((shouldTriggerRockRing || rockRingHasShownRef.current) && rockRing) {
-      // Ensure enabled
-      if (!rockRing.isEnabled()) {
-        rockRing.setEnabled(true);
-      }
+    // Handle rockring visibility based on rockRingEnabled config
+    // Rockring is always shown as-is (no fade animation) when enabled
+    const rockRingEnabled = config.canvas.babylonScene?.rockRingEnabled === true;
+    if (rockRing) {
+      rockRing.setEnabled(rockRingEnabled);
 
-      // Initial fade-in (only once, when first triggered)
-      if (!rockRingHasShownRef.current && shouldTriggerRockRing) {
-        rockRingHasShownRef.current = true;
-
-        const fps = 60;
-        const duration = 1; // seconds
-        const totalFrames = fps * duration;
-
-        // Play animation
-        if (rockRingAnimationGroups.length > 0) {
-          const animGroup = rockRingAnimationGroups[0];
+      // Start rockring GLB animation only in state 4+ (not state 3)
+      // Once started, animation continues looping
+      if (s >= S.state_4 && rockRingAnimationGroups.length > 0) {
+        const animGroup = rockRingAnimationGroups[0];
+        if (!rockRingAnimationStartedRef.current) {
+          // First time entering state 4+ - start the animation
+          rockRingAnimationStartedRef.current = true;
           animGroup.start(true, 1.7, 1, 2000);
-        }
-
-        // Gather materials from rockRing and its children
-        const materials: BABYLON.Material[] = [];
-        rockRing.getChildMeshes().forEach(mesh => {
-          if (mesh.material) {
-            materials.push(mesh.material);
-          }
-        });
-        if (rockRing.material) {
-          materials.push(rockRing.material);
-        }
-
-        // Fade in animation for all materials
-        materials.forEach(material => {
-          material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-
-          const fromAlpha = 0.01;
-          const toAlpha = 1;
-          material.alpha = fromAlpha;
-
-          const alphaAnimation = new BABYLON.Animation(
-            "fadeAlpha",
-            "alpha",
-            fps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-
-          alphaAnimation.setKeys([
-            { frame: 0, value: fromAlpha },
-            { frame: totalFrames, value: toAlpha }
-          ]);
-
-          const easingAlpha = new BABYLON.CubicEase();
-          easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-          alphaAnimation.setEasingFunction(easingAlpha);
-
-          material.animations = [alphaAnimation];
-          scene.beginAnimation(material, 0, totalFrames, false);
-        });
-      } else if (rockRingHasShownRef.current) {
-        // Ensure animation is playing if it stopped (e.g. navigating between states after trigger)
-        if (rockRingAnimationGroups.length > 0) {
-          const animGroup = rockRingAnimationGroups[0];
-          if (!animGroup.isPlaying) {
-            animGroup.start(true, 1.7, 1, 2000);
-          }
+          console.log("🎸 Rockring animation started (state 4+)");
+        } else if (!animGroup.isPlaying) {
+          // Animation was started before but stopped - resume it
+          animGroup.start(true, 1.7, 1, 2000);
         }
       }
     }
@@ -5036,7 +5032,7 @@ export function BabylonCanvas() {
       // Wait for camera animation to complete before enabling controls
       const timeoutId = setTimeout(() => {
         if (isGuidedMode) {
-          // In guided mode: only enable mouse wheel for zoom, no pointer rotation
+          // In guided mode: enable mouse wheel for zoom (radius limits are animated elsewhere to control zooming)
           camera.inputs.clear();
           camera.inputs.addMouseWheel();
           camera.attachControl(canvas, true);
@@ -5227,6 +5223,241 @@ export function BabylonCanvas() {
       modelRotationRef.current.originalQuaternion = null;
     };
   }, [s, navigationMode]);
+
+  // Model zoom in guided mode - toggle between default and zoomed-in positions with smooth animation
+  useEffect(() => {
+    const canvas = ref.current;
+    const scene = sceneRef.current;
+    const shipPivot = shipPivotRef.current;
+    if (!canvas || !scene || !shipPivot) return;
+
+    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const isGuidedMode = navigationMode === 'guided';
+
+    // Only enable model zoom in guided mode during explore states
+    if (!inExploreState || !isGuidedMode) {
+      return;
+    }
+
+    // Get the current model and its key based on state
+    const getCurrentModelInfo = (): { model: BABYLON.TransformNode | BABYLON.AbstractMesh | null; key: string } => {
+      switch (s) {
+        case S.state_4: return { model: carRootRef.current, key: 'model1' };
+        case S.state_5: return { model: musecraftRootRef.current, key: 'model2' };
+        case S.state_6: return { model: dioramasRootRef.current, key: 'model3' };
+        case S.state_7: return { model: petwheelsRootRef.current, key: 'model4' };
+        default: return { model: null, key: '' };
+      }
+    };
+
+    // Get the current anchor mesh based on state
+    const getCurrentAnchor = (): BABYLON.AbstractMesh | null => {
+      switch (s) {
+        case S.state_4: return carAnchorRef.current;
+        case S.state_5: return musecraftAnchorRef.current;
+        case S.state_6: return dioramasAnchorRef.current;
+        case S.state_7: return petwheelsAnchorRef.current;
+        default: return null;
+      }
+    };
+
+    // Animate model position with easing
+    const animateModelPosition = (
+      model: BABYLON.TransformNode | BABYLON.AbstractMesh,
+      startPos: BABYLON.Vector3,
+      endPos: BABYLON.Vector3,
+      duration: number,
+      onComplete?: () => void
+    ) => {
+      const fps = 60;
+      const totalFrames = fps * duration;
+
+      const positionAnimation = new BABYLON.Animation(
+        "modelZoomPosition",
+        "position",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+      );
+
+      positionAnimation.setKeys([
+        { frame: 0, value: startPos },
+        { frame: totalFrames, value: endPos }
+      ]);
+
+      const easing = new BABYLON.CubicEase();
+      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+      positionAnimation.setEasingFunction(easing);
+
+      model.animations = [positionAnimation];
+      scene.beginAnimation(model, 0, totalFrames, false, 1, () => {
+        model.position.copyFrom(endPos);
+        if (onComplete) onComplete();
+      });
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only zoom when ship has arrived
+      if (!guidedModeArrivedRef.current) {
+        return;
+      }
+
+      // Disable zoom in interior view
+      if (useUI.getState().isInteriorView) {
+        return;
+      }
+
+      // Prevent toggling while animation is in progress
+      if (modelZoomRef.current.isAnimating) {
+        return;
+      }
+
+      const { model, key } = getCurrentModelInfo();
+      const anchor = getCurrentAnchor();
+
+      if (!model || !anchor) return;
+
+      // Store original position if not already stored
+      if (!modelZoomRef.current.originalPositions[key]) {
+        modelZoomRef.current.originalPositions[key] = model.position.clone();
+        console.log(`🔍 Stored original position for ${key}:`, model.position.toString());
+      }
+
+      const originalPos = modelZoomRef.current.originalPositions[key]!;
+      const isCurrentlyZoomedIn = modelZoomRef.current.isZoomedIn[key];
+
+      // Get the ship pivot's world position (this is where the camera looks at)
+      const shipPivotPos = shipPivot.getAbsolutePosition();
+
+      // Calculate direction from model anchor to ship pivot
+      const anchorPos = anchor.getAbsolutePosition();
+      const directionToShip = shipPivotPos.subtract(anchorPos);
+      directionToShip.normalize();
+
+      // Determine target based on scroll direction
+      // deltaY < 0 = scroll up = zoom in (move model closer)
+      // deltaY > 0 = scroll down = zoom out (move model back)
+      const scrollingIn = e.deltaY < 0;
+      const wantsZoomedIn = scrollingIn;
+
+      // Only animate if target state is different from current state
+      if (wantsZoomedIn === isCurrentlyZoomedIn) {
+        return;
+      }
+
+      modelZoomRef.current.isAnimating = true;
+
+      const startPos = model.position.clone();
+      let endPos: BABYLON.Vector3;
+
+      if (wantsZoomedIn) {
+        // Zooming in: move model closer to ship by a percentage of the total distance
+        const anchorToShipDistance = BABYLON.Vector3.Distance(anchorPos, shipPivotPos);
+        const zoomDistance = anchorToShipDistance * modelZoomRef.current.zoomedInPercent;
+        const offsetVector = directionToShip.scale(zoomDistance);
+        endPos = originalPos.add(offsetVector);
+        console.log(`🔍 Zooming IN ${key} - moving ${(modelZoomRef.current.zoomedInPercent * 100).toFixed(0)}% closer (${zoomDistance.toFixed(1)} units)`);
+      } else {
+        // Zooming out: return to original position
+        endPos = originalPos.clone();
+        console.log(`🔍 Zooming OUT ${key} - returning to default`);
+      }
+
+      animateModelPosition(model, startPos, endPos, modelZoomRef.current.animationDuration, () => {
+        modelZoomRef.current.isZoomedIn[key] = wantsZoomedIn;
+        modelZoomRef.current.isAnimating = false;
+      });
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [s, navigationMode]);
+
+  // Reset model zoom when state changes or when leaving guided mode
+  useEffect(() => {
+    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const isGuidedMode = navigationMode === 'guided';
+
+    // Reset zoom states when leaving explore states or guided mode
+    if (!inExploreState || !isGuidedMode) {
+      const keys = ['model1', 'model2', 'model3', 'model4'];
+      keys.forEach(key => {
+        const originalPos = modelZoomRef.current.originalPositions[key];
+        if (originalPos) {
+          // Get the corresponding model
+          let model: BABYLON.TransformNode | BABYLON.AbstractMesh | null = null;
+          switch (key) {
+            case 'model1': model = carRootRef.current; break;
+            case 'model2': model = musecraftRootRef.current; break;
+            case 'model3': model = dioramasRootRef.current; break;
+            case 'model4': model = petwheelsRootRef.current; break;
+          }
+
+          // Reset position if model exists
+          if (model) {
+            model.position.copyFrom(originalPos);
+          }
+        }
+
+        // Reset zoom state
+        modelZoomRef.current.isZoomedIn[key] = false;
+      });
+
+      console.log("🔍 Model zoom reset (left explore state or guided mode)");
+    }
+  }, [s, navigationMode]);
+
+  // Reset model zoom when arriving at a new state (during travel between states)
+  useEffect(() => {
+    // When state changes within explore states, reset the zoom for all models
+    const keys = ['model1', 'model2', 'model3', 'model4'];
+    keys.forEach(key => {
+      const originalPos = modelZoomRef.current.originalPositions[key];
+
+      // If we have an original position stored and the model is zoomed in,
+      // reset the model's actual position before clearing the stored position
+      if (originalPos && modelZoomRef.current.isZoomedIn[key]) {
+        let model: BABYLON.TransformNode | BABYLON.AbstractMesh | null = null;
+        switch (key) {
+          case 'model1': model = carRootRef.current; break;
+          case 'model2': model = musecraftRootRef.current; break;
+          case 'model3': model = dioramasRootRef.current; break;
+          case 'model4': model = petwheelsRootRef.current; break;
+        }
+
+        if (model) {
+          model.position.copyFrom(originalPos);
+          console.log(`🔍 Reset ${key} position back to original before state change`);
+        }
+      }
+
+      // Clear original positions so they get re-captured at the new location
+      modelZoomRef.current.originalPositions[key] = null;
+      modelZoomRef.current.isZoomedIn[key] = false;
+    });
+    modelZoomRef.current.isAnimating = false;
+
+    console.log("🔍 Model zoom positions cleared for state change");
+  }, [s]);
+
+  // Reset model zoom when entering interior view (for Geely car)
+  useEffect(() => {
+    if (isInteriorView && s === S.state_4) {
+      const key = 'model1';
+      const originalPos = modelZoomRef.current.originalPositions[key];
+      const model = carRootRef.current;
+
+      if (originalPos && model && modelZoomRef.current.isZoomedIn[key]) {
+        // Instantly reset to default position when entering interior view
+        model.position.copyFrom(originalPos);
+        modelZoomRef.current.isZoomedIn[key] = false;
+        console.log("🔍 Model zoom reset (entered interior view)");
+      }
+    }
+  }, [isInteriorView, s]);
 
   // Handle navigation mode toggle - move ship to anchor when switching to guided mode in states 4-7
   const prevNavigationModeRef = useRef<'guided' | 'free'>(navigationMode);

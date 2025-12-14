@@ -20,8 +20,32 @@ export function AudioManager() {
       audioRef.current = audio;
     }
 
+    // Handle visibility change (pause when browser goes to background, especially for mobile)
+    const handleVisibilityChange = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (document.hidden) {
+        // Browser went to background - pause immediately
+        audio.pause();
+        console.log("🔇 Audio paused (browser in background)");
+      } else {
+        // Browser is visible again - resume if conditions are met
+        const shouldPlay = audioHasStartedRef.current && useUI.getState().audioEnabled;
+        if (shouldPlay && audio.paused) {
+          audio.play().catch((error) => {
+            console.log("Audio resume prevented:", error);
+          });
+          console.log("🔊 Audio resumed (browser visible)");
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       // Cleanup on unmount
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
