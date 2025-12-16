@@ -34,7 +34,7 @@ export const LoadingScreen: React.FC = () => {
         <div id="loading-screen" style={{ opacity: isFadingOut ? 0 : 1, pointerEvents: isFadingOut ? 'none' : 'auto' }}>
             <div className="logo-overlay">
                 <img
-                    src="/assets/brand/vector/Baltha_Studio_Icon.svg"
+                    src="/assets/brand/Baltha_Studio_Icon_Blue.png"
                     alt="Logo Top"
                     className="logo-top"
                 />
@@ -47,7 +47,7 @@ export const LoadingScreen: React.FC = () => {
             </div>
             <div className="logo-overlay">
                 <img
-                    src="/assets/brand/vector/Baltha_Studio_Text_Sign.svg"
+                    src="/assets/brand/Baltha_Studio_Text_Sign_Blue.png"
                     alt="Logo Bottom"
                     className="logo-bottom"
                 />

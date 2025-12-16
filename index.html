@@ -11,6 +11,70 @@
   <!-- Adobe Fonts (Ballinger Mono / Ballinger Condensed) -->
   <link rel="stylesheet" href="https://use.typekit.net/uou6yju.css" />
 
+  <!-- Preload Critical UI Images (ensures icons load before buttons render) -->
+  <!-- Core UI Icons -->
+  <link rel="preload" href="/assets/images/state_arrow.png" as="image" />
+  <link rel="preload" href="/assets/images/chatIcon.png" as="image" />
+  <link rel="preload" href="/assets/images/menu.png" as="image" />
+  <link rel="preload" href="/assets/images/close.png" as="image" />
+  <link rel="preload" href="/assets/images/info.png" as="image" />
+  <link rel="preload" href="/assets/images/audio_on.png" as="image" />
+  <link rel="preload" href="/assets/images/audio_off.png" as="image" />
+  <link rel="preload" href="/assets/images/guided_mode.png" as="image" />
+  <link rel="preload" href="/assets/images/free_mode.png" as="image" />
+  <link rel="preload" href="/assets/images/side-trigger.png" as="image" />
+
+  <!-- Navigation Menu Icons -->
+  <link rel="preload" href="/assets/images/baltha-outline.png" as="image" />
+  <link rel="preload" href="/assets/images/car.png" as="image" />
+  <link rel="preload" href="/assets/images/musecraft-outline.png" as="image" />
+  <link rel="preload" href="/assets/images/diorama.png" as="image" />
+  <link rel="preload" href="/assets/images/dog.png" as="image" />
+  <link rel="preload" href="/assets/images/connect.png" as="image" />
+  <link rel="preload" href="/assets/images/home.png" as="image" />
+  <link rel="preload" href="/assets/images/return.png" as="image" />
+
+  <!-- State 1: Logo Selector -->
+  <link rel="preload" href="/assets/images/1st_default.png" as="image" />
+  <link rel="preload" href="/assets/images/1st_necklace.png" as="image" />
+  <link rel="preload" href="/assets/images/1st_cookie.png" as="image" />
+  <link rel="preload" href="/assets/images/1st_badge.png" as="image" />
+
+  <!-- State 2: Continent Selector -->
+  <link rel="preload" href="/assets/images/Africa.png" as="image" />
+  <link rel="preload" href="/assets/images/NorthAmerica.png" as="image" />
+  <link rel="preload" href="/assets/images/Europe.png" as="image" />
+  <link rel="preload" href="/assets/images/SouthAmerica.png" as="image" />
+  <link rel="preload" href="/assets/images/Oceania.png" as="image" />
+  <link rel="preload" href="/assets/images/Asia.png" as="image" />
+
+  <!-- State 4: Geely Customizer -->
+  <link rel="preload" href="/assets/images/interior.png" as="image" />
+  <link rel="preload" href="/assets/images/exterior.png" as="image" />
+  <link rel="preload" href="/assets/images/body_green.png" as="image" />
+  <link rel="preload" href="/assets/images/body_yellow.png" as="image" />
+  <link rel="preload" href="/assets/images/body_pink.png" as="image" />
+  <link rel="preload" href="/assets/images/body_black.png" as="image" />
+  <link rel="preload" href="/assets/images/body_white.png" as="image" />
+  <link rel="preload" href="/assets/images/body_silver.png" as="image" />
+  <link rel="preload" href="/assets/images/body_gray.png" as="image" />
+
+  <!-- State 6: Dioramas Panel -->
+  <link rel="preload" href="/assets/images/dioramas/florianopolis-museum.png" as="image" />
+  <link rel="preload" href="/assets/images/dioramas/island-museum.png" as="image" />
+  <link rel="preload" href="/assets/images/dioramas/catarinense-museum.png" as="image" />
+
+  <!-- Connect/Final State -->
+  <link rel="preload" href="/assets/brand/baltha-studio-1.png" as="image" />
+  <link rel="preload" href="/assets/images/instagram.png" as="image" />
+  <link rel="preload" href="/assets/images/whatsapp.png" as="image" />
+  <link rel="preload" href="/assets/images/email.png" as="image" />
+  <link rel="preload" href="/assets/images/website.png" as="image" />
+  <link rel="preload" href="/assets/images/copy.png" as="image" />
+
+  <!-- Header -->
+  <link rel="preload" href="/assets/brand/Baltha_Studio_Icon_Blue.png" as="image" />
+
   <script type="module" src="/src/main.tsx"></script>
 
   <style>
@@ -49,41 +113,16 @@
 </head>
 
 <body class="min-h-screen antialiased" style="background-color: #F4F2ED;">
-  <!-- Static Loading Screen - shows immediately before React mounts -->
+  <!-- Static Loading Screen - shows immediately before React mounts (white background only) -->
   <div id="static-loading-screen" style="
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, #F4F2ED 0%, #F4F2ED 100%);
+    background: #F4F2ED;
     z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  ">
-    <img src="/assets/brand/vector/Baltha_Studio_Icon.svg" alt="Loading"
-      style="height: 60px; filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);" />
-    <div style="
-      width: 250px;
-      height: 6px;
-      background-color: #E5E3DE;
-      border-radius: 3px;
-      overflow: hidden;
-      margin: 24px 0;
-    ">
-      <div style="
-        width: 10%;
-        height: 100%;
-        border-radius: 3px;
-        background: linear-gradient(to right, #EF8253, #C79FCC, #99A1E6);
-        box-shadow: 0 0 15px rgba(199, 159, 204, 0.6);
-      "></div>
-    </div>
-    <img src="/assets/brand/vector/Baltha_Studio_Text_Sign.svg" alt="Baltha Studio"
-      style="height: 50px; filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);" />
-  </div>
+  "></div>
 
   <div id="root"></div>
 

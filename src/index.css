@@ -131,13 +131,11 @@ body {
 .logo-top {
   height: 60px;
   display: block;
-  filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);
 }
 
 .logo-bottom {
-  height: 50px;
+  height: 70px;
   display: block;
-  filter: invert(9%) sepia(15%) saturate(2399%) hue-rotate(176deg) brightness(92%) contrast(102%);
 }
 
 .loading-bar-container {

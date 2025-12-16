@@ -367,11 +367,12 @@ interface AtomIndicator {
     axis: BABYLON.Vector3;
     speed: number;
   }[];
-  isExpanded: boolean;
   config: AtomIndicatorConfig;
-  // Methods
-  expand: (duration?: number) => void;
-  contract: (duration?: number) => void;
+  // Methods - expand/contract now support force option to handle interruptions
+  expand: (duration?: number, force?: boolean) => void;
+  contract: (duration?: number, force?: boolean) => void;
+  getIsExpanded: () => boolean;
+  stopAnimations: () => void;
   dispose: () => void;
 }
 
@@ -496,10 +497,26 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
 
   // State tracking
   let isExpanded = false;
+  let runningAnimatables: BABYLON.Animatable[] = [];
+
+  // Stop all running ring animations
+  const stopAnimations = () => {
+    runningAnimatables.forEach(anim => {
+      if (anim) {
+        anim.stop();
+      }
+    });
+    runningAnimatables = [];
+  };
 
   // Expand rings and stop flame
-  const expand = (duration = 2) => {
-    if (isExpanded) return;
+  // force: if true, will expand even if already expanded (handles interruption mid-animation)
+  const expand = (duration = 2, force = false) => {
+    // Skip if already expanded and not forcing
+    if (isExpanded && !force) return;
+
+    // Stop any running animations to prevent conflicts
+    stopAnimations();
     isExpanded = true;
 
     const fps = 60;
@@ -508,7 +525,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
     // Stop flame particles
     flame.stop();
 
-    // Animate each ring to its expanded size
+    // Animate each ring to its expanded size (starting from CURRENT scale, not assumed start)
     rings.forEach((ring, i) => {
       const targetDiameter = expandedRingRadii[i] / (idleRingRadius * (1 + i * 0.15));
 
@@ -520,6 +537,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
       );
 
+      // Start from current scale (handles mid-animation interruption)
       scaleAnim.setKeys([
         { frame: 0, value: ring.scaling.clone() },
         { frame: totalFrames, value: new BABYLON.Vector3(targetDiameter, targetDiameter, targetDiameter) }
@@ -530,13 +548,19 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
       scaleAnim.setEasingFunction(easing);
 
       ring.animations = [scaleAnim];
-      scene.beginAnimation(ring, 0, totalFrames, false);
+      const animatable = scene.beginAnimation(ring, 0, totalFrames, false);
+      runningAnimatables.push(animatable);
     });
   };
 
   // Contract rings and start flame
-  const contract = (duration = 0.5) => {
-    if (!isExpanded) return;
+  // force: if true, will contract even if already contracted (handles interruption mid-animation)
+  const contract = (duration = 0.5, force = false) => {
+    // Skip if already contracted and not forcing
+    if (!isExpanded && !force) return;
+
+    // Stop any running animations to prevent conflicts
+    stopAnimations();
     isExpanded = false;
 
     const fps = 60;
@@ -545,7 +569,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
     // Start flame particles
     flame.start();
 
-    // Animate each ring back to idle size
+    // Animate each ring back to idle size (starting from CURRENT scale)
     rings.forEach((ring, i) => {
       const targetScale = 1; // Back to original scale
 
@@ -557,6 +581,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
       );
 
+      // Start from current scale (handles mid-animation interruption)
       scaleAnim.setKeys([
         { frame: 0, value: ring.scaling.clone() },
         { frame: totalFrames, value: new BABYLON.Vector3(targetScale, targetScale, targetScale) }
@@ -567,12 +592,17 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
       scaleAnim.setEasingFunction(easing);
 
       ring.animations = [scaleAnim];
-      scene.beginAnimation(ring, 0, totalFrames, false);
+      const animatable = scene.beginAnimation(ring, 0, totalFrames, false);
+      runningAnimatables.push(animatable);
     });
   };
 
+  // Getter for current expanded state
+  const getIsExpanded = () => isExpanded;
+
   // Dispose function
   const dispose = () => {
+    stopAnimations();
     scene.onBeforeRenderObservable.remove(rotationObserver);
     flame.dispose();
     emitterSphere.dispose();
@@ -585,11 +615,212 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
     rings,
     flame,
     ringAnimations,
-    isExpanded,
     config,
     expand,
     contract,
+    getIsExpanded,
+    stopAnimations,
     dispose
+  };
+}
+
+// ===== SPATIAL LOADING RING =====
+// Displays a spinning progress ring at anchor positions when models are still loading
+
+interface LoadingRingConfig {
+  scene: BABYLON.Scene;
+  position: BABYLON.Vector3;
+  radius?: number;
+  thickness?: number;
+}
+
+interface LoadingRing {
+  root: BABYLON.TransformNode;
+  dispose: () => void;
+  hide: (duration?: number) => void;
+}
+
+/**
+ * Creates a spatial loading ring at the specified position.
+ * The ring spins continuously with a gradient arc, indicating loading progress.
+ */
+function createLoadingRing(config: LoadingRingConfig): LoadingRing {
+  const { scene, position, radius = 3, thickness = 0.08 } = config;
+
+  // Create root transform node
+  const root = new BABYLON.TransformNode("loadingRingRoot", scene);
+  root.position.copyFrom(position);
+
+  // Create the arc points (3/4 of a circle)
+  const segments = 48;
+  const arcAngle = Math.PI * 1.5; // 270 degrees arc
+  const points: BABYLON.Vector3[] = [];
+  const colors: BABYLON.Color4[] = [];
+
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const angle = t * arcAngle - Math.PI / 2; // Start from top
+    points.push(new BABYLON.Vector3(
+      Math.cos(angle) * radius,
+      0,
+      Math.sin(angle) * radius
+    ));
+
+    // Gradient from transparent to bright (tail to head effect)
+    const alpha = Math.pow(t, 0.5) * 0.9; // Ease-in for smoother tail
+    // Color gradient: purple -> cyan -> white at the head
+    const r = 0.6 + t * 0.4;
+    const g = 0.4 + t * 0.6;
+    const b = 0.9 + t * 0.1;
+    colors.push(new BABYLON.Color4(r, g, b, alpha));
+  }
+
+  // Create the main arc line
+  const arc = BABYLON.MeshBuilder.CreateLines("loadingArc", {
+    points,
+    colors,
+    useVertexAlpha: true
+  }, scene);
+  arc.parent = root;
+
+  // Create a second, slightly larger arc for glow effect
+  const glowPoints: BABYLON.Vector3[] = [];
+  const glowColors: BABYLON.Color4[] = [];
+  const glowRadius = radius * 1.02;
+
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const angle = t * arcAngle - Math.PI / 2;
+    glowPoints.push(new BABYLON.Vector3(
+      Math.cos(angle) * glowRadius,
+      0,
+      Math.sin(angle) * glowRadius
+    ));
+    // Softer glow with lower alpha
+    const alpha = Math.pow(t, 0.7) * 0.3;
+    glowColors.push(new BABYLON.Color4(0.7, 0.5, 1, alpha));
+  }
+
+  const glowArc = BABYLON.MeshBuilder.CreateLines("loadingGlowArc", {
+    points: glowPoints,
+    colors: glowColors,
+    useVertexAlpha: true
+  }, scene);
+  glowArc.parent = root;
+
+  // Create particle effect at the head of the arc (brightest point)
+  const headEmitter = BABYLON.MeshBuilder.CreateSphere("loadingHeadEmitter", { diameter: 0.01 }, scene);
+  headEmitter.parent = root;
+  headEmitter.isVisible = false;
+  headEmitter.position.set(0, 0, radius); // Start at top of arc
+
+  const headParticles = new BABYLON.ParticleSystem("loadingHeadParticles", 30, scene);
+  headParticles.particleTexture = new BABYLON.Texture("/assets/textures/floating_light.png", scene);
+  headParticles.emitter = headEmitter;
+  headParticles.minEmitPower = 0.01;
+  headParticles.maxEmitPower = 0.02;
+  headParticles.emitRate = 15;
+  headParticles.minSize = 0.1;
+  headParticles.maxSize = 0.25;
+  headParticles.minLifeTime = 0.2;
+  headParticles.maxLifeTime = 0.5;
+  headParticles.color1 = new BABYLON.Color4(1, 1, 1, 0.6);
+  headParticles.color2 = new BABYLON.Color4(0.7, 0.5, 1, 0.3);
+  headParticles.colorDead = new BABYLON.Color4(0.5, 0.3, 0.8, 0);
+  headParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+  headParticles.gravity = BABYLON.Vector3.Zero();
+
+  const sphereEmitter = new BABYLON.SphereParticleEmitter(0.1);
+  sphereEmitter.radiusRange = 1;
+  headParticles.particleEmitterType = sphereEmitter;
+
+  headParticles.start();
+
+  // Animation: continuous rotation
+  const rotationSpeed = 2.5; // Radians per second
+  let currentAngle = 0;
+
+  const rotationObserver = scene.onBeforeRenderObservable.add(() => {
+    const deltaTime = scene.getEngine().getDeltaTime() / 1000;
+    currentAngle += rotationSpeed * deltaTime;
+    root.rotation.y = currentAngle;
+
+    // Update head emitter position (at the end of the arc, which rotates with root)
+    // The arc ends at 270 degrees from top, so head is at bottom-left
+    const headAngle = arcAngle - Math.PI / 2;
+    headEmitter.position.set(
+      Math.cos(headAngle) * radius,
+      0,
+      Math.sin(headAngle) * radius
+    );
+  });
+
+  // Face the camera (billboard-like, but only on XZ plane)
+  const billboardObserver = scene.onBeforeRenderObservable.add(() => {
+    const camera = scene.activeCamera;
+    if (!camera) return;
+
+    // Make the ring face the camera on the Y axis
+    const cameraPos = camera.position;
+    const ringPos = root.getAbsolutePosition();
+    const direction = cameraPos.subtract(ringPos);
+    direction.y = 0; // Keep level
+    direction.normalize();
+
+    // Calculate angle to face camera
+    // We offset by the current rotation so the spinning continues while facing camera
+    // Actually, for a spinner, we don't want to face camera - we want to spin freely
+    // So let's just have it spin on a slight tilt for visibility
+  });
+
+  // Tilt the ring slightly towards camera for better visibility
+  root.rotation.x = Math.PI / 6; // 30 degree tilt
+
+  // Hide animation function
+  const hide = (duration = 0.5) => {
+    const fps = 60;
+    const totalFrames = fps * duration;
+
+    // Fade out by scaling down
+    const scaleAnim = new BABYLON.Animation(
+      "loadingRingHide",
+      "scaling",
+      fps,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+
+    scaleAnim.setKeys([
+      { frame: 0, value: root.scaling.clone() },
+      { frame: totalFrames, value: new BABYLON.Vector3(0.01, 0.01, 0.01) }
+    ]);
+
+    const easing = new BABYLON.CubicEase();
+    easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
+    scaleAnim.setEasingFunction(easing);
+
+    root.animations = [scaleAnim];
+    scene.beginAnimation(root, 0, totalFrames, false, 1, () => {
+      root.setEnabled(false);
+      headParticles.stop();
+    });
+  };
+
+  // Dispose function
+  const dispose = () => {
+    scene.onBeforeRenderObservable.remove(rotationObserver);
+    scene.onBeforeRenderObservable.remove(billboardObserver);
+    headParticles.dispose();
+    headEmitter.dispose();
+    arc.dispose();
+    glowArc.dispose();
+    root.dispose();
+  };
+
+  return {
+    root,
+    dispose,
+    hide
   };
 }
 
@@ -652,7 +883,11 @@ async function warmupModelForGPU(
 
 /**
  * Shows or hides model using scale animation (scale up from near-zero or scale down to near-zero)
+ * Handles interruptions: stops any running animation and starts from current scale.
  */
+// Track running scale animations per model root for interruption handling
+const modelScaleAnimations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Animatable> = new Map();
+
 function scaleModelMeshes(
   rootMesh: BABYLON.TransformNode | BABYLON.AbstractMesh | null,
   meshes: BABYLON.AbstractMesh[],
@@ -666,30 +901,27 @@ function scaleModelMeshes(
     return;
   }
 
+  // Stop any running scale animation for this model (handles interruption)
+  const existingAnim = modelScaleAnimations.get(rootMesh);
+  if (existingAnim) {
+    existingAnim.stop();
+    modelScaleAnimations.delete(rootMesh);
+    console.log(`⏹️ Stopped existing scale animation for ${rootMesh.name}`);
+  }
+
   const fps = 60;
   const totalFrames = fps * duration;
   const nearZeroScale = 0.001;
 
-  // Get the original full scale (stored when model was loaded, or current if scaling out)
-  let fullScale: BABYLON.Vector3;
-  if (scaleIn) {
-    // When scaling in, use stored original scale or default to (1, 1, -1)
-    fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, -1);
-  } else {
-    // When scaling out, use current scale as the full scale and store it
-    fullScale = rootMesh.scaling.clone();
-    modelOriginalScales.set(rootMesh, fullScale);
+  // Get the original full scale (stored when model was loaded)
+  const fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, -1);
+
+  // When scaling out, make sure we have the correct full scale stored
+  if (!scaleIn && !modelOriginalScales.has(rootMesh)) {
+    modelOriginalScales.set(rootMesh, rootMesh.scaling.clone());
   }
 
-  // Calculate start and end scales
-  const startScale = scaleIn
-    ? new BABYLON.Vector3(
-      nearZeroScale * Math.sign(fullScale.x),
-      nearZeroScale * Math.sign(fullScale.y),
-      nearZeroScale * Math.sign(fullScale.z)
-    )
-    : fullScale.clone();
-
+  // Calculate end scale
   const endScale = scaleIn
     ? fullScale.clone()
     : new BABYLON.Vector3(
@@ -698,11 +930,22 @@ function scaleModelMeshes(
       nearZeroScale * Math.sign(fullScale.z)
     );
 
-  // If scaling in, enable meshes first and set scale to near-zero
+  // If scaling in and meshes are disabled, enable them first and set to near-zero
   if (scaleIn) {
+    const currentScaleMag = rootMesh.scaling.length();
+    // If model is currently at near-zero or disabled, start from near-zero
+    if (currentScaleMag < 0.01 || !meshes.some(m => m.isEnabled())) {
+      rootMesh.scaling.set(
+        nearZeroScale * Math.sign(fullScale.x),
+        nearZeroScale * Math.sign(fullScale.y),
+        nearZeroScale * Math.sign(fullScale.z)
+      );
+    }
     meshes.forEach(mesh => mesh.setEnabled(true));
-    rootMesh.scaling.copyFrom(startScale);
   }
+
+  // Start from CURRENT scale (handles mid-animation interruption gracefully)
+  const startScale = rootMesh.scaling.clone();
 
   const scaleAnim = new BABYLON.Animation(
     scaleIn ? "scaleInModel" : "scaleOutModel",
@@ -724,7 +967,11 @@ function scaleModelMeshes(
   scaleAnim.setEasingFunction(easing);
 
   rootMesh.animations = [scaleAnim];
-  scene.beginAnimation(rootMesh, 0, totalFrames, false, 1, () => {
+
+  const animatable = scene.beginAnimation(rootMesh, 0, totalFrames, false, 1, () => {
+    // Clean up tracking
+    modelScaleAnimations.delete(rootMesh);
+
     // If scaling out, disable meshes after animation
     if (!scaleIn) {
       meshes.forEach(mesh => mesh.setEnabled(false));
@@ -733,6 +980,9 @@ function scaleModelMeshes(
     }
     if (onComplete) onComplete();
   });
+
+  // Track this animation for potential interruption
+  modelScaleAnimations.set(rootMesh, animatable);
 }
 
 // Guided mode bezier animation options
@@ -1370,6 +1620,7 @@ export function BabylonCanvas() {
   const musecraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const musecraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
   const musecraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const musecraftAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
 
 
   // Dioramas refs (anchor_3, state 6) - Multiple models with shared parent
@@ -1407,6 +1658,32 @@ export function BabylonCanvas() {
 
   // Model visibility state (to track which models are currently shown/hidden)
   const modelVisibilityRef = useRef<{
+    model1: boolean; // GEELY
+    model2: boolean; // Musecraft
+    model3: boolean; // Dioramas
+    model4: boolean; // Petwheels
+  }>({
+    model1: false,
+    model2: false,
+    model3: false,
+    model4: false
+  });
+
+  // Loading rings for each anchor (shown when ship arrives but model isn't loaded yet)
+  const loadingRingsRef = useRef<{
+    ring1: LoadingRing | null; // For GEELY car (anchor_1)
+    ring2: LoadingRing | null; // For Musecraft (anchor_2)
+    ring3: LoadingRing | null; // For Dioramas (anchor_3)
+    ring4: LoadingRing | null; // For Petwheels (anchor_4)
+  }>({
+    ring1: null,
+    ring2: null,
+    ring3: null,
+    ring4: null
+  });
+
+  // Track whether each model has finished loading (different from visibility)
+  const modelLoadedRef = useRef<{
     model1: boolean; // GEELY
     model2: boolean; // Musecraft
     model3: boolean; // Dioramas
@@ -1638,7 +1915,7 @@ export function BabylonCanvas() {
 
     // Loading tracking
     let loadedCount = 0;
-    const totalAssets = 7; // 4 logos + planet + rockring + spaceship
+    const totalAssets = 8; // 4 logos + planet + rockring + spaceship + anchors
     let rockringGPUReady = false; // Track rockring GPU warmup separately
 
     const updateProgress = () => {
@@ -1984,6 +2261,8 @@ export function BabylonCanvas() {
         if (meshes[0]) {
           meshes[0].setEnabled(false);
         }
+
+        updateProgress(); // Count anchors as a loaded asset
       },
       undefined,
       (sceneOrMesh, message, exception) => {
@@ -2618,6 +2897,7 @@ export function BabylonCanvas() {
             iCam.minZ = 0.01;
             iCam.lowerRadiusLimit = 0;
             iCam.upperRadiusLimit = 0;
+            iCam.panningSensibility = 0; // Disable panning
 
             // Sync rotation with car/anchor
             // We calculate heading from the anchor's forward vector to be robust against scaling/quaternions
@@ -2683,6 +2963,16 @@ export function BabylonCanvas() {
         setTimeout(() => {
           customizeCar({ color: "green", trim: "lightBlue" });
         }, 100);
+
+        // Mark model as fully loaded
+        modelLoadedRef.current.model1 = true;
+        console.log("✅ GEELY car (model1) marked as loaded");
+
+        // If a loading ring is showing at this anchor, hide it
+        if (loadingRingsRef.current.ring1) {
+          loadingRingsRef.current.ring1.hide();
+          console.log("🔄 Hiding loading ring for model1 - model now loaded");
+        }
       } catch (error) {
         console.error("❌ Error loading GEELY car:", error);
       }
@@ -2792,7 +3082,9 @@ export function BabylonCanvas() {
         musecraftRootRef.current = modelRoot as any;
         console.log("🎨 Musecraft root mesh:", modelRoot.name);
 
-        // Stop all animations
+        // Store animation groups and stop them initially (will be started by proximity detection)
+        musecraftAnimationGroupsRef.current = container.animationGroups;
+        console.log(`🎨 Found ${container.animationGroups.length} animation groups:`, container.animationGroups.map(g => g.name));
         container.animationGroups.forEach(group => {
           group.stop();
           group.reset();
@@ -2865,6 +3157,16 @@ export function BabylonCanvas() {
         modelVisibilityRef.current.model2 = false;
 
         console.log(`🎨 Musecraft loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+
+        // Mark model as fully loaded
+        modelLoadedRef.current.model2 = true;
+        console.log("✅ Musecraft (model2) marked as loaded");
+
+        // If a loading ring is showing at this anchor, hide it
+        if (loadingRingsRef.current.ring2) {
+          loadingRingsRef.current.ring2.hide();
+          console.log("🔄 Hiding loading ring for model2 - model now loaded");
+        }
       } catch (error) {
         console.error("❌ Error loading Musecraft:", error);
       }
@@ -3017,6 +3319,16 @@ export function BabylonCanvas() {
         // This is handled by the model switching effect
 
         console.log(`🏛️ Dioramas loaded successfully! Total ${allMeshes.length} meshes across ${dioramaFiles.length} models`);
+
+        // Mark model as fully loaded
+        modelLoadedRef.current.model3 = true;
+        console.log("✅ Dioramas (model3) marked as loaded");
+
+        // If a loading ring is showing at this anchor, hide it
+        if (loadingRingsRef.current.ring3) {
+          loadingRingsRef.current.ring3.hide();
+          console.log("🔄 Hiding loading ring for model3 - model now loaded");
+        }
       } catch (error) {
         console.error("❌ Error loading Dioramas:", error);
       }
@@ -3120,6 +3432,16 @@ export function BabylonCanvas() {
         modelVisibilityRef.current.model4 = false;
 
         console.log(`🐾 Petwheels loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
+
+        // Mark model as fully loaded
+        modelLoadedRef.current.model4 = true;
+        console.log("✅ Petwheels (model4) marked as loaded");
+
+        // If a loading ring is showing at this anchor, hide it
+        if (loadingRingsRef.current.ring4) {
+          loadingRingsRef.current.ring4.hide();
+          console.log("🔄 Hiding loading ring for model4 - model now loaded");
+        }
       } catch (error) {
         console.error("❌ Error loading Petwheels:", error);
       }
@@ -4389,6 +4711,29 @@ export function BabylonCanvas() {
             onComplete: () => {
               guidedModeArrivedRef.current = true;
               console.log("🎯 Ship arrived at anchor - model rotation enabled");
+
+              // Check if model is loaded - if not, show loading ring
+              const modelKey = `model${anchorIndex}` as 'model1' | 'model2' | 'model3' | 'model4';
+              const ringKey = `ring${anchorIndex}` as 'ring1' | 'ring2' | 'ring3' | 'ring4';
+              const isModelLoaded = modelLoadedRef.current[modelKey];
+
+              if (!isModelLoaded && scene) {
+                console.log(`⏳ Model ${modelKey} not loaded yet - showing loading ring`);
+
+                // Dispose any existing ring first
+                if (loadingRingsRef.current[ringKey]) {
+                  loadingRingsRef.current[ringKey]!.dispose();
+                }
+
+                // Create loading ring at anchor position
+                const loadingRing = createLoadingRing({
+                  scene,
+                  position: anchorData.position,
+                  radius: 2.5
+                });
+                loadingRingsRef.current[ringKey] = loadingRing;
+                console.log(`🔄 Created loading ring at anchor for ${modelKey}`);
+              }
             }
           });
         } else {
@@ -5369,10 +5714,123 @@ export function BabylonCanvas() {
       });
     };
 
+    // ========== MOBILE PINCH-TO-ZOOM ==========
+    // Track pinch gesture with two fingers
+    let initialPinchDistance: number | null = null;
+    const PINCH_THRESHOLD = 50; // Minimum distance change to trigger zoom toggle (in pixels)
+
+    const getTouchDistance = (touch1: Touch, touch2: Touch): number => {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      // Only track when exactly 2 fingers are on screen
+      if (e.touches.length === 2) {
+        initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Need exactly 2 fingers and a valid initial distance
+      if (e.touches.length !== 2 || initialPinchDistance === null) return;
+
+      // Only zoom when ship has arrived
+      if (!guidedModeArrivedRef.current) return;
+
+      // Disable zoom in interior view
+      if (useUI.getState().isInteriorView) return;
+
+      // Prevent toggling while animation is in progress
+      if (modelZoomRef.current.isAnimating) return;
+
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const distanceChange = currentDistance - initialPinchDistance;
+
+      // Check if pinch gesture exceeds threshold
+      if (Math.abs(distanceChange) >= PINCH_THRESHOLD) {
+        const { model, key } = getCurrentModelInfo();
+        const anchor = getCurrentAnchor();
+
+        if (!model || !anchor) return;
+
+        // Store original position if not already stored
+        if (!modelZoomRef.current.originalPositions[key]) {
+          modelZoomRef.current.originalPositions[key] = model.position.clone();
+          console.log(`🔍 [Pinch] Stored original position for ${key}:`, model.position.toString());
+        }
+
+        const originalPos = modelZoomRef.current.originalPositions[key]!;
+        const isCurrentlyZoomedIn = modelZoomRef.current.isZoomedIn[key];
+
+        // Pinch out (spreading fingers) = zoom in (move model closer)
+        // Pinch in (contracting fingers) = zoom out (move model back)
+        const wantsZoomedIn = distanceChange > 0;
+
+        // Only animate if target state is different from current state
+        if (wantsZoomedIn === isCurrentlyZoomedIn) {
+          // Reset initial distance to allow continuous pinch detection
+          initialPinchDistance = currentDistance;
+          return;
+        }
+
+        modelZoomRef.current.isAnimating = true;
+
+        // Get the ship pivot's world position
+        const shipPivotPos = shipPivot.getAbsolutePosition();
+
+        // Calculate direction from model anchor to ship pivot
+        const anchorPos = anchor.getAbsolutePosition();
+        const directionToShip = shipPivotPos.subtract(anchorPos);
+        directionToShip.normalize();
+
+        const startPos = model.position.clone();
+        let endPos: BABYLON.Vector3;
+
+        if (wantsZoomedIn) {
+          // Zooming in: move model closer to ship
+          const anchorToShipDistance = BABYLON.Vector3.Distance(anchorPos, shipPivotPos);
+          const zoomDistance = anchorToShipDistance * modelZoomRef.current.zoomedInPercent;
+          const offsetVector = directionToShip.scale(zoomDistance);
+          endPos = originalPos.add(offsetVector);
+          console.log(`🔍 [Pinch] Zooming IN ${key} - spreading fingers`);
+        } else {
+          // Zooming out: return to original position
+          endPos = originalPos.clone();
+          console.log(`🔍 [Pinch] Zooming OUT ${key} - pinching fingers`);
+        }
+
+        animateModelPosition(model, startPos, endPos, modelZoomRef.current.animationDuration, () => {
+          modelZoomRef.current.isZoomedIn[key] = wantsZoomedIn;
+          modelZoomRef.current.isAnimating = false;
+        });
+
+        // Reset initial distance after triggering zoom
+        initialPinchDistance = currentDistance;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Reset when fingers are lifted (less than 2 remaining)
+      if (e.touches.length < 2) {
+        initialPinchDistance = null;
+      }
+    };
+
+    // Add event listeners
     canvas.addEventListener('wheel', handleWheel, { passive: false });
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: true });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: true });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
     return () => {
       canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [s, navigationMode]);
 
@@ -5618,37 +6076,55 @@ export function BabylonCanvas() {
       const visibility = modelVisibilityRef.current;
 
       // Contract all atoms that are expanded and hide them
+      // Use force=true and stop animations to ensure clean state when leaving explore states
       if (atoms.atom1) {
-        if (atoms.atom1.isExpanded) atoms.atom1.contract();
+        atoms.atom1.stopAnimations();
+        atoms.atom1.contract(0.3, true);
         atoms.atom1.root.setEnabled(false);
       }
       if (atoms.atom2) {
-        if (atoms.atom2.isExpanded) atoms.atom2.contract();
+        atoms.atom2.stopAnimations();
+        atoms.atom2.contract(0.3, true);
         atoms.atom2.root.setEnabled(false);
       }
       if (atoms.atom3) {
-        if (atoms.atom3.isExpanded) atoms.atom3.contract();
+        atoms.atom3.stopAnimations();
+        atoms.atom3.contract(0.3, true);
         atoms.atom3.root.setEnabled(false);
       }
       if (atoms.atom4) {
-        if (atoms.atom4.isExpanded) atoms.atom4.contract();
+        atoms.atom4.stopAnimations();
+        atoms.atom4.contract(0.3, true);
         atoms.atom4.root.setEnabled(false);
       }
 
-      // Hide all models
+      // Hide all models and stop any running scale animations
+      // This ensures clean state when leaving explore states
       if (visibility.model1 && carMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(carRootRef.current!);
+        if (anim) anim.stop();
+        if (carRootRef.current) modelScaleAnimations.delete(carRootRef.current);
         carMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model1 = false;
       }
       if (visibility.model2 && musecraftMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(musecraftRootRef.current!);
+        if (anim) anim.stop();
+        if (musecraftRootRef.current) modelScaleAnimations.delete(musecraftRootRef.current);
         musecraftMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model2 = false;
       }
       if (visibility.model3 && dioramasMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(dioramasRootRef.current!);
+        if (anim) anim.stop();
+        if (dioramasRootRef.current) modelScaleAnimations.delete(dioramasRootRef.current);
         dioramasMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model3 = false;
       }
       if (visibility.model4 && petwheelsMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(petwheelsRootRef.current!);
+        if (anim) anim.stop();
+        if (petwheelsRootRef.current) modelScaleAnimations.delete(petwheelsRootRef.current);
         petwheelsMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model4 = false;
       }
@@ -5657,6 +6133,14 @@ export function BabylonCanvas() {
       if (useUI.getState().isInteriorView) {
         useUI.getState().setIsInteriorView(false);
       }
+
+      // Dispose all loading rings when leaving explore states
+      const rings = loadingRingsRef.current;
+      if (rings.ring1) { rings.ring1.dispose(); rings.ring1 = null; }
+      if (rings.ring2) { rings.ring2.dispose(); rings.ring2 = null; }
+      if (rings.ring3) { rings.ring3.dispose(); rings.ring3 = null; }
+      if (rings.ring4) { rings.ring4.dispose(); rings.ring4 = null; }
+
       return;
     }
 
@@ -5668,6 +6152,7 @@ export function BabylonCanvas() {
     if (atoms.atom4) atoms.atom4.root.setEnabled(true);
 
     // Proximity check function for a single model
+    // Uses force mode on atom expand/contract to handle mid-animation interruptions
     const checkModelProximity = (
       modelKey: 'model1' | 'model2' | 'model3' | 'model4',
       rootRef: React.MutableRefObject<BABYLON.TransformNode | BABYLON.AbstractMesh | null>,
@@ -5695,14 +6180,23 @@ export function BabylonCanvas() {
       const isCurrentlyVisible = visibility[modelKey];
       const shouldBeVisible = distance <= config.proximityDistance;
 
-      // Transition to visible
+      // Transition to visible (SHOW model + EXPAND atom)
       if (shouldBeVisible && !isCurrentlyVisible) {
         visibility[modelKey] = true;
-        console.log(`⚛️ Ship within range of ${modelKey} (${distance.toFixed(1)}m) - showing model`);
+        console.log(`⚛️ [${modelKey}] Ship within range (${distance.toFixed(1)}m) - SHOWING model + EXPANDING atom`);
 
-        // Expand atom (stops flame, enlarges rings)
+        // Expand atom with force=true to handle interruptions
+        // This stops any running contract animation and starts expand from current state
         if (atom) {
-          atom.expand(0.6);
+          atom.expand(0.6, true);
+        }
+
+        // Hide any loading ring that might be showing at this anchor
+        const ringKey = modelKey.replace('model', 'ring') as 'ring1' | 'ring2' | 'ring3' | 'ring4';
+        const loadingRing = loadingRingsRef.current[ringKey];
+        if (loadingRing) {
+          loadingRing.hide(0.3);
+          console.log(`🔄 Hiding loading ring for ${modelKey} - model becoming visible`);
         }
 
         // Special handling for model3 (dioramas) - only show selected model
@@ -5718,33 +6212,8 @@ export function BabylonCanvas() {
             if (!dioramaRoot || dioramaMeshes.length === 0) continue;
 
             if (i === selectedIndex) {
-              // Show selected model with scale animation
-              dioramaRoot.scaling.set(0.001, 0.001, 0.001);
-              dioramaMeshes.forEach(m => m.setEnabled(true));
-
-              const fps = 60;
-              const duration = 2;
-              const totalFrames = fps * duration;
-
-              const scaleAnim = new BABYLON.Animation(
-                "dioramaScaleIn",
-                "scaling",
-                fps,
-                BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-              );
-
-              scaleAnim.setKeys([
-                { frame: 0, value: new BABYLON.Vector3(0.001, 0.001, 0.001) },
-                { frame: totalFrames, value: new BABYLON.Vector3(1, 1, 1) }
-              ]);
-
-              const easing = new BABYLON.QuadraticEase();
-              easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-              scaleAnim.setEasingFunction(easing);
-
-              dioramaRoot.animations = [scaleAnim];
-              scene.beginAnimation(dioramaRoot, 0, totalFrames, false, 1, () => {
+              // Use scaleModelMeshes for dioramas too (it handles interruption)
+              scaleModelMeshes(dioramaRoot, dioramaMeshes, scene, true, 2, () => {
                 console.log(`✨ diorama ${i} scale in complete`);
               });
             } else {
@@ -5753,9 +6222,17 @@ export function BabylonCanvas() {
             }
           }
         } else {
-          // Standard scale in for other models
+          // Standard scale in for other models (scaleModelMeshes handles interruption)
           scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => {
             console.log(`✨ ${modelKey} scale in complete`);
+          });
+        }
+
+        // Start musecraft animation when model becomes visible
+        if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
+          musecraftAnimationGroupsRef.current.forEach(group => {
+            group.play(true); // Play in loop
+            console.log(`🎨 Started animation: ${group.name}`);
           });
         }
 
@@ -5767,10 +6244,19 @@ export function BabylonCanvas() {
           });
         }
       }
-      // Transition to hidden
+      // Transition to hidden (HIDE model + CONTRACT atom)
       else if (!shouldBeVisible && isCurrentlyVisible) {
         visibility[modelKey] = false;
-        console.log(`⚛️ Ship left range of ${modelKey} (${distance.toFixed(1)}m) - hiding model`);
+        console.log(`⚛️ [${modelKey}] Ship left range (${distance.toFixed(1)}m) - HIDING model + CONTRACTING atom`);
+
+        // Stop musecraft animation when model becomes hidden
+        if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
+          musecraftAnimationGroupsRef.current.forEach(group => {
+            group.stop();
+            group.reset();
+            console.log(`🎨 Stopped animation: ${group.name}`);
+          });
+        }
 
         // Stop petwheels animation when model becomes hidden
         if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
@@ -5781,12 +6267,13 @@ export function BabylonCanvas() {
           });
         }
 
-        // Contract atom (starts flame, shrinks rings)
+        // Contract atom with force=true to handle interruptions
+        // This stops any running expand animation and starts contract from current state
         if (atom) {
-          atom.contract(0.6);
+          atom.contract(0.6, true);
         }
 
-        // Scale out model
+        // Scale out model (scaleModelMeshes handles interruption)
         scaleModelMeshes(modelRoot, meshes, scene, false, 2, () => {
           console.log(`✨ ${modelKey} scale out complete`);
           // Exit interior view if this was the car
