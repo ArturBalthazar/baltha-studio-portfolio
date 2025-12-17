@@ -91,7 +91,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
       const BASE_URL =
         window.location.hostname === "localhost"
           ? "http://127.0.0.1:8081"
-          : "https://baltha-studio.onrender.com";
+          : "https://baltha-studio-v2.onrender.com";
 
       const response = await fetch(`${BASE_URL}/chat`, {
         method: "POST",
