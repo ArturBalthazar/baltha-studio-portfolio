@@ -1540,175 +1540,147 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         console.log("✅ [Bezier Animation] Camera animation complete");
       });
 
-      // Camera radius animation - triggered by PATH COMPLETION, not time
-      // Use beginDirectAnimation so it doesn't overwrite the alpha/beta animations
+      // Camera radius animation - TIME-BASED triggers for reliable behavior
+      // Zoom out immediately at start, zoom in near the end
       const stateRadius = options.stateRadius; // Zoom-out radius from state config
       const arrivalRadius = 0; // Close-up radius for arrival
-      const radiusAnimDuration = duration * 0.25;
+      const radiusAnimDuration = duration * 0.25; // Duration of each zoom animation
       const radiusFps = 60;
-      const totalPathLength = bezierCurve.length();
 
-      // Track which triggers have fired
-      let zoomOutTriggered = false;
-      let zoomInTriggered = false;
+      // ===== ZOOM OUT: Trigger immediately when animation starts =====
+      {
+        const currentRadius = camera.radius;
+        const targetRadius = stateRadius ?? 24;
+        console.log(`🔭 [Bezier Animation] Starting zoom-out:`, currentRadius, "→", targetRadius);
 
-      // Path completion thresholds (adjustable)
-      const ZOOM_OUT_THRESHOLD = 0.001; // 5% of path
-      const ZOOM_IN_THRESHOLD = 0.7;  // 80% of path
+        // Allow the transition
+        camera.lowerRadiusLimit = 0;
+        camera.upperRadiusLimit = targetRadius;
 
-      // Helper to calculate path completion (0 to 1)
-      const getPathCompletion = (): number => {
-        const currentPos = target.position;
-        const distanceFromStart = BABYLON.Vector3.Distance(startPosition, currentPos);
-        const distanceToEnd = BABYLON.Vector3.Distance(currentPos, endPosition);
-        const totalDist = distanceFromStart + distanceToEnd;
-        if (totalDist === 0) return 0;
-        return distanceFromStart / totalDist;
-      };
+        // Animate radius
+        const zoomOutAnim = new BABYLON.Animation(
+          "bezierZoomOut",
+          "radius",
+          radiusFps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        const zoomOutEasing = new BABYLON.CubicEase();
+        zoomOutEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
+        zoomOutAnim.setEasingFunction(zoomOutEasing);
+        zoomOutAnim.setKeys([
+          { frame: 0, value: currentRadius },
+          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+        ]);
 
-      // Observer to check path completion each frame
-      // Store in module-level variable so it can be cleaned up if animation is cancelled
-      bezierPathObserver = scene.onBeforeRenderObservable.add(() => {
-        const completion = getPathCompletion();
+        // Animate lowerRadiusLimit to lock zoom during travel
+        const lowerLimitAnim = new BABYLON.Animation(
+          "bezierLowerLimit",
+          "lowerRadiusLimit",
+          radiusFps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        lowerLimitAnim.setEasingFunction(zoomOutEasing);
+        lowerLimitAnim.setKeys([
+          { frame: 0, value: currentRadius },
+          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+        ]);
 
-        // Trigger zoom OUT at ~5% path completion
-        if (!zoomOutTriggered && completion >= ZOOM_OUT_THRESHOLD) {
-          zoomOutTriggered = true;
+        // Animate upperRadiusLimit to lock zoom during travel
+        const upperLimitAnim = new BABYLON.Animation(
+          "bezierUpperLimit",
+          "upperRadiusLimit",
+          radiusFps,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        upperLimitAnim.setEasingFunction(zoomOutEasing);
+        upperLimitAnim.setKeys([
+          { frame: 0, value: currentRadius },
+          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+        ]);
+
+        scene.beginDirectAnimation(camera, [zoomOutAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
+          console.log("✅ [Bezier Animation] Zoom-out complete");
+        });
+      }
+
+      // ===== ZOOM IN: Trigger near the end of the animation (time-based) =====
+      if (!options.skipArrivalZoom) {
+        // Calculate delay: total duration minus zoom animation duration
+        // This ensures zoom-in starts so it completes roughly when ship arrives
+        const zoomInDelay = Math.max(0, (duration - radiusAnimDuration) * 1000);
+
+        console.log(`🔍 [Bezier Animation] Scheduling zoom-in in ${zoomInDelay.toFixed(0)}ms`);
+
+        setTimeout(() => {
+          // Check if this animation is still valid (not superseded)
+          if (thisAnimationId !== currentBezierAnimationId) {
+            console.log("⏭️ [Bezier Animation] Skipping zoom-in - animation was superseded");
+            return;
+          }
+
           const currentRadius = camera.radius;
-          const targetRadius = stateRadius ?? 24;
-          console.log(`🔭 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming out:`, currentRadius, "→", targetRadius);
+          const currentLowerLimit = camera.lowerRadiusLimit ?? currentRadius;
+          const currentUpperLimit = camera.upperRadiusLimit ?? currentRadius;
+          console.log(`🔍 [Bezier Animation] Starting zoom-in:`, currentRadius, "→", arrivalRadius);
 
-          // Allow the transition
+          // Allow zooming all the way in
           camera.lowerRadiusLimit = 0;
-          camera.upperRadiusLimit = targetRadius;
+          camera.upperRadiusLimit = currentRadius; // Will be animated down
 
           // Animate radius
-          const zoomOutAnim = new BABYLON.Animation(
-            "bezierZoomOut",
+          const zoomInAnim = new BABYLON.Animation(
+            "bezierZoomIn",
             "radius",
             radiusFps,
             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
           );
-          const zoomOutEasing = new BABYLON.CubicEase();
-          zoomOutEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-          zoomOutAnim.setEasingFunction(zoomOutEasing);
-          zoomOutAnim.setKeys([
+          const zoomInEasing = new BABYLON.CubicEase();
+          zoomInEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+          zoomInAnim.setEasingFunction(zoomInEasing);
+          zoomInAnim.setKeys([
             { frame: 0, value: currentRadius },
-            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
           ]);
 
-          // Animate lowerRadiusLimit to lock zoom during travel
+          // Animate lowerRadiusLimit to lock zoom during arrival
           const lowerLimitAnim = new BABYLON.Animation(
-            "bezierLowerLimit",
+            "bezierLowerLimitIn",
             "lowerRadiusLimit",
             radiusFps,
             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
           );
-          lowerLimitAnim.setEasingFunction(zoomOutEasing);
+          lowerLimitAnim.setEasingFunction(zoomInEasing);
           lowerLimitAnim.setKeys([
-            { frame: 0, value: currentRadius },
-            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+            { frame: 0, value: currentLowerLimit },
+            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
           ]);
 
-          // Animate upperRadiusLimit to lock zoom during travel
+          // Animate upperRadiusLimit to lock zoom during arrival
           const upperLimitAnim = new BABYLON.Animation(
-            "bezierUpperLimit",
+            "bezierUpperLimitIn",
             "upperRadiusLimit",
             radiusFps,
             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
           );
-          upperLimitAnim.setEasingFunction(zoomOutEasing);
+          upperLimitAnim.setEasingFunction(zoomInEasing);
           upperLimitAnim.setKeys([
-            { frame: 0, value: currentRadius },
-            { frame: radiusFps * radiusAnimDuration, value: targetRadius }
+            { frame: 0, value: currentUpperLimit },
+            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
           ]);
 
-          scene.beginDirectAnimation(camera, [zoomOutAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1);
-        }
-
-        // Trigger zoom IN at ~80% path completion (unless skipArrivalZoom is set)
-        if (!zoomInTriggered && completion >= ZOOM_IN_THRESHOLD) {
-          zoomInTriggered = true;
-
-          if (options.skipArrivalZoom) {
-            console.log(`⏭️ [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Skipping arrival zoom (skipArrivalZoom is set)`);
-          } else {
-            const currentRadius = camera.radius;
-            const currentLowerLimit = camera.lowerRadiusLimit ?? currentRadius;
-            const currentUpperLimit = camera.upperRadiusLimit ?? currentRadius;
-            console.log(`🔍 [Bezier Animation] Path ${(completion * 100).toFixed(0)}% - Zooming in:`, currentRadius, "→", arrivalRadius);
-
-            // Allow zooming all the way in
-            camera.lowerRadiusLimit = 0;
-            camera.upperRadiusLimit = currentRadius; // Will be animated down
-
-            // Animate radius
-            const zoomInAnim = new BABYLON.Animation(
-              "bezierZoomIn",
-              "radius",
-              radiusFps,
-              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-            );
-            const zoomInEasing = new BABYLON.CubicEase();
-            zoomInEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-            zoomInAnim.setEasingFunction(zoomInEasing);
-            zoomInAnim.setKeys([
-              { frame: 0, value: currentRadius },
-              { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-            ]);
-
-            // Animate lowerRadiusLimit to lock zoom during arrival
-            const lowerLimitAnim = new BABYLON.Animation(
-              "bezierLowerLimitIn",
-              "lowerRadiusLimit",
-              radiusFps,
-              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-            );
-            lowerLimitAnim.setEasingFunction(zoomInEasing);
-            lowerLimitAnim.setKeys([
-              { frame: 0, value: currentLowerLimit },
-              { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-            ]);
-
-            // Animate upperRadiusLimit to lock zoom during arrival
-            const upperLimitAnim = new BABYLON.Animation(
-              "bezierUpperLimitIn",
-              "upperRadiusLimit",
-              radiusFps,
-              BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-              BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-            );
-            upperLimitAnim.setEasingFunction(zoomInEasing);
-            upperLimitAnim.setKeys([
-              { frame: 0, value: currentUpperLimit },
-              { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-            ]);
-
-            scene.beginDirectAnimation(camera, [zoomInAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1);
-          }
-        }
-
-        // Remove observer when both triggers have fired
-        if (zoomOutTriggered && zoomInTriggered) {
-          if (bezierPathObserver) {
-            scene.onBeforeRenderObservable.remove(bezierPathObserver);
-            bezierPathObserver = null;
-          }
-        }
-      });
-
-      // Safety cleanup: remove observer after animation duration + buffer
-      setTimeout(() => {
-        if (bezierPathObserver) {
-          scene.onBeforeRenderObservable.remove(bezierPathObserver);
-          bezierPathObserver = null;
-        }
-      }, (duration + 1) * 1000);
+          scene.beginDirectAnimation(camera, [zoomInAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
+            console.log("✅ [Bezier Animation] Zoom-in complete");
+          });
+        }, zoomInDelay);
+      } else {
+        console.log(`⏭️ [Bezier Animation] Skipping arrival zoom (skipArrivalZoom is set)`);
+      }
     }
   }; // End of executeAnimation function
 

@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
+import { useUI, S } from "../state";
 
 interface Message {
   id: string;
   text: string;
   type: "user" | "bot";
   timestamp: Date;
+}
+
+// Context data sent with each message for more contextual AI responses
+interface ChatContext {
+  state: number;                          // Current state (0-7, 99=final)
+  navMode: 'guided' | 'free';             // Navigation mode
+  geelyVisible: boolean;                  // Geely customizer visible
+  geelyColor?: string;                    // Selected Geely color
+  geelyVersion?: string;                  // Selected Geely version (pro/max)
+  geelyInterior?: boolean;                // Viewing Geely interior
+  dioramaVisible: boolean;                // Dioramas panel visible
+  dioramaModel?: string;                  // Selected diorama model id
+  petwheelsVisible: boolean;              // Petwheels panel visible
+  musecraftVisible: boolean;              // Musecraft panel visible
 }
 
 interface ChatProps {
@@ -35,6 +50,33 @@ export function Chat({ className = "", onClose }: ChatProps) {
   const [isAnimating, setIsAnimating] = useState(true); // Start closed for entrance animation
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Subscribe to state for context
+  const state = useUI((st) => st.state);
+  const navigationMode = useUI((st) => st.navigationMode);
+  const geelyCustomizerVisible = useUI((st) => st.geelyCustomizerVisible);
+  const isInteriorView = useUI((st) => st.isInteriorView);
+  const dioramasPanelVisible = useUI((st) => st.dioramasPanelVisible);
+  const selectedDioramaModel = useUI((st) => st.selectedDioramaModel);
+  const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
+  const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
+
+  // Diorama model names for context
+  const dioramaModelNames = ["sesc-museum", "sesc-island", "dioramas"];
+
+  // Build context object for the current state
+  const buildContext = (): ChatContext => {
+    return {
+      state: state === S.state_final ? 99 : state,
+      navMode: navigationMode,
+      geelyVisible: geelyCustomizerVisible,
+      geelyInterior: geelyCustomizerVisible ? isInteriorView : undefined,
+      dioramaVisible: dioramasPanelVisible,
+      dioramaModel: dioramasPanelVisible ? dioramaModelNames[selectedDioramaModel] : undefined,
+      petwheelsVisible: petwheelsPanelVisible,
+      musecraftVisible: musecraftPanelVisible,
+    };
+  };
 
   const suggestions = [
     "What does Baltha Studio do?",
@@ -96,7 +138,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
       const response = await fetch(`${BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, userId: getSessionId() }),
+        body: JSON.stringify({ message, userId: getSessionId(), context: buildContext() }),
       });
 
       if (!response.ok) throw new Error("Network response was not ok");

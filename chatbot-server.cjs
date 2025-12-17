@@ -44,8 +44,12 @@ setInterval(() => {
 app.post('/chat', async (req, res) => {
     const userId = req.body.userId || 'default'; // Assuming a userId is provided, or use 'default' for testing
     const userMessage = req.body.message;
+    const context = req.body.context || {}; // Context from client about current UI state
 
     console.log(`Received message from ${userId}:`, userMessage);
+    if (Object.keys(context).length > 0) {
+        console.log(`Context:`, context);
+    }
 
     // Update session timestamp (keeps session alive)
     sessionTimestamps[userId] = Date.now();
@@ -55,15 +59,53 @@ app.post('/chat', async (req, res) => {
         conversations[userId] = [
             {
                 role: "system",
-                content: "Short answers by default. You are the AI representative of Artur Balthazar, the creative director at Baltha Studio. We are a creative-tech studio specialized in designing interactive web experiences in a brand oriented style, or custom software for real-time graphics. You are a selling agent, being both helpful, but also leading the user to get in touch with us. You ask pertinent questions that will convince the user that our solutions are worth for their case. You don't talk about things too far from the main subject that is how our business can help the user. If user is deviating, you try to bring them back and build the path to get them in touch with us after providing some solid ideas to them. You know our website structure and instruct user about it if needed. It was built using babylon.js, and is basically a representation of our capabilities. It's a space scene with a spaceship that travels around to show content. Some buttons are accessible from everywhere like the chat button to talk to you, the header with menu button to open a map of our site and the home button that is our logo. We showcase a Geely EX2 car customizer as the 1st thing, 2nd is a web-based 3D editor powered by Babylon.js, 3rd project is our past 3d printing projects just to show a bit of our history and 4th project is petwheels, a 3d printable parametric wheel chair for dogs, which is your capstone project and is not an active product or anything. Users can toggle bewteen guided or free mode, in guided mode, users are automatically taken between the different projects in our scene, while in free mode users can travel around in the spaceship by clicking the 3d space and moving the ship in the click direction.;"
-                // Keep the rest of your system message content here
+                content: "Short answers by default. You are the AI representative of Artur Balthazar, the creative director at Baltha Studio. We are a creative-tech studio specialized in designing interactive web experiences in a brand oriented style, or custom software for real-time graphics. You are a selling agent, being both helpful, but also leading the user to get in touch with us. You ask pertinent questions that will convince the user that our solutions are worth for their case. You don't talk about things too far from the main subject that is how our business can help the user. If user is deviating, you try to bring them back and build the path to get them in touch with us after providing some solid ideas to them. You know our website structure and instruct user about it if needed. It was built using babylon.js, and is basically a representation of our capabilities. It's a space scene with a spaceship that travels around to show content. Some buttons are accessible from everywhere like the chat button to talk to you, the header with menu button to open a map of our site and the home button that is our logo. We showcase a Geely EX2 car customizer as the 1st thing, 2nd is a web-based 3D editor powered by Babylon.js, 3rd project is our past 3d printing projects just to show a bit of our history and 4th project is petwheels, a 3d printable parametric wheel chair for dogs, which is your capstone project and is not an active product or anything. Users can toggle bewteen guided or free mode, in guided mode, users are automatically taken between the different projects in our scene, while in free mode users can travel around in the spaceship by clicking the 3d space and moving the ship in the click direction. CONTEXT: User messages may start with [ctx: ...] containing their current location/state. Key values: state=(loading|intro|hero|overlay|geely-area|musecraft-area|dioramas-area|petwheels-area|contact), nav=(guided|free), panel=(geely-customizer|musecraft|dioramas|petwheels), model=(sesc-museum|sesc-island|dioramas for 3d printing projects), view=interior (if viewing car interior). Use this context to give relevant answers about what they're seeing. Don't mention the context format to user."
             }
         ];
         tokenUsage[userId] = 0;  // Initialize token count for the user
     }
 
+    // Build compact context string from context object
+    // Format: [ctx: state=X navMode=Y panel=Z ...]
+    let contextParts = [];
+
+    // State mapping: 0=loading, 1=intro, 2=hero, 3=overlay, 4-7=content areas, 99=contact
+    const stateNames = {
+        0: 'loading', 1: 'intro', 2: 'hero', 3: 'overlay',
+        4: 'geely-area', 5: 'musecraft-area', 6: 'dioramas-area', 7: 'petwheels-area',
+        99: 'contact'
+    };
+    if (context.state !== undefined) {
+        contextParts.push(`state=${stateNames[context.state] || context.state}`);
+    }
+    if (context.navMode) {
+        contextParts.push(`nav=${context.navMode}`);
+    }
+    if (context.geelyVisible) {
+        contextParts.push('panel=geely-customizer');
+        if (context.geelyColor) contextParts.push(`color=${context.geelyColor}`);
+        if (context.geelyVersion) contextParts.push(`version=${context.geelyVersion}`);
+        if (context.geelyInterior) contextParts.push('view=interior');
+    }
+    if (context.dioramaVisible) {
+        contextParts.push(`panel=dioramas`);
+        if (context.dioramaModel) contextParts.push(`model=${context.dioramaModel}`);
+    }
+    if (context.petwheelsVisible) {
+        contextParts.push('panel=petwheels');
+    }
+    if (context.musecraftVisible) {
+        contextParts.push('panel=musecraft');
+    }
+
+    // Construct the message with context if available
+    let messageWithContext = userMessage;
+    if (contextParts.length > 0) {
+        messageWithContext = `[ctx: ${contextParts.join(' ')}] ${userMessage}`;
+    }
+
     // Append the user's message to the conversation
-    conversations[userId].push({ role: "user", content: userMessage });
+    conversations[userId].push({ role: "user", content: messageWithContext });
 
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
