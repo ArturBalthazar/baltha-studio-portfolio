@@ -42,12 +42,18 @@ export default function Connect() {
     const setState = useUI((st) => st.setState);
     useEffect(() => {
         setState(S.state_2);
+
+        // Hide the static HTML loading screen when Connect page mounts
+        const staticScreen = document.getElementById('static-loading-screen');
+        if (staticScreen) {
+            staticScreen.style.display = 'none';
+        }
     }, [setState]);
 
     // Close email section when clicking anywhere outside the email button
     useEffect(() => {
         if (!emailExpanded) return;
-        
+
         const handleClick = (e: MouseEvent) => {
             // If click is on the email button itself, let the button's onClick handle it
             if (emailButtonRef.current?.contains(e.target as Node)) {
@@ -61,7 +67,7 @@ export default function Connect() {
         const timeout = setTimeout(() => {
             window.addEventListener('click', handleClick);
         }, 0);
-        
+
         return () => {
             clearTimeout(timeout);
             window.removeEventListener('click', handleClick);
@@ -142,7 +148,7 @@ export default function Connect() {
     };
 
     // Button styles based on expanded state
-    const emailButtonStyle: React.CSSProperties = emailExpanded 
+    const emailButtonStyle: React.CSSProperties = emailExpanded
         ? {
             border: '1px solid rgba(255,255,255,0.6)',
             transform: 'scale(1.02)',

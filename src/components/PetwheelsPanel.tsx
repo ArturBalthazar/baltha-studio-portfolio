@@ -28,6 +28,7 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
                     <h2 className="font-sans text-2xl font-semibold text-white text-left">
                         Petwheels
                     </h2>
+                    <span className="font-mono text-sm font-light text-white">A patented parametric wheelchair for dogs.</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -112,12 +113,12 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
 
 // Separate mobile component for cleaner code
 function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    // Reset to expanded when visible becomes true
+    // Reset to collapsed when visible becomes true
     useEffect(() => {
         if (visible) {
-            setIsExpanded(true);
+            setIsExpanded(false);
         }
     }, [visible]);
 
@@ -125,47 +126,74 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
         <div
             className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
-                "flex flex-col rounded-xl overflow-hidden",
-                "bg-[rgba(12,20,40,0.6)] backdrop-blur-lg",
-                "border-2 border-white/30",
-                "transition-all duration-300",
+                "flex flex-col rounded-xl overflow-visible",
+                "transition-all duration-300 max-h-[38vh]",
                 visible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
-            style={{ maxHeight: "calc(35%)" }}
         >
-            {/* Mobile Header - Always visible, Title left-aligned */}
-            <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
-                <h2
-                    className="font-sans text-lg font-semibold text-white text-left flex-1 cursor-pointer"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                >
-                    Petwheels
-                </h2>
-
-                <img
-                    src="/assets/images/state_arrow.png"
-                    alt="Expand"
-                    className={cx(
-                        "w-6 h-4 transition-transform duration-300 ml-2 cursor-pointer",
-                        isExpanded ? "-rotate-90" : "rotate-90"
-                    )}
-                    onClick={() => setIsExpanded(!isExpanded)}
-                />
-            </div>
-
-            {/* Mobile Content - Hidden when collapsed */}
-            {isExpanded && (
-                <>
-                    <div className="h-px bg-white/50 w-full mx-3 flex-shrink-0" style={{ width: 'calc(100% - 24px)' }} />
-
-                    {/* Scrollable content area */}
-                    <div
-                        className="flex-1 overflow-y-auto px-3 py-3 min-h-0"
-                        style={scrollbarStyles}
+            {/* Glow effect - only visible when collapsed */}
+            <div
+                className={cx(
+                    "absolute -inset-1 rounded-xl pointer-events-none transition-opacity duration-300",
+                    !isExpanded ? "opacity-100 animate-pulse" : "opacity-0"
+                )}
+                style={{
+                    background: "linear-gradient(180deg,rgba(155,146,210,0.7) 0%,rgba(255,153,204,0.6) 70%,rgba(255,136,0,0.4) 100%)",
+                    filter: "blur(8px)",
+                }}
+            />
+            {/* Panel content */}
+            <div
+                className={cx(
+                    "relative flex flex-col rounded-xl overflow-hidden",
+                    "bg-[rgba(12,20,40,0.9)] backdrop-blur-lg",
+                    "border-2 border-white/30"
+                )}
+                style={{ maxHeight: "calc(35%)" }}
+            >
+                {/* Mobile Header - Always visible, Title left-aligned */}
+                <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2">
+                    <h2
+                        className="font-sans text-lg font-semibold text-white text-left flex-1 cursor-pointer"
+                        onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        <style>{`
+                        Petwheels
+                    </h2>
+
+                    <img
+                        src="/assets/images/state_arrow.png"
+                        alt="Expand"
+                        className={cx(
+                            "w-6 h-4 transition-transform duration-300 ml-2 cursor-pointer",
+                            isExpanded ? "-rotate-90" : "rotate-90"
+                        )}
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    />
+                </div>
+
+                {/* Description text - only visible when collapsed, clickable to expand */}
+                {!isExpanded && (
+                    <div
+                        className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        A patented parametric wheelchair for dogs that is fully 3D printable.
+                    </div>
+                )}
+
+                {/* Mobile Content - Hidden when collapsed */}
+                {isExpanded && (
+                    <>
+                        <div className="h-px bg-white/50 w-full mx-3 flex-shrink-0" style={{ width: 'calc(100% - 24px)' }} />
+
+                        {/* Scrollable content area */}
+                        <div
+                            className="flex-1 overflow-y-auto px-3 py-3 min-h-0"
+                            style={scrollbarStyles}
+                        >
+                            <style>{`
                             .mobile-petwheels-scroll::-webkit-scrollbar {
                                 width: 4px;
                             }
@@ -177,59 +205,60 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                                 border-radius: 2px;
                             }
                         `}</style>
-                        <div className="flex flex-col gap-3 mobile-petwheels-scroll">
-                            {/* First text block */}
-                            <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.
-                            </p>
+                            <div className="flex flex-col gap-3 mobile-petwheels-scroll">
+                                {/* First text block */}
+                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
+                                    A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.
+                                </p>
 
-                            {/* Main Image */}
-                            <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
-                                <img
-                                    src="/assets/images/petwheels/petwheels1.jpg"
-                                    alt="Petwheels main view"
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-
-                            {/* Second text block */}
-                            <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.
-                            </p>
-
-                            {/* Image Composition - Left large, Right stacked */}
-                            <div className="flex gap-2 flex-shrink-0">
-                                {/* Left - Large image - rotated 90 degrees */}
-                                <div className="w-2/5 aspect-[3/4] rounded-lg overflow-hidden border border-white/50 flex items-center justify-center bg-white">
+                                {/* Main Image */}
+                                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
                                     <img
-                                        src="/assets/images/petwheels/petwheels2.jpg"
-                                        alt="Petwheels patent diagram side"
-                                        className="h-[133%] w-auto object-contain rotate-90"
+                                        src="/assets/images/petwheels/petwheels1.jpg"
+                                        alt="Petwheels main view"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
 
-                                {/* Right - Stacked images */}
-                                <div className="w-3/5 flex flex-col gap-2">
-                                    <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
+                                {/* Second text block */}
+                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
+                                    The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.
+                                </p>
+
+                                {/* Image Composition - Left large, Right stacked */}
+                                <div className="flex gap-2 flex-shrink-0">
+                                    {/* Left - Large image - rotated 90 degrees */}
+                                    <div className="w-2/5 aspect-[3/4] rounded-lg overflow-hidden border border-white/50 flex items-center justify-center bg-white">
                                         <img
-                                            src="/assets/images/petwheels/petwheels3.jpg"
-                                            alt="Petwheels patent diagram top"
-                                            className="w-full h-full object-cover"
+                                            src="/assets/images/petwheels/petwheels2.jpg"
+                                            alt="Petwheels patent diagram side"
+                                            className="h-[133%] w-auto object-contain rotate-90"
                                         />
                                     </div>
-                                    <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
-                                        <img
-                                            src="/assets/images/petwheels/petwheels4.jpg"
-                                            alt="Petwheels patent diagram bottom"
-                                            className="w-full h-full object-cover"
-                                        />
+
+                                    {/* Right - Stacked images */}
+                                    <div className="w-3/5 flex flex-col gap-2">
+                                        <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
+                                            <img
+                                                src="/assets/images/petwheels/petwheels3.jpg"
+                                                alt="Petwheels patent diagram top"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
+                                            <img
+                                                src="/assets/images/petwheels/petwheels4.jpg"
+                                                alt="Petwheels patent diagram bottom"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }

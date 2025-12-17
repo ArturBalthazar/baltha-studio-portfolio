@@ -1012,6 +1012,117 @@ const GUIDED_SHIP_DURATION = 4.0;
 // Track current bezier animation to prevent stale callbacks from affecting visibility
 let currentBezierAnimationId = 0;
 
+// Track ship velocity during bezier animations for smooth speed transitions
+// When a new animation starts mid-travel, we use this to continue from current speed instead of 0
+let shipLastPosition: BABYLON.Vector3 | null = null;
+let shipCurrentVelocity: BABYLON.Vector3 = new BABYLON.Vector3(0, 0, 0);
+let shipCurrentSpeed: number = 0; // Magnitude of velocity
+let bezierVelocityObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
+
+// Observer for drag deceleration after cancelling bezier animation
+let dragDecelerationObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
+
+// Observer for path completion zoom triggers (zoom out at start, zoom in at end)
+let bezierPathObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
+
+/**
+ * Cancels any running bezier animation by invalidating its ID and cleaning up observers.
+ * Call this when switching to free mode to immediately stop the guided mode animation.
+ * Applies a smooth drag deceleration so the ship coasts to a stop instead of stopping abruptly.
+ * @param scene - The Babylon scene (needed to stop animations)
+ * @param target - The ship transform node (optional, to stop its animations)
+ * @param camera - The camera (optional, to stop camera animations)
+ */
+function cancelBezierAnimation(
+  scene: BABYLON.Scene | null,
+  target?: BABYLON.TransformNode | null,
+  camera?: BABYLON.ArcRotateCamera | null
+): void {
+  console.log("🛑 [Bezier Animation] Cancelling bezier animation");
+
+  // Increment animation ID to invalidate any running animation's callbacks
+  currentBezierAnimationId++;
+
+  // Clean up velocity observer
+  if (bezierVelocityObserver && scene) {
+    scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
+    bezierVelocityObserver = null;
+  }
+
+  // Clean up any existing drag deceleration observer
+  if (dragDecelerationObserver && scene) {
+    scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
+    dragDecelerationObserver = null;
+  }
+
+  // Clean up path observer (prevents zoom in/out triggers from continuing)
+  if (bezierPathObserver && scene) {
+    scene.onBeforeRenderObservable.remove(bezierPathObserver);
+    bezierPathObserver = null;
+    console.log("🛑 [Bezier Animation] Cleaned up path observer");
+  }
+
+  // Capture current velocity before stopping for drag effect
+  const capturedVelocity = shipCurrentVelocity.clone();
+  const capturedSpeed = shipCurrentSpeed;
+
+  // Reset velocity tracking
+  shipCurrentSpeed = 0;
+  shipLastPosition = null;
+
+  // Stop keyframe animations on the ship (frees it from the bezier path)
+  if (target && scene) {
+    scene.stopAnimation(target);
+    console.log("🛑 [Bezier Animation] Stopped ship animations");
+
+    // Apply drag deceleration if the ship was moving
+    if (capturedSpeed > 0.5) {
+      console.log(`🎿 [Bezier Animation] Applying drag deceleration from speed: ${capturedSpeed.toFixed(2)}`);
+
+      // Create a velocity vector for the drag physics
+      let dragVelocity = capturedVelocity.clone();
+      const dragFriction = 4.0; // How quickly to slow down (higher = faster stop)
+      const minSpeed = 0.1; // Speed threshold to stop the drag effect
+
+      dragDecelerationObserver = scene.onBeforeRenderObservable.add(() => {
+        if (!target || !scene) {
+          if (dragDecelerationObserver) {
+            scene?.onBeforeRenderObservable.remove(dragDecelerationObserver);
+            dragDecelerationObserver = null;
+          }
+          return;
+        }
+
+        const deltaTime = scene.getEngine().getDeltaTime() / 1000;
+
+        // Apply drag friction (exponential decay)
+        const dragMultiplier = Math.exp(-dragFriction * deltaTime);
+        dragVelocity.scaleInPlace(dragMultiplier);
+
+        // Move the ship by the velocity
+        const displacement = dragVelocity.scale(deltaTime);
+        target.position.addInPlace(displacement);
+
+        // Check if we've slowed down enough to stop
+        const currentDragSpeed = dragVelocity.length();
+        if (currentDragSpeed < minSpeed) {
+          console.log("🛑 [Bezier Animation] Drag deceleration complete");
+          if (dragDecelerationObserver) {
+            scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
+            dragDecelerationObserver = null;
+          }
+        }
+      });
+    }
+  }
+
+  // Stop animations on the camera (this stops the bezier's camera zoom animations)
+  if (camera && scene) {
+    scene.stopAnimation(camera);
+    console.log("🛑 [Bezier Animation] Stopped camera animations");
+  }
+}
+
 /**
  * Sets the visibility of the ship and flame particles together.
  * This ensures they are always in sync - either both visible or both hidden.
@@ -1070,6 +1181,21 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
   // Increment animation ID - any previous animation's callbacks will now be stale
   currentBezierAnimationId++;
   const thisAnimationId = currentBezierAnimationId;
+
+  // Clean up any existing drag deceleration observer from a previous cancellation
+  // This prevents conflicts when switching back to guided mode
+  if (dragDecelerationObserver && options.scene) {
+    options.scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
+    dragDecelerationObserver = null;
+    console.log("🧹 [Bezier Animation] Cleaned up drag deceleration observer");
+  }
+
+  // Clean up any existing path observer from a previous animation
+  if (bezierPathObserver && options.scene) {
+    options.scene.onBeforeRenderObservable.remove(bezierPathObserver);
+    bezierPathObserver = null;
+    console.log("🧹 [Bezier Animation] Cleaned up previous path observer");
+  }
 
   const {
     target,
@@ -1140,14 +1266,70 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     const totalFrames = fps * duration;
     const numKeyframes = 120; // Number of keyframes for smooth animation
 
-    // Asymmetric ease: moderate start, very smooth arrival
-    // Uses quadratic ease-in (faster start) but quintic ease-out (very smooth stop)
+    // Calculate the expected "peak speed" along this path
+    // For a cubic bezier with ease-in-out, the peak speed happens around the middle
+    // We estimate this by calculating the path length divided by duration, scaled by ~2 for ease-in-out peak
+    const pathLength = bezierCurve.length();
+    const averageSpeed = pathLength / duration;
+    const peakSpeed = averageSpeed * 2.0; // At the middle of ease-in-out, speed is roughly 2x average
+
+    // Calculate initial speed ratio (0-1) based on current ship velocity
+    // This tells us how "fast" we're already going compared to the new path's peak speed
+    let initialSpeedRatio = 0;
+    if (shipCurrentSpeed > 0.1 && peakSpeed > 0) {
+      // Clamp to 0-1 range (we can't start faster than peak speed)
+      initialSpeedRatio = Math.min(shipCurrentSpeed / peakSpeed, 1.0);
+      console.log(`🚀 [Bezier Animation] Continuing from existing speed:`, {
+        currentSpeed: shipCurrentSpeed.toFixed(2),
+        peakSpeed: peakSpeed.toFixed(2),
+        initialSpeedRatio: initialSpeedRatio.toFixed(2)
+      });
+    }
+
+    // Stop any previous velocity observer
+    if (bezierVelocityObserver) {
+      scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
+      bezierVelocityObserver = null;
+    }
+
+    // Set up velocity tracking for this animation
+    shipLastPosition = target.position.clone();
+    bezierVelocityObserver = scene.onBeforeRenderObservable.add(() => {
+      if (thisAnimationId !== currentBezierAnimationId) {
+        // This animation was superseded, clean up observer
+        if (bezierVelocityObserver) {
+          scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
+          bezierVelocityObserver = null;
+        }
+        return;
+      }
+
+      const currentPos = target.position.clone();
+      if (shipLastPosition) {
+        const deltaTime = scene.getEngine().getDeltaTime() / 1000;
+        if (deltaTime > 0) {
+          shipCurrentVelocity = currentPos.subtract(shipLastPosition).scale(1 / deltaTime);
+          shipCurrentSpeed = shipCurrentVelocity.length();
+        }
+      }
+      shipLastPosition = currentPos;
+    });
+
+    // Asymmetric ease: moderate start (or continue from current speed), very smooth arrival
+    // When initialSpeedRatio > 0, we blend the ease-in with a linear continuation
     const smoothEase = (t: number): number => {
       if (t < 0.5) {
-        // Quadratic ease-in: faster departure than quintic
-        return 2 * t * t;
+        // Blend between linear (maintaining speed) and quadratic ease-in (acceleration)
+        // At initialSpeedRatio = 0: pure quadratic (slow start)
+        // At initialSpeedRatio = 1: pure linear (maintain speed)
+        const quadratic = 2 * t * t;
+        const linear = t;
+        // Use a smooth blend: start more linear, then transition to quadratic behavior
+        // The blend factor decreases as t increases, so we smoothly transition to the normal ease
+        const blendFactor = initialSpeedRatio * Math.max(0, 1 - t * 2);
+        return quadratic + blendFactor * (linear - quadratic);
       } else {
-        // Quintic ease-out: very smooth arrival
+        // Quintic ease-out: very smooth arrival (unchanged)
         return 1 - Math.pow(-2 * t + 2, 2) / 2;
       }
     };
@@ -1246,6 +1428,15 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     // Start ship animation
     scene.beginAnimation(target, 0, totalFrames, false, 1, () => {
       console.log("✅ [Bezier Animation] Ship animation complete at:", target.position.toString());
+
+      // Clean up velocity observer and reset speed tracking when animation completes normally
+      if (bezierVelocityObserver && thisAnimationId === currentBezierAnimationId) {
+        scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
+        bezierVelocityObserver = null;
+        shipCurrentSpeed = 0;
+        shipLastPosition = null;
+      }
+
       // Only hide ship if:
       // 1. This animation is still current (not superseded)
       // 2. skipArrivalHide is not set
@@ -1376,7 +1567,8 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       };
 
       // Observer to check path completion each frame
-      const pathObserver = scene.onBeforeRenderObservable.add(() => {
+      // Store in module-level variable so it can be cleaned up if animation is cancelled
+      bezierPathObserver = scene.onBeforeRenderObservable.add(() => {
         const completion = getPathCompletion();
 
         // Trigger zoom OUT at ~5% path completion
@@ -1503,13 +1695,19 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
 
         // Remove observer when both triggers have fired
         if (zoomOutTriggered && zoomInTriggered) {
-          scene.onBeforeRenderObservable.remove(pathObserver);
+          if (bezierPathObserver) {
+            scene.onBeforeRenderObservable.remove(bezierPathObserver);
+            bezierPathObserver = null;
+          }
         }
       });
 
       // Safety cleanup: remove observer after animation duration + buffer
       setTimeout(() => {
-        scene.onBeforeRenderObservable.remove(pathObserver);
+        if (bezierPathObserver) {
+          scene.onBeforeRenderObservable.remove(bezierPathObserver);
+          bezierPathObserver = null;
+        }
       }, (duration + 1) * 1000);
     }
   }; // End of executeAnimation function
@@ -2877,14 +3075,14 @@ export function BabylonCanvas() {
 
           // Create interior camera
           if (!interiorCameraRef.current) {
-            const offset = new BABYLON.Vector3(0, 3.9, 0);
+            const offset = new BABYLON.Vector3(0, 3.75, 0);
             const rotatedOffset = offset.applyRotationQuaternion(carRoot.rotationQuaternion!);
             const targetPos = anchorPos.add(rotatedOffset);
 
             const iCam = new BABYLON.ArcRotateCamera(
               "interiorCamera",
               0,            // alpha
-              Math.PI / 2.5,  // beta
+              Math.PI / 2.3,  // beta
               0,            // radius
               targetPos,
               scene
@@ -3558,7 +3756,32 @@ export function BabylonCanvas() {
       }
     });
 
+    // Distance-based visibility for Musecraft panel
+    const MUSECRAFT_VISIBILITY_DISTANCE = 20; // Same threshold as others
 
+    scene.onBeforeRenderObservable.add(() => {
+      // Early return if ship or musecraft anchor not loaded yet
+      if (!spaceshipRootRef.current || !musecraftAnchorRef.current) {
+        return;
+      }
+
+      // Calculate distance from SHIP to musecraft anchor
+      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
+      const musecraftPosition = musecraftAnchorRef.current.getAbsolutePosition();
+      const distance = BABYLON.Vector3.Distance(shipPosition, musecraftPosition);
+
+      // Show/hide musecraft panel based on distance using state
+      const shouldBeVisible = distance <= MUSECRAFT_VISIBILITY_DISTANCE;
+      const currentlyVisible = useUI.getState().musecraftPanelVisible;
+
+      if (shouldBeVisible && !currentlyVisible) {
+        useUI.getState().setMusecraftPanelVisible(true);
+        console.log(`🎵 Musecraft panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      } else if (!shouldBeVisible && currentlyVisible) {
+        useUI.getState().setMusecraftPanelVisible(false);
+        console.log(`🎵 Musecraft panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
+      }
+    });
 
 
     // Also react to window resizes (DPR changes)
@@ -3685,7 +3908,7 @@ export function BabylonCanvas() {
       return;
     }
 
-    // Store handlers for cleanup (must be outside setTimeout)
+    // Store handlers for cleanup
     let handleKeyDown: ((e: KeyboardEvent) => void) | null = null;
     let handleKeyUp: ((e: KeyboardEvent) => void) | null = null;
     let handlePointerDown: ((e: PointerEvent) => void) | null = null;
@@ -3693,10 +3916,60 @@ export function BabylonCanvas() {
     let handlePointerUp: ((e: PointerEvent) => void) | null = null;
     let handleContextMenu: ((e: Event) => void) | null = null;
 
-    // Delay enabling controls until ship animation completes
-    console.log(`🚀 Delaying ship controls by ${totalShipAnimTime}ms to let ship animation complete`);
+    // ========== REGISTER POINTER HANDLERS IMMEDIATELY ==========
+    // This allows camera rotation/drag to work immediately when switching to free mode,
+    // without waiting for the ship animation to complete.
+    // The actual ship movement logic will still wait inside the setTimeout below.
+    const MC = mobileControlRef.current;
+
+    // Prevent context menu on right-click so we can use it for camera rotation
+    handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+
+    handlePointerDown = (e: PointerEvent) => {
+      MC.isDragging = true;
+      MC.isRightClick = e.button === 2; // Right-click = camera rotation only, no movement
+      MC.yawRate = 0; // Reset turn rate when starting drag
+      // Update pointer position immediately so edge detection works on first frame
+      MC.pointerX = e.clientX;
+      MC.pointerY = e.clientY;
+      console.log(`🖱️ Pointer down: button=${e.button}, isRightClick=${MC.isRightClick}, pos=(${e.clientX}, ${e.clientY})`);
+    };
+
+    handlePointerMove = (e: PointerEvent) => {
+      if (!MC.isDragging) return;
+
+      // Just update pointer position - raycasting happens in render loop
+      MC.pointerX = e.clientX;
+      MC.pointerY = e.clientY;
+    };
+
+    handlePointerUp = (e: PointerEvent) => {
+      MC.isDragging = false;
+      MC.isRightClick = false;
+      MC.hasDirection = false;
+      MC.cameraRotation = 0; // Stop camera rotation
+      MC.yawRate = 0; // Reset turn rate
+      MC.previousYaw = 0; // Reset previous yaw
+      // Clear side trigger visual effect when drag ends
+      useUI.getState().setSideTrigger(null);
+      console.log("🚀 Drag control ended");
+    };
+
+    // Register pointer event handlers IMMEDIATELY (no delay)
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+    console.log("🖱️ Pointer handlers registered immediately for camera rotation");
+
+    // Delay enabling ship MOVEMENT controls until ship animation completes
+    // (camera rotation via edge detection still works immediately via the handlers above)
+    console.log(`🚀 Delaying ship movement controls by ${totalShipAnimTime}ms to let ship animation complete`);
     const controlsTimeoutId = setTimeout(() => {
-      console.log("🚀 Ship animation complete - enabling free mode controls");
+      console.log("🚀 Ship animation complete - enabling free mode ship movement");
 
       // Get shipRoot - this is required now
       let shipRoot = spaceshipRootRef.current;
@@ -3840,49 +4113,9 @@ export function BabylonCanvas() {
       // canvas.tabIndex = 1;
       // canvas.focus();
 
-      // Drag control handlers (works for both mobile and desktop)
+
+      // Get MC reference for the render loop observer (handlers were registered immediately outside setTimeout)
       const MC = mobileControlRef.current;
-
-      // Prevent context menu on right-click so we can use it for camera rotation
-      handleContextMenu = (e: Event) => {
-        e.preventDefault();
-      };
-
-      handlePointerDown = (e: PointerEvent) => {
-        MC.isDragging = true;
-        MC.isRightClick = e.button === 2; // Right-click = camera rotation only, no movement
-        MC.yawRate = 0; // Reset turn rate when starting drag
-        // Update pointer position immediately so edge detection works on first frame
-        MC.pointerX = e.clientX;
-        MC.pointerY = e.clientY;
-        console.log(`🖱️ Pointer down: button=${e.button}, isRightClick=${MC.isRightClick}, pos=(${e.clientX}, ${e.clientY})`);
-      };
-
-      handlePointerMove = (e: PointerEvent) => {
-        if (!MC.isDragging) return;
-
-        // Just update pointer position - raycasting happens in render loop
-        MC.pointerX = e.clientX;
-        MC.pointerY = e.clientY;
-      };
-
-      handlePointerUp = (e: PointerEvent) => {
-        MC.isDragging = false;
-        MC.isRightClick = false;
-        MC.hasDirection = false;
-        MC.cameraRotation = 0; // Stop camera rotation
-        MC.yawRate = 0; // Reset turn rate
-        MC.previousYaw = 0; // Reset previous yaw
-        // Clear side trigger visual effect when drag ends
-        useUI.getState().setSideTrigger(null);
-        console.log("🚀 Drag control ended");
-      };
-
-      canvas.addEventListener('contextmenu', handleContextMenu);
-      canvas.addEventListener('pointerdown', handlePointerDown);
-      canvas.addEventListener('pointermove', handlePointerMove);
-      canvas.addEventListener('pointerup', handlePointerUp);
-      canvas.addEventListener('pointercancel', handlePointerUp);
 
       // Animation blending helper
       let lastPlayedAnim = "idle";
@@ -5937,6 +6170,40 @@ export function BabylonCanvas() {
       const anchorKey = isMobile ? `mobile${anchorIndex}` : `desktop${anchorIndex}`;
       const anchorData = anchorDataRef.current[anchorKey];
 
+      // FIX: Ensure model animations are running (they might have stopped in free mode)
+
+      // 1. Rockring (always active in states 4-7)
+      const rockRingGroups = rockRingAnimationGroupsRef.current;
+      if (rockRingGroups && rockRingGroups.length > 0) {
+        const animGroup = rockRingGroups[0];
+        if (!animGroup.isPlaying) {
+          animGroup.start(true, 1.7, 1, 2000);
+          console.log("🎸 [Mode Toggle] Restarted Rockring animation");
+        }
+      }
+
+      // 2. Musecraft (State 5)
+      const museGroups = musecraftAnimationGroupsRef.current;
+      if (s === S.state_5 && modelVisibilityRef.current.model2 && museGroups.length > 0) {
+        museGroups.forEach(group => {
+          if (!group.isPlaying) {
+            group.play(true);
+            console.log(`🎨 [Mode Toggle] Restarted Musecraft animation: ${group.name}`);
+          }
+        });
+      }
+
+      // 3. Petwheels (State 7) - Restart if visible
+      const petGroups = petwheelsAnimationGroupsRef.current;
+      if (s === S.state_7 && modelVisibilityRef.current.model4 && petGroups.length > 0) {
+        petGroups.forEach(group => {
+          if (!group.isPlaying) {
+            group.play(true);
+            console.log(`🐾 [Mode Toggle] Restarted Petwheels animation: ${group.name}`);
+          }
+        });
+      }
+
       if (anchorData) {
         // Get current ship position and forward direction
         const startPosition = shipRoot.position.clone();
@@ -6014,11 +6281,15 @@ export function BabylonCanvas() {
       s >= S.state_4 && s <= S.state_7 &&
       scene && camera) {
 
+      // CRITICAL: Cancel any running bezier animation first!
+      // This prevents the guided mode camera zoom-in animation from continuing
+      // and overriding the free mode camera radius
+      cancelBezierAnimation(scene, shipRoot, camera);
+
       // In free mode, no travel animation so model rotation is always allowed
       guidedModeArrivedRef.current = true;
 
       // Restore ship and flames visibility (they may have been hidden after guided mode arrival)
-      const shipRoot = spaceshipRootRef.current;
       if (shipRoot) {
         setShipAndFlamesVisibility({
           shipMeshes: shipRoot.getChildMeshes(),

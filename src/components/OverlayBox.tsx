@@ -90,8 +90,8 @@ export function OverlayBox({
         };
       case S.state_3:
         return {
-          width: { mobile: "w-[95%]", desktop: "sm:w-[calc(20%+200px)]" },
-          height: { mobile: "h-[28%]", desktop: "sm:h-[calc(20%+100px)]" },
+          width: { mobile: "w-[53%]", desktop: "sm:w-[calc(20%+200px)]" },
+          height: { mobile: "h-[43%]", desktop: "sm:h-[calc(20%+100px)]" },
           transform: { mobile: "translate-y-[0%]", desktop: "sm:-translate-y-[calc(60%-100px)]" },
         };
       default:
@@ -427,22 +427,22 @@ export function OverlayBox({
               visibility.state4.title ? "opacity-100 pointer-events-none" : "opacity-0 pointer-events-none"
             )}
           >
-            {/* State 3 Content Layout - Navigation Mode and Audio side by side */}
-            <div className="flex-1 flex items-center justify-center gap-8 sm:gap-12 pointer-events-none">
+            {/* State 3 Content Layout - Navigation Mode and Audio: vertical on mobile, horizontal on desktop */}
+            <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-12 pointer-events-none">
 
               {/* Navigation Mode Section */}
-              <div className="flex flex-col items-center gap-2 pointer-events-none">
+              <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                 {/* Navigation Mode Title */}
-                <h2 className="font-sans text-white text-xl sm:text-2xl font-medium select-none mb-2">{state3Content.title}</h2>
+                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-1 sm:mb-2">{state3Content.title}</h2>
 
                 {/* Navigation Mode Buttons */}
-                <div className="flex gap-4 sm:gap-6">
+                <div className="flex gap-3 sm:gap-6">
                   {state3Content.buttons.map((button, index) => (
-                    <div key={`state3-${index}`} className="flex flex-col items-center gap-2 pointer-events-none">
+                    <div key={`state3-${index}`} className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                       <button
                         onClick={() => handleInternalButtonClick(index)}
                         className={cx(
-                          "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0",
+                          "relative w-12 h-12 sm:w-16 sm:h-16 rounded-bigButton border-0",
                           "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
                           visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
                         )}
@@ -485,26 +485,26 @@ export function OverlayBox({
                       </button>
 
                       {/* Button Label */}
-                      <span className="font-mono text-white text-sm sm:text-base select-none">{button.label}</span>
+                      <span className="font-mono text-white text-xs sm:text-base select-none">{button.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Vertical Divider */}
-              <div className="h-24 w-px bg-white/20" />
+              {/* Divider: horizontal on mobile, vertical on desktop */}
+              <div className="w-32 h-px sm:w-px sm:h-24 bg-white/20" />
 
               {/* Audio Section */}
-              <div className="flex flex-col items-center gap-2 pointer-events-none">
+              <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                 {/* Audio Title */}
-                <h2 className="font-sans text-white text-xl sm:text-2xl font-medium select-none mb-2">Audio</h2>
+                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-1 sm:mb-2">Audio</h2>
 
                 {/* Audio Toggle Button */}
-                <div className="flex flex-col items-center gap-2 pointer-events-none">
+                <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                   <button
                     onClick={handleAudioToggle}
                     className={cx(
-                      "relative w-14 h-14 sm:w-16 sm:h-16 rounded-bigButton border-0",
+                      "relative w-12 h-12 sm:w-16 sm:h-16 rounded-bigButton border-0",
                       "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
                       visibility.state4.buttons ? "pointer-events-auto" : "pointer-events-none"
                     )}
@@ -551,7 +551,7 @@ export function OverlayBox({
                   </button>
 
                   {/* Audio Label */}
-                  <span className="font-mono text-white/0 text-sm sm:text-base select-none">
+                  <span className="font-mono text-white/0 text-xs sm:text-base select-none">
                     {audioEnabled ? "On" : "Off"}
                   </span>
                 </div>

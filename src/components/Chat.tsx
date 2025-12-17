@@ -37,9 +37,9 @@ export function Chat({ className = "", onClose }: ChatProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const suggestions = [
-    "What's your professional background?",
-    "What tools and technologies do you work with?",
-    "How can I get in touch with you?",
+    "What does Baltha Studio do?",
+    "What are your previous projects about?",
+    "How do I get in touch or start a project?",
   ];
 
   const scrollToBottom = () => {
@@ -52,12 +52,12 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
   useEffect(() => {
     if (!suggestionsDisplayed) setSuggestionsDisplayed(true);
-    
+
     // Entrance animation - small delay then open
     const timer = setTimeout(() => {
       setIsAnimating(false);
     }, 50);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -141,25 +141,25 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
 
   return (
-      <div
-        className={cx(
-          "fixed z-50 right-4 left-4 transition-all duration-500",
-          // Mobile: animate top position and opacity
-          isAnimating ? "top-[calc(68px+50%)] opacity-0" : "top-[calc(68px+0%)] opacity-100",
-          // Desktop: animate width and opacity, keep top fixed
-          "md:right-4 md:left-auto md:top-4 md:z-[60] md:w-[calc(25%-24px)]",
-          isAnimating ? "md:translate-x-[50%] md:opacity-0" : "md:translate-x-[0%] md:opacity-100",
-          
-          // MOBILE vs DESKTOP values for the top offset
-          "[--chat-top:84px] md:[--chat-top:32px]",
-          className
-        )}
-        // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)
-        style={{
-          height:
-            "calc(var(--app-vh, 100dvh) - var(--chat-top) - max(env(safe-area-inset-bottom,0px), 16px))",
-        }}
-      >
+    <div
+      className={cx(
+        "fixed z-50 right-4 left-4 transition-all duration-500",
+        // Mobile: animate top position and opacity
+        isAnimating ? "top-[calc(68px+50%)] opacity-0" : "top-[calc(68px+0%)] opacity-100",
+        // Desktop: animate width and opacity, keep top fixed
+        "md:right-4 md:left-auto md:top-4 md:z-[60] md:w-[calc(25%-24px)]",
+        isAnimating ? "md:translate-x-[50%] md:opacity-0" : "md:translate-x-[0%] md:opacity-100",
+
+        // MOBILE vs DESKTOP values for the top offset
+        "[--chat-top:84px] md:[--chat-top:32px]",
+        className
+      )}
+      // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)
+      style={{
+        height:
+          "calc(var(--app-vh, 100dvh) - var(--chat-top) - max(env(safe-area-inset-bottom,0px), 16px))",
+      }}
+    >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}
       <div
         className="absolute z-0 rounded-bigButton -inset-1 pointer-events-none animate-pulse-rect"
@@ -190,10 +190,10 @@ export function Chat({ className = "", onClose }: ChatProps) {
             <div className="font-bold">Artur Balthazar</div>
             <div className="text-sm opacity-90">Director at Baltha Studio</div>
           </div>
-           <button
-             onClick={handleClose}
-             className="text-white hover:text-white/80 text-lg font-bold w-6 h-6 flex -mt-3"
-           >
+          <button
+            onClick={handleClose}
+            className="text-white hover:text-white/80 text-lg font-bold w-6 h-6 flex -mt-3"
+          >
             <img src="/assets/images/close.png" alt="Close" className="w-5 h-5" />
           </button>
         </div>
@@ -206,7 +206,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
                 className="block mx-auto bg-gray-100 hover:bg-gray-200 text-gray-600 font-helvetica text-sm px-3 py-2 rounded-bigButton border border-gray-300 transition-colors"
-                >
+              >
                 {suggestion}
               </button>
             ))}
@@ -249,17 +249,17 @@ export function Chat({ className = "", onClose }: ChatProps) {
                 className="w-8 h-8 rounded-full border-2 border-white mr-2 flex-shrink-0"
               />
               <div className="bg-gray-200 text-gray-800 px-2 py-3 rounded-bigButton border border-gray-300 text-sm">
-              <div className="flex space-x-[3px]">
-                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high" />
-                <div
-                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
-                  style={{ animationDelay: "0.1s" }}
-                />
-                <div
-                  className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
-                  style={{ animationDelay: "0.2s" }}
-                />
-              </div>
+                <div className="flex space-x-[3px]">
+                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high" />
+                  <div
+                    className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
+                    style={{ animationDelay: "0.1s" }}
+                  />
+                  <div
+                    className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce-high"
+                    style={{ animationDelay: "0.2s" }}
+                  />
+                </div>
 
               </div>
             </div>

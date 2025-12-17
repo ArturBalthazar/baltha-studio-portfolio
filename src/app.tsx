@@ -9,6 +9,7 @@ import { BottomLeftControls } from "./components/BottomLeftControls";
 import { GeelyCustomizer } from "./components/GeelyCustomizer";
 import { DioramasPanel } from "./components/DioramasPanel";
 import { PetwheelsPanel } from "./components/PetwheelsPanel";
+import { MusecraftPanel } from "./components/MusecraftPanel";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
@@ -25,6 +26,7 @@ export default function App() {
   const geelyCustomizerVisible = useUI((st) => st.geelyCustomizerVisible);
   const dioramasPanelVisible = useUI((st) => st.dioramasPanelVisible);
   const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
+  const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
   const isInteriorView = useUI((st) => st.isInteriorView);
   const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent, setIsInteriorView } = useUI();
   const config = getStateConfig(s);
@@ -281,13 +283,16 @@ export default function App() {
               )}
 
               {/* GEELY Car Customizer */}
-              <GeelyCustomizer visible={geelyCustomizerVisible} />
+              <GeelyCustomizer visible={geelyCustomizerVisible && s !== S.state_3 && s !== S.state_final} />
 
               {/* Dioramas Panel */}
-              <DioramasPanel visible={dioramasPanelVisible} />
+              <DioramasPanel visible={dioramasPanelVisible && s !== S.state_3 && s !== S.state_final} />
 
               {/* Petwheels Panel */}
-              <PetwheelsPanel visible={petwheelsPanelVisible} />
+              <PetwheelsPanel visible={petwheelsPanelVisible && s !== S.state_3 && s !== S.state_final} />
+
+              {/* Musecraft Panel */}
+              <MusecraftPanel visible={musecraftPanelVisible && s !== S.state_3 && s !== S.state_final} />
 
               {/* Connect Overlay (State 5) */}
               {config.content.showConnectOverlay && (

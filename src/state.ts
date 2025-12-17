@@ -47,6 +47,8 @@ type UIState = {
   setSelectedDioramaModel: (index: number) => void;
   petwheelsPanelVisible: boolean; // Petwheels panel visibility
   setPetwheelsPanelVisible: (visible: boolean) => void;
+  musecraftPanelVisible: boolean; // Musecraft panel visibility
+  setMusecraftPanelVisible: (visible: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -83,5 +85,7 @@ export const useUI = create<UIState>((set, get) => ({
   selectedDioramaModel: 0, // Default to first model (sesc-museum)
   setSelectedDioramaModel: (index) => set({ selectedDioramaModel: index }),
   petwheelsPanelVisible: false, // Petwheels panel hidden by default
-  setPetwheelsPanelVisible: (visible) => set({ petwheelsPanelVisible: visible })
+  setPetwheelsPanelVisible: (visible) => set({ petwheelsPanelVisible: visible }),
+  musecraftPanelVisible: false, // Musecraft panel hidden by default
+  setMusecraftPanelVisible: (visible) => set({ musecraftPanelVisible: visible })
 }));
