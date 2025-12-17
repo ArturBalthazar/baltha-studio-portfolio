@@ -18,6 +18,27 @@ app.use(express.json());
 // Store conversations and token usage in memory
 const conversations = {};
 const tokenUsage = {};  // Store token usage per user
+const sessionTimestamps = {};  // Track when each session was last active
+
+// Session expiration time (30 minutes in milliseconds)
+const SESSION_EXPIRY_MS = 30 * 60 * 1000;
+
+// Clean up stale sessions every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    let cleanedCount = 0;
+    for (const sessionId in sessionTimestamps) {
+        if (now - sessionTimestamps[sessionId] > SESSION_EXPIRY_MS) {
+            delete conversations[sessionId];
+            delete tokenUsage[sessionId];
+            delete sessionTimestamps[sessionId];
+            cleanedCount++;
+        }
+    }
+    if (cleanedCount > 0) {
+        console.log(`Cleaned up ${cleanedCount} stale session(s)`);
+    }
+}, 5 * 60 * 1000);
 
 // POST /chat endpoint
 app.post('/chat', async (req, res) => {
@@ -25,6 +46,9 @@ app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
 
     console.log(`Received message from ${userId}:`, userMessage);
+
+    // Update session timestamp (keeps session alive)
+    sessionTimestamps[userId] = Date.now();
 
     // Initialize conversation history and token tracking if not present
     if (!conversations[userId]) {
