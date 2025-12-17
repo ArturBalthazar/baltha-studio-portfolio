@@ -42,14 +42,24 @@ const getSessionId = () => {
   return sessionId;
 };
 
+// Store messages at module level so they persist when chat is closed and reopened
+// (component unmounts but messages stay in memory until page reload)
+let persistedMessages: Message[] = [];
+
 export function Chat({ className = "", onClose }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Initialize from persisted messages so chat history survives close/reopen
+  const [messages, setMessages] = useState<Message[]>(persistedMessages);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [suggestionsDisplayed, setSuggestionsDisplayed] = useState(false);
+  const [suggestionsDisplayed, setSuggestionsDisplayed] = useState(persistedMessages.length > 0);
   const [isAnimating, setIsAnimating] = useState(true); // Start closed for entrance animation
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync messages to module-level storage whenever they change
+  React.useEffect(() => {
+    persistedMessages = messages;
+  }, [messages]);
 
   // Subscribe to state for context
   const state = useUI((st) => st.state);
