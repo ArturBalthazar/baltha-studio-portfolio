@@ -5,6 +5,18 @@ interface PetwheelsPanelProps {
     visible: boolean;
 }
 
+// Shared content configuration - single source of truth for both mobile and desktop
+const petwheelsContent = {
+    title: "Petwheels",
+    subtitle: "A patented parametric wheelchair for dogs.",
+    text1: "A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.",
+    image1: "/assets/images/petwheels/petwheels1.jpg",
+    text2: "The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.",
+    image2: "/assets/images/petwheels/petwheels2.jpg",
+    image3: "/assets/images/petwheels/petwheels3.jpg",
+    image4: "/assets/images/petwheels/petwheels4.jpg"
+};
+
 // Custom scrollbar styles
 const scrollbarStyles: React.CSSProperties = {
     scrollbarWidth: 'thin',
@@ -26,9 +38,9 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
                 {/* Fixed Header - Title aligned left */}
                 <div className="flex-shrink-0 px-5 pt-5 pb-3">
                     <h2 className="font-sans text-2xl font-semibold text-white text-left">
-                        Petwheels
+                        {petwheelsContent.title}
                     </h2>
-                    <span className="font-mono text-sm font-light text-white">A patented parametric wheelchair for dogs.</span>
+                    <span className="font-mono text-sm font-light text-white">{petwheelsContent.subtitle}</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -55,13 +67,13 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
                     <div className="flex flex-col gap-4 petwheels-scroll pb-2">
                         {/* First text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.
+                            {petwheelsContent.text1}
                         </p>
 
                         {/* Main Image - petwheels1.jpg */}
                         <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
                             <img
-                                src="/assets/images/petwheels/petwheels1.jpg"
+                                src={petwheelsContent.image1}
                                 alt="Petwheels main view"
                                 className="w-full h-full object-cover"
                             />
@@ -69,7 +81,7 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
 
                         {/* Second text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.
+                            {petwheelsContent.text2}
                         </p>
 
                         {/* Image Composition - Left large, Right stacked */}
@@ -77,7 +89,7 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
                             {/* Left - Large image (petwheels2.jpg) - rotated 90 degrees */}
                             <div className="w-2/5  rounded-lg overflow-hidden border border-white/50 flex items-center justify-center bg-white">
                                 <img
-                                    src="/assets/images/petwheels/petwheels2.jpg"
+                                    src={petwheelsContent.image2}
                                     alt="Petwheels patent diagram side"
                                     className="h-auto w-auto object-cover rotate-90"
                                 />
@@ -87,14 +99,14 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
                             <div className="w-1/2 flex flex-col gap-2">
                                 <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
                                     <img
-                                        src="/assets/images/petwheels/petwheels3.jpg"
+                                        src={petwheelsContent.image3}
                                         alt="Petwheels patent diagram top"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
                                     <img
-                                        src="/assets/images/petwheels/petwheels4.jpg"
+                                        src={petwheelsContent.image4}
                                         alt="Petwheels patent diagram bottom"
                                         className="w-full h-full object-cover"
                                     />
@@ -106,13 +118,13 @@ export function PetwheelsPanel({ visible }: PetwheelsPanelProps) {
             </div>
 
             {/* Mobile: Top collapsible panel */}
-            <MobilePetwheelsPanel visible={visible} />
+            <MobilePetwheelsPanel visible={visible} content={petwheelsContent} />
         </>
     );
 }
 
 // Separate mobile component for cleaner code
-function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
+function MobilePetwheelsPanel({ visible, content }: { visible: boolean; content: typeof petwheelsContent }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Reset to collapsed when visible becomes true
@@ -127,7 +139,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
             className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
                 "flex flex-col rounded-xl overflow-visible",
-                "transition-all duration-300 max-h-[38vh]",
+                "transition-all duration-300 max-h-[calc(50vh-96px)]",
                 visible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
@@ -159,7 +171,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                         className="font-sans text-lg font-semibold text-white text-left flex-1 cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        Petwheels
+                        {content.title}
                     </h2>
 
                     <img
@@ -179,7 +191,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                         className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        A patented parametric wheelchair for dogs that is fully 3D printable.
+                        {content.subtitle}
                     </div>
                 )}
 
@@ -208,13 +220,13 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                             <div className="flex flex-col gap-3 mobile-petwheels-scroll">
                                 {/* First text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.
+                                    {content.text1}
                                 </p>
 
                                 {/* Main Image */}
                                 <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
                                     <img
-                                        src="/assets/images/petwheels/petwheels1.jpg"
+                                        src={content.image1}
                                         alt="Petwheels main view"
                                         className="w-full h-full object-cover"
                                     />
@@ -222,7 +234,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
 
                                 {/* Second text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.
+                                    {content.text2}
                                 </p>
 
                                 {/* Image Composition - Left large, Right stacked */}
@@ -230,7 +242,7 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                                     {/* Left - Large image - rotated 90 degrees */}
                                     <div className="w-2/5 aspect-[3/4] rounded-lg overflow-hidden border border-white/50 flex items-center justify-center bg-white">
                                         <img
-                                            src="/assets/images/petwheels/petwheels2.jpg"
+                                            src={content.image2}
                                             alt="Petwheels patent diagram side"
                                             className="h-[133%] w-auto object-contain rotate-90"
                                         />
@@ -240,14 +252,14 @@ function MobilePetwheelsPanel({ visible }: { visible: boolean }) {
                                     <div className="w-3/5 flex flex-col gap-2">
                                         <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
                                             <img
-                                                src="/assets/images/petwheels/petwheels3.jpg"
+                                                src={content.image3}
                                                 alt="Petwheels patent diagram top"
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
                                         <div className="flex-1 rounded-lg overflow-hidden border border-white/50">
                                             <img
-                                                src="/assets/images/petwheels/petwheels4.jpg"
+                                                src={content.image4}
                                                 alt="Petwheels patent diagram bottom"
                                                 className="w-full h-full object-cover"
                                             />

@@ -5,6 +5,17 @@ interface MusecraftPanelProps {
     visible: boolean;
 }
 
+// Shared content configuration - single source of truth for both mobile and desktop
+const musecraftContent = {
+    title: "Musecraft.xyz",
+    titleMobile: "Musecraft",
+    subtitle: "Create interactive 3D scenes for the web in our collaborative web editor.",
+    text1: "A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.",
+    image: "/public/assets/images/musecraft/editor.png",
+    text2: "Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.",
+    text3: "Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow."
+};
+
 // Custom scrollbar styles
 const scrollbarStyles: React.CSSProperties = {
     scrollbarWidth: 'thin',
@@ -26,9 +37,9 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
                 {/* Fixed Header - Title aligned left */}
                 <div className="flex-shrink-0 px-5 pt-5 pb-3">
                     <h2 className="font-sans text-2xl mb-1 font-semibold text-white text-left">
-                        Musecraft.xyz
+                        {musecraftContent.title}
                     </h2>
-                    <span className="font-mono text-sm font-light text-white">Create interactive 3D scenes for the web in our collaborative web editor.</span>
+                    <span className="font-mono text-sm font-light text-white">{musecraftContent.subtitle}</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -56,35 +67,35 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
 
                         {/* First text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.
+                            {musecraftContent.text1}
                         </p>
 
                         <div className="w-full rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-black">
                             <img
-                                src="/public/assets/images/musecraft/editor.png"
+                                src={musecraftContent.image}
                                 alt="Editor preview"
                                 className="w-full h-full object-fit"
                             />
                         </div>
 
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.
+                            {musecraftContent.text2}
                         </p>
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow.
+                            {musecraftContent.text3}
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Mobile: Top collapsible panel */}
-            <MobileMusecraftPanel visible={visible} />
+            <MobileMusecraftPanel visible={visible} content={musecraftContent} />
         </>
     );
 }
 
 // Separate mobile component for cleaner code
-function MobileMusecraftPanel({ visible }: { visible: boolean }) {
+function MobileMusecraftPanel({ visible, content }: { visible: boolean; content: typeof musecraftContent }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Reset to collapsed when visible becomes true
@@ -99,7 +110,7 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
             className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
                 "flex flex-col rounded-xl overflow-visible",
-                "transition-all duration-300 max-h-[38vh]",
+                "transition-all duration-300 max-h-[calc(50vh-96px)]",
                 visible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
@@ -131,7 +142,7 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
                         className="font-sans text-lg font-semibold text-white text-left flex-1 cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        Musecraft
+                        {content.titleMobile}
                     </h2>
 
                     <img
@@ -151,7 +162,7 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
                         className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        Create interactive 3D scenes for the web in our collaborative web editor.
+                        {content.subtitle}
                     </div>
                 )}
 
@@ -180,34 +191,27 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
                             <div className="flex flex-col gap-3 mobile-musecraft-scroll">
                                 {/* First text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.
-                                </p>
-                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    This editor allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.
-                                </p>
-                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow.
+                                    {content.text1}
                                 </p>
 
-                                {/* Placeholder Image */}
-                                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-gradient-to-br from-purple-900/50 via-blue-800/50 to-teal-700/50 flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="text-3xl mb-1">🎵</div>
-                                        <span className="font-mono text-xs text-white/60">Coming Soon</span>
-                                    </div>
+                                {/* Image */}
+                                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-black">
+                                    <img
+                                        src={content.image}
+                                        alt="Editor preview"
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
 
                                 {/* Second text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    Perfect for content creators, game developers, and artists seeking AI-powered musical inspiration with natural language prompts.
+                                    {content.text2}
                                 </p>
 
-                                {/* Features list - condensed for mobile */}
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded-full text-white/80">✨ Natural prompts</span>
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded-full text-white/80">🎹 Multiple genres</span>
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded-full text-white/80">📦 Export options</span>
-                                </div>
+                                {/* Third text block */}
+                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
+                                    {content.text3}
+                                </p>
                             </div>
                         </div>
                     </>
@@ -216,4 +220,3 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
         </div>
     );
 }
-

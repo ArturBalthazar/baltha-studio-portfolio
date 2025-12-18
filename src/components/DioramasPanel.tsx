@@ -247,7 +247,7 @@ function MobileDioramasPanel({
             className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
                 "flex flex-col rounded-xl overflow-visible",
-                "transition-all duration-300 max-h-[38vh]",
+                "transition-all duration-300 max-h-[calc(50vh-96px)]",
                 visible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
