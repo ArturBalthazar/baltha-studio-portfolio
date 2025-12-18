@@ -5,6 +5,15 @@ import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 
 import { colorSettings, trimConfigs } from "./carConfig";
+import {
+  initMusecraftInteraction,
+  resetMusecraftInteraction,
+  stopRocketFlames,
+  startRocketFlames,
+  isMusecraftInteractionInitialized,
+  isMusecraftGizmoDragging,
+  selectRocketByDefault
+} from "./MusecraftInteraction";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
@@ -468,6 +477,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
     }, scene);
 
     ring.parent = root;
+    ring.isPickable = false; // Allow clicks to pass through to models behind
 
     // Apply initial orientation
     const orient = ringOrientations[i];
@@ -1912,6 +1922,8 @@ export function BabylonCanvas() {
     peekRotationX: 0,
     // Accumulated Y rotation (persists during drag)
     accumulatedYRotation: 0,
+    // Y rotation velocity for momentum effect
+    velocityY: 0,
     // Store original quaternion for the model
     originalQuaternion: null as BABYLON.Quaternion | null
   });
@@ -3654,23 +3666,14 @@ export function BabylonCanvas() {
       const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
       const distance = BABYLON.Vector3.Distance(shipPosition, targetPosition);
 
-      // Log distance occasionally for debugging
-      if (Math.random() < 0.016) {
-        console.log(`📏 SHIP distance to car: ${distance.toFixed(2)}m (threshold: ${VISIBILITY_DISTANCE}m)`);
-        console.log(`   Ship pos: (${shipPosition.x.toFixed(1)}, ${shipPosition.y.toFixed(1)}, ${shipPosition.z.toFixed(1)})`);
-        console.log(`   Car pos: (${targetPosition.x.toFixed(1)}, ${targetPosition.y.toFixed(1)}, ${targetPosition.z.toFixed(1)})`);
-      }
-
       // Show/hide panel based on distance using state
       const shouldBeVisible = distance <= VISIBILITY_DISTANCE;
       const currentlyVisible = useUI.getState().geelyCustomizerVisible;
 
       if (shouldBeVisible && !currentlyVisible) {
         useUI.getState().setGeelyCustomizerVisible(true);
-        console.log(`🚗 GEELY customizer panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       } else if (!shouldBeVisible && currentlyVisible) {
         useUI.getState().setGeelyCustomizerVisible(false);
-        console.log(`🚗 GEELY customizer panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       }
     });
 
@@ -4630,23 +4633,13 @@ export function BabylonCanvas() {
     const wasInExploreState = prevState >= S.state_4 && prevState <= S.state_7; // Was in states 4-7
     const isNowInExploreState = s >= S.state_4 && s <= S.state_7; // Is now in states 4-7
     const isLeavingExploreState = wasInExploreState && !isNowInExploreState; // Leaving 4-7 to any non-explore state
-    const isComingFromState3 = prevState === S.state_3 && s === S.state_2; // State 3 → State 2
     const isComingFromExploreToState3 = wasInExploreState && s === S.state_3; // States 4-7 → State 3
     const isGoingToStateFinal = s === S.state_final; // Any state → State Final
-    const isGoingToState3 = prevState === S.state_2 && s === S.state_3; // State 2 → State 3
     const isGoingToState4 = prevState === S.state_3 && s === S.state_4; // State 3 → State 4
 
 
-    // Handle logo visibility based on config with delay when coming from state 3
-    if (isComingFromState3 && sceneConfig.logoEnabled) {
-      // Disable logo initially, enable after delay
-      logosRoot.setEnabled(false);
-      setTimeout(() => {
-        logosRoot.setEnabled(true);
-      }, 400); // 0.4 second delay
-    } else {
-      logosRoot.setEnabled(sceneConfig.logoEnabled);
-    }
+    // Handle logo visibility based on config
+    logosRoot.setEnabled(sceneConfig.logoEnabled);
 
     // Reset drag rotation to identity on state change with animation (quaternion slerp)
     const currentDragQuat = dragRotationRef.current.clone();
@@ -4692,8 +4685,8 @@ export function BabylonCanvas() {
     const easing = new BABYLON.CubicEase();
     easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
 
-    // Use config value for transform delay only when coming from state 3 to state 2
-    const transformDelay = isComingFromState3 ? (sceneConfig.transformAnimationDelay ?? 0) : 0;
+    // Transform animation (no delay since state 2 was removed)
+    const transformDelay = 0;
 
     animateTransform({
       target: root1,
@@ -4768,7 +4761,7 @@ export function BabylonCanvas() {
       }
 
       // Check if coming FROM guided state (4-7) TO any non-explore state while in guided mode
-      // This includes state_0, state_1, state_2, state_3, and state_final
+      // This includes state_0, state_3, and state_final
       const isLeavingGuidedExploreState = currentNavigationMode === 'guided' &&
         prevState >= S.state_4 && prevState <= S.state_7 &&
         (s <= S.state_3 || s === S.state_final);
@@ -4818,8 +4811,6 @@ export function BabylonCanvas() {
         // Determine state name for logging
         const stateNames: Record<number, string> = {
           [S.state_0]: 'state_0',
-          [S.state_1]: 'state_1',
-          [S.state_2]: 'state_2',
           [S.state_3]: 'state_3',
           [S.state_final]: 'state_final'
         };
@@ -5284,215 +5275,13 @@ export function BabylonCanvas() {
       }
     }
 
-    if (s === S.state_2) { // State 2 (index 2)
-      // State 2: Scale down logos, move them
-      logosRoot.scaling.set(0.25, 0.25, 0.25);
-      logosRoot.position.set(0, 1.25, 4);
 
-      // Fade in logos when coming from state 3
-      if (isComingFromState3) {
-        const logoModels = logoModelsRef.current;
-        const currentLogoModel = logoModels[selectedLogoModel];
+    // Logos are always at normal size and position (state 2 with planet is removed)
+    logosRoot.scaling.set(1, 1, 1);
+    logosRoot.position.set(0, 0, 0);
 
-        if (currentLogoModel) {
-          const logoMaterials: BABYLON.Material[] = [];
-          currentLogoModel.getChildMeshes().forEach(mesh => {
-            if (mesh.material) {
-              logoMaterials.push(mesh.material);
-            }
-          });
-          if (currentLogoModel.material) {
-            logoMaterials.push(currentLogoModel.material);
-          }
-
-          const logoMaterialDelay = (sceneConfig.materialAnimationDelay ?? 0) * 1000;
-
-          const animateLogo = () => {
-            const fps = 60;
-            const duration = 1.0; // 1 second fade
-            const totalFrames = fps * duration;
-
-            logoMaterials.forEach(mat => {
-              mat.alpha = 0.01;
-
-              const alphaAnimation = new BABYLON.Animation(
-                "fadeInLogo",
-                "alpha",
-                fps,
-                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-              );
-
-              alphaAnimation.setKeys([
-                { frame: 0, value: 0.01 },
-                { frame: totalFrames, value: 1 }
-              ]);
-
-              const easingAlpha = new BABYLON.CubicEase();
-              easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-              alphaAnimation.setEasingFunction(easingAlpha);
-
-              mat.animations = [alphaAnimation];
-              scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
-                mat.alpha = 1;
-              });
-            });
-          };
-
-          if (logoMaterialDelay > 0) {
-            setTimeout(animateLogo, logoMaterialDelay);
-          } else {
-            animateLogo();
-          }
-        }
-      }
-
-      if (material) {
-        // Get target rotation for current continent
-        const currentContinent = useUI.getState().selectedContinent;
-        const targetRotation = planetRotations[currentContinent]
-          ? planetRotations[currentContinent].clone()
-          : new BABYLON.Vector3(0, 0, 0);
-        targetRotation.y += Math.PI;
-
-        // Set initial rotation to opposite side (flip X and Y by 180 degrees)
-        const fromRotation = new BABYLON.Vector3(
-          targetRotation.x + Math.PI / 2,
-          targetRotation.y + Math.PI / 2,
-          targetRotation.z
-        );
-        planet.rotation = fromRotation;
-
-        // Use config value for material animation delay only when coming from state 3
-        const materialDelay = isComingFromState3 ? (sceneConfig.materialAnimationDelay ?? 0) * 1000 : 0;
-
-        const animatePlanet = () => {
-          // Enable planet with invisible material right before animation
-          material.alpha = 0.01;
-          planet.setEnabled(true);
-
-          // Fade in animation
-          const fps = 60;
-          const duration = 1.5; // seconds
-          const totalFrames = fps * duration;
-
-          const alphaAnimation = new BABYLON.Animation(
-            "fadeInPlanet",
-            "alpha",
-            fps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-
-          alphaAnimation.setKeys([
-            { frame: 0, value: 0.01 },
-            { frame: totalFrames, value: 1 }
-          ]);
-
-          const easingAlpha = new BABYLON.CubicEase();
-          easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-          alphaAnimation.setEasingFunction(easingAlpha);
-
-          material.animations = [alphaAnimation];
-          scene.beginAnimation(material, 0, totalFrames, false, 1, () => {
-            material.alpha = 1;
-          });
-
-          // Rotation animation during fade in
-          const rotationAnimation = new BABYLON.Animation(
-            "rotateInPlanet",
-            "rotation",
-            fps,
-            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-
-          rotationAnimation.setKeys([
-            { frame: 0, value: fromRotation },
-            { frame: totalFrames, value: targetRotation }
-          ]);
-
-          const easingRot = new BABYLON.CubicEase();
-          easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-          rotationAnimation.setEasingFunction(easingRot);
-
-          planet.animations = [rotationAnimation];
-          scene.beginAnimation(planet, 0, totalFrames, false);
-        };
-
-        if (materialDelay > 0) {
-          setTimeout(animatePlanet, materialDelay);
-        } else {
-          animatePlanet();
-        }
-      }
-    } else {
-      // States 0, 1, 3: Normal logo size and position, fade out and hide planet
-      logosRoot.scaling.set(1, 1, 1);
-      logosRoot.position.set(0, 0, 0);
-
-      if (material && planet.isEnabled()) {
-        // Fade out animation
-        const fps = 60;
-        const duration = 0.6; // seconds
-        const totalFrames = fps * duration;
-
-        material.alpha = 1;
-
-        const alphaAnimation = new BABYLON.Animation(
-          "fadeOutPlanet",
-          "alpha",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-
-        alphaAnimation.setKeys([
-          { frame: 0, value: 1 },
-          { frame: totalFrames / 1.5, value: 0.01 }
-        ]);
-
-        const easingAlpha = new BABYLON.CubicEase();
-        easingAlpha.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-        alphaAnimation.setEasingFunction(easingAlpha);
-
-        material.animations = [alphaAnimation];
-        scene.beginAnimation(material, 0, totalFrames / 1.5, false, 1, () => {
-          planet.setEnabled(false);
-          material.alpha = 1;
-        });
-
-        // Rotation animation during fade out (rotate to opposite)
-        const currentRotation = planet.rotation.clone();
-        const toRotation = new BABYLON.Vector3(
-          currentRotation.x + Math.PI,
-          currentRotation.y + Math.PI,
-          currentRotation.z
-        );
-
-        const rotationAnimation = new BABYLON.Animation(
-          "rotateOutPlanet",
-          "rotation",
-          fps,
-          BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-
-        rotationAnimation.setKeys([
-          { frame: 0, value: currentRotation },
-          { frame: totalFrames, value: toRotation }
-        ]);
-
-        const easingRot = new BABYLON.CubicEase();
-        easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-        rotationAnimation.setEasingFunction(easingRot);
-
-        planet.animations = [rotationAnimation];
-        scene.beginAnimation(planet, 0, totalFrames, false);
-      } else {
-        planet.setEnabled(false);
-      }
-    }
+    // Planet is always disabled (was only used in now-removed state 2)
+    planet.setEnabled(false);
 
     // Update previous state reference for next transition
     prevStateRef.current = s;
@@ -5669,11 +5458,20 @@ export function BabylonCanvas() {
 
       const deltaX = e.clientX - modelRotationRef.current.lastX;
       const deltaY = e.clientY - modelRotationRef.current.lastY;
-      const rotationSpeed = 0.005; // Radians per pixel
+
+      // Reduce rotation speed to 0.1 of normal when gizmo is being dragged
+      const gizmoReductionFactor = isMusecraftGizmoDragging() ? 0.1 : 1.0;
+      const rotationSpeed = 0.005 * gizmoReductionFactor; // Radians per pixel
 
       // Y axis rotation - free rotation around world Y axis, accumulates
       const deltaYRotation = -deltaX * rotationSpeed;
       modelRotationRef.current.accumulatedYRotation += deltaYRotation;
+
+      // Track velocity for momentum effect (exponential smoothing)
+      const velocitySmoothing = 0.3; // Lower = smoother, higher = more responsive
+      modelRotationRef.current.velocityY =
+        modelRotationRef.current.velocityY * (1 - velocitySmoothing) +
+        deltaYRotation * velocitySmoothing;
 
       // X axis rotation with resistance - use camera's right vector so it tilts toward/away from camera
       const currentPeek = modelRotationRef.current.peekRotationX;
@@ -5714,46 +5512,66 @@ export function BabylonCanvas() {
       }
     };
 
-    // Spring-back animation for X-axis peek rotation
+    // Animation loop for X-axis spring-back AND Y-axis momentum
     let springAnimationFrame: number | null = null;
-    const springBack = () => {
+    const animateRotation = () => {
+      // Skip updates while dragging (user is in control)
       if (modelRotationRef.current.isDragging) {
-        springAnimationFrame = requestAnimationFrame(springBack);
+        springAnimationFrame = requestAnimationFrame(animateRotation);
         return;
       }
 
+      let needsUpdate = false;
+
+      // Y-axis momentum - apply friction to velocity and update rotation
+      const currentVelocityY = modelRotationRef.current.velocityY;
+      if (Math.abs(currentVelocityY) > 0.00001) {
+        // Apply friction (0.95 = smooth decay, 0.9 = faster stop)
+        const friction = 0.95;
+        modelRotationRef.current.velocityY *= friction;
+
+        // Apply velocity to accumulated rotation
+        modelRotationRef.current.accumulatedYRotation += currentVelocityY;
+        needsUpdate = true;
+      } else {
+        modelRotationRef.current.velocityY = 0;
+      }
+
+      // X-axis spring-back
       const currentPeek = modelRotationRef.current.peekRotationX;
-      if (Math.abs(currentPeek) < 0.001) {
+      if (Math.abs(currentPeek) > 0.001) {
+        // Spring constant - higher = faster return
+        const springStrength = 0.02;
+        const newPeek = currentPeek * (1 - springStrength);
+        modelRotationRef.current.peekRotationX = newPeek;
+        needsUpdate = true;
+      } else if (currentPeek !== 0) {
         modelRotationRef.current.peekRotationX = 0;
-        springAnimationFrame = requestAnimationFrame(springBack);
-        return;
+        needsUpdate = true;
       }
 
-      // Spring constant - higher = faster return
-      const springStrength = 0.02;
-      const newPeek = currentPeek * (1 - springStrength);
-      modelRotationRef.current.peekRotationX = newPeek;
+      // Update model rotation if anything changed
+      if (needsUpdate) {
+        const model = getCurrentModel();
+        const camera = cameraRef.current;
+        if (model && model.rotationQuaternion && camera) {
+          // Get camera right vector for tilt axis
+          const cameraRight = camera.getDirection(BABYLON.Axis.X);
+          cameraRight.y = 0;
+          cameraRight.normalize();
 
-      // Update model rotation
-      const model = getCurrentModel();
-      const camera = cameraRef.current;
-      if (model && model.rotationQuaternion && camera) {
-        // Get camera right vector for tilt axis
-        const cameraRight = camera.getDirection(BABYLON.Axis.X);
-        cameraRight.y = 0;
-        cameraRight.normalize();
-
-        const originalQuat = modelRotationRef.current.originalQuaternion || BABYLON.Quaternion.Identity();
-        const yRotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, modelRotationRef.current.accumulatedYRotation);
-        const xPeekRotation = BABYLON.Quaternion.RotationAxis(cameraRight, newPeek);
-        model.rotationQuaternion = xPeekRotation.multiply(yRotation.multiply(originalQuat));
+          const originalQuat = modelRotationRef.current.originalQuaternion || BABYLON.Quaternion.Identity();
+          const yRotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, modelRotationRef.current.accumulatedYRotation);
+          const xPeekRotation = BABYLON.Quaternion.RotationAxis(cameraRight, modelRotationRef.current.peekRotationX);
+          model.rotationQuaternion = xPeekRotation.multiply(yRotation.multiply(originalQuat));
+        }
       }
 
-      springAnimationFrame = requestAnimationFrame(springBack);
+      springAnimationFrame = requestAnimationFrame(animateRotation);
     };
 
-    // Start spring-back animation loop
-    springAnimationFrame = requestAnimationFrame(springBack);
+    // Start rotation animation loop
+    springAnimationFrame = requestAnimationFrame(animateRotation);
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -5768,8 +5586,10 @@ export function BabylonCanvas() {
       if (springAnimationFrame) {
         cancelAnimationFrame(springAnimationFrame);
       }
-      // Reset peek rotation when leaving
+      // Reset all rotation state when leaving to prevent jump on re-entry
       modelRotationRef.current.peekRotationX = 0;
+      modelRotationRef.current.accumulatedYRotation = 0;
+      modelRotationRef.current.velocityY = 0;
       modelRotationRef.current.originalQuaternion = null;
     };
   }, [s, navigationMode]);
@@ -6479,6 +6299,38 @@ export function BabylonCanvas() {
           });
         }
 
+        // Initialize Musecraft interaction system (selection + gizmo) for model2
+        if (modelKey === 'model2') {
+          console.log("🔍 [Musecraft DEBUG] model2 became visible, checking interaction init...");
+          console.log("🔍 [Musecraft DEBUG] musecraftRootRef.current:", musecraftRootRef.current?.name || "null");
+          console.log("🔍 [Musecraft DEBUG] sceneRef.current:", sceneRef.current ? "EXISTS" : "null");
+          console.log("🔍 [Musecraft DEBUG] isMusecraftInteractionInitialized():", isMusecraftInteractionInitialized());
+
+          const root = musecraftRootRef.current;
+          if (root && sceneRef.current && !isMusecraftInteractionInitialized()) {
+            console.log("🔍 [Musecraft DEBUG] Will initialize interaction in 100ms...");
+            // Small delay to ensure meshes are fully enabled after scale animation starts
+            setTimeout(() => {
+              console.log("🔍 [Musecraft DEBUG] Timeout fired, checking refs again...");
+              console.log("🔍 [Musecraft DEBUG] musecraftRootRef.current:", musecraftRootRef.current?.name || "null");
+              console.log("🔍 [Musecraft DEBUG] sceneRef.current:", sceneRef.current ? "EXISTS" : "null");
+              if (musecraftRootRef.current && sceneRef.current) {
+                console.log("🔍 [Musecraft DEBUG] Calling initMusecraftInteraction now!");
+                initMusecraftInteraction(musecraftRootRef.current as BABYLON.AbstractMesh, sceneRef.current);
+              } else {
+                console.log("🔍 [Musecraft DEBUG] FAILED - refs became null");
+              }
+            }, 100);
+          } else if (isMusecraftInteractionInitialized()) {
+            // Already initialized from previous visit - re-select rocket and start flames
+            console.log("🔍 [Musecraft DEBUG] Already initialized - re-selecting rocket");
+            setTimeout(() => {
+              selectRocketByDefault();
+              startRocketFlames();
+            }, 100);
+          }
+        }
+
         // Start petwheels animation when model becomes visible
         if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
           petwheelsAnimationGroupsRef.current.forEach(group => {
@@ -6499,6 +6351,12 @@ export function BabylonCanvas() {
             group.reset();
             console.log(`🎨 Stopped animation: ${group.name}`);
           });
+        }
+
+        // Reset Musecraft interaction when model2 becomes hidden (always, regardless of animations)
+        if (modelKey === 'model2') {
+          resetMusecraftInteraction();
+          stopRocketFlames();
         }
 
         // Stop petwheels animation when model becomes hidden

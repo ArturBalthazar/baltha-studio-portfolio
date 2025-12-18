@@ -2,14 +2,12 @@ import { create } from "zustand";
 
 export enum S {
   state_0 = 0,
-  state_1,
-  state_2,
-  state_3,
-  state_4,
-  state_5,
-  state_6,
-  state_7,
-  state_final // Contact/Connect state - always the last destination
+  state_3 = 1,  // Mode selection (skipping removed states 1 & 2)
+  state_4 = 2,  // Car Customizer
+  state_5 = 3,  // Musecraft Editor
+  state_6 = 4,  // Digital Dioramas
+  state_7 = 5,  // Petwheels
+  state_final = 6 // Contact/Connect state - always the last destination
 }
 
 type UIState = {

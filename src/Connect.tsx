@@ -41,7 +41,7 @@ export default function Connect() {
     // Force state 2 for smaller header sizing
     const setState = useUI((st) => st.setState);
     useEffect(() => {
-        setState(S.state_2);
+        setState(S.state_3);
 
         // Hide the static HTML loading screen when Connect page mounts
         const staticScreen = document.getElementById('static-loading-screen');

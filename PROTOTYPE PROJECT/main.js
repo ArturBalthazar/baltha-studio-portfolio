@@ -48,10 +48,10 @@ let currentTrim = "lightBlue";
 let rotationEnabled = false;
 let isInteriorView = false;
 const colorSettings = {
-    green:  { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
-    white:   { hex: "#E5DDC9", metallic: 0.2, roughness: 0.2, sheen: 1 },
-    black:   { hex: "#000000", metallic: 0.7, roughness: 0.2, sheen: 0.2 },
-    pink:    { hex: "#E8BDE1", metallic: 0.18, roughness: 0.2, sheen: 1 }
+    green: { hex: "#AFBF25", metallic: 0.2, roughness: 0.2, sheen: 1 },
+    white: { hex: "#E5DDC9", metallic: 0.2, roughness: 0.2, sheen: 1 },
+    black: { hex: "#000000", metallic: 0.7, roughness: 0.2, sheen: 0.2 },
+    pink: { hex: "#E8BDE1", metallic: 0.18, roughness: 0.2, sheen: 1 }
 };
 
 const trimConfigs = {
@@ -132,10 +132,10 @@ let warpEffectAttached = false;
 let currentScene = "main";
 let previousScene = null;
 const ENV_ROOTS = {
-    main    : null,   // the space scene with the ship – set below
-    geely     : null,   // filled when GEELY finishes loading
-    atlasflow    : null,   // fill when you load atlasflow
-    editor : null    // fill when you load editor
+    main: null,   // the space scene with the ship – set below
+    geely: null,   // filled when GEELY finishes loading
+    atlasflow: null,   // fill when you load atlasflow
+    editor: null    // fill when you load editor
 };
 
 /* UI and Interaction */
@@ -188,20 +188,20 @@ const viewCarBtnImg = viewCarBtn.querySelector("img");
 const whiteFade = document.getElementById("white-fade-overlay");
 
 /* State Machine */
-const STATE_HOME       = 0;
+const STATE_HOME = 0;
 const STATE_HOME_1 = 1;
 const STATE_HOME_2 = 2;
 const STATE_HOME_3 = 3;
-const STATE_EXPLORE    = 4;
-const STATE_EXPLORE_1   = 5;
-const STATE_EXPLORE_2   = 6;
-const STATE_EXPLORE_3   = 7;
-const STATE_EXPLORE_4   = 8;
-const STATE_EXPLORE_5   = 9;
+const STATE_EXPLORE = 4;
+const STATE_EXPLORE_1 = 5;
+const STATE_EXPLORE_2 = 6;
+const STATE_EXPLORE_3 = 7;
+const STATE_EXPLORE_4 = 8;
+const STATE_EXPLORE_5 = 9;
 
-const maxFreeState     = 4;
-const maxGuidedState   = 9;
-let maxState         = 9;
+const maxFreeState = 4;
+const maxGuidedState = 9;
+let maxState = 9;
 
 let guidedProgress = 0;
 let guidedCurve = null;
@@ -214,7 +214,7 @@ let currentState = STATE_HOME;
 let previousState = STATE_HOME;
 let isAnimating = false;
 let camAlphaTarget = null;
-let camBetaTarget  = null;
+let camBetaTarget = null;
 let camInputDisabled = false;
 let guidedState = null;
 let editorCubeCamPos = null;
@@ -229,11 +229,11 @@ let guidedPoints = [
     { id: 7, pos: new BABYLON.Vector3(27, 6.5, -35), alpha: BABYLON.Tools.ToRadians(145), beta: BABYLON.Tools.ToRadians(85) }, // STATE_EXPLORE_3
 
     { id: 8, pos: new BABYLON.Vector3(-27, .5, -35), alpha: BABYLON.Tools.ToRadians(62), beta: BABYLON.Tools.ToRadians(85) }, // STATE_EXPLORE_4
-    
+
     { id: 9, pos: new BABYLON.Vector3(3, 20, -75), alpha: BABYLON.Tools.ToRadians(85), beta: BABYLON.Tools.ToRadians(87) },
-    
+
     { id: 9.1, pos: new BABYLON.Vector3(-15, 0, -25) },
-    
+
     { id: 10, pos: new BABYLON.Vector3(0, 0, -30), alpha: BABYLON.Tools.ToRadians(-90), beta: BABYLON.Tools.ToRadians(90) }, // STATE_EXPLORE_6
 ];
 
@@ -255,175 +255,175 @@ const planetRotations = {
         BABYLON.Tools.ToRadians(0)
     ),
     NorthAmerica: new BABYLON.Vector3(
-      BABYLON.Tools.ToRadians(8.5),
-      BABYLON.Tools.ToRadians(53),
-      BABYLON.Tools.ToRadians(28)
+        BABYLON.Tools.ToRadians(8.5),
+        BABYLON.Tools.ToRadians(53),
+        BABYLON.Tools.ToRadians(28)
     ),
     SouthAmerica: new BABYLON.Vector3(
-      BABYLON.Tools.ToRadians(-30),
-      BABYLON.Tools.ToRadians(9),
-      BABYLON.Tools.ToRadians(0)
+        BABYLON.Tools.ToRadians(-30),
+        BABYLON.Tools.ToRadians(9),
+        BABYLON.Tools.ToRadians(0)
     ),
     Europe: new BABYLON.Vector3(
-      BABYLON.Tools.ToRadians(15),
-      BABYLON.Tools.ToRadians(-80),
-      BABYLON.Tools.ToRadians(-30)
+        BABYLON.Tools.ToRadians(15),
+        BABYLON.Tools.ToRadians(-80),
+        BABYLON.Tools.ToRadians(-30)
     ),
     Asia: new BABYLON.Vector3(
-      BABYLON.Tools.ToRadians(-23),
-      BABYLON.Tools.ToRadians(-155),
-      BABYLON.Tools.ToRadians(-3)
+        BABYLON.Tools.ToRadians(-23),
+        BABYLON.Tools.ToRadians(-155),
+        BABYLON.Tools.ToRadians(-3)
     ),
     Oceania: new BABYLON.Vector3(
-      BABYLON.Tools.ToRadians(35),
-      BABYLON.Tools.ToRadians(-195),
-      BABYLON.Tools.ToRadians(-20)
+        BABYLON.Tools.ToRadians(35),
+        BABYLON.Tools.ToRadians(-195),
+        BABYLON.Tools.ToRadians(-20)
     )
-  };
+};
 
 const liveEarthTitles = {
-    Africa:        "Live Earth - Africa",
-    NorthAmerica:  "Live Earth - North America",
-    SouthAmerica:  "Live Earth - South America",
-    Europe:        "Live Earth - Europe",
-    Asia:          "Live Earth - Asia",
-    Oceania:       "Live Earth - Oceania"
+    Africa: "Live Earth - Africa",
+    NorthAmerica: "Live Earth - North America",
+    SouthAmerica: "Live Earth - South America",
+    Europe: "Live Earth - Europe",
+    Asia: "Live Earth - Asia",
+    Oceania: "Live Earth - Oceania"
 };
 
 // Each array is for years: [1950, 1975, 2000, 2025]. 
 // The numbers are population in millions, e.g. 229 => 229 million.
 const populationData = {
-    Africa:      [229, 420, 814, 1550], 
-    Asia:        [1394, 2360, 3714, 4980],
-    Europe:      [549, 675, 726, 744],
-    NorthAmerica:[227, 350, 491, 617],
-    SouthAmerica:[114, 217, 350, 438],
-    Oceania:     [13, 21, 31, 47]
+    Africa: [229, 420, 814, 1550],
+    Asia: [1394, 2360, 3714, 4980],
+    Europe: [549, 675, 726, 744],
+    NorthAmerica: [227, 350, 491, 617],
+    SouthAmerica: [114, 217, 350, 438],
+    Oceania: [13, 21, 31, 47]
 };
 
 const gdpData = {
-    Africa:      [61, 159, 616, 3000],  
-    Asia:        [260, 1200, 7600, 40000],
-    Europe:      [500, 2200, 9100, 24000],
-    NorthAmerica:[330, 2500, 11400, 28000],
-    SouthAmerica:[88, 350, 1700, 4200],
-    Oceania:     [15, 65, 400, 2000]
-  };
+    Africa: [61, 159, 616, 3000],
+    Asia: [260, 1200, 7600, 40000],
+    Europe: [500, 2200, 9100, 24000],
+    NorthAmerica: [330, 2500, 11400, 28000],
+    SouthAmerica: [88, 350, 1700, 4200],
+    Oceania: [15, 65, 400, 2000]
+};
 
 const maxPop = 5500;        // e.g. top scale for population (in millions)
 const maxGDP = 45000;       // e.g. top scale for GDP (in billions, or however you're storing it)
-const xVals  = [0, 33.3, 66.6, 100]; // X positions for 4 data points: 1950, 1975, 2000, 2025
+const xVals = [0, 33.3, 66.6, 100]; // X positions for 4 data points: 1950, 1975, 2000, 2025
 
 // Accepts the array of data (4 points) + which maximum to scale
 function buildPathString(dataArr, maxVal) {
     let pathString = "";
     dataArr.forEach((val, i) => {
-      // Map i => x coordinate
-      const x = xVals[i];
-      // Scale val up to 0..100, invert so bigger is “higher”
-      const yVal = (val / maxVal) * 100; 
-      const y = 100 - yVal;
-      // Move or Line
-      if (i === 0) {
-        pathString += `M${x},${y} `;
-      } else {
-        pathString += `L${x},${y} `;
-      }
+        // Map i => x coordinate
+        const x = xVals[i];
+        // Scale val up to 0..100, invert so bigger is “higher”
+        const yVal = (val / maxVal) * 100;
+        const y = 100 - yVal;
+        // Move or Line
+        if (i === 0) {
+            pathString += `M${x},${y} `;
+        } else {
+            pathString += `L${x},${y} `;
+        }
     });
     return pathString;
 }
-  
+
 function updateGraph(continent) {
     // 1) Grab population & GDP arrays for this continent
-    const popArr = populationData[continent];  
+    const popArr = populationData[continent];
     const gdpArr = gdpData[continent];
-    
+
     // 2) Build the path strings for population & GDP lines
     const popPathD = buildPathString(popArr, maxPop);
     const gdpPathD = buildPathString(gdpArr, maxGDP);
-  
+
     // ------ Update POPULATION lines ------
     glowPathPpl.setAttribute("d", popPathD);
     mainPathPpl.setAttribute("d", popPathD);
-  
+
     // 3) Position the CSS-based live dot for population
     //    (Instead of setAttribute("cx"/"cy"), we’ll set .style.left/.style.top)
-    
+
     // final data point’s X/Y in your 0..100 coordinate system
     const lastPopIndex = popArr.length - 1;
     const popXEnd = xVals[lastPopIndex];          // e.g. 0, 33.3, 66.6, or 100
     const popValue = popArr[lastPopIndex];
-    const popYPercent = 100 - (popValue / maxPop)*100; 
+    const popYPercent = 100 - (popValue / maxPop) * 100;
     // Convert 0..100 into 0..100% for CSS
     dotPop.style.left = popXEnd + "%";
-    dotPop.style.top  = popYPercent + "%";
-  
+    dotPop.style.top = popYPercent + "%";
+
     // ------ Update GDP lines ------
 
     glowPathGdp.setAttribute("d", gdpPathD);
     mainPathGdp.setAttribute("d", gdpPathD);
-  
+
     // 4) Position the CSS-based live dot for GDP
-    
+
     const lastGdpIndex = gdpArr.length - 1;
     const gdpXEnd = xVals[lastGdpIndex];
     const gdpValue = gdpArr[lastGdpIndex];
-    const gdpYPercent = 100 - (gdpValue / maxGDP)*100;
+    const gdpYPercent = 100 - (gdpValue / maxGDP) * 100;
     dotGdp.style.left = gdpXEnd + "%";
-    dotGdp.style.top  = gdpYPercent + "%";
-  }
-  
-  
+    dotGdp.style.top = gdpYPercent + "%";
+}
+
+
 // This function animates planetMesh's rotation from its current value to the target rotation.
 function animatePlanetMeshTo(targetRotation, durationInSeconds, continentName) {
     const fps = 60;
     const totalFrames = fps * durationInSeconds;
-  
+
     let rotationAnim = new BABYLON.Animation(
-      "rotatePlanetMeshContinent",
-      "rotation",
-      fps,
-      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        "rotatePlanetMeshContinent",
+        "rotation",
+        fps,
+        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
-  
+
     // Ensure planetMesh.rotation is set.
     const currentRotation = planetMesh.rotation ? planetMesh.rotation.clone() : BABYLON.Vector3.Zero();
-  
+
     let keys = [
-      { frame: 0, value: currentRotation },
-      { frame: totalFrames, value: targetRotation }
+        { frame: 0, value: currentRotation },
+        { frame: totalFrames, value: targetRotation }
     ];
     rotationAnim.setKeys(keys);
-  
+
     // Add easing for a smooth transition.
     let easingFunc = new BABYLON.CubicEase();
     easingFunc.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
     rotationAnim.setEasingFunction(easingFunc);
-  
+
     planetMesh.animations = [];
     planetMesh.animations.push(rotationAnim);
-  
+
     scene.beginAnimation(planetMesh, 0, totalFrames, false);
 
     if (highlightedContinentMesh) {
         highlightLayer.removeMesh(highlightedContinentMesh);
         highlightedContinentMesh = null;
     }
-    
+
     const continentMeshes = planetMesh.getChildMeshes();
     const targetMesh = continentMeshes.find(m => m.name === continentName);
     if (!targetMesh) {
         console.error("Continent mesh not found for:", continentName);
         return;
     }
-  
+
     highlightLayer.addMesh(targetMesh, new BABYLON.Color3(0.93, 0.4, 0.32));
     highlightedContinentMesh = targetMesh;
-  }
-  
- 
-  continentButtons.forEach(btn => {
+}
+
+
+continentButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         // Stop any running alpha animations on the planet materials.
         let materials = [];
@@ -431,50 +431,50 @@ function animatePlanetMeshTo(targetRotation, durationInSeconds, continentName) {
         materials.forEach(mat => {
             scene.stopAnimation(mat);
         });
-        
+
         // Update button active classes.
         continentButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-    
+
         // Get the continent name and target rotation.
         const continent = btn.getAttribute('data-continent');
         const targetRotation = planetRotations[continent];
 
-        
+
         liveEarthTitle.textContent = liveEarthTitles[continent];
 
         updateGraph(continent);
-    
+
         // Animate the planetMesh's rotation (this doesn't affect opacity).
         animatePlanetMeshTo(targetRotation, 1.5, continent);
-  
+
     });
-  });
-  
+});
+
 
 function loadPlanet() {
     return new Promise((resolve) => {
-        BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/planet.glb", scene, function(meshes) {
+        BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/planet.glb", scene, function (meshes) {
             // Retrieve nodes by their names.
             planetRoot1 = scene.getTransformNodeByName("MainRoot");
             if (!planetRoot1) {
                 console.error("Master __root__ node not found in the GLB.");
             }
             planetRoot2 = scene.getTransformNodeByName("PlanetRoot");
-            planetBone  = scene.getTransformNodeByName("PlanetBone");
+            planetBone = scene.getTransformNodeByName("PlanetBone");
             // Try to get "PlanetMesh" by name; if not found, fallback to the first mesh
             planetMesh = meshes.find(m => m.name === "PlanetMesh" && m.material);
             planetPinCenter = scene.getTransformNodeByName("PinCenter");
-    
+
             const materials = [];
-            
-            
+
+
             planetMesh.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
             planetMesh.material.needDepthPrePass = true;
             planetMesh.material.backFaceCulling = true;
 
             if (planetMesh?.material) materials.push(planetMesh.material);
-            
+
             materials.forEach(mat => {
                 mat.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
                 mat.needDepthPrePass = true;
@@ -486,7 +486,7 @@ function loadPlanet() {
             planetRoot1.setEnabled(false);
 
             // Resolve with the found nodes (wrapped in an object for clarity)
-            resolve({planetRoot1,planetRoot2,planetBone,planetMesh,planetPinCenter});
+            resolve({ planetRoot1, planetRoot2, planetBone, planetMesh, planetPinCenter });
         });
     });
 }
@@ -563,11 +563,11 @@ function updateOverlayVisibility() {
             hideElement(graphsContainer);
             hideElement(modeButtonsContainer);
             disableButtons(modeButtons);
-            
+
 
         }, 300);
-    } 
-    
+    }
+
     else if (currentState === STATE_HOME_2) {
         hideElement(modeButtonsContainer);
         disableButtons(modeButtons);
@@ -597,7 +597,7 @@ function updateOverlayVisibility() {
             showElement(graphsContainer);
         }, 200);
     }
-    
+
     else if (currentState === STATE_HOME_3) {
         setTimeout(() => {
             hideElement(btnContainer);
@@ -615,7 +615,7 @@ function updateOverlayVisibility() {
             hideElement(continentButtons1);
             hideElement(continentButtons2);
             hideElement(graphsContainer);
-            
+
 
             textBottom.style.color = '#081529';
 
@@ -654,7 +654,7 @@ function updateOverlayVisibility() {
 
         }, 50);
     }
-    
+
     else if (currentState >= STATE_EXPLORE && currentState != maxGuidedState) {
         setTimeout(() => {
             overlay.style.opacity = '0';
@@ -692,7 +692,7 @@ function updateOverlayVisibility() {
             portalInfoOverlay.style.zIndex = '-6';
         }, 500);
     }
-    
+
     else {
         setTimeout(() => {
             overlay.style.opacity = '0';
@@ -717,43 +717,43 @@ function updateOverlayVisibility() {
 function updateOverlayPosition() {
     // 1) Choose the reference 3D point for the overlay:
     const referencePoint = new BABYLON.Vector3(0, 0, 0);
-  
+
     if (!scene || !camera || !engine) return;
-  
+
     // 2) Project the reference point into 2D coordinates
     const projected = BABYLON.Vector3.Project(
-      referencePoint,
-      BABYLON.Matrix.Identity(),
-      scene.getTransformMatrix(),
-      camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
+        referencePoint,
+        BABYLON.Matrix.Identity(),
+        scene.getTransformMatrix(),
+        camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
     );
-    
+
     // 3) Get the overlay and the canvas bounding box
-    
+
     if (!overlay) return;
     const canvasRect = canvas.getBoundingClientRect();
-  
+
     // 4) Calculate final overlay position
     //    i.e. add the canvas's top/left to the projected (x, y).
     const offsetX = canvasRect.left;
     const offsetY = canvasRect.top;
-  
+
     overlay.style.left = (offsetX + projected.x - overlay.offsetWidth / 2) + 'px';
     overlay.style.top = (offsetY + projected.y - overlay.offsetHeight / 2) + 'px';
 }
-  
+
 
 // Define setClipPath and removeClipPath functions globally
 function setClipPath(isOverlayState, duration = 500) {
 
     const isChatOpen = chatContainer.classList.contains('chat-open');
     let rightInset, leftInset;
-    
+
     // If we're in STATE_EXPLORE, do not change the canvas layout.
     if (currentState >= STATE_EXPLORE && currentState != maxGuidedState) {
         // Get current clip values as computed—preserve layout
         const computedStyle = window.getComputedStyle(canvasContainer);
-        const topInsetAdjusted = parseFloat(computedStyle.getPropertyValue('--clip-top')) +50 || 0;
+        const topInsetAdjusted = parseFloat(computedStyle.getPropertyValue('--clip-top')) + 50 || 0;
         const bottomInsetAdjusted = parseFloat(computedStyle.getPropertyValue('--clip-bottom')) + 50 || 0;
         const leftInset = parseFloat(computedStyle.getPropertyValue('--clip-left')) || 0;
         const rightInset = parseFloat(computedStyle.getPropertyValue('--clip-right')) || 0;
@@ -778,7 +778,7 @@ function setClipPath(isOverlayState, duration = 500) {
         textBox1.style.width = 'calc(75% - 40px)';
         textBox1.style.transform = 'translate(-20%)';
         setTimeout(() => {
-            textBox1.style.transform = `translateX(${(parseFloat(getComputedStyle(header).width) - parseFloat(getComputedStyle(textBox1).width))/(-2)+20}px)`;
+            textBox1.style.transform = `translateX(${(parseFloat(getComputedStyle(header).width) - parseFloat(getComputedStyle(textBox1).width)) / (-2) + 20}px)`;
         }, 500);
 
     } else {
@@ -812,8 +812,8 @@ function setClipPath(isOverlayState, duration = 500) {
         }
     } else {
         // Overlay states: use fixed inset value.
-            topInset = 95;
-            const verticalOffset = (topInset - bottomInset) / 2;
+        topInset = 95;
+        const verticalOffset = (topInset - bottomInset) / 2;
         topInsetAdjusted = topInset - verticalOffset;
         bottomInsetAdjusted = bottomInset + verticalOffset;
     }
@@ -835,7 +835,7 @@ function setClipPath(isOverlayState, duration = 500) {
 
 // Helper to position the chat container within the reserved space.
 function positionChatContainer(isChatOpen, isOverlayState, insets) {
-    
+
 
     // If chat is closed, show as a small button.
     if (!isChatOpen) {
@@ -865,16 +865,16 @@ function positionChatContainer(isChatOpen, isOverlayState, insets) {
     const visibleBottom = window.innerHeight - insets.bottomInsetAdjusted;
     // For non-FINAL (non-overlay) states, you may adjust an extra offset (here +100),
     // but in FINAL we want no extra shift.
-    
+
     let chatTop;
     if (!isOverlayState) {
-        chatTop = insets.topInsetAdjusted *1.5 + marginTop*2-3;  // normal state offset
+        chatTop = insets.topInsetAdjusted * 1.5 + marginTop * 2 - 3;  // normal state offset
     } else {
-        chatTop = insets.topInsetAdjusted  + marginTop -2;        // in FINAL, no extra offset
+        chatTop = insets.topInsetAdjusted + marginTop - 2;        // in FINAL, no extra offset
     }
     // Here we choose the chat height equal to the visible area between visibleTop and visibleBottom.
     // (You can further adjust if desired.)
-    const chatHeight = visibleBottom - insets.topInsetAdjusted + 10 ;
+    const chatHeight = visibleBottom - insets.topInsetAdjusted + 10;
 
     chatContainer.style.position = 'fixed';
     chatContainer.style.top = chatTop + 'px';
@@ -911,7 +911,7 @@ function updateClipPathOnResize() {
         removeClipPath();
         setClipPath(false);
     } else if (currentState > STATE_EXPLORE) {
-        
+
     } else {
         setClipPath(true);
     }
@@ -952,17 +952,17 @@ function hideLoadingScreen() {
 
 function setupInitialLayout() {
     const isDesktop = window.innerWidth >= screenWidth;
-    
+
     // Ensure textBox1 is visible and properly rendered
     if (textBox1) {
         textBox1.style.opacity = "1";
     }
-    
+
     // Force a reflow to ensure styles are applied
     if (textBox1) {
         textBox1.offsetHeight; // This forces a reflow
     }
-    
+
     // Since we have loading screen covering, we can do multiple attempts with shorter delays
     const attemptLayout = (attempt = 1, maxAttempts = 3) => {
         try {
@@ -973,7 +973,7 @@ function setupInitialLayout() {
                 textBox1Height = textBox1.scrollHeight || textBox1.offsetHeight || parseFloat(getComputedStyle(textBox1).height) || 0;
                 console.log(`Layout attempt ${attempt}: TextBox1 height:`, textBox1Height);
             }
-            
+
             // If we got a reasonable height, proceed
             if (textBox1Height > 0) {
                 // Adjust header height dynamically with minimum values
@@ -986,10 +986,10 @@ function setupInitialLayout() {
                     header.style.height = `${headerHeight}px`;
                     console.log("Mobile header height set to:", headerHeight);
                 }
-                
+
                 // Set the clip path
                 setClipPath(false);
-                
+
             } else if (attempt < maxAttempts) {
                 // Retry after a short delay
                 setTimeout(() => attemptLayout(attempt + 1, maxAttempts), 30);
@@ -1003,7 +1003,7 @@ function setupInitialLayout() {
                 }
                 setClipPath(false);
             }
-            
+
         } catch (error) {
             console.error("Error in setupInitialLayout:", error);
             // Fallback to default heights
@@ -1015,7 +1015,7 @@ function setupInitialLayout() {
             setClipPath(false);
         }
     };
-    
+
     // Start the layout attempts
     attemptLayout();
 }
@@ -1023,28 +1023,28 @@ function setupInitialLayout() {
 // Real loading implementation
 document.addEventListener('DOMContentLoaded', async function () {
     const isDesktop = window.innerWidth >= screenWidth;
-    
+
     try {
         // Initialize the scene first
         scene = createScene();
-        
+
         // Wait for core scene assets to load
         await waitForCoreSceneLoading();
-        
+
         // Show home page behind the loading screen (loading screen stays visible)
         showHomePageBehindLoader();
-        
+
         // Setup UI layout immediately while loading screen covers it
-        setTimeout(function() {
+        setTimeout(function () {
             setupInitialLayout();
         }, 50);
-        
+
         // Keep loading screen visible for 1.5 seconds to allow layout to fully settle
-        setTimeout(function() {
+        setTimeout(function () {
             hideLoadingScreen();
             console.log("Loading screen hidden, home page revealed");
         }, 800);
-        
+
         // Load additional assets in background (as requested)
         idle(async () => {
             await loadGEELYCarAsync(scene);
@@ -1053,17 +1053,17 @@ document.addEventListener('DOMContentLoaded', async function () {
             rotateObject(carRoot);
             console.log("GEELY loaded in background");
         });
-/*         idle(async () => {
-            await loadatlasflowAsync(scene);
-            ENV_ROOTS.atlasflow = atlasflowRoot;
-            console.log("atlasflow loaded in background");
-        }); */
-/*         idle(async () => {
-            await loadFdaAsync(scene);
-            ENV_ROOTS.fda = fdaRoot;
-            console.log("FDA loaded in background");
-        }); */
-        
+        /*         idle(async () => {
+                    await loadatlasflowAsync(scene);
+                    ENV_ROOTS.atlasflow = atlasflowRoot;
+                    console.log("atlasflow loaded in background");
+                }); */
+        /*         idle(async () => {
+                    await loadFdaAsync(scene);
+                    ENV_ROOTS.fda = fdaRoot;
+                    console.log("FDA loaded in background");
+                }); */
+
     } catch (error) {
         console.error("Error during scene loading:", error);
         // Show error and hide loading screen anyway
@@ -1090,7 +1090,7 @@ document.querySelectorAll(".color-btn").forEach(button => {
         if (!result) return;
 
         currentColor = result.finalColor;
-        currentTrim  = result.finalTrim;
+        currentTrim = result.finalTrim;
 
         // Sync .active for color buttons
         document.querySelectorAll(".color-btn").forEach(btn => {
@@ -1125,7 +1125,7 @@ document.querySelectorAll(".trim-btn").forEach(button => {
         const result = customizeCar({ trim: currentTrim });
         if (!result) return;
 
-        currentTrim  = result.finalTrim;
+        currentTrim = result.finalTrim;
         currentColor = result.finalColor;
 
         // Sync .active for trim buttons
@@ -1164,7 +1164,7 @@ viewCarBtn.addEventListener("click", () => {
             glowLayer.isEnabled = true;
             textBottom.style.color = "#081529";
             carConfigurator.style.opacity = 1;
-            
+
         } else {
             viewCarBtnImg.src = "./assets/images/exterior.png";
             viewCarBtn.innerHTML = `<img src="./assets/images/exterior.png"/> Exterior view`;
@@ -1181,7 +1181,7 @@ viewCarBtn.addEventListener("click", () => {
             glowLayer.isEnabled = false;
             textBottom.style.color = "#E5E3DE";
             carConfigurator.style.opacity = 1;
-        }  
+        }
     });
 });
 
@@ -1194,7 +1194,7 @@ function idle(cb) {
 }
 
 function triggerWhiteFade(callback) {
-    
+
     whiteFade.style.transition = "none";      // no fade-in
     whiteFade.style.opacity = "1";            // show white immediately
 
@@ -1208,10 +1208,10 @@ function triggerWhiteFade(callback) {
 async function waitForCoreSceneLoading() {
     // Wait for all core assets to finish loading
     const coreAssetPromises = [];
-    
+
     // Wait a bit for createScene to set up the promises
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // Collect all the loading promises
     if (window.logoLoadingPromise) {
         coreAssetPromises.push(
@@ -1221,7 +1221,7 @@ async function waitForCoreSceneLoading() {
             })
         );
     }
-    
+
     if (window.planetLoadingPromise) {
         coreAssetPromises.push(
             window.planetLoadingPromise.then(() => {
@@ -1230,7 +1230,7 @@ async function waitForCoreSceneLoading() {
             })
         );
     }
-    
+
     if (window.spaceshipLoadingPromise) {
         coreAssetPromises.push(
             window.spaceshipLoadingPromise.then(() => {
@@ -1239,7 +1239,7 @@ async function waitForCoreSceneLoading() {
             })
         );
     }
-    
+
     if (window.rockringLoadingPromise) {
         coreAssetPromises.push(
             window.rockringLoadingPromise.then(() => {
@@ -1248,20 +1248,20 @@ async function waitForCoreSceneLoading() {
             })
         );
     }
-    
+
     // Update progress as each asset loads
     let loadedCount = 0;
     const totalCount = coreAssetPromises.length;
     updateLoadingProgress(0, totalCount);
-    
-    const promises = coreAssetPromises.map(promise => 
+
+    const promises = coreAssetPromises.map(promise =>
         promise.then(asset => {
             loadedCount++;
             updateLoadingProgress(loadedCount, totalCount);
             return asset;
         })
     );
-    
+
     // Wait for all core assets to load
     await Promise.all(promises);
     console.log("All core scene assets loaded");
@@ -1269,7 +1269,7 @@ async function waitForCoreSceneLoading() {
 
 function createScene() {
     canvas = renderCanvas;
-    engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, antialias: true});
+    engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, antialias: true });
     scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
     // Cap the render rate to ~60fps
@@ -1281,7 +1281,7 @@ function createScene() {
 
     // add fog
     scene.fogMode = BABYLON.Scene.FOGMODE_LINEAR;
-    scene.fogColor = new BABYLON.Color3(13/255, 13/255, 38/255);
+    scene.fogColor = new BABYLON.Color3(13 / 255, 13 / 255, 38 / 255);
     scene.fogStart = 0;
     scene.fogEnd = 300;
 
@@ -1293,7 +1293,7 @@ function createScene() {
     camera = new BABYLON.ArcRotateCamera(
         "Camera",
         -Math.PI / 2,          // alpha → looking straight down -Z
-        Math.PI  / 2,          // beta  → level with horizon
+        Math.PI / 2,          // beta  → level with horizon
         orbitRadius,           // radius → 24
         cameraPivot,           // target we just created
         scene
@@ -1304,7 +1304,7 @@ function createScene() {
     camera.lowerRadiusLimit = camera.upperRadiusLimit = orbitRadius; // lock zoom for now
 
     camAlphaTarget = camera.alpha;
-    camBetaTarget  = camera.beta;
+    camBetaTarget = camera.beta;
 
     BABYLON.Effect.ShadersStore["portalWarpFragmentShader"] = `
         precision highp float;
@@ -1349,7 +1349,7 @@ function createScene() {
     };
     warpEffect._intensity = 0;
     camera.detachPostProcess(warpEffect);
-    
+
     const environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("./assets/textures/environment7.env", scene);
     scene.environmentTexture = environmentTexture;
     environmentTexture.rotationY = BABYLON.Tools.ToRadians(0);
@@ -1361,7 +1361,7 @@ function createScene() {
 
     // Create a HighlightLayer for the scene.
     highlightLayer = new BABYLON.HighlightLayer("hl", scene);
-    highlightLayer.innerGlow = false; 
+    highlightLayer.innerGlow = false;
     highlightLayer.outerGlow = true;
 
     highlightLayer.intensity = 1; // Adjust intensity as needed
@@ -1375,7 +1375,7 @@ function createScene() {
     const hemiLight = new BABYLON.HemisphericLight("HemisphericLight", lightDirection, scene);
     hemiLight.intensity = 0.5;
     hemiLight.diffuse = new BABYLON.Color3(1, 1, 1);
-    
+
 
     // -------------------------
     // Updated runRenderLoop: call updateOverlayPosition each frame.
@@ -1395,7 +1395,7 @@ function createScene() {
             if (currentState === STATE_HOME) {
                 // Use the consistent layout setup function
                 setupInitialLayout();
-                
+
                 // Set icon sizes
                 if (isDesktop) {
                     logoIcon.style.height = "35px";
@@ -1408,14 +1408,14 @@ function createScene() {
                 }
             } else {
                 header.style.height = `60px`;
-            if (isDesktop) {
-                logoIcon.style.height = "25px";
-                menuIcon.style.height = "25px";
-                logoIcon.style.top = "17px";
-                menuIcon.style.top = "17px";
-            } else {
-                logoIcon.style.height = "21px";
-                menuIcon.style.height = "21px";
+                if (isDesktop) {
+                    logoIcon.style.height = "25px";
+                    menuIcon.style.height = "25px";
+                    logoIcon.style.top = "17px";
+                    menuIcon.style.top = "17px";
+                } else {
+                    logoIcon.style.height = "21px";
+                    menuIcon.style.height = "21px";
                 }
             }
             updateClipPathOnResize();
@@ -1438,10 +1438,10 @@ function createScene() {
             });
         }
     };
-    
+
     backgroundMusic = new Audio('./assets/audio/spaceVoyage.m4a');
     teleportSound = new Audio('./assets/audio/teleport.m4a');
-    infoSound  = new Audio("./assets/audio/info4.m4a");
+    infoSound = new Audio("./assets/audio/info4.m4a");
 
     teleportSound.volume = 0.75;
 
@@ -1457,13 +1457,13 @@ function createScene() {
     // click toggles audio
     audioBtn.addEventListener("click", () => {
         audioEnabled = !audioEnabled;
-    
+
         audioIcon.src = audioEnabled
             ? "./assets/images/audio_on.png"
             : "./assets/images/audio_off.png";
-    
+
         audioManager.setEnabled(audioEnabled);
-    
+
         console.log(audioEnabled ? "Audio Enabled" : "Audio Muted");
     });
 
@@ -1474,7 +1474,7 @@ function createScene() {
             e.preventDefault();
             e.stopPropagation();
             console.log("Logo button clicked - navigating to home page");
-            
+
             // Navigate to home state if not already there
             if (currentState !== STATE_HOME && !isAnimating) {
                 previousState = currentState;
@@ -1483,7 +1483,7 @@ function createScene() {
                 updateState();
             }
         });
-        
+
         // Add hover effect for better UX
         logoIcon.addEventListener("mouseenter", () => {
             logoIcon.style.transform = "scale(1.1)";
@@ -1497,15 +1497,15 @@ function createScene() {
     // Add click listeners to your 4 overlay buttons
 
 
-    function setNavMode(isGuided){
+    function setNavMode(isGuided) {
         guidedMode = isGuided;
         console.log("guidedMode", guidedMode);
         console.log("currentState", currentState);
         maxState = guidedMode ? maxGuidedState : maxFreeState;
 
         /* knob position */
-        navToggle.classList.toggle("guided",  guidedMode);
-        navToggle.classList.toggle("free",   !guidedMode);
+        navToggle.classList.toggle("guided", guidedMode);
+        navToggle.classList.toggle("free", !guidedMode);
 
         /* animate camera */
         animateCameraPosition(!guidedMode);
@@ -1528,11 +1528,11 @@ function createScene() {
         } else {
             attachShipControls(false, guidedMode);
         }
-        
+
 
         /* highlight the little buttons */
         btnElementsMode.forEach(b => b.classList.remove("active"));
-        btnElementsMode[ isGuided ? 0 : 1 ].classList.add("active");
+        btnElementsMode[isGuided ? 0 : 1].classList.add("active");
     }
 
     btnElementsMode.forEach((btn, idx) => {
@@ -1544,14 +1544,14 @@ function createScene() {
         const nowGuided = navToggle.classList.contains("guided");
         setNavMode(!nowGuided);
     });
-    
+
     // If you want the first button active by default:
     let currentModeIndex = 0;
     btnElementsMode[currentModeIndex].classList.add('active');
 
     function loadLogo(fileName) {
         return new Promise((resolve) => {
-            BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/" + fileName, scene, function(meshes) {
+            BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/" + fileName, scene, function (meshes) {
                 meshes.forEach(mesh => mesh.setEnabled(false));
                 const mainLogo = meshes[0];
                 logoMesh.push(mainLogo);
@@ -1561,41 +1561,41 @@ function createScene() {
             });
         });
     }
-    
+
     const logoPromise = Promise.all([
         loadLogo("logo.glb"),
         loadLogo("logo_chain2.glb"),
         loadLogo("logo_cookie.glb"),
         loadLogo("logo_badge.glb")
     ]);
-    
+
     // Store globally for loading tracking
     window.logoLoadingPromise = logoPromise;
-    
+
     logoPromise.then(results => {
         const order = ["logo.glb", "logo_chain2.glb", "logo_cookie.glb", "logo_badge.glb"];
         const logos = order.map(fileName => {
             const result = results.find(r => r.fileName === fileName);
             return result.meshes;
         });
-    
+
         spaceRoot = new BABYLON.TransformNode("spaceRoot", scene);
         logoRoot = new BABYLON.TransformNode("logoRoot", scene);
         logoRoot.parent = spaceRoot;
         logoRoot.rotationQuaternion = null; // Ensure rotation works
-    
+
         // Flatten and parent to logoRoot
         logos.flat().forEach(mesh => {
             mesh.parent = logoRoot;
         });
-    
+
         // Function to toggle logo visibility
         function showLogo(index) {
             logos.forEach((logoMeshes, i) => {
                 logoMeshes.forEach(mesh => mesh.setEnabled(i === index));
             });
         }
-    
+
         // Setup buttons
         btnElements.forEach((btn, idx) => {
             btn.addEventListener('click', () => {
@@ -1604,33 +1604,33 @@ function createScene() {
                 btn.classList.add('active');
             });
         });
-    
+
         // Show first by default
         let currentLogoIndex = 0;
         showLogo(currentLogoIndex);
         btnElements[currentLogoIndex].classList.add('active');
     });
-    
-    
-    
+
+
+
     // After your Promise.all for logos, also load the planet:
     const planetPromise = loadPlanet();
-    
+
     // Store globally for loading tracking
     window.planetLoadingPromise = planetPromise;
-    
+
     planetPromise.then(() => {
-        if (planetMesh) {   
+        if (planetMesh) {
             // Set the planetMesh rotation directly to SouthAmerica's rotation
             planetMesh.rotation.copyFrom(planetRotations.SouthAmerica);
-        
+
             // Highlight SouthAmerica by default
             animatePlanetMeshTo(planetRotations.SouthAmerica, 1.5, "SouthAmerica");
-            
+
             liveEarthTitle.textContent = liveEarthTitles.SouthAmerica;
-        
+
             // Update continent button state: find the button with data-continent="SouthAmerica" and mark it as active.
-            
+
             continentButtons.forEach(btn => btn.classList.remove('active')); // Clear any active classes.
             const southAmericaButton = document.querySelector('[data-continent="SouthAmerica"]');
             if (southAmericaButton) {
@@ -1641,7 +1641,7 @@ function createScene() {
 
     // babylon scene loader
     const rockringPromise = new Promise((resolve) => {
-        BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/rockring.glb", scene, function(meshes, particleSystems, skeletons, animationGroups) {
+        BABYLON.SceneLoader.ImportMesh("", "", "./assets/models/rockring.glb", scene, function (meshes, particleSystems, skeletons, animationGroups) {
             console.log(meshes);
             rockRing = meshes[0];
             rockRingAnimationGroups = animationGroups;
@@ -1658,14 +1658,14 @@ function createScene() {
             resolve();
         });
     });
-    
+
     // Store globally for loading tracking
     window.rockringLoadingPromise = rockringPromise;
 
     defaultPortalMesh = BABYLON.MeshBuilder.CreatePlane("defaultInfoPlaceholder", { width: 1, height: 1 }, scene);
     defaultPortalMesh.isVisible = false;
     defaultPortalMesh.setEnabled(false);
-    
+
     portalInfo.set(defaultPortalMesh, {
         sceneKey: "main",
         logo: "./assets/images/info.png",
@@ -1680,7 +1680,7 @@ function createScene() {
                 shipRoot = scene.getTransformNodeByName("shiproot");
                 if (!shipRoot) throw new Error("shiproot not found in GLB");
                 shipMesh = meshes[0];
-                shipRoot.position           = new BABYLON.Vector3(0, -0.8, -24);
+                shipRoot.position = new BABYLON.Vector3(0, -0.8, -24);
                 const s = shipRoot.scaling;
                 shipRoot.scaling.set(Math.abs(s.x), Math.abs(s.y), Math.abs(s.z));
                 sceneSmoke = createSmoke();
@@ -1689,87 +1689,87 @@ function createScene() {
                 resolve();
             });
     });
-    
+
     // Store globally for loading tracking
     window.spaceshipLoadingPromise = spaceshipPromise;
-    
+
     spaceshipPromise.then(() => {
         cameraPivot.position = new BABYLON.Vector3(0, 0.7, 0);
 
         shipRoot.rotationQuaternion ??= BABYLON.Quaternion.Identity();
 
         shipOriginalPose = {
-                rot   : shipRoot.rotationQuaternion.clone(),   // upright, +Z forward
-                scale : shipRoot.scaling.clone()
-            };
-            // 1. Create the portal(s) – this returns the mesh and assigns it to the variable
-            updatePortals(false);               //  babylonEditorPortal now === a Disc mesh
+            rot: shipRoot.rotationQuaternion.clone(),   // upright, +Z forward
+            scale: shipRoot.scaling.clone()
+        };
+        // 1. Create the portal(s) – this returns the mesh and assigns it to the variable
+        updatePortals(false);               //  babylonEditorPortal now === a Disc mesh
 
-            portalInfo.set(babylonEditorPortal, {
-                sceneKey: "editor",
-                logo  : "./assets/images/babylon_logo.png",
-                title : "Babylon.js Editor",
-                html  : `
+        portalInfo.set(babylonEditorPortal, {
+            sceneKey: "editor",
+            logo: "./assets/images/babylon_logo.png",
+            title: "Babylon.js Editor",
+            html: `
                     <p>A Babylon.js web editor with real-time collaborative support I've been building that prioritizes user experience, performance and accessibility of artists and designers in 3D web workflows.</p>
                     <img src="./assets/images/babylonDashboard.png">
                     <p>Engineered with React + TypeScript + Tailwind and Supabase (auth, storage, realtime). I also designed all the UX and built the full toolchain.</p>
                     <p>The result is a modern 3D creation environment where artists and designers can build interactive WebGL experiences without installs, just open a link and create.</p>
                     <img src="./assets/textures/babylonEditor.png">
                 `,
-                radius: 6
-            });
-        
-            portalInfo.set(atlasflowPortal, {
-                sceneKey: "atlasflow",
-                logo  : "./assets/images/blender_logo.png",
-                title : "Atlasflow (Blender addon)",
-                html  : `
+            radius: 6
+        });
+
+        portalInfo.set(atlasflowPortal, {
+            sceneKey: "atlasflow",
+            logo: "./assets/images/blender_logo.png",
+            title: "Atlasflow (Blender addon)",
+            html: `
                     <p>Atlasflow is a powerful Blender addon that takes color atlasing to the next-level by enabling per-face PBR editing within a single material and two lightweight 128×128 pixel textures.</p>
                     <img src="./assets/textures/atlasflow_nodes.png">
                     <p>With an intuitive toolset, you can achieve an immense range of PBR value combinations and face-specific settings with unprecedented ease and nearly zero texture footprint.</p>
                     <iframe src="https://www.youtube.com/embed/nHKqTXtzG2U" frameborder="0" allowfullscreen></iframe>`,
-                radius: 6
-            });
-        
-            portalInfo.set(geelySeagullPortal, {
-                sceneKey: "geely",
-                logo  : "./assets/images/geely_logo.png",
-                title : "GEELY Car Visualizer (Demo)",
-                html  : `
+            radius: 6
+        });
+
+        portalInfo.set(geelySeagullPortal, {
+            sceneKey: "geely",
+            logo: "./assets/images/geely_logo.png",
+            title: "GEELY Car Visualizer (Demo)",
+            html: `
                     <p>A 3D car visualizer I built with Babylon.js, showcasing the Seagull model in a fully interactive web experience.</p>
                     <img src="./assets/textures/geelySeagull-All.png">
                     <p>This demo highlights real-time rendering, optimized GLB assets, material switching, and smooth navigation directly in the browser. It demonstrates how WebGL can bring automotive products online in a highly engaging and accessible way.</p>
                 `,
-                radius: 6
-            });
-        
-            portalInfo.set(fdaPortal, {
-                sceneKey: "fda",
-                logo  : "./assets/images/fda_logo.png",
-                title : "FDA Training Platform",
-                html  : `
+            radius: 6
+        });
+
+        portalInfo.set(fdaPortal, {
+            sceneKey: "fda",
+            logo: "./assets/images/fda_logo.png",
+            title: "FDA Training Platform",
+            html: `
                     <p>The FDA Training Platform is an interactive simulation designed to train staff in FDA-compliant warehouse operations. Built with Babylon.js, it demonstrates inspection protocols, safety procedures, and regulatory compliance workflows.</p>
                     <img src="./assets/images/fda2.png">
                     <p>3D assets were created by Meetkai’s 3D artists. I handled scene implementation, UI, interactivity, and overall integration—plus 3D adjustments to ensure everything worked seamlessly inside Babylon.js. The platform helps FDA personnel practice navigating storage areas, quality control stations, and documentation processes in a realistic environment.</p>
                     <iframe src="https://www.youtube.com/embed/pRrM0jb3-8s?si=VcQi2w0Gxbjium7Q&amp;start=32" frameborder="0" allowfullscreen></iframe>
                 `,
-                radius: 6
-            });
-            
-            createGuidedCurve()
-        }
+            radius: 6
+        });
+
+        createGuidedCurve()
+    }
     );
 
     setTimeout(() => {
         // 3. Hand that map to the info-system **after** it’s real
         portalInfoSystem = initPortalInfoSystem({
-            scene, camera, ship : shipRoot, meta : portalInfo,
-            infoBtnElm   : document.getElementById("info-btn"),
-            infoIconElm  : document.getElementById("info-icon"),
-            overlayElm   : document.getElementById("portal-info-overlay"),
-            overlayLogo  : document.getElementById("portal-logo"),
-            overlayTitleElm : document.getElementById("portal-title"),
-            overlayBodyElm  : document.getElementById("portal-content"),
+            scene, camera, ship: shipRoot, meta: portalInfo,
+            infoBtnElm: document.getElementById("info-btn"),
+            infoIconElm: document.getElementById("info-icon"),
+            overlayElm: document.getElementById("portal-info-overlay"),
+            overlayLogo: document.getElementById("portal-logo"),
+            overlayTitleElm: document.getElementById("portal-title"),
+            overlayBodyElm: document.getElementById("portal-content"),
             defaultPortal: defaultPortalMesh
         });
     }, 3000);
@@ -1785,91 +1785,91 @@ function createScene() {
 
 function createEditorCube(scene) {
     // Create the editor cube
-    const editorCube = BABYLON.MeshBuilder.CreateBox("editorCube", {size: 4}, scene);
+    const editorCube = BABYLON.MeshBuilder.CreateBox("editorCube", { size: 4 }, scene);
     editorCube.position = new BABYLON.Vector3(40, 3, -50);
-    
+
     // Create a bright material so it's easily visible
     const editorMaterial = new BABYLON.StandardMaterial("editorMaterial", scene);
     editorMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1); // Orange color
     editorMaterial.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5); // Slight glow
     editorCube.material = editorMaterial;
-    
+
     // Make it always visible (not affected by fog)
     //editorCube.infiniteDistance = true;
-    
+
     // Initialize the camera position variable
     updateEditorCubeCamPos();
-    
+
     // Create position gizmo - only for this cube, only visible in main scene
     const gizmoManager = new BABYLON.GizmoManager(scene);
     gizmoManager.positionGizmoEnabled = true;
     gizmoManager.rotationGizmoEnabled = true;
     gizmoManager.scaleGizmoEnabled = false;
     gizmoManager.boundingBoxGizmoEnabled = false;
-    
+
     // Set fixed scaling (not adaptive to screen/distance)
     gizmoManager.scaleRatio = 0.8; // Fixed scale for position gizmo
-    
+
     // Set rotation gizmo scale smaller than position gizmo (after attachment)
     setTimeout(() => {
         if (gizmoManager.gizmos.rotationGizmo) {
             gizmoManager.gizmos.rotationGizmo.scaleRatio = 0.6;
         }
     }, 100);
-    
+
     // Attach gizmo only to the editor cube and keep it always attached
     gizmoManager.attachToMesh(editorCube);
-    
+
     // Prevent gizmo from being affected by other mesh selections
     gizmoManager.usePointerToAttachGizmos = false;
-    
+
     // Show/hide gizmo based on current scene and distance
     function updateGizmoVisibility() {
         const shouldShowForScene = currentScene === "main";
-        
+
         // Check distance from camera to editor cube
         let shouldShowForDistance = true;
         if (shouldShowForScene && camera) {
             const distanceToGizmo = BABYLON.Vector3.Distance(camera.position, editorCube.position);
             shouldShowForDistance = distanceToGizmo <= 50; // Hide if more than 50m away
         }
-        
+
         const shouldShow = shouldShowForScene && shouldShowForDistance;
         gizmoManager.positionGizmoEnabled = shouldShow;
         gizmoManager.rotationGizmoEnabled = shouldShow;
     }
-    
+
     // Initial visibility check
     updateGizmoVisibility();
-    
+
     // Store the update function globally so we can call it when scene changes
     window.updateGizmoVisibility = updateGizmoVisibility;
-    
+
     // Update gizmo visibility based on camera distance (check every frame)
     scene.onBeforeRenderObservable.add(() => {
         if (currentScene === "main") {
             updateGizmoVisibility();
         }
     });
-    
+
     // Update camera position when cube is moved
     editorCube.onAfterWorldMatrixUpdateObservable.add(() => {
         updateEditorCubeCamPos();
     });
-    
+
     // Store reference globally
     window.editorCube = editorCube;
     window.gizmoManager = gizmoManager;
-    
+
     console.log("Editor cube created at position:", editorCube.position);
-    
+
     function updateEditorCubeCamPos() {
         editorCubeCamPos = new BABYLON.Vector3(
             editorCube.position.x - 13,
             editorCube.position.y + 3.5,
             editorCube.position.z + 15
         );
-        
+
         // Update the guided point directly in the array
         const guidedPoint = guidedPoints.find(p => p.id === 7);
         if (guidedPoint) {
@@ -1877,13 +1877,13 @@ function createEditorCube(scene) {
             guidedPoint.pos.y = editorCubeCamPos.y;
             guidedPoint.pos.z = editorCubeCamPos.z;
         }
-        
+
         console.log("Editor cube camera position updated:", editorCubeCamPos);
         console.log("Guided point 7 position updated:", guidedPoint ? guidedPoint.pos : "not found");
     }
 }
 
-async function loadFdaAsync(scene, onProgress = () => {}) {
+async function loadFdaAsync(scene, onProgress = () => { }) {
     const gltfPath = "./assets/models/fda/";
     const fdaFile = "warehouse.gltf";
     const lightmapPath = "./assets/models/fda/lightmaps/";
@@ -1899,14 +1899,14 @@ async function loadFdaAsync(scene, onProgress = () => {}) {
     // Process meshes
     container.meshes.forEach(mesh => {
         if (!(mesh instanceof BABYLON.Mesh)) return;
-        
+
         // Hide mk_collider mesh
         if (mesh.name === "mk_collider") {
             mesh.setEnabled(false);
             mesh.isVisible = false;
             return; // Don't add to fdaMeshes array
         }
-        
+
         mesh.parent = fdaRoot;
         mesh.setEnabled(false);
         fdaMeshes.push(mesh);
@@ -1935,14 +1935,14 @@ async function loadFdaAsync(scene, onProgress = () => {}) {
 
 async function loadFdaLightmaps(scene, meshes, lightmapPath) {
     console.log("Loading FDA lightmaps...");
-    
+
     // Get all lightmap files (assuming they follow the naming convention: [meshName]_lightmap.png)
     const lightmapPromises = meshes.map(async (mesh) => {
         if (!mesh.material) return;
-        
+
         const meshName = mesh.name;
         const lightmapUrl = `${lightmapPath}${meshName}_lightmap.png`;
-        
+
         try {
             // Create lightmap texture
             const lightmapTexture = new BABYLON.Texture(
@@ -1969,13 +1969,13 @@ async function loadFdaLightmaps(scene, meshes, lightmapPath) {
             console.log(`Lightmap loading failed for: ${meshName}`);
         }
     });
-    
+
     // Wait for all lightmap loading attempts to complete
     await Promise.allSettled(lightmapPromises);
     console.log("FDA lightmap loading complete");
 }
 
-async function loadatlasflowAsync(scene, onProgress = () => {}) {
+async function loadatlasflowAsync(scene, onProgress = () => { }) {
     const gltfPath = "./assets/models/atlasflow/";
     const atlasflowFile = "atlasflowMap.gltf"; // changed to .gltf
 
@@ -2013,7 +2013,7 @@ async function loadatlasflowAsync(scene, onProgress = () => {}) {
     }
 }
 
-async function loadGEELYCarAsync(scene, onProgress = () => {}) {
+async function loadGEELYCarAsync(scene, onProgress = () => { }) {
     const gltfPath = "./assets/models/geely/";
     const carFile = "geely_seagull.gltf"; // changed to .gltf
 
@@ -2033,7 +2033,7 @@ async function loadGEELYCarAsync(scene, onProgress = () => {}) {
 
     container.meshes.forEach(mesh => {
         if (!(mesh instanceof BABYLON.Mesh)) return;
-    
+
         const material = mesh.material;
         if (material && material.ambientTexture) {
             material.ambientTexture.coordinatesIndex = 1;
@@ -2075,10 +2075,10 @@ function customizeCar({ color, trim } = {}) {
     const carMaterial = scene.getMaterialByName("Body_Paint");
     /* 1.  Defaults (fall back to whatever is current on the car)         */
     let newColor = color ?? currentColor;
-    let newTrim  = trim  ?? currentTrim;
+    let newTrim = trim ?? currentTrim;
 
     const colorProvided = color !== undefined;
-    const trimProvided  = trim !== undefined;
+    const trimProvided = trim !== undefined;
 
     /* 2.  Sanity‑check the names                                         */
     const colorSetting = colorSettings[newColor];
@@ -2087,7 +2087,7 @@ function customizeCar({ color, trim } = {}) {
     if (!trimConfigs[newTrim]) {
         // Unknown trim → pick the first trim that accepts the color
         newTrim = Object.keys(trimConfigs)
-                        .find(t => trimConfigs[t].allowed.includes(newColor));
+            .find(t => trimConfigs[t].allowed.includes(newColor));
     }
     if (!newTrim) return;   // still nothing? bail out
 
@@ -2098,31 +2098,31 @@ function customizeCar({ color, trim } = {}) {
         if (colorProvided && !trimProvided) {
             /* user changed COLOR → keep it, swap TRIM */
             newTrim = Object.keys(trimConfigs)
-                            .find(t => trimConfigs[t].allowed.includes(newColor));
+                .find(t => trimConfigs[t].allowed.includes(newColor));
         } else if (!colorProvided && trimProvided) {
             /* user changed TRIM → keep it, swap COLOR */
             newColor = trimConfigs[newTrim].allowed.includes(currentColor)
-                       ? currentColor
-                       : trimConfigs[newTrim].allowed[0];
+                ? currentColor
+                : trimConfigs[newTrim].allowed[0];
         } else {
             /* both provided or nothing matched → prefer COLOR, adjust TRIM */
             newTrim = Object.keys(trimConfigs)
-                            .find(t => trimConfigs[t].allowed.includes(newColor));
+                .find(t => trimConfigs[t].allowed.includes(newColor));
         }
     }
 
     /* 4.  Apply body paint                                               */
     const paint = colorSettings[newColor];
-    carMaterial.albedoColor        = BABYLON.Color3.FromHexString(paint.hex);
-    carMaterial.metallic           = paint.metallic;
-    carMaterial.roughness          = paint.roughness;
-    carMaterial.sheen.intensity    = paint.sheen;
+    carMaterial.albedoColor = BABYLON.Color3.FromHexString(paint.hex);
+    carMaterial.metallic = paint.metallic;
+    carMaterial.roughness = paint.roughness;
+    carMaterial.sheen.intensity = paint.sheen;
 
     /* 5.  Apply trim‑specific materials                                  */
     const chosenTrim = trimConfigs[newTrim];
     for (const [meshName, matName] of Object.entries(chosenTrim.materials)) {
         const mesh = scene.getMeshByName(meshName);
-        const mat  = scene.getMaterialByName(matName);
+        const mat = scene.getMaterialByName(matName);
         if (mesh && mat) mesh.material = mat;
     }
 
@@ -2200,31 +2200,31 @@ function updatePortalControls(showReturnButton) {
 
 function initPortalInfoSystem({
     scene, camera, ship, meta, infoBtnElm, infoIconElm,
-    overlayElm, overlayLogo, overlayTitleElm, overlayBodyElm, defaultPortal}) {
+    overlayElm, overlayLogo, overlayTitleElm, overlayBodyElm, defaultPortal }) {
 
-    
+
     /* ── constants ─────────────────────────────────────── */
     const defaultPortalMesh = defaultPortal;
     let userClosedOverlay = false;
-    
+
     infoSound.volume = 0.6;
 
     /* ── state ─────────────────────────────────────────── */
-    let focusPortal   = null;    // currently “nearest & visible” portal
-    let overlayOpen   = false;   // info panel status
-    let activePortal   = null;      // portal whose info is showing
+    let focusPortal = null;    // currently “nearest & visible” portal
+    let overlayOpen = false;   // info panel status
+    let activePortal = null;      // portal whose info is showing
     const shownPortals = new Set(); // ← portals that were auto-opened once
 
     /* ── helpers ──────────────────────────────────────── */
     function openOverlay(portalMesh = defaultPortalMesh) {
         let data = meta.get(portalMesh) || meta.get(defaultPortalMesh);
         if (!data) return;
-    
+
         activePortal = portalMesh;      // remember what we’re showing
-        overlayLogo.src       = data.logo;
+        overlayLogo.src = data.logo;
         overlayTitleElm.textContent = data.title;
-        overlayBodyElm.innerHTML    = data.html;
-    
+        overlayBodyElm.innerHTML = data.html;
+
         overlayElm.classList.add("visible");
         infoIconElm.src = "./assets/images/close.png";
         infoIconElm.classList.add("rotate");
@@ -2234,8 +2234,8 @@ function initPortalInfoSystem({
         infoSound.currentTime = 0;
         infoSound.play();
     }
-    
-    
+
+
     function closeOverlay() {
         overlayElm.classList.remove("visible");
         infoIconElm.src = "./assets/images/info.png";
@@ -2248,7 +2248,7 @@ function initPortalInfoSystem({
             infoBtnElm.classList.add("glow-info");
         }
     }
-    
+
     function clearFocus() {
         focusPortal = null;
         userClosedOverlay = false; // ← allows glow again if user returns
@@ -2257,7 +2257,7 @@ function initPortalInfoSystem({
         }
         infoBtnElm.classList.remove("glow-info");
     }
-    
+
 
     /* ── button click ─────────────────────────────────── */
     infoBtnElm.addEventListener("click", () => {
@@ -2271,7 +2271,7 @@ function initPortalInfoSystem({
             }
             return; // Early exit: we just closed it
         }
-    
+
         // OPEN overlay logic
         if (currentScene !== "main") {
             const portalMesh = [...meta.entries()].find(([_, data]) => data.sceneKey === currentScene)?.[0];
@@ -2285,7 +2285,7 @@ function initPortalInfoSystem({
             openOverlay(portalToShow);
         }
     });
-    
+
     /* ── per-frame proximity check ────────────────────── */
     scene.registerBeforeRender(() => {
         /* Only in FREE nav mode */
@@ -2299,10 +2299,10 @@ function initPortalInfoSystem({
         } else {
             target = ship;
         }
-        
+
         meta.forEach((data, mesh) => {
             if (!(mesh instanceof BABYLON.AbstractMesh)) return;
-            
+
             let r = null;
             if (!guidedMode) {
                 r = (data.radius ?? 6) * 7;
@@ -2312,7 +2312,7 @@ function initPortalInfoSystem({
             const targetPos = target.getAbsolutePosition();
             const dist2 = BABYLON.Vector3.DistanceSquared(targetPos, mesh.position);
             const inView = camera.isInFrustum(mesh);
-    
+
             if (dist2 < r * r && inView) {
                 if (dist2 < nearestDist2) {
                     nearest = mesh;
@@ -2320,13 +2320,13 @@ function initPortalInfoSystem({
                 }
             }
         });
-    
+
         /* handle focus changes */
         if (nearest) {
             if (nearest !== focusPortal) { // NEW FOCUS
                 console.log("[InfoSystem] New portal in focus!", nearest.name);
                 focusPortal = nearest;
-    
+
                 if (overlayOpen) {
                     const changed = activePortal !== nearest;
                     openOverlay(focusPortal);
@@ -2357,7 +2357,7 @@ function initPortalInfoSystem({
             clearFocus();
         }
     });
-    return {closeOverlay, openOverlay};
+    return { closeOverlay, openOverlay };
 }
 
 function animateEntrance(target, rotate) {
@@ -2375,7 +2375,7 @@ function animateEntrance(target, rotate) {
 
     // Keyframes for rotation (0 to 180 degrees)
     rotationAnim.setKeys([
-        { frame: 0, value: target.rotation.y + Math.PI/4}, // Start at current rotation
+        { frame: 0, value: target.rotation.y + Math.PI / 4 }, // Start at current rotation
         { frame: 90, value: target.rotation.y } // Rotate 180 degrees
     ]);
 
@@ -2465,7 +2465,7 @@ function activateEnvironment(key) {
             camera.beta = BABYLON.Tools.ToRadians(60);
             camera.lowerRadiusLimit = 30;  // Min zoom distance (closer view)
             camera.upperRadiusLimit = 70;  // Max zoom distance (farthest view)
-            camera.radius = 70; 
+            camera.radius = 70;
             camera.upperBetaLimit = BABYLON.Tools.ToRadians(75);
             camera.lowerBetaLimit = BABYLON.Tools.ToRadians(0);
             attachShipControls(false, guidedMode);
@@ -2514,34 +2514,34 @@ function activateEnvironment(key) {
             camera.lowerRadiusLimit = camera.upperRadiusLimit = guidedMode ? 0 : 4;
             if (previousScene === 'geely') {
                 camera.alpha = guidedPoints.find(p => p.id === 7).alpha;
-                camera.beta  = guidedPoints.find(p => p.id === 7).beta;
+                camera.beta = guidedPoints.find(p => p.id === 7).beta;
                 if (!guidedMode) {
                     shipRoot.position = getGuidedPointPos(guidedPoints.find(p => p.id === 7)).clone();
                     shipRoot.position.x *= -1;
                 }
             } else if (previousScene === 'atlasflow') {
                 camera.alpha = guidedPoints.find(p => p.id === 6).alpha;
-                camera.beta  = guidedPoints.find(p => p.id === 6).beta;
+                camera.beta = guidedPoints.find(p => p.id === 6).beta;
                 if (!guidedMode) {
                     shipRoot.position = getGuidedPointPos(guidedPoints.find(p => p.id === 6)).clone();
                     shipRoot.position.x *= -1;
                 }
             } else if (previousScene === 'fda') {
                 camera.alpha = guidedPoints.find(p => p.id === 6).alpha;
-                camera.beta  = guidedPoints.find(p => p.id === 6).beta;
+                camera.beta = guidedPoints.find(p => p.id === 6).beta;
                 if (!guidedMode) {
                     shipRoot.position = getGuidedPointPos(guidedPoints.find(p => p.id === 6)).clone();
                     shipRoot.position.x *= -1;
                 }
             } else {
                 camera.alpha = guidedPoints.find(p => p.id === 4).alpha;
-                camera.beta  = guidedPoints.find(p => p.id === 4).beta;
+                camera.beta = guidedPoints.find(p => p.id === 4).beta;
                 if (!guidedMode) {
                     shipRoot.position = getGuidedPointPos(guidedPoints.find(p => p.id === 4)).clone();
                 }
             }
-            
-            
+
+
             camera.fov = 0.7;
             camera.attachControl();
             attachShipControls(true, guidedMode);
@@ -2550,7 +2550,7 @@ function activateEnvironment(key) {
             carConfigurator.style.opacity = 0;
             textBottom.style.color = "#E0E0EB";
             glowLayer.isEnabled = false;
-            
+
             // Open information panel if in guided mode when returning from a portal
             if (guidedMode && previousScene && previousScene !== 'main') {
                 openPortalInfoAfterReturn();
@@ -2563,41 +2563,41 @@ function openPortalInfoAfterReturn() {
     // Wait for the scene to settle and portal detection to work properly
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     const checkForPortalFocus = () => {
         attempts++;
-        
+
         // Get all portals and find which one we're facing
         const allPortals = [geelySeagullPortal, atlasflowPortal, fdaPortal, babylonEditorPortal].filter(p => p);
-        
+
         if (allPortals.length === 0) {
             if (attempts < maxAttempts) {
                 setTimeout(checkForPortalFocus, 200);
             }
             return;
         }
-        
+
         // Find the closest portal that we're facing
         let closestPortal = null;
         let closestDistance = Infinity;
-        
+
         const cameraPosition = camera.position;
         const cameraForward = camera.getForwardRay().direction;
-        
+
         allPortals.forEach(portal => {
             const portalPosition = portal.getAbsolutePosition();
             const toPortal = portalPosition.subtract(cameraPosition);
             const distance = toPortal.length();
-            
+
             // Check if we're generally facing this portal (dot product > 0.3 means roughly facing)
             const dot = BABYLON.Vector3.Dot(cameraForward.normalize(), toPortal.normalize());
-            
+
             if (dot > 0.3 && distance < closestDistance) {
                 closestDistance = distance;
                 closestPortal = portal;
             }
         });
-        
+
         // If we found a portal we're facing, open its info
         if (closestPortal && portalInfoSystem) {
             console.log(`[Portal Return] Opening info for: ${closestPortal.name}`);
@@ -2613,7 +2613,7 @@ function openPortalInfoAfterReturn() {
             }
         }
     };
-    
+
     // Start checking after a short delay to let everything settle
     setTimeout(checkForPortalFocus, 500);
 }
@@ -2624,7 +2624,7 @@ function fadeMaterial(show, durationInSeconds, material) {
     const fps = 30;
     const totalFrames = durationInSeconds * fps;
     const from = show ? 0.01 : 1;
-    const to   = show ? 1 : 0;
+    const to = show ? 1 : 0;
 
     if (material instanceof BABYLON.ShaderMaterial) {
         // ShaderMaterial: animate globalAlpha manually
@@ -2728,14 +2728,14 @@ function updatePortals(isVisible) {
             onEnter: () => {
                 attachShipControls(false, guidedMode);
                 window.open(
-                "https://superhivemarket.com/products/atlasflow",
-                "_blank",
-                "noopener,noreferrer"
+                    "https://superhivemarket.com/products/atlasflow",
+                    "_blank",
+                    "noopener,noreferrer"
                 );
                 attachShipControls(true, guidedMode);
             }
         });
-    } 
+    }
     atlasflowPortal.setEnabled(isVisible);
 
     //const teleportPosition = editorCube.position.clone();
@@ -2766,9 +2766,9 @@ function updatePortals(isVisible) {
                 // );
                 alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk about it more in depth upon request!");
                 attachShipControls(true, guidedMode);
-              }
+            }
         });
-    } 
+    }
     babylonEditorPortal.setEnabled(isVisible);
 
     if (!fdaPortal) {
@@ -2795,9 +2795,9 @@ function updatePortals(isVisible) {
                 // );
                 alert("Unfortunately, I cannot allow direct access to the link at this moment, but I'd be happy to talk about it more in depth upon request!");
                 attachShipControls(true, guidedMode);
-              }
+            }
         });
-    } 
+    }
     fdaPortal.setEnabled(isVisible);
 
 }
@@ -2815,7 +2815,7 @@ function createPortal({
     name = "portal",
     title = "",
     texturePath = "./assets/textures/static_portal.jpg",
-    onEnter = () => {}
+    onEnter = () => { }
 }) {
     let guidedScroll = 0;
 
@@ -2878,13 +2878,13 @@ function createPortal({
         attributes: ["position", "uv"],
         uniforms: ["worldViewProjection", "time", "cameraRotation", "globalAlpha", "textureSampler"]
     });
-    
+
 
     shaderMat.backFaceCulling = false;
     shaderMat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
     shaderMat.needAlphaBlending = () => true;
     shaderMat.setTexture("textureSampler", new BABYLON.Texture(texturePath, scene));
-    
+
     const portalTex = new BABYLON.Texture(texturePath, scene);
     portalTex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE; // ← important!
     portalTex.uScale = 1; // normal (default)
@@ -2899,7 +2899,7 @@ function createPortal({
     label.style.fontFamily = "ballinger-condensed, sans-serif";
     label.style.fontStyle = "normal";
     label.style.fontWeight = "500";
-    label.style.fontSize = "40px";  
+    label.style.fontSize = "40px";
     label.style.whiteSpace = "nowrap";
     label.style.padding = "8px 16px";
     label.style.borderRadius = "10px";
@@ -2910,7 +2910,7 @@ function createPortal({
     label.style.pointerEvents = "none";
     label.style.opacity = "0";
     label.style.transition = "opacity 1s ease";
-    
+
     document.getElementById("canvas-container").appendChild(label);
 
 
@@ -2921,15 +2921,15 @@ function createPortal({
     swirl.minEmitBox = swirl.maxEmitBox = new BABYLON.Vector3(0, 0, 0);
     swirl.direction1 = swirl.direction2 = new BABYLON.Vector3(0, 0, 0);
     swirl.minEmitPower = swirl.maxEmitPower = 0;
-    swirl.minSize = portalRadius*2*0.3;
-    swirl.maxSize = portalRadius*2*1.2;
+    swirl.minSize = portalRadius * 2 * 0.3;
+    swirl.maxSize = portalRadius * 2 * 1.2;
     swirl.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
     swirl.minAngularSpeed = 1;
     swirl.maxAngularSpeed = 3;
     swirl.enableColorGradients = true;
     swirl.addColorGradient(0.0, new BABYLON.Color4(0.2, 0.2, .7, 0));
-    swirl.addColorGradient(0.2, new BABYLON.Color4(.6/1.5, .62/1.5, .9/1.2, .4));
-    swirl.addColorGradient(0.8, new BABYLON.Color4(.78/1.5, .63/1.5, .82/1.2, .4));  
+    swirl.addColorGradient(0.2, new BABYLON.Color4(.6 / 1.5, .62 / 1.5, .9 / 1.2, .4));
+    swirl.addColorGradient(0.8, new BABYLON.Color4(.78 / 1.5, .63 / 1.5, .82 / 1.2, .4));
     swirl.addColorGradient(1.0, new BABYLON.Color4(.5, 0.2, 0.9, 0));
     swirl.minLifeTime = 4;
     swirl.maxLifeTime = 8;
@@ -2951,10 +2951,10 @@ function createPortal({
         scene.onBeforeRenderObservable.add(function warpPulse() {
             t += engine.getDeltaTime() / 1000;
             const progress = t / duration;
-        
-            const intensity = Math.max(0, 1 - progress)*.75;
+
+            const intensity = Math.max(0, 1 - progress) * .75;
             warpEffect._intensity = intensity;
-        
+
             if (intensity > 0 && !warpEffectAttached) {
                 camera.attachPostProcess(warpEffect);
                 warpEffectAttached = true;
@@ -2962,7 +2962,7 @@ function createPortal({
                 camera.detachPostProcess(warpEffect);
                 warpEffectAttached = false;
             }
-        
+
             if (progress >= 1) {
                 warpEffect._intensity = 0;
                 scene.onBeforeRenderObservable.removeCallback(warpPulse);
@@ -2972,7 +2972,7 @@ function createPortal({
 
     scene.registerBeforeRender(() => {
         // Shader scroll and time
-        
+
         shaderMat.setFloat("time", performance.now() * 0.001);
 
         shaderMat.setFloat("cameraRotation", camera.alpha * 0.2); // tweak scroll sensitivity
@@ -2991,7 +2991,7 @@ function createPortal({
         const forward = portalMesh.forward || portalMesh.getDirection(BABYLON.Axis.Z);
         shaderMat.setFloat("time", performance.now() * 0.001);
         shaderMat.setFloat("cameraRotation", camera.alpha * 0.2);
-    
+
         if (guidedMode) {
             guidedScroll -= 0.0002; // scroll speed; tweak this
             if (guidedScroll > 1) guidedScroll -= 1; // keep it in 0–1 range
@@ -3002,26 +3002,26 @@ function createPortal({
             const scrollOffset = angle / (2 * Math.PI); // Normalize 0–1
             shaderMat.setVector2("uvOffset", new BABYLON.Vector2(-scrollOffset, 0));
         }
-        
+
 
         const portalPlane = BABYLON.Plane.FromPositionAndNormal(portalMesh.position, forward);
         const shipPos = target.getAbsolutePosition();
         const currentSide = Math.sign(portalPlane.signedDistanceTo(shipPos));
         const dist = BABYLON.Vector3.Distance(shipPos, portalMesh.position);
         const withinRadius = dist < portalRadius;
-        
+
         if (pullIn) {
             const pullRadius = portalRadius * 2;
-            const baseSpeed  = 0.08;
-            const exponent   = 2;
-            
+            const baseSpeed = 0.08;
+            const exponent = 2;
+
             if (dist < pullRadius && !hasTeleported) {
-            
+
                 const portalPos = portalMesh.getAbsolutePosition();
                 const pullDir = portalPos.subtract(shipPos).normalize();
                 const t = BABYLON.Scalar.Clamp(dist / pullRadius, 0, 1);
                 const pullStrength = Math.pow(1 - t, exponent);
-            
+
                 target.translate(
                     pullDir,
                     pullStrength * baseSpeed,
@@ -3037,9 +3037,9 @@ function createPortal({
             teleportSound.play();
 
             scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(iblUrl, scene);
-            
+
             hasTeleported = true;
-        
+
             screenRipple();
         }
 
@@ -3060,8 +3060,8 @@ function createPortal({
                 camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight())
             );
 
-            const fadeRange   = portalRadius * (!guidedMode ? 7 : 5);
-            const distToShip  = BABYLON.Vector3.Distance(!guidedMode ? target.getAbsolutePosition() : pathFollower.getAbsolutePosition(), portalMesh.position);
+            const fadeRange = portalRadius * (!guidedMode ? 7 : 5);
+            const distToShip = BABYLON.Vector3.Distance(!guidedMode ? target.getAbsolutePosition() : pathFollower.getAbsolutePosition(), portalMesh.position);
             label.style.opacity = distToShip < fadeRange ? "1" : "0";
 
             label.style.left = screenPos.x + "px";
@@ -3078,7 +3078,7 @@ function createPortal({
     portalMesh.actionManager.registerAction(
         new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
             if (hasTeleported) return; // prevent duplicate trigger
-    
+
             // Same logic as your cross-trigger
             target.position = teleportPosition.clone();
             onEnter();
@@ -3086,13 +3086,13 @@ function createPortal({
             teleportSound.play();
 
             scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(iblUrl, scene);
-    
+
             hasTeleported = true;
-    
+
             screenRipple();
         })
     );
-    
+
     return portalMesh;
 }
 
@@ -3115,11 +3115,11 @@ function createGuidedCurve() {
     pathFollower.position.copyFrom(pathPoints[0]);
 
     // Debug line
-/*     const debugCurve = BABYLON.MeshBuilder.CreateLines("debugCurve", {
-        points: guidedCurve.getPoints(),
-        updatable: false
-    }, scene);
-    debugCurve.color = new BABYLON.Color3(1, 1, 0); */
+    /*     const debugCurve = BABYLON.MeshBuilder.CreateLines("debugCurve", {
+            points: guidedCurve.getPoints(),
+            updatable: false
+        }, scene);
+        debugCurve.color = new BABYLON.Color3(1, 1, 0); */
 
     // Precompute exact progress for each point
     const curvePoints = guidedCurve.getPoints();
@@ -3147,15 +3147,15 @@ function moveToGuidedState(state) {
         console.warn("[moveToGuidedState] No guided point found for state:", state);
         return;
     }
-    
+
     function tweenGuidedProgress(from, to, secs, onDone = null) {
         const proxy = { v: from };
-    
+
         tweenFloat(proxy, "v", from, to, secs, () => {
             guidedProgress = to;
             if (onDone) onDone();
         });
-    
+
         // Sync during animation
         const sync = scene.onBeforeRenderObservable.add(() => {
             guidedProgress = proxy.v;
@@ -3164,10 +3164,10 @@ function moveToGuidedState(state) {
             }
         });
     }
-    
+
     function tweenFloat(obj, prop, from, to, secs, onDone = null) {
         const anim = new BABYLON.Animation(
-            "tween_"+prop, prop, 60,
+            "tween_" + prop, prop, 60,
             BABYLON.Animation.ANIMATIONTYPE_FLOAT,
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
         );
@@ -3175,12 +3175,12 @@ function moveToGuidedState(state) {
             { frame: 0, value: from },
             { frame: 60, value: to }
         ]);
-    
+
         const e = new BABYLON.QuadraticEase();
         e.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
 
         anim.setEasingFunction(e);
-    
+
         const speed = 1 / secs;
         scene.beginDirectAnimation(obj, [anim], 0, 60, false, speed, onDone);
     }
@@ -3199,7 +3199,7 @@ function moveToGuidedState(state) {
         const dB = signedDelta(camera.beta, p.beta, p.dirBeta);
 
         tweenFloat(camera, "alpha", camera.alpha, camera.alpha + dA, duration);
-        tweenFloat(camera, "beta",  camera.beta,  camera.beta  + dB, duration);
+        tweenFloat(camera, "beta", camera.beta, camera.beta + dB, duration);
     }
 
     attachShipControls(true, guidedMode);
@@ -3209,15 +3209,15 @@ function updateGuidedMovement() {
     if (!guidedCurve || !pathFollower) return;
 
     /* wrap progress so it always sits in [0, 1) */
-    const s = ((guidedProgress % 1) + 1) % 1;  
+    const s = ((guidedProgress % 1) + 1) % 1;
 
     /* compute interpolated point on the curve */
     const pts = guidedCurve.getPoints();
     const cnt = pts.length;
-    const f   = s * cnt;
-    const i1  = Math.floor(f) % cnt;
-    const i2  = (i1 + 1) % cnt;
-    const t   = f - i1;
+    const f = s * cnt;
+    const i1 = Math.floor(f) % cnt;
+    const i2 = (i1 + 1) % cnt;
+    const t = f - i1;
 
     const pos = BABYLON.Vector3.Lerp(pts[i1], pts[i2], t);
     pathFollower.position.copyFrom(pos);
@@ -3232,7 +3232,7 @@ function signedDelta(from, to, dir /* 1, -1, or 0 / undefined */) {
     let d = (to - from) % TWO;
 
     if (!dir) {
-        if (d >  Math.PI) d -= TWO;
+        if (d > Math.PI) d -= TWO;
         if (d < -Math.PI) d += TWO;
     } else if (dir > 0) {
         if (d < 0) d += TWO;
@@ -3247,20 +3247,20 @@ function attachShipControls(enable, guidedMode) {
     /* ───────── singleton state ───────── */
     const S = attachShipControls;
     if (!S.once) {
-        S.keys   = Object.create(null);
-        S.once   = true;
-        S.speed  = 10;   // cruise
+        S.keys = Object.create(null);
+        S.once = true;
+        S.speed = 10;   // cruise
         S.speedK = 3;    // Shift multiplier
-        S.v      = S.speed; // smoothed speed
+        S.v = S.speed; // smoothed speed
     }
 
     /* ───────── helpers ───────── */
     const grab = () => ({
-        fwd : scene.getAnimationGroupByName("forward"),
-        brk : scene.getAnimationGroupByName("stop"),
-        L   : scene.getAnimationGroupByName("turnLeft"),
-        R   : scene.getAnimationGroupByName("turnRight"),
-        I   : scene.getAnimationGroupByName("idle")   // new default clip
+        fwd: scene.getAnimationGroupByName("forward"),
+        brk: scene.getAnimationGroupByName("stop"),
+        L: scene.getAnimationGroupByName("turnLeft"),
+        R: scene.getAnimationGroupByName("turnRight"),
+        I: scene.getAnimationGroupByName("idle")   // new default clip
     });
 
     /* ───────── turn OFF ───────── */
@@ -3268,13 +3268,13 @@ function attachShipControls(enable, guidedMode) {
         if (S.observer) scene.onBeforeRenderObservable.remove(S.observer);
         S.observer = null;
 
-        canvas.removeEventListener("keydown",     S._d);
-        canvas.removeEventListener("keyup",       S._u);
+        canvas.removeEventListener("keydown", S._d);
+        canvas.removeEventListener("keyup", S._u);
 
         Object.values(grab()).forEach(g => g?.stop?.());
 
         shipRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-        S.pitch     = 0;
+        S.pitch = 0;
         S.yawTarget = 0;
 
         S.keys = Object.create(null);
@@ -3308,12 +3308,12 @@ function attachShipControls(enable, guidedMode) {
             pivotFreeLocalPos = cameraPivot.position.clone();
             pivotFreeLocalRot = (cameraPivot.rotationQuaternion || BABYLON.Quaternion.Identity()).clone();
         }
-    
+
         /* move the camera onto the rail */
         cameraPivot.setParent(pathFollower);
         cameraPivot.position.set(0, 0, 0);
         cameraPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
-    
+
         shipRoot.setEnabled(false);
         S.observer = scene.onBeforeRenderObservable.add(updateGuidedMovement);
         return;
@@ -3328,7 +3328,7 @@ function attachShipControls(enable, guidedMode) {
         cameraPivot.setParent(shipRoot);                    // back to the craft
         cameraPivot.position.copyFrom(pivotFreeLocalPos);   // original cockpit offset
         cameraPivot.rotationQuaternion = pivotFreeLocalRot.clone();
-    
+
         shipRoot.setEnabled(true);
     }
 
@@ -3341,26 +3341,26 @@ function attachShipControls(enable, guidedMode) {
 
     Object.values(A).forEach(g => {
         g.enableBlending = true;
-        g.blendingSpeed  = .06;
-        g.loopAnimation  = true;
+        g.blendingSpeed = .06;
+        g.loopAnimation = true;
         g.stop(); g.reset();
     });
     A.I.play(true);                        // idle is now the starting clip
 
     /* --- session state --- */
-    let pitch = 0,      yawTarget = 0;
+    let pitch = 0, yawTarget = 0;
     let dragging = false, startY = 0;
 
-    let pitchVel = 0;  
+    let pitchVel = 0;
     const PITCH_RATE = Math.PI / 1.5;         //   max rad/s
-    const SMOOTH    = 5; 
+    const SMOOTH = 5;
 
 
     /* --- keyboard listeners --- */
     S._d = e => S.keys[e.key.toLowerCase()] = true;
     S._u = e => S.keys[e.key.toLowerCase()] = false;
     canvas.addEventListener("keydown", S._d);
-    canvas.addEventListener("keyup",   S._u);
+    canvas.addEventListener("keyup", S._u);
     canvas.tabIndex = 1; canvas.focus();
 
     /* --- helper: exponential weight blend --- */
@@ -3382,11 +3382,11 @@ function attachShipControls(enable, guidedMode) {
     /* ── per‑frame update ── */
     S.observer = scene.onBeforeRenderObservable.add(() => {
         const dt = engine.getDeltaTime() * 0.001;
-        const K  = S.keys;
+        const K = S.keys;
 
         /* yaw from A / D */
-        const turnIn  = (K["d"] || K["arrowright"] ? 1 : 0) -
-                        (K["a"] || K["arrowleft"] ? 1 : 0);
+        const turnIn = (K["d"] || K["arrowright"] ? 1 : 0) -
+            (K["a"] || K["arrowleft"] ? 1 : 0);
 
         /* pitch from Q / E … with easing */
         const pitchIn = (K["e"] ? 1 : 0) - (K["q"] ? 1 : 0);
@@ -3397,7 +3397,7 @@ function attachShipControls(enable, guidedMode) {
         yawTarget -= turnIn * PITCH_RATE * dt;
 
         /* ship orientation */
-        const qYaw   = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, yawTarget);
+        const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, yawTarget);
         const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, pitch);
         const qFinal = qYaw.multiply(qPitch);
         shipRoot.rotationQuaternion = BABYLON.Quaternion.Slerp(
@@ -3410,13 +3410,13 @@ function attachShipControls(enable, guidedMode) {
         const wStep = BLEND_PER_SEC * dt;
 
         const forwardKey = K["w"] || K["arrowup"];
-        const brakeKey   = K["s"] || K["arrowdown"];
+        const brakeKey = K["s"] || K["arrowdown"];
 
-        if      (turnIn < 0) play(A.L,   wStep);
-        else if (turnIn > 0) play(A.R,   wStep);
-        else if (brakeKey)   play(A.brk, wStep);
+        if (turnIn < 0) play(A.L, wStep);
+        else if (turnIn > 0) play(A.R, wStep);
+        else if (brakeKey) play(A.brk, wStep);
         else if (forwardKey) play(A.fwd, wStep);
-        else                 play(A.I,   wStep);  // idle when nothing else
+        else play(A.I, wStep);  // idle when nothing else
 
         /* smooth Shift throttle */
         const wantSpeed = K["shift"] ? S.speed * S.speedK : S.speed;
@@ -3424,7 +3424,7 @@ function attachShipControls(enable, guidedMode) {
 
         /* movement */
         const throttle = forwardKey && !brakeKey ? 1 :
-                         forwardKey &&  brakeKey ? 0.5 : 0;
+            forwardKey && brakeKey ? 0.5 : 0;
 
         if (throttle) {
             const verticalTarget = (K["e"] ? 1 : 0) - (K["q"] ? 1 : 0);
@@ -3450,42 +3450,42 @@ function createEngineFlame(scene) {
     emitter.rotation.x = BABYLON.Tools.ToRadians(152);
     emitter.rotation.z = BABYLON.Tools.ToRadians(25);
     if (!emitter) throw new Error("engineFlame node not found");
-  
+
     const flame = new BABYLON.ParticleSystem("engineFlamePS", 600, scene);
-    flame.particleTexture        = new BABYLON.Texture("./assets/textures/muzzle_06.png", scene);
-    flame.emitter                = emitter;
-    flame.updateSpeed            = 0.01;                // smoother updates
-    flame.minEmitPower           = 0.02;
-    flame.maxEmitPower           = 0.05;
-    flame.emitRate               = 1000;                 // higher, constant rate
-  
+    flame.particleTexture = new BABYLON.Texture("./assets/textures/muzzle_06.png", scene);
+    flame.emitter = emitter;
+    flame.updateSpeed = 0.01;                // smoother updates
+    flame.minEmitPower = 0.02;
+    flame.maxEmitPower = 0.05;
+    flame.emitRate = 1000;                 // higher, constant rate
+
     // point‐spawn exactly at nozzle
-    flame.particleEmitterType    = new BABYLON.PointParticleEmitter();
-  
+    flame.particleEmitterType = new BABYLON.PointParticleEmitter();
+
     // size randomness
-    flame.minSize                = 0.2;
-    flame.maxSize                = 0.5;
-  
+    flame.minSize = 0.2;
+    flame.maxSize = 0.5;
+
     // rotation randomness
-    flame.minInitialRotation     = Math.PI * 1.9;
-    flame.maxInitialRotation     = Math.PI * 2.1;
-  
+    flame.minInitialRotation = Math.PI * 1.9;
+    flame.maxInitialRotation = Math.PI * 2.1;
+
     // give each particle a tight lifetime window
-    flame.minLifeTime            = 0.03;
-    flame.maxLifeTime            = 0.1;
-  
+    flame.minLifeTime = 0.03;
+    flame.maxLifeTime = 0.1;
+
     // color & blend
-    flame.gravity                = new BABYLON.Vector3(0, 0, 0);
-    flame.blendMode              = BABYLON.ParticleSystem.BLENDMODE_ADD;
-    flame.color1                 = new BABYLON.Color4(1, 0.6, 0.3, .5);
-    flame.color2                 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
-    flame.colorDead              = new BABYLON.Color4(0, 0, .5, .2);
-  
+    flame.gravity = new BABYLON.Vector3(0, 0, 0);
+    flame.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+    flame.color1 = new BABYLON.Color4(1, 0.6, 0.3, .5);
+    flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
+    flame.colorDead = new BABYLON.Color4(0, 0, .5, .2);
+
     flame.start();
-  
+
     // remove any flicker loop so it stays constant
     // (if you ever want throttle control, just override .emitRate / .minEmitPower / .maxEmitPower)
-  
+
     return flame;
 }
 
@@ -3506,15 +3506,15 @@ function createSmoke() {
     smoke.particleTexture = fogTexture;
 
     smoke.emitter = fountain;
-    smoke.updateSpeed            = 0.01; 
+    smoke.updateSpeed = 0.01;
     smoke.minEmitBox = new BABYLON.Vector3(-100, -15, 100);
     smoke.maxEmitBox = new BABYLON.Vector3(100, 5, -100);
 
     smoke.enableColorGradients = true;
     smoke.addColorGradient(0.0, new BABYLON.Color4(0.40, 0.40, 0.88, 0));   // 0% life → fully transparent
     smoke.addColorGradient(0.2, new BABYLON.Color4(0.35, 0.40, 0.88, 0.1)); // 10% life → mostly opaque
-    smoke.addColorGradient(0.8, new BABYLON.Color4(0.4,  0.25, 0.5,  0.08)); // 90% life → still opaque
-    smoke.addColorGradient(1.0, new BABYLON.Color4(0.3,  0.15, 0.4,  0));   // 100% life → fully transparent
+    smoke.addColorGradient(0.8, new BABYLON.Color4(0.4, 0.25, 0.5, 0.08)); // 90% life → still opaque
+    smoke.addColorGradient(1.0, new BABYLON.Color4(0.3, 0.15, 0.4, 0));   // 100% life → fully transparent
 
     smoke.minSize = 15;
     smoke.maxSize = 40;
@@ -3565,9 +3565,9 @@ function createStars() {
     stars.startPositionFunction = (worldMatrix, position, particle) => {
         let x, y, z;
         do {
-            x = BABYLON.Scalar.RandomRange(-3500+shipRoot.position.x, 3500+shipRoot.position.x);
-            y = BABYLON.Scalar.RandomRange(-3500+shipRoot.position.y, 3500+shipRoot.position.y);
-            z = BABYLON.Scalar.RandomRange(-3500+shipRoot.position.z, 3500+shipRoot.position.z);
+            x = BABYLON.Scalar.RandomRange(-3500 + shipRoot.position.x, 3500 + shipRoot.position.x);
+            y = BABYLON.Scalar.RandomRange(-3500 + shipRoot.position.y, 3500 + shipRoot.position.y);
+            z = BABYLON.Scalar.RandomRange(-3500 + shipRoot.position.z, 3500 + shipRoot.position.z);
         } while (
             (x - shipPos.x) * (x - shipPos.x) +
             (y - shipPos.y) * (y - shipPos.y) +
@@ -3582,30 +3582,30 @@ function createStars() {
 
     // color gradients
     stars.enableColorGradients = true;
-    stars.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1,   0));   // birth: transparent
-    stars.addColorGradient(0.05, new BABYLON.Color4(.8,   .8,   1,   1));   // pop in
-    stars.addColorGradient(0.4, new BABYLON.Color4(.9,   0.9, 0.7, 0.8));
-    stars.addColorGradient(0.7, new BABYLON.Color4(1,   0.9, 0.7, 0.8));  // fade
-    stars.addColorGradient(1.0, new BABYLON.Color4(1,   0.7, 0.7, 0));    // death: transparent
+    stars.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));   // birth: transparent
+    stars.addColorGradient(0.05, new BABYLON.Color4(.8, .8, 1, 1));   // pop in
+    stars.addColorGradient(0.4, new BABYLON.Color4(.9, 0.9, 0.7, 0.8));
+    stars.addColorGradient(0.7, new BABYLON.Color4(1, 0.9, 0.7, 0.8));  // fade
+    stars.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));    // death: transparent
 
     // size / lifetime / rate
-    stars.minSize      = 20;
-    stars.maxSize      = 50;
+    stars.minSize = 20;
+    stars.maxSize = 50;
 
-    stars.minLifeTime  = 10;
-    stars.maxLifeTime  = 30;
-    stars.emitRate     = 100000;
+    stars.minLifeTime = 10;
+    stars.maxLifeTime = 30;
+    stars.emitRate = 100000;
 
     // physics
-    stars.blendMode       = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
-    stars.gravity         = new BABYLON.Vector3(0, 0, 0);
-    stars.direction1      = new BABYLON.Vector3(0, 0, 0);
-    stars.direction2      = new BABYLON.Vector3(0, 0, 0);
+    stars.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+    stars.gravity = new BABYLON.Vector3(0, 0, 0);
+    stars.direction1 = new BABYLON.Vector3(0, 0, 0);
+    stars.direction2 = new BABYLON.Vector3(0, 0, 0);
     stars.minAngularSpeed = -0.5;
-    stars.maxAngularSpeed =  0.5;
-    stars.minEmitPower    = 0.5;
-    stars.maxEmitPower    = 1.5;
-    stars.updateSpeed     = 0.01;
+    stars.maxAngularSpeed = 0.5;
+    stars.minEmitPower = 0.5;
+    stars.maxEmitPower = 1.5;
+    stars.updateSpeed = 0.01;
 
     stars.start();
     return stars;
@@ -3641,7 +3641,7 @@ function animateScene(show, durationInSeconds) {
             material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
 
             const fromAlpha = show ? 0.01 : 1;
-            const toAlpha   = show ? 1 : 0;
+            const toAlpha = show ? 1 : 0;
             material.alpha = fromAlpha;
 
             const alphaAnimation = new BABYLON.Animation(
@@ -3671,7 +3671,7 @@ function animateScene(show, durationInSeconds) {
             }
         }, durationInSeconds * 1000);
     }
-    sceneSmoke.emitRate=10000;
+    sceneSmoke.emitRate = 10000;
     sceneStars = createStars();
     animateRockRing(show, durationInSeconds);
 }
@@ -3683,15 +3683,15 @@ function animatePlanet(show, durationInSeconds) {
     const materials = [];
 
     if (planetMesh?.material) materials.push(planetMesh.material);
-    
+
     materials.forEach(material => {
 
         material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLENDANDTEST;
         material.needDepthPrePass = true;
         material.backFaceCulling = true;
-        
+
         const fromAlpha = show ? 0.01 : 1;
-        const toAlpha   = show ? 1 : 0;
+        const toAlpha = show ? 1 : 0;
         material.alpha = fromAlpha;
 
         const alphaAnimation = new BABYLON.Animation(
@@ -3723,12 +3723,12 @@ function animatePlanet(show, durationInSeconds) {
             material.backFaceCulling = false;
         });
     }, durationInSeconds * 1000);
-    
+
     // Animate global rotation on planetRoot.
     // Adjust these vectors as needed for your desired effect.
     const fromRotation = show ? new BABYLON.Vector3(-1, -2, 0) : new BABYLON.Vector3(0, 0, 0);
-    const toRotation   = show ? new BABYLON.Vector3(0, 0, 0)  : new BABYLON.Vector3(1, 2, 0);
-    
+    const toRotation = show ? new BABYLON.Vector3(0, 0, 0) : new BABYLON.Vector3(1, 2, 0);
+
     const rotationAnimation = new BABYLON.Animation(
         "rotatePlanet",
         "rotation",
@@ -3736,12 +3736,12 @@ function animatePlanet(show, durationInSeconds) {
         BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
-    
+
     rotationAnimation.setKeys([
         { frame: 0, value: fromRotation },
         { frame: totalFrames, value: toRotation }
     ]);
-    
+
     const easingRot = new BABYLON.CubicEase();
     if (show) {
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
@@ -3749,7 +3749,7 @@ function animatePlanet(show, durationInSeconds) {
         easingRot.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
     }
     rotationAnimation.setEasingFunction(easingRot);
-    
+
     if (planetRoot2) {
         planetRoot2.animations = [rotationAnimation];
         scene.beginAnimation(planetRoot2, 0, totalFrames, false);
@@ -3765,7 +3765,7 @@ function updatePlanetVisibility() {
             const baseX = 1;
             const wFactor = 1 / 240;
             const hFactor = 1 / 240;
-            const x = (baseX + (wFactor*width)/2 - hFactor*height);
+            const x = (baseX + (wFactor * width) / 2 - hFactor * height);
 
             planetRoot1.position = new BABYLON.Vector3(x, -1, 0);
             setTimeout(() => {
@@ -3829,14 +3829,14 @@ function initializeScrollActions() {
     // Prevent scrolling with mouse wheel
     window.addEventListener(
         "wheel",
-        function (e) {            
+        function (e) {
             // Allow scrolling if mouse is over chat
-            if (chatContainer.classList.contains('chat-open') && 
+            if (chatContainer.classList.contains('chat-open') &&
                 e.target.closest('#chatMessages')) {
                 e.stopPropagation();
                 return;
             }
-    
+
             // Allow scrolling if mouse is over the portal info panel
             if (portalOverlay.classList.contains('visible') &&
                 e.target.closest('#portal-info-overlay')) {
@@ -3848,7 +3848,7 @@ function initializeScrollActions() {
                 e.stopPropagation();
                 return;
             }
-    
+
             // Otherwise prevent scrolling and handle page states
             e.preventDefault();
             if (!isAnimating) {
@@ -3861,7 +3861,7 @@ function initializeScrollActions() {
         },
         { passive: false }
     );
-    
+
 
     // Prevent scrolling with touch
     let touchStartY = 0;
@@ -3877,7 +3877,7 @@ function initializeScrollActions() {
     window.addEventListener(
         "touchmove",
         function (e) {
-            if (chatContainer.classList.contains('chat-open') && 
+            if (chatContainer.classList.contains('chat-open') &&
                 e.target.closest('#chatMessages')) {
                 e.stopPropagation();
                 return;
@@ -3905,68 +3905,68 @@ function initializeScrollActions() {
         { passive: false }
     );
 
-    
+
     function scrollForward() {
         if (isAnimating) return;
-    
+
         previousState = currentState;
         // normal forward increment if we’re not at the end
         if (currentState < maxState) currentState++;
         else return;                           // already at the end in free-mode
-    
+
         updateState();
 
-/*         if (currentState === STATE_EXPLORE && guidedMode) {
-            setTimeout(() => {
-                if (isAnimating) return;
-    
-                previousState = currentState;
-                // normal forward increment if we’re not at the end
-                if (currentState < maxState) currentState++;
-                else return;                           // already at the end in free-mode
+        /*         if (currentState === STATE_EXPLORE && guidedMode) {
+                    setTimeout(() => {
+                        if (isAnimating) return;
             
-                updateState();
-            }, 500);
-        } */
+                        previousState = currentState;
+                        // normal forward increment if we’re not at the end
+                        if (currentState < maxState) currentState++;
+                        else return;                           // already at the end in free-mode
+                    
+                        updateState();
+                    }, 500);
+                } */
     }
 
     function scrollBackward() {
         if (isAnimating) return;
-    
+
         previousState = currentState;
-    
+
         if (currentState > STATE_HOME) currentState--;
         else return; // Already at start
-    
+
         updateState();
-    
-/*         if (currentState === STATE_EXPLORE && guidedMode) {
-            setTimeout(() => {
-                if (isAnimating) return;
-    
-                previousState = currentState;
-                
-                if (currentState > STATE_HOME) currentState--;
-                else return;
-    
-                updateState();
-            }, 1500);
-        } */
+
+        /*         if (currentState === STATE_EXPLORE && guidedMode) {
+                    setTimeout(() => {
+                        if (isAnimating) return;
+            
+                        previousState = currentState;
+                        
+                        if (currentState > STATE_HOME) currentState--;
+                        else return;
+            
+                        updateState();
+                    }, 1500);
+                } */
     }
 
     function updateState() {
         console.log("[updateState] currentState =", currentState);
         console.log("[updateState] guidedMode =", guidedMode);
-    
+
         // Adjust maxState based on mode
         maxState = guidedMode ? maxGuidedState : maxFreeState;
-    
+
         if (isAnimating) return;
         isAnimating = true;
-    
+
         const fromState = previousState;
         const toState = currentState;
-    
+
         /* special transitions between Services_3 <-> Explore */
         if (fromState === STATE_HOME_3 && toState === STATE_EXPLORE) {
             transitionToExploreState();
@@ -4009,12 +4009,12 @@ function initializeScrollActions() {
                             header.style.transition = 'all 1.5s ease';
                             header.classList.remove('white-icons');
                             header.style.height = `60px`;
-                            header.style.backgroundColor= '#F4F2ED';
+                            header.style.backgroundColor = '#F4F2ED';
                             if (isDesktop) {
                                 if (chatContainer.classList.contains('chat-open')) {
                                     header.style.width = 'calc(100% - 40px)';
                                 } else {
-                                header.style.width= '75%';
+                                    header.style.width = '75%';
                                 }
                             }
                         } else {
@@ -4024,9 +4024,9 @@ function initializeScrollActions() {
                             header.style.transition = 'all 0.5s ease';
                             header.classList.add('white-icons');
                             header.style.height = `60px`;
-                            header.style.backgroundColor='transparent';
+                            header.style.backgroundColor = 'transparent';
                             if (isDesktop) {
-                                header.style.width= '100%';
+                                header.style.width = '100%';
                             }
                         }
                     }, 1000);
@@ -4042,7 +4042,7 @@ function initializeScrollActions() {
                 highlightLayer.isEnabled = false;
             }
         }
-    
+
         // Always update overlays and planets visibility
         updateOverlayVisibility();
         updatePlanetVisibility();
@@ -4060,9 +4060,9 @@ function initializeScrollActions() {
         // Change icons to light color over time
         header.classList.add('white-icons');
         header.style.height = `60px`;
-        header.style.backgroundColor='transparent';
+        header.style.backgroundColor = 'transparent';
         if (isDesktop) {
-            header.style.width= '100%';
+            header.style.width = '100%';
         }
 
         attachShipControls(true, guidedMode);
@@ -4070,9 +4070,9 @@ function initializeScrollActions() {
         updatePortals(true);
 
         // Delay to match the longer clip-path transition duration
-        setTimeout(function() {
+        setTimeout(function () {
             isAnimating = false;
-            
+
         }, 500);
     }
 
@@ -4084,12 +4084,12 @@ function initializeScrollActions() {
         // Change icons back to default color over time
         header.classList.remove('white-icons');
         header.style.height = `60px`;
-        header.style.backgroundColor= '#F4F2ED';
+        header.style.backgroundColor = '#F4F2ED';
         if (isDesktop) {
             if (chatContainer.classList.contains('chat-open')) {
                 header.style.width = 'calc(100% - 40px)';
             } else {
-            header.style.width= '75%';
+                header.style.width = '75%';
             }
         }
         updatePortals(false);
@@ -4097,10 +4097,10 @@ function initializeScrollActions() {
 
 
         // Delay to match the longer clip-path transition duration
-        setTimeout(function() {
+        setTimeout(function () {
             // Show overlay text for State 4 after clip-path transition
             showOverlayText(textSegments[2]);
-            setTimeout(function() {
+            setTimeout(function () {
                 isAnimating = false;
             }, 500);
         }, 200);
@@ -4116,7 +4116,7 @@ function initializeScrollActions() {
             menuIcon.style.height = "35px";
             logoIcon.style.top = "25px";
             menuIcon.style.top = "25px";
-    
+
         } else {
             logoIcon.style.height = "25px";
             menuIcon.style.height = "25px";
@@ -4136,7 +4136,7 @@ function initializeScrollActions() {
         header.classList.remove('white-icons');
 
         // Delay to ensure animations complete
-        setTimeout(function() {
+        setTimeout(function () {
             isAnimating = false;
         }, 500);
     }
@@ -4149,7 +4149,7 @@ function initializeScrollActions() {
             menuIcon.style.height = "25px";
             logoIcon.style.top = "17px";
             menuIcon.style.top = "17px";
-            
+
         } else {
             logoIcon.style.height = "21px";
             menuIcon.style.height = "21px";
@@ -4174,7 +4174,7 @@ function initializeScrollActions() {
             menuIcon.style.height = "25px";
             logoIcon.style.top = "17px";
             logoIcon.style.top = "17px";
-            
+
         } else {
             logoIcon.style.height = "21px";
             menuIcon.style.height = "21px";
@@ -4185,11 +4185,11 @@ function initializeScrollActions() {
         if (previousState === STATE_HOME_3) {
             animateCameraPosition(false);
         }
-        
+
         // Show overlay text for the given index
         showOverlayText(textSegments[1]);
         setTimeout(() => {
-          isAnimating = false;
+            isAnimating = false;
         }, 1000);
     }
 
@@ -4200,7 +4200,7 @@ function initializeScrollActions() {
             menuIcon.style.height = "25px";
             logoIcon.style.top = "17px";
             menuIcon.style.top = "17px";
-            
+
         } else {
             logoIcon.style.height = "21px";
             menuIcon.style.height = "21px";
@@ -4212,9 +4212,9 @@ function initializeScrollActions() {
         }
         // Show overlay text for the given index
         showOverlayText(textSegments[2]);
-        
+
         if (!isAudioPlaying(backgroundMusic)) {
-            
+
             animateScene(true, 3);
 
             backgroundMusic.loop = true;
@@ -4225,12 +4225,12 @@ function initializeScrollActions() {
             const steps = 40;
             const interval = duration / steps;
             let currentStep = 0;
-        
+
             const fadeIn = setInterval(() => {
                 currentStep++;
                 const newVolume = (targetVolume / steps) * currentStep;
                 backgroundMusic.volume = Math.min(newVolume, targetVolume);
-        
+
                 if (currentStep >= steps) {
                     clearInterval(fadeIn);
                 }
@@ -4260,9 +4260,9 @@ function initializeScrollActions() {
         overlayText.style.top = '70px'; // Adjust as needed
 
         const typingSpeed = 25; // milliseconds per character
-        
+
         setTimeout(() => {
-            isAnimating = false; 
+            isAnimating = false;
         }, 500);
 
         function typeCharacter() {
@@ -4287,7 +4287,7 @@ function initializeScrollActions() {
 }
 
 function animateCameraPosition(forward) {
-    
+
     if (forward) {
         camera.attachControl(canvas, false);
     } else {
@@ -4305,8 +4305,8 @@ function animateCameraPosition(forward) {
     scene.getAnimationGroupByName("idle").play(true);
     engineFlame.emitRate = forward ? 1000 : (navState ? 1000 : 0);
 
-    const fps     = 60;
-    const frames  = fps * 1.5;            // 1‑second sweep
+    const fps = 60;
+    const frames = fps * 1.5;            // 1‑second sweep
     const easeOut = new BABYLON.QuadraticEase();
     easeOut.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
 
@@ -4316,13 +4316,13 @@ function animateCameraPosition(forward) {
     const animX = new BABYLON.Animation("pivotX", "position.x", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
     const animY = new BABYLON.Animation("pivotY", "position.y", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
     const animZ = new BABYLON.Animation("pivotZ", "position.z", fps, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
-    
+
     animX.setKeys([{ frame: 0, value: shipRoot.position.x }, { frame: frames, value: forward ? shipRoot.position.x : 0 }]);
     animY.setKeys([{ frame: 0, value: shipRoot.position.y }, { frame: frames, value: forward && !navState ? 0.7 : -0.5 }]);
     animZ.setKeys([{ frame: 0, value: shipRoot.position.z }, { frame: frames, value: forward ? shipRoot.position.z : -24 }]);
-    
+
     [animX, animY, animZ].forEach(a => a.setEasingFunction(easeOut));
-    
+
     shipRoot.animations = [animX, animY, animZ];
     scene.beginAnimation(shipRoot, 0, frames, false);
 
@@ -4340,8 +4340,8 @@ function animateCameraPosition(forward) {
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
     alphaAnim.setKeys([
-        { frame: 0,      value: forward ? currentAlpha :  currentAlpha },
-        { frame: frames, value: forward ?  -Math.PI/2 : -Math.PI/2 }
+        { frame: 0, value: forward ? currentAlpha : currentAlpha },
+        { frame: frames, value: forward ? -Math.PI / 2 : -Math.PI / 2 }
     ]);
     alphaAnim.setEasingFunction(easeOut);
 
@@ -4351,20 +4351,20 @@ function animateCameraPosition(forward) {
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
     betaAnim.setKeys([
-        { frame: 0,      value: forward ? camera.beta :  camera.beta },
-        { frame: frames, value: forward && !navState && !guidedMode ? Math.PI/2.2 : Math.PI/2}
+        { frame: 0, value: forward ? camera.beta : camera.beta },
+        { frame: frames, value: forward && !navState && !guidedMode ? Math.PI / 2.2 : Math.PI / 2 }
     ]);
     betaAnim.setEasingFunction(easeOut);
 
     const rFrom = forward ? camera.lowerRadiusLimit : camera.lowerRadiusLimit;
-    const rTo   = forward ? (guidedMode ? 0 : 4) : 0;
+    const rTo = forward ? (guidedMode ? 0 : 4) : 0;
 
     const lowerLimitAnim = new BABYLON.Animation(
         "camLower", "lowerRadiusLimit", fps,
         BABYLON.Animation.ANIMATIONTYPE_FLOAT,
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
-    lowerLimitAnim.setKeys([{frame:0,value:rFrom},{frame:frames,value:rTo}]);
+    lowerLimitAnim.setKeys([{ frame: 0, value: rFrom }, { frame: frames, value: rTo }]);
     lowerLimitAnim.setEasingFunction(easeOut);
 
     const upperLimitAnim = new BABYLON.Animation(
@@ -4372,7 +4372,7 @@ function animateCameraPosition(forward) {
         BABYLON.Animation.ANIMATIONTYPE_FLOAT,
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
     );
-    upperLimitAnim.setKeys([{frame:0,value:rFrom},{frame:frames,value:rTo}]);
+    upperLimitAnim.setKeys([{ frame: 0, value: rFrom }, { frame: frames, value: rTo }]);
     upperLimitAnim.setEasingFunction(easeOut);
 
     camera.animations = [alphaAnim, betaAnim, lowerLimitAnim, upperLimitAnim];
@@ -4409,8 +4409,8 @@ function onMouseMove(event) {
 
     if (planetRoot1) {
         planetRoot1.rotationQuaternion = null; // Force Babylon to use .rotatio
-        planetRoot1.rotation.x = planetBaseRot.x - offsetX/2;
-        planetRoot1.rotation.y = planetBaseRot.y - offsetY/2;
+        planetRoot1.rotation.x = planetBaseRot.x - offsetX / 2;
+        planetRoot1.rotation.y = planetBaseRot.y - offsetY / 2;
     }
     if (logoRoot) {
         if (currentState === STATE_HOME_2) {

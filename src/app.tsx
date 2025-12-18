@@ -28,7 +28,7 @@ export default function App() {
   const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
   const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
   const isInteriorView = useUI((st) => st.isInteriorView);
-  const { setChatOpen, setMenuOpen, setSelectedLogoModel, setSelectedContinent, setIsInteriorView } = useUI();
+  const { setChatOpen, setMenuOpen, setIsInteriorView } = useUI();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
 
@@ -51,16 +51,6 @@ export default function App() {
       `Button ${index} clicked:`,
       config.content.overlayContent?.buttons[index]
     );
-
-    // Handle state 1 button clicks - switch logo models
-    if (s === S.state_1) {
-      setSelectedLogoModel(index);
-    }
-
-    // Handle state 2 button clicks - rotate planet to continent
-    if (s === S.state_2) {
-      setSelectedContinent(index);
-    }
   };
 
   const navigationMode = useUI((st) => st.navigationMode);
@@ -69,8 +59,6 @@ export default function App() {
   const stateNameToEnum = (name: string): S | null => {
     const stateMap: Record<string, S> = {
       'state_0': S.state_0,
-      'state_1': S.state_1,
-      'state_2': S.state_2,
       'state_3': S.state_3,
       'state_4': S.state_4,
       'state_5': S.state_5,
@@ -203,7 +191,7 @@ export default function App() {
               )}
 
               {/* Single resizing overlay box */}
-              {(s === S.state_1 || s === S.state_2 || s === S.state_3) && (
+              {s === S.state_3 && (
                 <OverlayBox
                   visible={true}
                   currentState={s}
@@ -231,7 +219,12 @@ export default function App() {
               {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
+                  className={cx(
+                    "absolute top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-[right,transform,opacity] duration-[500ms,200ms,200ms] hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none",
+                    // Move arrow left when chat is open in states 4-7 on desktop
+                    // Chat width is calc(25% - 24px) + right-4 (16px) + gap (16px) = calc(25% + 8px)
+                    chatOpen && s >= S.state_4 && s <= S.state_7 ? "right-[calc(25%+8px)]" : "right-4"
+                  )}
                   aria-label="Next state"
                 >
                   <img

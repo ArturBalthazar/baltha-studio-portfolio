@@ -42,7 +42,7 @@ export const state0Config: StateConfig = {
         desktop: -Math.PI * 1.5
       },
       animationDuration: 0, // Duration for ALL camera properties (radius, beta, alpha)
-      animationDelay: 0 // Delay before camera animation starts
+      animationDelay: 0.01 // Delay before camera animation starts
     },
     babylonScene: {
       logoEnabled: true,

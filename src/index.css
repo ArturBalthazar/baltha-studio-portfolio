@@ -141,11 +141,11 @@ body {
 .loading-bar-container {
   width: 250px;
   height: 6px;
-
   background-color: #E5E3DE;
   border-radius: 3px;
-  overflow: hidden;
+  overflow: visible;
   margin: 24px 0;
+  position: relative;
 }
 
 .loading-bar {
@@ -155,7 +155,39 @@ body {
   border-radius: 3px;
   background: linear-gradient(to right, #EF8253, #C79FCC, #99A1E6);
   transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 15px rgba(199, 159, 204, 0.6);
+  position: relative;
+}
+
+/* Gradient-following glow effect using blurred pseudo-element */
+.loading-bar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -4px;
+  right: -4px;
+  height: 150%;
+  transform: translateY(-50%) scaleX(1.02);
+  background: inherit;
+  border-radius: inherit;
+  filter: blur(2px);
+  opacity: 1;
+  z-index: -1;
+  animation: loadingGlow 2s ease-in-out infinite;
+}
+
+
+@keyframes loadingGlow {
+
+  0%,
+  100% {
+    filter: blur(12px);
+    opacity: 0.9;
+  }
+
+  50% {
+    filter: blur(18px);
+    opacity: 1;
+  }
 }
 
 /* Landscape blocker overlay for mobile */

@@ -25,10 +25,10 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
             )}>
                 {/* Fixed Header - Title aligned left */}
                 <div className="flex-shrink-0 px-5 pt-5 pb-3">
-                    <h2 className="font-sans text-2xl font-semibold text-white text-left">
-                        Musecraft
+                    <h2 className="font-sans text-2xl mb-1 font-semibold text-white text-left">
+                        Musecraft.xyz
                     </h2>
-                    <span className="font-mono text-sm font-light text-white">Create interactive 3D scenes in our fully web-based and AI-powered 3D editor.</span>
+                    <span className="font-mono text-sm font-light text-white">Create interactive 3D scenes for the web in our collaborative web editor.</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -53,43 +53,26 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
                         }
                     `}</style>
                     <div className="flex flex-col gap-4 musecraft-scroll pb-2">
+
                         {/* First text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            Musecraft is an experimental project that explores the intersection of artificial intelligence and musical creativity. Using cutting-edge generative models, it allows users to describe their vision in natural language and receive unique, royalty-free compositions.
+                            A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.
                         </p>
 
-                        {/* Placeholder Image area - using a gradient for now */}
-                        <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-gradient-to-br from-purple-900/50 via-blue-800/50 to-teal-700/50 flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="text-4xl mb-2">🎵</div>
-                                <span className="font-mono text-xs text-white/60">Coming Soon</span>
-                            </div>
+                        <div className="w-full rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-black">
+                            <img
+                                src="/public/assets/images/musecraft/editor.png"
+                                alt="Editor preview"
+                                className="w-full h-full object-fit"
+                            />
                         </div>
 
-                        {/* Second text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            Whether you're a content creator needing background music, a game developer looking for adaptive soundtracks, or an artist seeking inspiration, Musecraft provides a seamless creative experience powered by the latest in AI research.
+                            Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.
                         </p>
-
-                        {/* Features list */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-white/80">
-                                <span className="text-lg">✨</span>
-                                <span className="font-mono text-sm font-light">Natural language prompts</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-white/80">
-                                <span className="text-lg">🎹</span>
-                                <span className="font-mono text-sm font-light">Multiple genres & styles</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-white/80">
-                                <span className="text-lg">🔄</span>
-                                <span className="font-mono text-sm font-light">Iterative refinement</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-white/80">
-                                <span className="text-lg">📦</span>
-                                <span className="font-mono text-sm font-light">Export in multiple formats</span>
-                            </div>
-                        </div>
+                        <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
+                            Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -168,7 +151,7 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
                         className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        Create interactive 3D scenes in our fully web-based and AI-powered 3D editor.
+                        Create interactive 3D scenes for the web in our collaborative web editor.
                     </div>
                 )}
 
@@ -197,7 +180,13 @@ function MobileMusecraftPanel({ visible }: { visible: boolean }) {
                             <div className="flex flex-col gap-3 mobile-musecraft-scroll">
                                 {/* First text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    Musecraft is an experimental project that explores the intersection of artificial intelligence and musical creativity. Using generative models, it allows users to describe their vision and receive unique compositions.
+                                    A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.
+                                </p>
+                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
+                                    This editor allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.
+                                </p>
+                                <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
+                                    Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow.
                                 </p>
 
                                 {/* Placeholder Image */}

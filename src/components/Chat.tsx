@@ -89,8 +89,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
   };
 
   const suggestions = [
-    "What does Baltha Studio do?",
-    "What are your previous projects about?",
+    "What is Baltha Studio specialized in?",
+    "Which projects have you worked on?",
     "How do I get in touch or start a project?",
   ];
 
