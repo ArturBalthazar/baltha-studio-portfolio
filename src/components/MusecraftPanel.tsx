@@ -11,7 +11,7 @@ const musecraftContent = {
     titleMobile: "Musecraft",
     subtitle: "Create interactive 3D scenes for the web in our collaborative web editor.",
     text1: "A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.",
-    image: "/public/assets/images/musecraft/editor.png",
+    image: "/assets/images/musecraft/editor.png",
     text2: "Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.",
     text3: "Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow."
 };

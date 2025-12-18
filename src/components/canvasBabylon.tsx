@@ -1241,20 +1241,32 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     });
 
     // Calculate the distance between start and end for control point scaling
-    const distance = BABYLON.Vector3.Distance(startPosition, endPosition);
+    let effectiveStartPosition = startPosition.clone();
+    let distance = BABYLON.Vector3.Distance(startPosition, endPosition);
+
+    // If start and end positions are the same (or very close), the bezier curve would degenerate
+    // and cause erratic ship movement. Offset the start position slightly backward along the
+    // ship's forward direction to create a valid curve.
+    const MIN_DISTANCE_THRESHOLD = 0.1;
+    if (distance < MIN_DISTANCE_THRESHOLD) {
+      const offsetDistance = 0.05; // Very small offset behind the ship
+      effectiveStartPosition = startPosition.add(startForward.scale(offsetDistance));
+      distance = BABYLON.Vector3.Distance(effectiveStartPosition, endPosition);
+      console.log("🔧 [Bezier Animation] Start/end positions too close, applied small backward offset");
+    }
 
     // Control point distance is proportional to the total distance
     // Using 1/3 of the distance creates a nice smooth curve
     const controlPointDistance = distance * .25;
 
     // Create cubic bezier control points:
-    // P0 = start position
+    // P0 = start position (possibly offset if too close to end)
     // P1 = start position - startForward * controlPointDistance (ship continues in its facing direction)
     // P2 = end position + endForward * controlPointDistance (approaches target aligned with its facing direction)
     // P3 = end position
 
-    const p0 = startPosition.clone();
-    const p1 = startPosition.subtract(startForward.scale(controlPointDistance));
+    const p0 = effectiveStartPosition.clone();
+    const p1 = effectiveStartPosition.subtract(startForward.scale(controlPointDistance));
     const p2 = endPosition.add(endForward.scale(controlPointDistance));
     const p3 = endPosition.clone();
 
@@ -3135,9 +3147,16 @@ export function BabylonCanvas() {
           atomIndicatorsRef.current.atom1 = atom;
           console.log("⚛️ Created atom indicator for GEELY car at anchor_1");
 
-          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
-          if (s < S.state_4 || s > S.state_7) {
+          // Handle atom visibility based on current state
+          // Use current state from store (not captured 's') to avoid stale state during async loading
+          const currentState = useUI.getState().state;
+          if (currentState < S.state_4 || currentState > S.state_7) {
+            // Not in explore states - hide atom
             atom.root.setEnabled(false);
+          } else {
+            // In explore states - ensure atom is explicitly enabled
+            atom.root.setEnabled(true);
+            console.log("⚛️ Atom1 enabled (in explore state during creation)");
           }
         }
 
@@ -3320,9 +3339,16 @@ export function BabylonCanvas() {
           atomIndicatorsRef.current.atom2 = atom;
           console.log("⚛️ Created atom indicator for Musecraft at anchor_2");
 
-          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
-          if (s < S.state_4 || s > S.state_7) {
+          // Handle atom visibility based on current state
+          // Use current state from store (not captured 's') to avoid stale state during async loading
+          const currentState = useUI.getState().state;
+          if (currentState < S.state_4 || currentState > S.state_7) {
+            // Not in explore states - hide atom
             atom.root.setEnabled(false);
+          } else {
+            // In explore states - ensure atom is explicitly enabled
+            atom.root.setEnabled(true);
+            console.log("⚛️ Atom2 enabled (in explore state during creation)");
           }
         } else {
           console.warn("⚠️ anchor_2 mesh not found for Musecraft");
@@ -3415,9 +3441,16 @@ export function BabylonCanvas() {
         atomIndicatorsRef.current.atom3 = atom;
         console.log("⚛️ Created atom indicator for Dioramas at anchor_3");
 
-        // Hide atom if not in explore states (4-7)
-        if (s < S.state_4 || s > S.state_7) {
+        // Handle atom visibility based on current state
+        // Use current state from store (not captured 's') to avoid stale state during async loading
+        const currentState = useUI.getState().state;
+        if (currentState < S.state_4 || currentState > S.state_7) {
+          // Not in explore states - hide atom
           atom.root.setEnabled(false);
+        } else {
+          // In explore states - ensure atom is explicitly enabled
+          atom.root.setEnabled(true);
+          console.log("⚛️ Atom3 enabled (in explore state during creation)");
         }
 
         // Load each diorama model
@@ -3595,9 +3628,16 @@ export function BabylonCanvas() {
           atomIndicatorsRef.current.atom4 = atom;
           console.log("⚛️ Created atom indicator for Petwheels at anchor_4");
 
-          // Hide atom if not in explore states (4-7) - fixes initial page load visibility
-          if (s < S.state_4 || s > S.state_7) {
+          // Handle atom visibility based on current state
+          // Use current state from store (not captured 's') to avoid stale state during async loading
+          const currentState = useUI.getState().state;
+          if (currentState < S.state_4 || currentState > S.state_7) {
+            // Not in explore states - hide atom
             atom.root.setEnabled(false);
+          } else {
+            // In explore states - ensure atom is explicitly enabled
+            atom.root.setEnabled(true);
+            console.log("⚛️ Atom4 enabled (in explore state during creation)");
           }
         } else {
           console.warn("⚠️ anchor_4 mesh not found for Petwheels");
