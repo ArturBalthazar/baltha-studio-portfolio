@@ -75,9 +75,8 @@ export function OverlayBox({
       <div
         className={cx(
           "relative shrink-0 rounded-canvas transition-all duration-1000",
-          // State 3 dimensions
-          "w-[53%] sm:w-[calc(20%+200px)]",
-          "h-[43%] sm:h-[calc(20%+100px)]",
+          // State 3 dimensions - auto width and height to wrap content
+          "w-auto h-auto",
           "translate-y-[0%] sm:-translate-y-[calc(60%-100px)]"
         )}
       >
@@ -101,10 +100,10 @@ export function OverlayBox({
         <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45 select-none" aria-hidden />
 
         {/* MAIN CONTENT */}
-        <div className="relative z-10 w-full h-full rounded-canvas p-4 flex flex-col text-center pointer-events-none select-none">
+        <div className="relative z-10 w-full translate-y-[8px] sm:-translate-y-0 rounded-canvas px-4 py-2 sm:px-10 sm:py-8 flex flex-col text-center pointer-events-none select-none">
 
           {/* STATE 3 CONTENT - Navigation Mode and Audio */}
-          <div className="absolute inset-4 flex flex-col text-center select-none opacity-100">
+          <div className="flex flex-col text-center select-none opacity-100">
             {/* Content Layout - Navigation Mode and Audio: vertical on mobile, horizontal on desktop */}
             <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-12 pointer-events-none">
 
