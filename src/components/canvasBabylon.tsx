@@ -3101,7 +3101,7 @@ export function BabylonCanvas() {
             // ArcRotateCamera alpha 0 looks down -X axis (in Babylon left-handed)
             // We want to convert our heading (angle from +Z) to alpha
             // Formula: alpha = -heading - Math.PI/2
-            iCam.alpha = -heading - Math.PI * 1.5;
+            iCam.alpha = -heading;
 
             interiorCameraRef.current = iCam;
           }
@@ -5548,6 +5548,8 @@ export function BabylonCanvas() {
     const handlePointerUp = (e: PointerEvent) => {
       if (modelRotationRef.current.isDragging) {
         modelRotationRef.current.isDragging = false;
+        // Reset velocity to prevent momentum drift after release
+        modelRotationRef.current.velocityY = 0;
         canvas.releasePointerCapture(e.pointerId);
       }
     };
@@ -6461,6 +6463,17 @@ export function BabylonCanvas() {
         }
       }
 
+      // Reset interior camera to fixed starting angle
+      // Calculate the fixed alpha based on the anchor's forward direction
+      const anchorMesh = carAnchorRef.current;
+      if (anchorMesh) {
+        const anchorForward = anchorMesh.forward;
+        const heading = Math.atan2(anchorForward.x, anchorForward.z);
+        interiorCameraRef.current.alpha = -heading + Math.PI / 2;
+      }
+      // Reset beta to the fixed starting value
+      interiorCameraRef.current.beta = Math.PI / 2.3;
+
       sceneRef.current.activeCamera = interiorCameraRef.current;
       interiorCameraRef.current.attachControl(ref.current, true);
       cameraRef.current.detachControl();
@@ -6468,6 +6481,21 @@ export function BabylonCanvas() {
       // Disable glass in interior view
       if (glassMesh) glassMesh.setEnabled(false);
     } else {
+      // Reset car rotation to original when exiting interior view
+      const carRoot = carRootRef.current;
+      if (carRoot && carRoot.rotationQuaternion) {
+        const originalRotation = modelOriginalRotations.get(carRoot);
+        if (originalRotation) {
+          // Reset all rotation state immediately
+          modelRotationRef.current.accumulatedYRotation = 0;
+          modelRotationRef.current.peekRotationX = 0;
+          modelRotationRef.current.originalQuaternion = null;
+          modelRotationRef.current.isDragging = false;
+          // Apply original rotation instantly
+          carRoot.rotationQuaternion.copyFrom(originalRotation);
+        }
+      }
+
       sceneRef.current.activeCamera = cameraRef.current;
       cameraRef.current.attachControl(ref.current, true);
       interiorCameraRef.current.detachControl();
