@@ -304,6 +304,10 @@ function MobileDioramasPanel({
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         In 2018, Baltha Studio started as a 3D printing business before moving to the digital space.
+                        {/* Tap to see more hint */}
+                        <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
+                            <span className="text-xs font-mono">⮟ Tap to see more</span>
+                        </div>
                     </div>
                 )}
 

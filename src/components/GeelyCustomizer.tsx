@@ -11,7 +11,7 @@ interface GeelyCustomizerProps {
 
 // Shared content configuration - single source of truth for both mobile and desktop
 const geelyContent = {
-    title: "Customize your GEELY",
+    title: "GEELY Customizer",
     titleMobile: "GEELY Customizer",
     subtitle: "We create everything from 3D car configurators to test-drive tracks, virtual showrooms and much more.",
     colors: ["green", "gray", "white", "silver"] as const,
@@ -49,15 +49,13 @@ export function GeelyCustomizer({
     // Handle interior view changes - save/restore expand states
     useEffect(() => {
         if (isInteriorView) {
-            // Entering interior view - save current states and collapse everything
+            // Entering interior view - save current states but keep panel expanded
             savedExpandStatesRef.current = {
                 isExpanded,
                 isBodyColorExpanded,
                 isVersionExpanded
             };
-            setIsExpanded(false);
-            setIsBodyColorExpanded(false);
-            setIsVersionExpanded(false);
+            // Panel stays expanded as-is when entering interior view
         } else if (savedExpandStatesRef.current) {
             // Leaving interior view - restore saved states
             setIsExpanded(savedExpandStatesRef.current.isExpanded);
@@ -316,6 +314,10 @@ export function GeelyCustomizer({
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {geelyContent.subtitle}
+                            {/* Tap to see more hint */}
+                            <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
+                                <span className="text-xs font-mono">⮟ Tap to see more</span>
+                            </div>
                         </div>
                     )}
 

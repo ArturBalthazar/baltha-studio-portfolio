@@ -109,12 +109,44 @@ export default function Connect() {
         }
     };
 
+    const handleLinkedInClick = () => {
+        const webUrl = "https://www.linkedin.com/company/balthastudio";
+        const appUrl = "linkedin://company/balthastudio";
+
+        // Simple mobile detection
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            const start = Date.now();
+            // Try to open the app
+            window.location.href = appUrl;
+
+            // Fallback check
+            setTimeout(() => {
+                const end = Date.now();
+                // If the browser wasn't backgrounded (meaning app didn't open), open web url
+                if (end - start < 1500) {
+                    window.open(webUrl, '_blank');
+                }
+            }, 1000);
+        } else {
+            window.open(webUrl, '_blank');
+        }
+    };
+
     const links = [
         {
             label: "Baltha Studio",
             url: "https://baltha.studio",
             icon: "/assets/brand/baltha-studio-1.png",
             type: "link"
+        },
+        {
+            label: "LinkedIn",
+            url: "#",
+            icon: "/assets/images/linkedin.png",
+            type: "action",
+            action: handleLinkedInClick
         },
         {
             label: "Instagram",
@@ -153,11 +185,15 @@ export default function Connect() {
             border: '1px solid rgba(255,255,255,0.6)',
             transform: 'scale(1.02)',
             backgroundColor: 'rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
         }
         : {
             border: '1px solid rgba(255,255,255,0.3)',
             transform: 'scale(1)',
-            backgroundColor: 'transparent',
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
         };
 
     return (
@@ -217,7 +253,7 @@ export default function Connect() {
                                                 "group relative w-full h-16 rounded-bigButton border border-white/30",
                                                 "flex items-center justify-between px-6",
                                                 "transition-all duration-300 hover:scale-[1.02] hover:border-white/60",
-                                                "select-none bg-brand-white/00"
+                                                "select-none bg-white/5 backdrop-blur-sm"
                                             )}
                                             style={{
                                                 animation: `fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
@@ -259,7 +295,7 @@ export default function Connect() {
                                             ref={emailButtonRef}
                                             onClick={handleEmailClick}
                                             className={cx(
-                                                "group relative w-full h-16 flex items-center justify-between px-6 select-none rounded-bigButton transition-all duration-300",
+                                                "group relative w-full h-16 flex items-center justify-between px-6 select-none rounded-bigButton transition-all duration-300 bg-white/5 backdrop-blur-sm",
                                                 !emailExpanded && "hover:scale-[1.02] hover:border-white/60"
                                             )}
                                             style={emailButtonStyle}

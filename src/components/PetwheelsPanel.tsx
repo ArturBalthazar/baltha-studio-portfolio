@@ -8,7 +8,7 @@ interface PetwheelsPanelProps {
 // Shared content configuration - single source of truth for both mobile and desktop
 const petwheelsContent = {
     title: "Petwheels",
-    subtitle: "A patented parametric wheelchair for dogs.",
+    subtitle: "A patented, fully 3D printable parametric wheelchair for dogs.",
     text1: "A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.",
     image1: "/assets/images/petwheels/petwheels1.jpg",
     text2: "The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold.",
@@ -192,6 +192,10 @@ function MobilePetwheelsPanel({ visible, content }: { visible: boolean; content:
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         {content.subtitle}
+                        {/* Tap to see more hint */}
+                        <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
+                            <span className="text-xs font-mono">⮟ Tap to see more</span>
+                        </div>
                     </div>
                 )}
 

@@ -1,0 +1,8 @@
+# Baltha Studio - robots.txt
+# https://baltha.studio
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://baltha.studio/sitemap.xml

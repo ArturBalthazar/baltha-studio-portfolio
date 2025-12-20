@@ -41,7 +41,7 @@ export function ConnectOverlay() {
     // Close email section when clicking anywhere outside the email button
     useEffect(() => {
         if (!emailExpanded) return;
-        
+
         const handleClick = (e: MouseEvent) => {
             // If click is on the email button itself, let the button's onClick handle it
             if (emailButtonRef.current?.contains(e.target as Node)) {
@@ -55,12 +55,31 @@ export function ConnectOverlay() {
         const timeout = setTimeout(() => {
             window.addEventListener('click', handleClick);
         }, 0);
-        
+
         return () => {
             clearTimeout(timeout);
             window.removeEventListener('click', handleClick);
         };
     }, [emailExpanded]);
+
+    const handleLinkedInClick = () => {
+        const webUrl = "https://www.linkedin.com/company/balthastudio";
+        const appUrl = "linkedin://company/balthastudio";
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            const start = Date.now();
+            window.location.href = appUrl;
+            setTimeout(() => {
+                const end = Date.now();
+                if (end - start < 1500) {
+                    window.open(webUrl, '_blank');
+                }
+            }, 1000);
+        } else {
+            window.open(webUrl, '_blank');
+        }
+    };
 
     const handleInstagramClick = () => {
         const webUrl = "https://instagram.com/baltha.studio";
@@ -106,6 +125,13 @@ export function ConnectOverlay() {
             action: handleBalthaStudioClick
         },
         {
+            label: "LinkedIn",
+            url: "#",
+            icon: "/assets/images/linkedin.png",
+            type: "action",
+            action: handleLinkedInClick
+        },
+        {
             label: "Instagram",
             url: "#",
             icon: "/assets/images/instagram.png",
@@ -120,18 +146,6 @@ export function ConnectOverlay() {
         },
     ];
 
-    // Button styles based on expanded state
-    const emailButtonStyle: React.CSSProperties = emailExpanded 
-        ? {
-            border: '1px solid rgba(255,255,255,0.6)',
-            transform: 'scale(1.02)',
-            backgroundColor: 'rgba(255,255,255,0.08)',
-        }
-        : {
-            border: '1px solid rgba(255,255,255,0.3)',
-            transform: 'scale(1)',
-            backgroundColor: 'transparent',
-        };
 
     return (
         <div className="w-full h-full relative overflow-hidden flex items-start justify-center pointer-events-none">
@@ -153,7 +167,7 @@ export function ConnectOverlay() {
                                 "group relative w-full h-14 md:h-16 rounded-bigButton border border-white/30",
                                 "flex items-center justify-between px-5",
                                 "transition-all duration-300 hover:scale-[1.02] hover:border-white/60",
-                                "select-none bg-transparent"
+                                "select-none bg-white/5 backdrop-blur-sm"
                             )}
                             style={{
                                 animation: `fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
@@ -180,22 +194,24 @@ export function ConnectOverlay() {
                     ))}
 
                     {/* Email Button with Expandable Section */}
-                    <div
-                        className="w-full"
-                        style={{
-                            animation: `fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
-                            animationDelay: `${links.length * 0.15}s`,
-                            opacity: 0,
-                        }}
-                    >
+                    <div className="w-full">
                         <button
                             ref={emailButtonRef}
                             onClick={handleEmailClick}
                             className={cx(
-                                "group relative w-full h-14 md:h-16 flex items-center justify-between px-5 select-none rounded-bigButton transition-all duration-300",
-                                !emailExpanded && "hover:scale-[1.02] hover:border-white/60"
+                                "group relative w-full h-14 md:h-16 rounded-bigButton border",
+                                "flex items-center justify-between px-5",
+                                "transition-all duration-300",
+                                "select-none bg-white/5 backdrop-blur-sm",
+                                emailExpanded
+                                    ? "border-white/60 scale-[1.02]"
+                                    : "border-white/30 hover:scale-[1.02] hover:border-white/60"
                             )}
-                            style={emailButtonStyle}
+                            style={{
+                                animation: `fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                                animationDelay: `${links.length * 0.15}s`,
+                                opacity: 0,
+                            }}
                         >
                             {/* Hover gradient - only show when NOT expanded */}
                             {!emailExpanded && (

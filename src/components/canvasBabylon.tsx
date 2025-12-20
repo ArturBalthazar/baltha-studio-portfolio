@@ -1940,6 +1940,10 @@ export function BabylonCanvas() {
     originalQuaternion: null as BABYLON.Quaternion | null
   });
 
+  // Free mode model rotation state - tracks when user is rotating the model in free mode
+  // When active, ship controls and camera rotation are disabled
+  const freeModeDraggingModelRef = useRef(false);
+
   // Model zoom state - moves model along axis from anchor to ship pivot when scrolling
   // Toggle-based: zoom in moves to a % of distance, zoom out returns to default
   const modelZoomRef = useRef({
@@ -4171,6 +4175,11 @@ export function BabylonCanvas() {
         const dt = scene.getEngine().getDeltaTime() * 0.001;
         const K = ShipControls.keys;
 
+        // Skip ship controls if user is rotating model in free mode
+        if (freeModeDraggingModelRef.current) {
+          return;
+        }
+
         // Drag control: Update direction and edge rotation every frame (works for both mobile and desktop)
         if (MC.isDragging) {
           // Check if pointer is near screen edges (10% threshold)
@@ -5430,17 +5439,19 @@ export function BabylonCanvas() {
     }
   }, [s, navigationMode]);
 
-  // Model rotation in guided mode - rotate model on Y axis freely, X axis with spring-back
+  // Model rotation in explore states - rotate model on Y axis freely, X axis with spring-back
+  // Works in both guided mode (click anywhere) and free mode (click on model only)
   useEffect(() => {
     const canvas = ref.current;
     const scene = sceneRef.current;
+    const camera = cameraRef.current;
     if (!canvas || !scene) return;
 
     const inExploreState = s >= S.state_4 && s <= S.state_7;
     const isGuidedMode = navigationMode === 'guided';
 
-    // Only enable model rotation in guided mode during explore states
-    if (!inExploreState || !isGuidedMode) {
+    // Only enable model rotation in explore states
+    if (!inExploreState) {
       return;
     }
 
@@ -5455,6 +5466,17 @@ export function BabylonCanvas() {
       }
     };
 
+    // Get all meshes for the current model (for picking)
+    const getCurrentModelMeshes = (): BABYLON.AbstractMesh[] => {
+      switch (s) {
+        case S.state_4: return carMeshesRef.current;
+        case S.state_5: return musecraftMeshesRef.current;
+        case S.state_6: return dioramasMeshesRef.current;
+        case S.state_7: return petwheelsMeshesRef.current;
+        default: return [];
+      }
+    };
+
     // Max peek angle in radians (~30 degrees)
     const maxPeekAngle = Math.PI / 12;
     // Resistance factor - higher = more resistance at extremes
@@ -5466,14 +5488,42 @@ export function BabylonCanvas() {
         return;
       }
 
-      // Only allow rotation if ship has arrived
-      if (!guidedModeArrivedRef.current) {
+      // Only allow rotation if ship has arrived (guided mode check)
+      if (isGuidedMode && !guidedModeArrivedRef.current) {
         console.log("🔄 Model rotation blocked - ship still traveling");
         return;
       }
 
       const model = getCurrentModel();
       if (!model) return;
+
+      // In free mode, check if user clicked on the model
+      if (!isGuidedMode) {
+        const modelMeshes = getCurrentModelMeshes();
+        if (modelMeshes.length === 0) return;
+
+        // Create a picking predicate to only pick model meshes
+        const pickPredicate = (mesh: BABYLON.AbstractMesh) => {
+          return modelMeshes.includes(mesh);
+        };
+
+        const pickResult = scene.pick(e.clientX, e.clientY, pickPredicate);
+
+        if (!pickResult || !pickResult.hit) {
+          // User didn't click on the model, don't rotate
+          return;
+        }
+
+        console.log("🔄 [Free Mode] Model clicked - starting rotation");
+
+        // Mark that we're rotating the model in free mode
+        freeModeDraggingModelRef.current = true;
+
+        // Disable camera controls in free mode during rotation
+        if (camera) {
+          camera.detachControl();
+        }
+      }
 
       modelRotationRef.current.isDragging = true;
       modelRotationRef.current.lastX = e.clientX;
@@ -5489,11 +5539,10 @@ export function BabylonCanvas() {
 
     const handlePointerMove = (e: PointerEvent) => {
       if (!modelRotationRef.current.isDragging) return;
-      if (!guidedModeArrivedRef.current) return;
+      if (isGuidedMode && !guidedModeArrivedRef.current) return;
       if (useUI.getState().isInteriorView) return;
 
       const model = getCurrentModel();
-      const camera = cameraRef.current;
       if (!model || !model.rotationQuaternion || !camera) return;
 
       const deltaX = e.clientX - modelRotationRef.current.lastX;
@@ -5551,6 +5600,19 @@ export function BabylonCanvas() {
         // Reset velocity to prevent momentum drift after release
         modelRotationRef.current.velocityY = 0;
         canvas.releasePointerCapture(e.pointerId);
+
+        // Re-enable camera and ship controls if we were in free mode
+        if (!isGuidedMode && freeModeDraggingModelRef.current) {
+          freeModeDraggingModelRef.current = false;
+
+          // Re-enable camera controls
+          if (camera) {
+            camera.inputs.addMouseWheel();
+            camera.inputs.addPointers();
+            camera.attachControl(canvas, true);
+          }
+          console.log("🔄 [Free Mode] Model rotation ended - controls restored");
+        }
       }
     };
 
@@ -5595,7 +5657,6 @@ export function BabylonCanvas() {
       // Update model rotation if anything changed
       if (needsUpdate) {
         const model = getCurrentModel();
-        const camera = cameraRef.current;
         if (model && model.rotationQuaternion && camera) {
           // Get camera right vector for tilt axis
           const cameraRight = camera.getDirection(BABYLON.Axis.X);
@@ -5633,6 +5694,9 @@ export function BabylonCanvas() {
       modelRotationRef.current.accumulatedYRotation = 0;
       modelRotationRef.current.velocityY = 0;
       modelRotationRef.current.originalQuaternion = null;
+
+      // Ensure free mode dragging state is reset
+      freeModeDraggingModelRef.current = false;
     };
   }, [s, navigationMode]);
 

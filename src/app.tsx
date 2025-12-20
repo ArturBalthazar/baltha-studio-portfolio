@@ -276,16 +276,16 @@ export default function App() {
               )}
 
               {/* GEELY Car Customizer */}
-              <GeelyCustomizer visible={geelyCustomizerVisible && s !== S.state_3 && s !== S.state_final} />
+              <GeelyCustomizer visible={geelyCustomizerVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
 
               {/* Dioramas Panel */}
-              <DioramasPanel visible={dioramasPanelVisible && s !== S.state_3 && s !== S.state_final} />
+              <DioramasPanel visible={dioramasPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
 
               {/* Petwheels Panel */}
-              <PetwheelsPanel visible={petwheelsPanelVisible && s !== S.state_3 && s !== S.state_final} />
+              <PetwheelsPanel visible={petwheelsPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
 
               {/* Musecraft Panel */}
-              <MusecraftPanel visible={musecraftPanelVisible && s !== S.state_3 && s !== S.state_final} />
+              <MusecraftPanel visible={musecraftPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
 
               {/* Connect Overlay (State 5) */}
               {config.content.showConnectOverlay && (

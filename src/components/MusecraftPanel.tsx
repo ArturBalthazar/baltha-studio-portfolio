@@ -7,8 +7,8 @@ interface MusecraftPanelProps {
 
 // Shared content configuration - single source of truth for both mobile and desktop
 const musecraftContent = {
-    title: "Musecraft.xyz",
-    titleMobile: "Musecraft",
+    title: "Musecraft Editor",
+    titleMobile: "Musecraft Editor",
     subtitle: "Create interactive 3D scenes for the web in our collaborative web editor.",
     text1: "A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.",
     image: "/assets/images/musecraft/editor.png",
@@ -163,6 +163,10 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
                         {content.subtitle}
+                        {/* Tap to see more hint */}
+                        <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
+                            <span className="text-xs font-mono">⮟ Tap to see more</span>
+                        </div>
                     </div>
                 )}
 
