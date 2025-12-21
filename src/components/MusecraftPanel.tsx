@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from "react";
 import cx from "classnames";
+import { useI18n } from "../i18n";
 
 interface MusecraftPanelProps {
     visible: boolean;
 }
 
-// Shared content configuration - single source of truth for both mobile and desktop
-const musecraftContent = {
-    title: "Musecraft Editor",
-    titleMobile: "Musecraft Editor",
-    subtitle: "Create interactive 3D scenes for the web in our collaborative web editor.",
-    text1: "A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.",
+// Config for non-text values (images)
+const musecraftConfig = {
     image: "/assets/images/musecraft/editor.png",
-    text2: "Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.",
-    text3: "Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow."
 };
 
 // Custom scrollbar styles
@@ -23,6 +18,8 @@ const scrollbarStyles: React.CSSProperties = {
 };
 
 export function MusecraftPanel({ visible }: MusecraftPanelProps) {
+    const { t } = useI18n();
+
     return (
         <>
             {/* Desktop: Left side panel */}
@@ -37,9 +34,9 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
                 {/* Fixed Header - Title aligned left */}
                 <div className="flex-shrink-0 px-5 pt-5 pb-3">
                     <h2 className="font-sans text-2xl mb-1 font-semibold text-white text-left">
-                        {musecraftContent.title}
+                        {t.musecraft.title}
                     </h2>
-                    <span className="font-mono text-sm font-light text-white">{musecraftContent.subtitle}</span>
+                    <span className="font-mono text-sm font-light text-white">{t.musecraft.subtitle}</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -67,35 +64,36 @@ export function MusecraftPanel({ visible }: MusecraftPanelProps) {
 
                         {/* First text block */}
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            {musecraftContent.text1}
+                            {t.musecraft.text1}
                         </p>
 
                         <div className="w-full rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-black">
                             <img
-                                src={musecraftContent.image}
+                                src={musecraftConfig.image}
                                 alt="Editor preview"
                                 className="w-full h-full object-fit"
                             />
                         </div>
 
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            {musecraftContent.text2}
+                            {t.musecraft.text2}
                         </p>
                         <p className="font-mono text-sm font-light text-white/90 leading-relaxed">
-                            {musecraftContent.text3}
+                            {t.musecraft.text3}
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Mobile: Top collapsible panel */}
-            <MobileMusecraftPanel visible={visible} content={musecraftContent} />
+            <MobileMusecraftPanel visible={visible} />
         </>
     );
 }
 
 // Separate mobile component for cleaner code
-function MobileMusecraftPanel({ visible, content }: { visible: boolean; content: typeof musecraftContent }) {
+function MobileMusecraftPanel({ visible }: { visible: boolean }) {
+    const { t } = useI18n();
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Reset to collapsed when visible becomes true
@@ -115,6 +113,7 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
+            style={{ maxWidth: "380px", margin: "0 auto" }}
         >
             {/* Glow effect - only visible when collapsed */}
             <div
@@ -142,7 +141,7 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
                         className="font-sans text-lg font-semibold text-white text-left flex-1 cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        {content.titleMobile}
+                        {t.musecraft.title}
                     </h2>
 
                     <img
@@ -162,10 +161,15 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
                         className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        {content.subtitle}
+                        {t.musecraft.subtitle}
                         {/* Tap to see more hint */}
-                        <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
-                            <span className="text-xs font-mono">⮟ Tap to see more</span>
+                        <div className="flex justify-center items-center gap-1.5 mt-2 -mb-2 text-white/60">
+                            <img
+                                src="/assets/images/state_arrow.png"
+                                alt="Expand"
+                                className="w-4 h-2.5 rotate-90"
+                            />
+                            <span className="text-xs font-mono">{t.geely.tapToSeeMore}</span>
                         </div>
                     </div>
                 )}
@@ -195,13 +199,13 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
                             <div className="flex flex-col gap-3 mobile-musecraft-scroll">
                                 {/* First text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    {content.text1}
+                                    {t.musecraft.text1}
                                 </p>
 
                                 {/* Image */}
                                 <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0 bg-black">
                                     <img
-                                        src={content.image}
+                                        src={musecraftConfig.image}
                                         alt="Editor preview"
                                         className="w-full h-full object-cover"
                                     />
@@ -209,12 +213,12 @@ function MobileMusecraftPanel({ visible, content }: { visible: boolean; content:
 
                                 {/* Second text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    {content.text2}
+                                    {t.musecraft.text2}
                                 </p>
 
                                 {/* Third text block */}
                                 <p className="font-mono text-xs font-light text-white/90 leading-relaxed">
-                                    {content.text3}
+                                    {t.musecraft.text3}
                                 </p>
                             </div>
                         </div>

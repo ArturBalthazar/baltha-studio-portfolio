@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
+import { useI18n } from "../i18n";
 
 // Typing Label Component
 const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
@@ -26,6 +27,7 @@ const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
 };
 
 export function ConnectOverlay() {
+    const { t } = useI18n();
     const [emailExpanded, setEmailExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
     const emailButtonRef = useRef<HTMLButtonElement>(null);
@@ -150,7 +152,7 @@ export function ConnectOverlay() {
     return (
         <div className="w-full h-full relative overflow-hidden flex items-start justify-center pointer-events-none">
             <div className="w-full md:max-w-sm max-w-xs p-6 flex flex-col items-center pointer-events-auto">
-                <h2 className="font-sans text-white text-3xl font-medium mb-8 select-none">Let's connect!</h2>
+                <h2 className="font-sans text-white text-3xl font-medium mb-8 select-none">{t.connect.title}</h2>
 
                 <div className="w-full flex flex-col gap-4">
                     {links.map((link, index) => (
@@ -227,7 +229,7 @@ export function ConnectOverlay() {
                                     <img src="/assets/images/email.png" alt="Email" className="w-full h-full object-contain" />
                                 </span>
                                 <span className="text-white text-lg font-thin font-mono tracking-wide">
-                                    <TypingLabel text="Email" delay={links.length * 150} />
+                                    <TypingLabel text={t.connect.email} delay={links.length * 150} />
                                 </span>
                             </div>
                         </button>
@@ -262,13 +264,13 @@ export function ConnectOverlay() {
                                         onClick={handleCopyEmail}
                                         className="flex-1 h-9 rounded-lg bg-brand-dark/80 hover:bg-brand-dark text-white text-sm font-medium transition-colors flex items-center justify-center font-mono border border-white/20"
                                     >
-                                        {copied ? "Copied!" : "Copy"}
+                                        {copied ? t.connect.copied : t.connect.copy}
                                     </button>
                                     <button
                                         onClick={handleSendEmail}
                                         className="flex-1 h-9 rounded-lg bg-brand-dark/80 hover:bg-brand-dark text-white text-sm font-medium transition-colors flex items-center justify-center font-mono border border-white/20"
                                     >
-                                        Send
+                                        {t.connect.send}
                                     </button>
                                 </div>
                             </div>

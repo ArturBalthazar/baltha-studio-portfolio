@@ -18,6 +18,7 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { ConnectOverlay } from "./components/ConnectOverlay";
 import { NavigationMenu } from "./components/NavigationMenu";
 import { SideTriggerOverlay } from "./components/SideTriggerOverlay";
+import { useI18n } from "./i18n";
 
 export default function App() {
   const s = useUI((st) => st.state);
@@ -29,6 +30,7 @@ export default function App() {
   const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
   const isInteriorView = useUI((st) => st.isInteriorView);
   const { setChatOpen, setMenuOpen, setIsInteriorView } = useUI();
+  const { t } = useI18n();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
 
@@ -179,10 +181,10 @@ export default function App() {
               />
 
               {/* Typing text overlay - appears at top-left */}
-              {config.content.showTypingText && config.content.typingText && (
+              {config.content.showTypingText && (
                 <div className="absolute top-8 left-8 right-8 md:left-16 md:right-16 md:top-12 z-20">
                   <TypingText
-                    text={config.content.typingText}
+                    text={t.state3.typingText}
                     startDelay={500}
                     typingSpeed={25}
                     className="text-brand-white text-lg md:text-2xl"

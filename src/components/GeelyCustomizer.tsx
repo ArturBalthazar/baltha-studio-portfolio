@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
+import { useI18n } from "../i18n";
 
 interface GeelyCustomizerProps {
     visible: boolean;
@@ -9,11 +10,8 @@ interface GeelyCustomizerProps {
     onToggleView?: () => void;
 }
 
-// Shared content configuration - single source of truth for both mobile and desktop
-const geelyContent = {
-    title: "GEELY Customizer",
-    titleMobile: "GEELY Customizer",
-    subtitle: "We create everything from 3D car configurators to test-drive tracks, virtual showrooms and much more.",
+// Content configuration (non-text values only - text comes from translations)
+const geelyConfig = {
     colors: ["green", "gray", "white", "silver"] as const,
     versions: [
         { id: "pro", label: "EX2 PRO" },
@@ -45,6 +43,7 @@ export function GeelyCustomizer({
     const geelyCustomizeCallback = useUI((st) => st.geelyCustomizeCallback);
     const isInteriorView = useUI((st) => st.isInteriorView);
     const setIsInteriorView = useUI((st) => st.setIsInteriorView);
+    const { t } = useI18n();
 
     // Handle interior view changes - save/restore expand states
     useEffect(() => {
@@ -136,7 +135,7 @@ export function GeelyCustomizer({
         >
             <img
                 src={`/assets/images/body_${color}.png`}
-                alt={color}
+                alt={t.geely.bodyColor}
                 className={cx(
                     "object-contain rounded-lg",
                     isMobile ? "w-[100%] h-[100%]" : "w-full h-full"
@@ -150,7 +149,7 @@ export function GeelyCustomizer({
     );
 
     // Shared version button renderer
-    const renderVersionButton = (version: typeof geelyContent.versions[number], isMobile: boolean = false) => {
+    const renderVersionButton = (version: typeof geelyConfig.versions[number], isMobile: boolean = false) => {
         const isSelected = selectedVersion === version.id;
 
         return (
@@ -209,10 +208,10 @@ export function GeelyCustomizer({
         >
             <img
                 src={isInteriorView ? "/assets/images/exterior.png" : "/assets/images/interior.png"}
-                alt={isInteriorView ? "Exterior" : "Interior"}
+                alt={isInteriorView ? t.geely.exteriorView : t.geely.interiorView}
                 className="w-5 h-5"
             />
-            {isInteriorView ? "Exterior view" : "Interior view"}
+            {isInteriorView ? t.geely.exteriorView : t.geely.interiorView}
         </button>
     );
 
@@ -229,18 +228,18 @@ export function GeelyCustomizer({
             )}>
                 <div className="flex flex-col gap-4 p-5 overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-thumb-white/40">
                     {/* Header */}
-                    <h2 className="font-sans text-2xl font-semibold text-white">{geelyContent.title}</h2>
-                    <span className="-mt-2 font-mono text-sm font-light text-white">{geelyContent.subtitle}</span>
+                    <h2 className="font-sans text-2xl font-semibold text-white">{t.geely.title}</h2>
+                    <span className="-mt-2 font-mono text-sm font-light text-white">{t.geely.subtitle}</span>
 
                     <div className="h-px bg-white/40 -mt-2 w-full flex-shrink-0" />
 
                     {/* Body Color */}
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center font-mono text-sm font-light text-white/90">
-                            <span>Body Color</span>
+                            <span>{t.geely.bodyColor}</span>
                         </div>
                         <div className="flex gap-2">
-                            {geelyContent.colors.map((color) => renderColorButton(color, false))}
+                            {geelyConfig.colors.map((color) => renderColorButton(color, false))}
                         </div>
                     </div>
 
@@ -249,10 +248,10 @@ export function GeelyCustomizer({
                     {/* Version */}
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center font-mono text-sm font-light text-white/90">
-                            <span>Version</span>
+                            <span>{t.geely.version}</span>
                         </div>
                         <div className="flex gap-3">
-                            {geelyContent.versions.map((version) => renderVersionButton(version, false))}
+                            {geelyConfig.versions.map((version) => renderVersionButton(version, false))}
                         </div>
                     </div>
 
@@ -273,6 +272,7 @@ export function GeelyCustomizer({
                         ? "opacity-100 translate-y-0"
                         : "opacity-0 -translate-y-10 pointer-events-none"
                 )}
+                style={{ maxWidth: "380px", margin: "0 auto" }}
             >
                 {/* Glow effect - only visible when collapsed */}
                 <div
@@ -296,7 +296,7 @@ export function GeelyCustomizer({
                         className="flex items-center justify-between p-4 pt-3 pb-2 cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        <h2 className="font-sans text-xl font-semibold text-white ">{geelyContent.titleMobile}</h2>
+                        <h2 className="font-sans text-xl font-semibold text-white ">{t.geely.title}</h2>
                         <img
                             src="/assets/images/state_arrow.png"
                             alt="Expand"
@@ -313,10 +313,15 @@ export function GeelyCustomizer({
                             className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
-                            {geelyContent.subtitle}
+                            {t.geely.subtitle}
                             {/* Tap to see more hint */}
-                            <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
-                                <span className="text-xs font-mono">⮟ Tap to see more</span>
+                            <div className="flex justify-center items-center gap-1.5 mt-2 -mb-2 text-white/60">
+                                <img
+                                    src="/assets/images/state_arrow.png"
+                                    alt="Expand"
+                                    className="w-4 h-2.5 rotate-90"
+                                />
+                                <span className="text-xs font-mono">{t.geely.tapToSeeMore}</span>
                             </div>
                         </div>
                     )}
@@ -332,7 +337,7 @@ export function GeelyCustomizer({
                                     className="flex justify-between items-center py-3 cursor-pointer"
                                     onClick={handleBodyColorToggle}
                                 >
-                                    <span className="font-mono text-sm font-light text-white">Body Color</span>
+                                    <span className="font-mono text-sm font-light text-white">{t.geely.bodyColor}</span>
                                     <img
                                         src="/assets/images/state_arrow.png"
                                         alt="Expand"
@@ -344,7 +349,7 @@ export function GeelyCustomizer({
                                 </div>
                                 {isBodyColorExpanded && (
                                     <div className="flex gap-2 flex-wrap pb-3">
-                                        {geelyContent.colors.map((color) => renderColorButton(color, true))}
+                                        {geelyConfig.colors.map((color) => renderColorButton(color, true))}
                                     </div>
                                 )}
                             </div>
@@ -357,7 +362,7 @@ export function GeelyCustomizer({
                                     className="flex justify-between items-center py-3 cursor-pointer"
                                     onClick={handleVersionToggle}
                                 >
-                                    <span className="font-mono text-sm font-light text-white">Version</span>
+                                    <span className="font-mono text-sm font-light text-white">{t.geely.version}</span>
                                     <img
                                         src="/assets/images/state_arrow.png"
                                         alt="Expand"
@@ -369,7 +374,7 @@ export function GeelyCustomizer({
                                 </div>
                                 {isVersionExpanded && (
                                     <div className="flex gap-2.5 flex-wrap pb-3">
-                                        {geelyContent.versions.map((version) => renderVersionButton(version, true))}
+                                        {geelyConfig.versions.map((version) => renderVersionButton(version, true))}
                                     </div>
                                 )}
                             </div>

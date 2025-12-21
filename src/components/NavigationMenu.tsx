@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
+import { useI18n } from "../i18n";
 
 interface Point {
   x: number;           // percentage (0-100)
@@ -15,21 +16,21 @@ interface NavigationMenuProps {
   onClose: () => void;
 }
 
-// Menu items configuration
+// Menu items configuration - using labelKey for translation lookup
 interface MenuItem {
   id: string;
-  label: string;
+  labelKey: 'welcome' | 'carCustomizer' | 'musecraftEditor' | 'digitalDioramas' | 'petwheels' | 'letsConnect';
   icon: string;
   pathPercent: number; // Position along the path (0-1)
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'what-we-do', label: 'Welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
-  { id: 'car-customizer', label: 'Car\nCustomizer', icon: '/assets/images/car.png', pathPercent: 0.18 },
-  { id: 'musecraft', label: 'Musecraft\nEditor', icon: '/assets/images/musecraft-outline.png', pathPercent: 0.39 },
-  { id: 'dioramas', label: 'Digital\nDioramas', icon: '/assets/images/diorama.png', pathPercent: 0.57 },
-  { id: 'petwheels', label: 'Petwheels', icon: '/assets/images/dog.png', pathPercent: 0.76 },
-  { id: 'connect', label: "Let's\nConnect!", icon: '/assets/images/connect.png', pathPercent: 1 },
+  { id: 'what-we-do', labelKey: 'welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
+  { id: 'car-customizer', labelKey: 'carCustomizer', icon: '/assets/images/car.png', pathPercent: 0.18 },
+  { id: 'musecraft', labelKey: 'musecraftEditor', icon: '/assets/images/musecraft-outline.png', pathPercent: 0.39 },
+  { id: 'dioramas', labelKey: 'digitalDioramas', icon: '/assets/images/diorama.png', pathPercent: 0.57 },
+  { id: 'petwheels', labelKey: 'petwheels', icon: '/assets/images/dog.png', pathPercent: 0.76 },
+  { id: 'connect', labelKey: 'letsConnect', icon: '/assets/images/connect.png', pathPercent: 1 },
 ];
 
 // Desktop points - horizontal S-curve pattern (7 points)
@@ -368,6 +369,7 @@ function isTouchDevice(): boolean {
 }
 
 export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const [pathD, setPathD] = useState("");
@@ -848,7 +850,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              console.log(`Clicked: ${item.label}`);
+              console.log(`Clicked: ${item.labelKey}`);
 
               // Map menu items to states
               const stateMap: Record<string, S> = {
@@ -890,7 +892,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
           >
             <img
               src={item.icon}
-              alt={item.label}
+              alt={t.menu[item.labelKey]}
               className={cx(
                 "select-none mb-2",
                 // Car icon is slightly bigger
@@ -906,7 +908,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
                 isMobile ? "text-sm" : "text-base"
               )}
             >
-              {item.label}
+              {t.menu[item.labelKey]}
             </span>
           </button>
         );

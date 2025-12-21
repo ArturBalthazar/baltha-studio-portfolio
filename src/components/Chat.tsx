@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
+import { useI18n } from "../i18n";
 
 interface Message {
   id: string;
@@ -88,10 +89,13 @@ export function Chat({ className = "", onClose }: ChatProps) {
     };
   };
 
+  // Get translations
+  const { t } = useI18n();
+
   const suggestions = [
-    "What is Baltha Studio specialized in?",
-    "Which projects have you worked on?",
-    "How do I get in touch or start a project?",
+    t.chat.suggestion1,
+    t.chat.suggestion2,
+    t.chat.suggestion3,
   ];
 
   const scrollToBottom = () => {
@@ -156,7 +160,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
       addMessage(data.response, "bot");
     } catch (error) {
       console.error("Error:", error);
-      addMessage("Oops! Something went wrong.", "bot");
+      addMessage(t.chat.errorMessage, "bot");
     } finally {
       setIsTyping(false);
     }
@@ -239,8 +243,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
             className="w-10 h-10 rounded-full border-[3px] border-white mr-3"
           />
           <div className="flex-1">
-            <div className="font-bold">Artur Balthazar</div>
-            <div className="text-sm opacity-90">Director at Baltha Studio</div>
+            <div className="font-bold">{t.chat.headerTitle}</div>
+            <div className="text-sm opacity-90">{t.chat.headerSubtitle}</div>
           </div>
           <button
             onClick={handleClose}
@@ -327,7 +331,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message here..."
+            placeholder={t.chat.placeholder}
             className="w-full resize-none border-0 outline-none bg-transparent font-mono text-xs text-brand-dark/70 max-h-[60px] overflow-y-auto leading-5"
             rows={1}
             style={{ minHeight: "10px" }}

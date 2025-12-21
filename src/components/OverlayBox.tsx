@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import cx from "classnames";
 import { S, useUI } from "../state";
+import { useI18n } from "../i18n";
 
 interface OverlayBoxProps {
   visible: boolean;
@@ -22,6 +23,7 @@ export function OverlayBox({
   const [showBox, setShowBox] = useState(false);
 
   // Get global state
+  const { t } = useI18n();
   const navigationMode = useUI((st) => st.navigationMode);
   const audioEnabled = useUI((st) => st.audioEnabled);
   const { setNavigationMode, setAudioEnabled } = useUI();
@@ -35,12 +37,12 @@ export function OverlayBox({
     }
   }, [visible, delay]);
 
-  // State 3 content - navigation mode selection
+  // State 3 content - navigation mode selection (using translations)
   const state3Content = {
-    title: "Navigation",
+    title: t.state3.navigationTitle,
     buttons: [
-      { icon: "/assets/images/guided_mode.png", label: "Guided", selected: navigationMode === 'guided' },
-      { icon: "/assets/images/free_mode.png", label: "Free", selected: navigationMode === 'free' },
+      { icon: "/assets/images/guided_mode.png", label: t.state3.guided, selected: navigationMode === 'guided' },
+      { icon: "/assets/images/free_mode.png", label: t.state3.free, selected: navigationMode === 'free' },
     ],
   };
 
@@ -174,7 +176,7 @@ export function OverlayBox({
               {/* Audio Section */}
               <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                 {/* Audio Title */}
-                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-1 sm:mb-2">Audio</h2>
+                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-1 sm:mb-2">{t.state3.audioTitle}</h2>
 
                 {/* Audio Toggle Button */}
                 <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
@@ -185,7 +187,7 @@ export function OverlayBox({
                       "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
                       "pointer-events-auto"
                     )}
-                    title={audioEnabled ? "Turn audio off" : "Turn audio on"}
+                    title={audioEnabled ? t.controls.turnAudioOff : t.controls.turnAudioOn}
                   >
                     {/* non-selected (audio off) subtle outline */}
                     {!audioEnabled && (
@@ -229,7 +231,7 @@ export function OverlayBox({
 
                   {/* Audio Label - invisible but keeps layout */}
                   <span className="font-mono text-white/0 text-xs sm:text-base select-none">
-                    {audioEnabled ? "On" : "Off"}
+                    {audioEnabled ? t.state3.on : t.state3.off}
                   </span>
                 </div>
               </div>

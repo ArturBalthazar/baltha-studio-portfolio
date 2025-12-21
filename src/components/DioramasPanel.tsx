@@ -1,36 +1,31 @@
 import React, { useState, useEffect } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
+import { useI18n } from "../i18n";
 
 interface DioramasPanelProps {
     visible: boolean;
 }
 
-// Content configuration for each diorama model
-const dioramaContent = [
+// Content configuration - images only, text comes from translations
+const dioramaConfig = [
     {
         id: "sesc-museum",
         file: "sesc-museum.glb",
-        title: "Florianópolis Museum",
-        text1: "We partnered with SESC to build a 3D printable scale model of the Florianópolis Museum that was about to open in the historic center of city.",
+        translationKey: "florianopolisMuseum" as const,
         image: "/assets/images/dioramas/florianopolis-museum.png",
-        text2: "This is a 100cm x 85cm x 60cm model placed in the entrance room of the museum. Entirely covered with epoxy resin, it's intended to last for several years as a tactile model."
     },
     {
         id: "sesc-island",
         file: "sesc-island.glb",
-        title: "Santa Catarina Island",
-        text1: "Also as part of the Florianópolis Museum project with SESC, we created this 3m x 1m scale model of the Santa Catarina Island where the museum lives.",
+        translationKey: "santaCatarinaIsland" as const,
         image: "/assets/images/dioramas/island-museum.png",
-        text2: "This is also a tactile model of the real island relief, with a vertical scale factor of 2.5x, and and entire room dedicated for it."
     },
     {
         id: "dioramas",
         file: "dioramas.gltf",
-        title: "Santa Catarina School Museum",
-        text1: "Also an important building of the historic center of Florianópolis is the Santa Catarina School, which later became not only a museum, but a center for creativity and innovation with the CoCreation Lab, a startup incubator coworking space.",
+        translationKey: "catarinenseMuseum" as const,
         image: "/assets/images/dioramas/catarinense-museum.png",
-        text2: "Following the previous trend, we were also contacted to make a 3D printable scale model of the building."
     }
 ];
 
@@ -41,20 +36,22 @@ const scrollbarStyles: React.CSSProperties = {
 };
 
 export function DioramasPanel({ visible }: DioramasPanelProps) {
+    const { t } = useI18n();
     const selectedDioramaModel = useUI((st) => st.selectedDioramaModel);
     const setSelectedDioramaModel = useUI((st) => st.setSelectedDioramaModel);
 
     // For animation when switching models
     const [isAnimating, setIsAnimating] = useState(false);
 
-    const currentContent = dioramaContent[selectedDioramaModel];
+    const currentConfig = dioramaConfig[selectedDioramaModel];
+    const currentContent = t.dioramas[currentConfig.translationKey];
 
     const handlePrevious = () => {
         if (isAnimating) return;
         setIsAnimating(true);
 
         const newIndex = selectedDioramaModel === 0
-            ? dioramaContent.length - 1
+            ? dioramaConfig.length - 1
             : selectedDioramaModel - 1;
         setSelectedDioramaModel(newIndex);
 
@@ -65,7 +62,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
         if (isAnimating) return;
         setIsAnimating(true);
 
-        const newIndex = selectedDioramaModel === dioramaContent.length - 1
+        const newIndex = selectedDioramaModel === dioramaConfig.length - 1
             ? 0
             : selectedDioramaModel + 1;
         setSelectedDioramaModel(newIndex);
@@ -93,7 +90,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
                     )}>
                         {currentContent.title}
                     </h2>
-                    <span className="font-mono text-sm font-light text-white">In 2018, Baltha Studio started as a 3D printing business, and then moved to the digital space.</span>
+                    <span className="font-mono text-sm font-light text-white">{t.dioramas.subtitle}</span>
                     <div className="h-px bg-white/40 w-full mt-3" />
                 </div>
 
@@ -129,7 +126,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
                         {/* Image */}
                         <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
                             <img
-                                src={currentContent.image}
+                                src={currentConfig.image}
                                 alt={currentContent.title}
                                 className="w-full h-full object-cover"
                             />
@@ -159,7 +156,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
 
                         {/* Navigation dots */}
                         <div className="flex items-center gap-2">
-                            {dioramaContent.map((_, index) => (
+                            {dioramaConfig.map((_, index) => (
                                 <button
                                     key={index}
                                     onClick={() => {
@@ -198,6 +195,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
             {/* Mobile: Top collapsible panel */}
             <MobileDioramasPanel
                 visible={visible}
+                currentConfig={currentConfig}
                 currentContent={currentContent}
                 selectedIndex={selectedDioramaModel}
                 isAnimating={isAnimating}
@@ -218,6 +216,7 @@ export function DioramasPanel({ visible }: DioramasPanelProps) {
 // Separate mobile component for cleaner code
 function MobileDioramasPanel({
     visible,
+    currentConfig,
     currentContent,
     selectedIndex,
     isAnimating,
@@ -226,13 +225,15 @@ function MobileDioramasPanel({
     onDotClick
 }: {
     visible: boolean;
-    currentContent: typeof dioramaContent[0];
+    currentConfig: typeof dioramaConfig[0];
+    currentContent: { title: string; text1: string; text2: string; };
     selectedIndex: number;
     isAnimating: boolean;
     onPrevious: () => void;
     onNext: () => void;
     onDotClick: (index: number) => void;
 }) {
+    const { t } = useI18n();
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Reset to collapsed when visible becomes true
@@ -252,6 +253,7 @@ function MobileDioramasPanel({
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
+            style={{ maxWidth: "380px", margin: "0 auto" }}
         >
             {/* Glow effect - only visible when collapsed */}
             <div
@@ -303,10 +305,15 @@ function MobileDioramasPanel({
                         className="font-mono text-sm p-4 pt-0 font-light text-white cursor-pointer"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        In 2018, Baltha Studio started as a 3D printing business before moving to the digital space.
+                        {t.dioramas.subtitleMobile}
                         {/* Tap to see more hint */}
-                        <div className="flex justify-center items-center mt-2 -mb-2 text-white/60">
-                            <span className="text-xs font-mono">⮟ Tap to see more</span>
+                        <div className="flex justify-center items-center gap-1.5 mt-2 -mb-2 text-white/60">
+                            <img
+                                src="/assets/images/state_arrow.png"
+                                alt="Expand"
+                                className="w-4 h-2.5 rotate-90"
+                            />
+                            <span className="text-xs font-mono">{t.geely.tapToSeeMore}</span>
                         </div>
                     </div>
                 )}
@@ -346,7 +353,7 @@ function MobileDioramasPanel({
                                     {/* Image */}
                                     <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-white/50 flex-shrink-0">
                                         <img
-                                            src={currentContent.image}
+                                            src={currentConfig.image}
                                             alt={currentContent.title}
                                             className="w-full h-full object-cover"
                                         />
@@ -376,7 +383,7 @@ function MobileDioramasPanel({
 
                                     {/* Navigation dots */}
                                     <div className="flex items-center gap-2">
-                                        {dioramaContent.map((_, index) => (
+                                        {dioramaConfig.map((_: typeof dioramaConfig[0], index: number) => (
                                             <button
                                                 key={index}
                                                 onClick={() => onDotClick(index)}
@@ -398,6 +405,8 @@ function MobileDioramasPanel({
                                     >
                                         <img
                                             src="/assets/images/state_arrow.png"
+                                            alt="Next"
+                                            className="w-5 h-5 opacity-60"
                                         />
                                     </button>
                                 </div>
@@ -410,6 +419,5 @@ function MobileDioramasPanel({
     );
 }
 
-// Export the diorama content for use in canvasBabylon.tsx
-export { dioramaContent };
-
+// Export the diorama config for use in canvasBabylon.tsx
+export { dioramaConfig };
