@@ -78,8 +78,8 @@ export function LanguageSelector({ visible, isWhite = false, isLarge = false }: 
                     "cursor-pointer overflow-hidden",
                     // Size variants based on isLarge
                     isLarge
-                        ? "h-[36px] sm:h-[42px] pl-[4px] pr-[10px] sm:pr-[12px]"
-                        : "h-[30px] sm:h-[36px] pl-[3px] pr-[8px] sm:pr-[10px]"
+                        ? "h-[36px] sm:h-[36px] pl-[4px] pr-[10px] sm:pr-[12px]"
+                        : "h-[30px] sm:h-[34px] pl-[3px] pr-[8px] sm:pr-[10px]"
                 )}
                 style={{
                     backgroundColor: '#08142801',
@@ -99,8 +99,8 @@ export function LanguageSelector({ visible, isWhite = false, isLarge = false }: 
                         "transition-all duration-500 overflow-hidden",
                         // Size variants based on isLarge
                         isLarge
-                            ? "w-[28px] h-[28px] sm:w-[36px] sm:h-[36px]"
-                            : "w-[24px] h-[24px] sm:w-[30px] sm:h-[30px]"
+                            ? "w-[28px] h-[28px] sm:w-[30px] sm:h-[30px]"
+                            : "w-[24px] h-[24px] sm:w-[28px] sm:h-[28px]"
                     )}
                     style={{
                         backgroundColor: 'rgba(255, 255, 255, 0.2)',

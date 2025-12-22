@@ -127,21 +127,21 @@ export function ConnectOverlay() {
             action: handleBalthaStudioClick
         },
         {
-            label: "LinkedIn",
+            label: t.connect.linkedin,
             url: "#",
             icon: "/assets/images/linkedin.png",
             type: "action",
             action: handleLinkedInClick
         },
         {
-            label: "Instagram",
+            label: t.connect.instagram,
             url: "#",
             icon: "/assets/images/instagram.png",
             type: "action",
             action: handleInstagramClick
         },
         {
-            label: "WhatsApp",
+            label: t.connect.whatsapp,
             url: "https://wa.me/554891287795?text=Hello%2C%20I%27d%20like%20to%20get%20in%20touch%21",
             icon: "/assets/images/whatsapp.png",
             type: "link"

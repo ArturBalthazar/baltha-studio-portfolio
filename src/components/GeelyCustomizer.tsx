@@ -37,8 +37,10 @@ export function GeelyCustomizer({
         isVersionExpanded: boolean;
     } | null>(null);
 
-    const [selectedColor, setSelectedColor] = useState("green");
-    const [selectedVersion, setSelectedVersion] = useState("max"); // Default to EX2 MAX
+    const selectedColor = useUI((st) => st.geelyColor);
+    const setSelectedColor = useUI((st) => st.setGeelyColor);
+    const selectedVersion = useUI((st) => st.geelyVersion);
+    const setSelectedVersion = useUI((st) => st.setGeelyVersion);
 
     const geelyCustomizeCallback = useUI((st) => st.geelyCustomizeCallback);
     const isInteriorView = useUI((st) => st.isInteriorView);

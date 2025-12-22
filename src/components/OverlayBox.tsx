@@ -223,7 +223,7 @@ export function OverlayBox({
                     <span className="relative z-10 text-white flex items-center justify-center">
                       <img
                         src={audioEnabled ? "/assets/images/audio_on.png" : "/assets/images/audio_off.png"}
-                        alt={audioEnabled ? "Audio On" : "Audio Off"}
+                        alt={audioEnabled ? "On" : "Off"}
                         className="w-[70%] h-[70%] object-contain"
                       />
                     </span>

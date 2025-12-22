@@ -3,11 +3,17 @@ import cx from "classnames";
 import { useUI, S } from "../state";
 import { useI18n } from "../i18n";
 
+interface ChatAction {
+  label: string;
+  type: 'whatsapp' | 'email' | 'linkedin' | 'instagram' | 'home';
+}
+
 interface Message {
   id: string;
   text: string;
   type: "user" | "bot";
   timestamp: Date;
+  actions?: ChatAction[];
 }
 
 // Context data sent with each message for more contextual AI responses
@@ -71,6 +77,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
   const selectedDioramaModel = useUI((st) => st.selectedDioramaModel);
   const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
   const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
+  const geelyColor = useUI((st) => st.geelyColor);
+  const geelyVersion = useUI((st) => st.geelyVersion);
 
   // Diorama model names for context
   const dioramaModelNames = ["sesc-museum", "sesc-island", "dioramas"];
@@ -81,6 +89,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
       state: state === S.state_final ? 99 : state,
       navMode: navigationMode,
       geelyVisible: geelyCustomizerVisible,
+      geelyColor: geelyCustomizerVisible ? geelyColor : undefined,
+      geelyVersion: geelyCustomizerVisible ? geelyVersion : undefined,
       geelyInterior: geelyCustomizerVisible ? isInteriorView : undefined,
       dioramaVisible: dioramasPanelVisible,
       dioramaModel: dioramasPanelVisible ? dioramaModelNames[selectedDioramaModel] : undefined,
@@ -126,14 +136,50 @@ export function Chat({ className = "", onClose }: ChatProps) {
       .replace(/\n/g, "<br>");
   };
 
-  const addMessage = (text: string, type: "user" | "bot") => {
+  const addMessage = (text: string, type: "user" | "bot", actions?: ChatAction[]) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       text,
       type,
       timestamp: new Date(),
+      actions,
     };
     setMessages((prev) => [...prev, newMessage]);
+  };
+
+  // Parse actions from bot response: [ACTIONS][{"label":"...","type":"..."}][/ACTIONS]
+  const parseResponse = (response: string): { text: string; actions?: ChatAction[] } => {
+    const match = response.match(/\[ACTIONS\](.*?)\[\/ACTIONS\]/s);
+    if (match) {
+      try {
+        const actions = JSON.parse(match[1]) as ChatAction[];
+        const text = response.replace(/\[ACTIONS\].*?\[\/ACTIONS\]/s, '').trim();
+        return { text, actions };
+      } catch { return { text: response }; }
+    }
+    return { text: response };
+  };
+
+  // Action handlers
+  const handleAction = (action: ChatAction) => {
+    switch (action.type) {
+      case 'whatsapp':
+        window.open('https://wa.me/554891287795?text=Hello%2C%20I%27d%20like%20to%20get%20in%20touch%21', '_blank');
+        break;
+      case 'email':
+        window.location.href = 'mailto:arturbalhazar@gmail.com';
+        break;
+      case 'linkedin':
+        window.open('https://www.linkedin.com/company/balthastudio', '_blank');
+        break;
+      case 'instagram':
+        window.open('https://instagram.com/baltha.studio', '_blank');
+        break;
+      case 'home':
+        useUI.getState().setNavigationMode('guided');
+        useUI.getState().setState(S.state_0);
+        break;
+    }
   };
 
   const sendMessage = async (message: string) => {
@@ -157,7 +203,8 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
-      addMessage(data.response, "bot");
+      const { text, actions } = parseResponse(data.response);
+      addMessage(text, "bot", actions);
     } catch (error) {
       console.error("Error:", error);
       addMessage(t.chat.errorMessage, "bot");
@@ -293,6 +340,19 @@ export function Chat({ className = "", onClose }: ChatProps) {
                 <div
                   dangerouslySetInnerHTML={{ __html: formatMarkdown(message.text) }}
                 />
+                {message.actions && message.actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-gray-300">
+                    {message.actions.map((action, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleAction(action)}
+                        className="px-2.5 py-1 text-xs bg-brand-dark/80 text-white rounded-lg hover:bg-brand-dark transition-colors"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}

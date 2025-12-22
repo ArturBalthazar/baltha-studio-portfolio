@@ -107,6 +107,10 @@ export interface TranslationKeys {
         copy: string;
         copied: string;
         send: string;
+        // Brand names - kept identical to prevent phone auto-translation
+        linkedin: string;
+        instagram: string;
+        whatsapp: string;
     };
 
     // Chat
@@ -134,7 +138,7 @@ export interface TranslationKeys {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "We design interactive web experiences with your brand's essence and accessible to all."
+            welcomeText: "We design interactive web experiences tailored to your brand's essence and accessible to all."
         },
         menu: {
             welcome: "Welcome",
@@ -149,8 +153,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "Guided",
             free: "Free",
             audioTitle: "Audio",
-            on: "On",
-            off: "Off",
+            on: "-",
+            off: "-",
             typingText: "Welcome to Baltha Studio! Choose a navigation mode to continue..."
         },
         controls: {
@@ -204,7 +208,10 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             email: "Email",
             copy: "Copy",
             copied: "Copied!",
-            send: "Send"
+            send: "Send",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",
@@ -241,8 +248,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "Guiado",
             free: "Livre",
             audioTitle: "Áudio",
-            on: "Ligado",
-            off: "Desligado",
+            on: "-",
+            off: "-",
             typingText: "Bem-vindo a Baltha Studio! Escolha um modo de navegação para continuar..."
         },
         controls: {
@@ -292,11 +299,14 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             text2: "O produto se diferencia de todos os outros no mercado devido às suas barras laterais flexíveis e foi patenteado como tal. Rapidamente ganhou atenção da mídia brasileira e algumas unidades foram vendidas."
         },
         connect: {
-            title: "Vamos conversar!",
+            title: "Vamos conectar!",
             email: "E-mail",
             copy: "Copiar",
             copied: "Copiado!",
-            send: "Enviar"
+            send: "Enviar",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",
@@ -333,8 +343,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "Guiado",
             free: "Libre",
             audioTitle: "Audio",
-            on: "Encendido",
-            off: "Apagado",
+            on: "-",
+            off: "-",
             typingText: "¡Bienvenido a Baltha Studio! Elige un modo de navegación para continuar..."
         },
         controls: {
@@ -388,7 +398,10 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             email: "Correo",
             copy: "Copiar",
             copied: "¡Copiado!",
-            send: "Enviar"
+            send: "Enviar",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",
@@ -425,8 +438,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "Geführt",
             free: "Frei",
             audioTitle: "Audio",
-            on: "An",
-            off: "Aus",
+            on: "-",
+            off: "-",
             typingText: "Willkommen bei Baltha Studio! Wählen Sie einen Navigationsmodus, um fortzufahren..."
         },
         controls: {
@@ -480,7 +493,10 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             email: "E-Mail",
             copy: "Kopieren",
             copied: "Kopiert!",
-            send: "Senden"
+            send: "Senden",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",
@@ -517,8 +533,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "Guidé",
             free: "Libre",
             audioTitle: "Audio",
-            on: "Activé",
-            off: "Désactivé",
+            on: "-",
+            off: "-",
             typingText: "Bienvenue chez Baltha Studio! Choisissez un mode de navigation pour continuer..."
         },
         controls: {
@@ -572,7 +588,10 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             email: "E-mail",
             copy: "Copier",
             copied: "Copié!",
-            send: "Envoyer"
+            send: "Envoyer",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",
@@ -609,8 +628,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             guided: "引导",
             free: "自由",
             audioTitle: "音频",
-            on: "开启",
-            off: "关闭",
+            on: "-",
+            off: "-",
             typingText: "欢迎来到Baltha Studio！选择导航模式以继续..."
         },
         controls: {
@@ -664,7 +683,10 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             email: "邮箱",
             copy: "复制",
             copied: "已复制！",
-            send: "发送"
+            send: "发送",
+            linkedin: "LinkedIn",
+            instagram: "Instagram",
+            whatsapp: "WhatsApp"
         },
         chat: {
             headerTitle: "Artur Balthazar",

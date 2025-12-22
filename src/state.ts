@@ -35,6 +35,10 @@ type UIState = {
   setGeelyCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
   isInteriorView: boolean;
   setIsInteriorView: (isInterior: boolean) => void;
+  geelyColor: string;
+  setGeelyColor: (color: string) => void;
+  geelyVersion: string;
+  setGeelyVersion: (version: string) => void;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
   sideTrigger: 'left' | 'right' | null; // Which side trigger is active for visual effect
@@ -74,6 +78,10 @@ export const useUI = create<UIState>((set, get) => ({
   setGeelyCustomizeCallback: (callback) => set({ geelyCustomizeCallback: callback }),
   isInteriorView: false,
   setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior }),
+  geelyColor: 'green',
+  setGeelyColor: (color) => set({ geelyColor: color }),
+  geelyVersion: 'max',
+  setGeelyVersion: (version) => set({ geelyVersion: version }),
   menuOpen: false,
   setMenuOpen: (open) => set({ menuOpen: open }),
   sideTrigger: null,
