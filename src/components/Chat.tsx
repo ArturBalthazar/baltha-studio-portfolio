@@ -167,7 +167,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
         window.open('https://wa.me/554891287795?text=Hello%2C%20I%27d%20like%20to%20get%20in%20touch%21', '_blank');
         break;
       case 'email':
-        window.location.href = 'mailto:arturbalhazar@gmail.com';
+        window.location.href = 'mailto:artur@baltha.studio';
         break;
       case 'linkedin':
         window.open('https://www.linkedin.com/company/balthastudio', '_blank');
