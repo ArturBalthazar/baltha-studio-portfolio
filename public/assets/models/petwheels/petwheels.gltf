@@ -2991,19 +2991,15 @@
 	],
 	"materials":[
 		{
+			"alphaMode":"BLEND",
 			"doubleSided":true,
-			"emissiveFactor":[
-				0.20000000298023224,
-				0.20000000298023224,
-				0.20000000298023224
-			],
 			"name":"Material.007",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					0.800000011920929,
 					0.800000011920929,
 					0.800000011920929,
-					1
+					0.5
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.5
@@ -3389,7 +3385,7 @@
 			"componentType":5126,
 			"count":161,
 			"max":[
-				20
+				33.333333333333336
 			],
 			"min":[
 				0
@@ -3413,7 +3409,7 @@
 			"componentType":5126,
 			"count":2,
 			"max":[
-				20
+				33.333333333333336
 			],
 			"min":[
 				0
