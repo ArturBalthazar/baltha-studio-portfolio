@@ -2994,6 +2994,8 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring1) {
           loadingRingsRef.current.ring1.hide();
         }
+      } catch {
+        // Silent catch - error loading GEELY car
       }
     };
 
@@ -3172,6 +3174,8 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring2) {
           loadingRingsRef.current.ring2.hide();
         }
+      } catch {
+        // Silent catch - error loading Musecraft model
       }
     };
 
@@ -3288,6 +3292,8 @@ export function BabylonCanvas() {
               mesh.setEnabled(false);
             });
             dioramaModelsRef.current.meshes[i] = modelMeshes;
+          } catch {
+            // Silent catch - error loading individual diorama model
           }
         }
 
@@ -3319,6 +3325,8 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring3) {
           loadingRingsRef.current.ring3.hide();
         }
+      } catch {
+        // Silent catch - error loading Dioramas models
       }
     };
 
@@ -3419,6 +3427,8 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring4) {
           loadingRingsRef.current.ring4.hide();
         }
+      } catch {
+        // Silent catch - error loading Petwheels model
       }
     };
 
