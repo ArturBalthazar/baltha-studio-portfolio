@@ -3385,7 +3385,7 @@ export function BabylonCanvas() {
     };
 
     // Load Dioramas models asynchronously (anchor_3, state 6)
-    // Loads 3 separate models: sesc-museum.glb, sesc-island.glb, dioramas.gltf
+    // Loads 3 separate models: sesc-museum.gltf, sesc-island.gltf, mesc-museum.gltf
     const loadDioramasAsync = async () => {
       console.log("🏛️ Starting Dioramas loading (async)...");
 
@@ -3393,9 +3393,9 @@ export function BabylonCanvas() {
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       const dioramaFiles = [
-        { name: "sesc-museum", file: "sesc-museum.glb" },
-        { name: "sesc-island", file: "sesc-island.glb" },
-        { name: "dioramas", file: "dioramas.gltf" }
+        { name: "sesc-museum", file: "sesc-museum.gltf" },
+        { name: "sesc-island", file: "sesc-island.gltf" },
+        { name: "mesc-museum", file: "mesc-museum.gltf" }
       ];
 
       try {

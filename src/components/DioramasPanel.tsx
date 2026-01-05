@@ -11,19 +11,19 @@ interface DioramasPanelProps {
 const dioramaConfig = [
     {
         id: "sesc-museum",
-        file: "sesc-museum.glb",
+        file: "sesc-museum.gltf",
         translationKey: "florianopolisMuseum" as const,
         image: "/assets/images/dioramas/florianopolis-museum.png",
     },
     {
         id: "sesc-island",
-        file: "sesc-island.glb",
+        file: "sesc-island.gltf",
         translationKey: "santaCatarinaIsland" as const,
         image: "/assets/images/dioramas/island-museum.png",
     },
     {
-        id: "dioramas",
-        file: "dioramas.gltf",
+        id: "mesc-museum",
+        file: "mesc-museum.gltf",
         translationKey: "catarinenseMuseum" as const,
         image: "/assets/images/dioramas/catarinense-museum.png",
     }
