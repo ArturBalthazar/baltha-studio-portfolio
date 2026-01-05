@@ -58,7 +58,6 @@ export function OverlayBox({
   // Handle audio toggle
   const handleAudioToggle = () => {
     setAudioEnabled(!audioEnabled);
-    console.log('Audio:', !audioEnabled ? 'OFF' : 'ON');
   };
 
   // Only render for state 3

@@ -48,12 +48,7 @@ export default function App() {
     }
   }, [chatOpen]);
 
-  const handleButtonClick = (index: number) => {
-    console.log(
-      `Button ${index} clicked:`,
-      config.content.overlayContent?.buttons[index]
-    );
-  };
+  const handleButtonClick = (index: number) => { };
 
   const navigationMode = useUI((st) => st.navigationMode);
 

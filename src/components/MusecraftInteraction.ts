@@ -176,41 +176,33 @@ function isMeshLike(node: any): node is BABYLON.AbstractMesh {
 function getFirstMeshChild(node: BABYLON.Node): BABYLON.AbstractMesh | null {
     // First check if node itself is mesh-like using duck-typing
     if (isMeshLike(node)) {
-        console.log("🔍 [getFirstMeshChild] Node is mesh-like:", node.name);
         return node;
     }
 
     // Also try instanceof as backup
     if (node instanceof BABYLON.AbstractMesh) {
-        console.log("🔍 [getFirstMeshChild] Node is AbstractMesh:", node.name);
         return node;
     }
 
     // Try getChildMeshes() which specifically returns AbstractMesh instances
     if ('getChildMeshes' in node) {
         const childMeshes = (node as BABYLON.TransformNode).getChildMeshes(true);
-        console.log(`🔍 [getFirstMeshChild] "${node.name}" has ${childMeshes.length} child meshes`);
         if (childMeshes.length > 0) {
-            console.log("🔍 [getFirstMeshChild] Returning first child mesh:", childMeshes[0].name);
             return childMeshes[0];
         }
     }
 
     // Fallback: Look for child meshes via getChildren
     const children = node.getChildren();
-    console.log(`🔍 [getFirstMeshChild] "${node.name}" getChildren returned ${children.length} items`);
     for (const child of children) {
         if (isMeshLike(child)) {
-            console.log("🔍 [getFirstMeshChild] Found mesh-like child:", child.name);
             return child;
         }
         if (child instanceof BABYLON.AbstractMesh) {
-            console.log("🔍 [getFirstMeshChild] Found AbstractMesh child:", child.name);
             return child;
         }
     }
 
-    console.log("🔍 [getFirstMeshChild] No mesh found for node:", node.name);
     return null;
 }
 
@@ -226,15 +218,6 @@ function findMusecraftMeshes(rootMesh: BABYLON.AbstractMesh): MusecraftMeshes {
     // Search through all descendants
     const allNodes = rootMesh.getDescendants(false);
 
-    // DEBUG: Log all nodes found in the GLB
-    console.log("🔍 [Musecraft DEBUG] Root mesh:", rootMesh.name);
-    console.log("🔍 [Musecraft DEBUG] Total descendants:", allNodes.length);
-    console.log("🔍 [Musecraft DEBUG] All node names:");
-    allNodes.forEach((node, index) => {
-        const type = node instanceof BABYLON.AbstractMesh ? "MESH" : "NODE";
-        console.log(`   ${index}: [${type}] "${node.name}"`);
-    });
-
     for (const node of allNodes) {
         const nameLower = node.name.toLowerCase();
 
@@ -245,33 +228,28 @@ function findMusecraftMeshes(rootMesh: BABYLON.AbstractMesh): MusecraftMeshes {
             const mesh = getFirstMeshChild(node);
             if (mesh) {
                 meshes.sandbox = mesh;
-                console.log("🎨 [Musecraft] Found sandbox mesh:", mesh.name, "(from node:", node.name, ")");
             }
         }
         else if (nameLower === "platform") {
             const mesh = getFirstMeshChild(node);
             if (mesh) {
                 meshes.platform = mesh;
-                console.log("🎨 [Musecraft] Found platform mesh:", mesh.name, "(from node:", node.name, ")");
             }
         }
         else if (nameLower === "telescope") {
             const mesh = getFirstMeshChild(node);
             if (mesh) {
                 meshes.telescope = mesh;
-                console.log("🎨 [Musecraft] Found telescope mesh:", mesh.name, "(from node:", node.name, ")");
             }
         }
         else if (nameLower === "rocket_flames" || nameLower === "rocketflames") {
             // This is a transform node for flames - keep as TransformNode
             meshes.rocketFlames = node as BABYLON.TransformNode;
-            console.log("🎨 [Musecraft] Found rocket_flames node:", node.name);
         }
         else if (nameLower === "rocket") {
             const mesh = getFirstMeshChild(node);
             if (mesh) {
                 meshes.rocket = mesh;
-                console.log("🎨 [Musecraft] Found rocket mesh:", mesh.name, "(from node:", node.name, ")");
             }
         }
     }
@@ -292,7 +270,6 @@ function storeOriginalState(meshes: MusecraftMeshes): MusecraftOriginalState {
             // Store mesh position
             positions.set(mesh, mesh.position.clone());
             rotations.set(mesh, mesh.rotationQuaternion ? mesh.rotationQuaternion.clone() : null);
-            console.log(`🎨 [Musecraft] Storing ${mesh.name} position: (${mesh.position.x.toFixed(2)}, ${mesh.position.y.toFixed(2)}, ${mesh.position.z.toFixed(2)})`);
 
             // Also store parent position if parent exists (GLTF structure has TransformNode parents)
             if (mesh.parent && mesh.parent instanceof BABYLON.TransformNode) {
@@ -300,7 +277,6 @@ function storeOriginalState(meshes: MusecraftMeshes): MusecraftOriginalState {
                 if (!positions.has(parent)) {
                     positions.set(parent, parent.position.clone());
                     rotations.set(parent, parent.rotationQuaternion ? parent.rotationQuaternion.clone() : null);
-                    console.log(`🎨 [Musecraft] Storing parent ${parent.name} position: (${parent.position.x.toFixed(2)}, ${parent.position.y.toFixed(2)}, ${parent.position.z.toFixed(2)})`);
                 }
             }
         }
@@ -335,8 +311,6 @@ function clearSelection(scene: BABYLON.Scene): void {
 function selectMesh(mesh: BABYLON.AbstractMesh, scene: BABYLON.Scene): void {
     // Don't re-select the same mesh
     if (state.selectedMesh === mesh) return;
-
-    console.log("🎨 [Musecraft] Selecting mesh:", mesh.name);
 
     // Clear previous selection
     clearSelection(scene);
@@ -407,11 +381,9 @@ function setupGizmoManager(scene: BABYLON.Scene): BABYLON.GizmoManager {
             if (!gizmo?.dragBehavior) return;
             gizmo.dragBehavior.onDragStartObservable.add(() => {
                 isGizmoDragging = true;
-                console.log("🎯 [Musecraft] Gizmo drag STARTED");
             });
             gizmo.dragBehavior.onDragEndObservable.add(() => {
                 isGizmoDragging = false;
-                console.log("🎯 [Musecraft] Gizmo drag ENDED");
             });
         };
 
@@ -426,7 +398,6 @@ function setupGizmoManager(scene: BABYLON.Scene): BABYLON.GizmoManager {
 // ===== POINTER HANDLING =====
 
 function setupPointerObserver(scene: BABYLON.Scene): BABYLON.Observer<BABYLON.PointerInfo> {
-    console.log("🔍 [Musecraft DEBUG] Setting up pointer observer...");
 
     const observer = scene.onPointerObservable.add((pointerInfo) => {
         const evt = pointerInfo.event as PointerEvent;
@@ -454,23 +425,18 @@ function setupPointerObserver(scene: BABYLON.Scene): BABYLON.Observer<BABYLON.Po
 
             // If dragged more than threshold, this was a camera rotation, not a click
             if (distance > DRAG_THRESHOLD) {
-                console.log("🔍 [Musecraft DEBUG] Pointer up after drag (distance:", distance.toFixed(1), ") - ignoring");
                 return;
             }
-
-            console.log("🔍 [Musecraft DEBUG] Click detected (distance:", distance.toFixed(1), ")");
 
             // Now handle the click - pick at this position
             const pickResult = scene.pick(evt.clientX, evt.clientY);
 
             if (!pickResult || !pickResult.hit) {
-                console.log("🔍 [Musecraft DEBUG] No pick result or no hit - deselecting");
                 clearSelection(scene);
                 return;
             }
 
             const pickedMesh = pickResult.pickedMesh;
-            console.log("🔍 [Musecraft DEBUG] Picked mesh:", pickedMesh?.name);
 
             if (!pickedMesh) return;
 
@@ -481,8 +447,6 @@ function setupPointerObserver(scene: BABYLON.Scene): BABYLON.Observer<BABYLON.Po
                 state.meshes.telescope,
                 state.meshes.rocket
             ];
-
-            console.log("🔍 [Musecraft DEBUG] Selectable meshes:", selectableMeshes.map(m => m?.name || "null"));
 
             // Check if clicked mesh or any of its parents is selectable
             let targetMesh: BABYLON.AbstractMesh | null = pickedMesh;
@@ -497,16 +461,13 @@ function setupPointerObserver(scene: BABYLON.Scene): BABYLON.Observer<BABYLON.Po
             }
 
             if (foundSelectable && targetMesh) {
-                console.log("🔍 [Musecraft DEBUG] Found selectable mesh, selecting:", targetMesh.name);
                 selectMesh(targetMesh, scene);
             } else {
-                console.log("🔍 [Musecraft DEBUG] Clicked non-selectable mesh, deselecting");
                 clearSelection(scene);
             }
         }
     });
 
-    console.log("🔍 [Musecraft DEBUG] Pointer observer registered:", observer ? "SUCCESS" : "FAILED");
     return observer;
 }
 
@@ -524,18 +485,11 @@ export function initMusecraftInteraction(
     rootMesh: BABYLON.AbstractMesh,
     scene: BABYLON.Scene
 ): boolean {
-    console.log("========================================");
-    console.log("🎨 [Musecraft] initMusecraftInteraction CALLED");
-    console.log("  rootMesh:", rootMesh?.name || "null");
-    console.log("  scene:", scene ? "EXISTS" : "null");
-    console.log("========================================");
 
     if (state.isInitialized) {
-        console.log("🎨 [Musecraft] Already initialized, skipping");
         return true;
     }
 
-    console.log("🎨 [Musecraft] Initializing interaction system...");
     sceneRef = scene;
 
     // Find all relevant meshes
@@ -546,16 +500,13 @@ export function initMusecraftInteraction(
         .filter(([key, value]) => value !== null)
         .map(([key]) => key);
 
-    console.log("🎨 [Musecraft] Found meshes:", foundMeshes.join(", "));
 
     if (foundMeshes.length === 0) {
-        console.warn("⚠️ [Musecraft] No meshes found! Aborting initialization.");
         return false;
     }
 
     // Store original state for reset
     state.originalState = storeOriginalState(state.meshes);
-    console.log("🎨 [Musecraft] Stored original positions for", state.originalState.positions.size, "nodes");
 
     // Make meshes pickable
     const selectableMeshes = [
@@ -573,28 +524,22 @@ export function initMusecraftInteraction(
 
     // Setup gizmo manager
     state.gizmoManager = setupGizmoManager(scene);
-    console.log("🎨 [Musecraft] Gizmo manager created");
 
     // Setup rocket flame particles
     if (state.meshes.rocketFlames) {
         state.flameParticles = createRocketFlameParticles(scene, state.meshes.rocketFlames);
         state.flameParticles.start();
-        console.log("🔥 [Musecraft] Rocket flame particles started");
     }
 
     // Setup pointer observer for selection
     state.pointerObserver = setupPointerObserver(scene);
-    console.log("🎨 [Musecraft] Pointer observer registered");
 
     // Select rocket by default so user sees what they can interact with
     if (state.meshes.rocket) {
         selectMesh(state.meshes.rocket, scene);
-        console.log("🚀 [Musecraft] Rocket selected by default");
     }
 
     state.isInitialized = true;
-    console.log("✅ [Musecraft] Interaction system initialized successfully!");
-
     return true;
 }
 
@@ -605,8 +550,6 @@ export function initMusecraftInteraction(
 export function resetMusecraftInteraction(): void {
     if (!state.isInitialized) return;
 
-    console.log("🎨 [Musecraft] Resetting to original state...");
-    console.log("🎨 [Musecraft] Positions to reset:", state.originalState.positions.size);
 
     // Clear selection and detach gizmo FIRST
     if (sceneRef) {
@@ -620,7 +563,6 @@ export function resetMusecraftInteraction(): void {
 
     // Reset positions
     for (const [node, position] of state.originalState.positions) {
-        console.log(`🎨 [Musecraft] Resetting ${node.name} position from (${node.position.x.toFixed(2)}, ${node.position.y.toFixed(2)}, ${node.position.z.toFixed(2)}) to (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`);
         node.position.copyFrom(position);
     }
 
@@ -634,8 +576,6 @@ export function resetMusecraftInteraction(): void {
             }
         }
     }
-
-    console.log("✅ [Musecraft] Reset complete");
 }
 
 /**
@@ -645,7 +585,6 @@ export function resetMusecraftInteraction(): void {
 export function disposeMusecraftInteraction(): void {
     if (!state.isInitialized) return;
 
-    console.log("🎨 [Musecraft] Disposing interaction system...");
 
     // Remove pointer observer
     if (state.pointerObserver && sceneRef) {
@@ -706,7 +645,6 @@ export function disposeMusecraftInteraction(): void {
     state.isInitialized = false;
     sceneRef = null;
 
-    console.log("✅ [Musecraft] Interaction system disposed");
 }
 
 /**
@@ -715,7 +653,6 @@ export function disposeMusecraftInteraction(): void {
 export function startRocketFlames(): void {
     if (state.flameParticles && !state.flameParticles.isStarted()) {
         state.flameParticles.start();
-        console.log("🔥 [Musecraft] Rocket flames started");
     }
 }
 
@@ -725,7 +662,6 @@ export function startRocketFlames(): void {
 export function stopRocketFlames(): void {
     if (state.flameParticles && state.flameParticles.isStarted()) {
         state.flameParticles.stop();
-        console.log("🔥 [Musecraft] Rocket flames stopped");
     }
 }
 
@@ -760,6 +696,5 @@ export function selectRocketByDefault(): void {
 
     if (state.meshes.rocket) {
         selectMesh(state.meshes.rocket, sceneRef);
-        console.log("🚀 [Musecraft] Rocket re-selected by default");
     }
 }

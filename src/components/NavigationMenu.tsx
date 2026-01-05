@@ -850,7 +850,6 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              console.log(`Clicked: ${item.labelKey}`);
 
               // Map menu items to states
               const stateMap: Record<string, S> = {
@@ -867,7 +866,6 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
 
               // If in state_final and clicking Welcome, reload the page
               if (currentState === S.state_final && item.id === 'what-we-do') {
-                console.log('🔄 [Menu] Reloading page from state_final');
                 onClose();
                 window.location.reload();
                 return;
@@ -878,12 +876,10 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
                 const currentMode = useUI.getState().navigationMode;
                 if (currentMode === 'free') {
                   useUI.getState().setNavigationMode('guided');
-                  console.log('🔄 [Menu] Switched to guided mode');
                 }
 
                 // Then navigate to the target state
                 useUI.getState().setState(targetState);
-                console.log(`🚀 [Menu] Navigating to state: ${targetState}`);
 
                 // Close the menu
                 onClose();

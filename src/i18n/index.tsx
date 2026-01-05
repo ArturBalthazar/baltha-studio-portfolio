@@ -90,7 +90,6 @@ export function I18nProvider({ children }: I18nProviderProps) {
         if (typeof window !== 'undefined') {
             localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
         }
-        console.log(`🌐 Language changed to: ${code}`);
     }, []);
 
     // Update document lang attribute when language changes

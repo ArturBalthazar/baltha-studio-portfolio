@@ -32,20 +32,20 @@ const xVals = [0, 33.3, 66.6, 100]; // X positions for 4 data points: 1950, 1975
 // Helper function to build SVG path string
 const buildPathString = (dataArray: number[], maxValue: number): string => {
   if (!dataArray || dataArray.length === 0) return "";
-  
+
   let pathD = "";
-  
+
   for (let i = 0; i < dataArray.length; i++) {
     const x = xVals[i];
     const y = 100 - (dataArray[i] / maxValue) * 100;
-    
+
     if (i === 0) {
       pathD += `M ${x} ${y}`;
     } else {
       pathD += ` L ${x} ${y}`;
     }
   }
-  
+
   return pathD;
 };
 
@@ -63,11 +63,11 @@ export function GraphComponent({ continent, className = "" }: GraphComponentProp
       "South America": "SouthAmerica",
       "North America": "NorthAmerica",
       "Africa": "Africa",
-      "Europe": "Europe", 
+      "Europe": "Europe",
       "Asia": "Asia",
       "Oceania": "Oceania"
     };
-    
+
     const continentKey = continentMapping[continent] || continent.replace(/\s+/g, '') as keyof typeof populationData;
     const popArr = populationData[continentKey];
     const gdpArr = gdpData[continentKey];
@@ -127,14 +127,14 @@ export function GraphComponent({ continent, className = "" }: GraphComponentProp
         <div className="absolute bottom-0 w-px h-full bg-white/10" style={{ left: "100%" }} />
 
         {/* Year Labels */}
-        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2" 
-             style={{ left: "0%", bottom: "-20px" }}>1950</div>
-        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2" 
-             style={{ left: "33.3%", bottom: "-20px" }}>1975</div>
-        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2" 
-             style={{ left: "66.6%", bottom: "-20px" }}>2000</div>
-        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2" 
-             style={{ left: "100%", bottom: "-20px" }}>2025</div>
+        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2"
+          style={{ left: "0%", bottom: "-20px" }}>1950</div>
+        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2"
+          style={{ left: "33.3%", bottom: "-20px" }}>1975</div>
+        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2"
+          style={{ left: "66.6%", bottom: "-20px" }}>2000</div>
+        <div className="absolute text-xs text-white/60 font-mono pointer-events-none transform -translate-x-1/2"
+          style={{ left: "100%", bottom: "-20px" }}>2025</div>
 
         {/* SVG for the lines */}
         <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -148,7 +148,7 @@ export function GraphComponent({ continent, className = "" }: GraphComponentProp
             strokeLinejoin="round"
             className="drop-shadow-sm"
           />
-          
+
           {/* GDP line (brand-orange) */}
           <path
             ref={gdpPathRef}
@@ -158,7 +158,7 @@ export function GraphComponent({ continent, className = "" }: GraphComponentProp
             strokeLinecap="round"
             strokeLinejoin="round"
             className="drop-shadow-sm"
-            
+
           />
         </svg>
         {/* BLUR UNDERLAY */}

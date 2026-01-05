@@ -24,18 +24,15 @@ export function BottomLeftControls({
 
   const toggleAudio = () => {
     setAudioEnabled(!audioEnabled);
-    console.log('Audio:', !audioEnabled ? 'ON' : 'OFF');
   };
 
   const toggleNavigation = () => {
     const newMode = navigationMode === 'guided' ? 'free' : 'guided';
     setNavigationMode(newMode);
-    console.log('Navigation mode:', newMode);
   };
 
   const toggleInfo = () => {
     setInfoOpen(!infoOpen);
-    console.log('Info:', !infoOpen ? 'OPEN' : 'CLOSED');
   };
 
   return (

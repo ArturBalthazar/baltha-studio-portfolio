@@ -28,15 +28,11 @@ export function AudioManager() {
       if (document.hidden) {
         // Browser went to background - pause immediately
         audio.pause();
-        console.log("🔇 Audio paused (browser in background)");
       } else {
         // Browser is visible again - resume if conditions are met
         const shouldPlay = audioHasStartedRef.current && useUI.getState().audioEnabled;
         if (shouldPlay && audio.paused) {
-          audio.play().catch((error) => {
-            console.log("Audio resume prevented:", error);
-          });
-          console.log("🔊 Audio resumed (browser visible)");
+          audio.play();
         }
       }
     };
@@ -71,9 +67,7 @@ export function AudioManager() {
         audio.volume = 0; // Start from 0
 
         // Use play() with catch to handle autoplay restrictions
-        audio.play().catch((error) => {
-          console.log("Audio autoplay prevented:", error);
-        });
+        audio.play();
 
         // Fade in over 1.5 seconds to 50% volume
         const fadeInDuration = 1500; // ms

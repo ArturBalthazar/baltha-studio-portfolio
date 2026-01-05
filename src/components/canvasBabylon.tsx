@@ -153,18 +153,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
   const { camera, scene, duration, delay = 0, lowerRadiusLimit, upperRadiusLimit, beta, alpha, easing, onComplete } = options;
 
   const executeAnimation = () => {
-    console.log('🎥 [Camera Animation] Starting camera animation', {
-      currentLowerRadiusLimit: camera.lowerRadiusLimit,
-      currentUpperRadiusLimit: camera.upperRadiusLimit,
-      currentBeta: camera.beta,
-      currentAlpha: camera.alpha,
-      targetLowerRadiusLimit: lowerRadiusLimit,
-      targetUpperRadiusLimit: upperRadiusLimit,
-      targetBeta: beta,
-      targetAlpha: alpha,
-      duration,
-      delay
-    });
 
     const fps = 60;
     const totalFrames = fps * duration;
@@ -186,7 +174,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) lowerAnim.setEasingFunction(easing);
       animations.push(lowerAnim);
-      console.log('📐 [Camera Animation] Added lower radius limit animation:', currentLower, '→', lowerRadiusLimit);
     }
 
     // Upper radius limit animation
@@ -205,7 +192,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) upperAnim.setEasingFunction(easing);
       animations.push(upperAnim);
-      console.log('📐 [Camera Animation] Added upper radius limit animation:', currentUpper, '→', upperRadiusLimit);
     }
 
     // Beta animation (vertical rotation)
@@ -225,7 +211,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) betaAnim.setEasingFunction(easing);
       animations.push(betaAnim);
-      console.log('🔄 [Camera Animation] Added beta animation:', currentBeta, '→', normalizedBeta, `(target: ${beta}, normalized for shortest path)`);
     }
 
     // Alpha animation (horizontal rotation)
@@ -245,19 +230,12 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
       ]);
       if (easing) alphaAnim.setEasingFunction(easing);
       animations.push(alphaAnim);
-      console.log('🔄 [Camera Animation] Added alpha animation:', currentAlpha, '→', normalizedAlpha, `(target: ${alpha}, normalized for shortest path)`);
     }
 
     // Apply animations
     if (animations.length > 0) {
       camera.animations = animations;
       scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
-        console.log('✅ [Camera Animation] Animation completed', {
-          finalLowerRadiusLimit: camera.lowerRadiusLimit,
-          finalUpperRadiusLimit: camera.upperRadiusLimit,
-          finalBeta: camera.beta,
-          finalAlpha: camera.alpha
-        });
         if (onComplete) onComplete();
       });
     } else if (onComplete) {
@@ -267,7 +245,6 @@ function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
 
   // Apply delay if specified
   if (delay > 0) {
-    console.log('⏱️ [Camera Animation] Delaying animation by', delay, 'seconds');
     setTimeout(executeAnimation, delay * 1000);
   } else {
     executeAnimation();
@@ -858,8 +835,6 @@ async function warmupModelForGPU(
 ): Promise<void> {
   if (!rootMesh || meshes.length === 0) return;
 
-  console.log(`🔥 Starting GPU warmup for ${rootMesh.name} (${meshes.length} meshes)...`);
-
   // Store original visibility state
   const originalEnabled = meshes.map(m => m.isEnabled());
   const originalVisibility = meshes.map(m => m.visibility);
@@ -888,7 +863,6 @@ async function warmupModelForGPU(
     mesh.setEnabled(originalEnabled[i]);
   });
 
-  console.log(`✅ GPU warmup complete for ${rootMesh.name}`);
 }
 
 /**
@@ -916,7 +890,6 @@ function scaleModelMeshes(
   if (existingAnim) {
     existingAnim.stop();
     modelScaleAnimations.delete(rootMesh);
-    console.log(`⏹️ Stopped existing scale animation for ${rootMesh.name}`);
   }
 
   const fps = 60;
@@ -1048,7 +1021,6 @@ function cancelBezierAnimation(
   target?: BABYLON.TransformNode | null,
   camera?: BABYLON.ArcRotateCamera | null
 ): void {
-  console.log("🛑 [Bezier Animation] Cancelling bezier animation");
 
   // Increment animation ID to invalidate any running animation's callbacks
   currentBezierAnimationId++;
@@ -1069,7 +1041,6 @@ function cancelBezierAnimation(
   if (bezierPathObserver && scene) {
     scene.onBeforeRenderObservable.remove(bezierPathObserver);
     bezierPathObserver = null;
-    console.log("🛑 [Bezier Animation] Cleaned up path observer");
   }
 
   // Capture current velocity before stopping for drag effect
@@ -1083,12 +1054,9 @@ function cancelBezierAnimation(
   // Stop keyframe animations on the ship (frees it from the bezier path)
   if (target && scene) {
     scene.stopAnimation(target);
-    console.log("🛑 [Bezier Animation] Stopped ship animations");
 
     // Apply drag deceleration if the ship was moving
     if (capturedSpeed > 0.5) {
-      console.log(`🎿 [Bezier Animation] Applying drag deceleration from speed: ${capturedSpeed.toFixed(2)}`);
-
       // Create a velocity vector for the drag physics
       let dragVelocity = capturedVelocity.clone();
       const dragFriction = 4.0; // How quickly to slow down (higher = faster stop)
@@ -1116,7 +1084,6 @@ function cancelBezierAnimation(
         // Check if we've slowed down enough to stop
         const currentDragSpeed = dragVelocity.length();
         if (currentDragSpeed < minSpeed) {
-          console.log("🛑 [Bezier Animation] Drag deceleration complete");
           if (dragDecelerationObserver) {
             scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
             dragDecelerationObserver = null;
@@ -1129,7 +1096,6 @@ function cancelBezierAnimation(
   // Stop animations on the camera (this stops the bezier's camera zoom animations)
   if (camera && scene) {
     scene.stopAnimation(camera);
-    console.log("🛑 [Bezier Animation] Stopped camera animations");
   }
 }
 
@@ -1168,18 +1134,13 @@ function setShipAndFlamesVisibility(options: SetShipAndFlamesVisibilityOptions):
       const wasAlreadyStarted = flameParticles.isStarted();
       // Always call start() when making visible - it's safe to call even if already started
       flameParticles.start();
-      console.log(`🔥 ${ctx}Flame particles started (wasAlreadyStarted: ${wasAlreadyStarted})`);
     } else {
-      console.warn(`⚠️ ${ctx}Flame particles ref is null/undefined!`);
     }
   } else {
     if (flameParticles && flameParticles.isStarted()) {
       flameParticles.stop();
-      console.log(`🔥 ${ctx}Flame particles stopped`);
     }
   }
-
-  console.log(visible ? `🚀 ${ctx}Ship and flames visible` : `🛬 ${ctx}Ship and flames hidden`);
 }
 
 /**
@@ -1197,14 +1158,12 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
   if (dragDecelerationObserver && options.scene) {
     options.scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
     dragDecelerationObserver = null;
-    console.log("🧹 [Bezier Animation] Cleaned up drag deceleration observer");
   }
 
   // Clean up any existing path observer from a previous animation
   if (bezierPathObserver && options.scene) {
     options.scene.onBeforeRenderObservable.remove(bezierPathObserver);
     bezierPathObserver = null;
-    console.log("🧹 [Bezier Animation] Cleaned up previous path observer");
   }
 
   const {
@@ -1227,7 +1186,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
   const executeAnimation = () => {
     // Check if animation was superseded during delay
     if (thisAnimationId !== currentBezierAnimationId) {
-      console.log("⏭️ [Bezier Animation] Skipping - animation superseded during delay");
       return;
     }
 
@@ -1252,7 +1210,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       const offsetDistance = 0.05; // Very small offset behind the ship
       effectiveStartPosition = startPosition.add(startForward.scale(offsetDistance));
       distance = BABYLON.Vector3.Distance(effectiveStartPosition, endPosition);
-      console.log("🔧 [Bezier Animation] Start/end positions too close, applied small backward offset");
     }
 
     // Control point distance is proportional to the total distance
@@ -1269,15 +1226,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     const p1 = effectiveStartPosition.subtract(startForward.scale(controlPointDistance));
     const p2 = endPosition.add(endForward.scale(controlPointDistance));
     const p3 = endPosition.clone();
-
-    console.log("🛸 [Bezier Animation] Starting curve animation:", {
-      p0: p0.toString(),
-      p1: p1.toString(),
-      p2: p2.toString(),
-      p3: p3.toString(),
-      distance,
-      duration
-    });
 
     // Create a Babylon Curve3 from the bezier points
     const bezierCurve = BABYLON.Curve3.CreateCubicBezier(p0, p1, p2, p3, 200);
@@ -1301,11 +1249,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
     if (shipCurrentSpeed > 0.1 && peakSpeed > 0) {
       // Clamp to 0-1 range (we can't start faster than peak speed)
       initialSpeedRatio = Math.min(shipCurrentSpeed / peakSpeed, 1.0);
-      console.log(`🚀 [Bezier Animation] Continuing from existing speed:`, {
-        currentSpeed: shipCurrentSpeed.toFixed(2),
-        peakSpeed: peakSpeed.toFixed(2),
-        initialSpeedRatio: initialSpeedRatio.toFixed(2)
-      });
     }
 
     // Stop any previous velocity observer
@@ -1449,7 +1392,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
 
     // Start ship animation
     scene.beginAnimation(target, 0, totalFrames, false, 1, () => {
-      console.log("✅ [Bezier Animation] Ship animation complete at:", target.position.toString());
 
       // Clean up velocity observer and reset speed tracking when animation completes normally
       if (bezierVelocityObserver && thisAnimationId === currentBezierAnimationId) {
@@ -1477,14 +1419,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
           method: 'visibility',
           logContext: 'Bezier Animation'
         });
-      } else {
-        if (thisAnimationId !== currentBezierAnimationId) {
-          console.log("⏭️ [Bezier Animation] Skipping hide - animation was superseded");
-        } else if (options.skipArrivalHide) {
-          console.log("⏭️ [Bezier Animation] Skipping hide - skipArrivalHide is set");
-        } else if (currentNavMode !== 'guided') {
-          console.log("⏭️ [Bezier Animation] Skipping hide - switched to free mode");
-        }
       }
       if (onComplete) onComplete();
     });
@@ -1520,14 +1454,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       while (alphaDiff < -Math.PI) alphaDiff += 2 * Math.PI;
       const normalizedEndAlpha = startAlpha + alphaDiff;
 
-      console.log("📷 [Bezier Animation] Camera animation:", {
-        startAlpha: startAlpha.toFixed(3),
-        endAlpha: normalizedEndAlpha.toFixed(3),
-        startBeta: startBeta.toFixed(3),
-        endBeta: endBeta.toFixed(3),
-        shipPitch: BABYLON.Tools.ToDegrees(pitchAngle).toFixed(1) + "°"
-      });
-
       // Create camera alpha animation
       const alphaAnimation = new BABYLON.Animation(
         "cameraAlpha",
@@ -1559,7 +1485,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       // Apply and start camera animations
       camera.animations = [alphaAnimation, betaAnimation];
       scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
-        console.log("✅ [Bezier Animation] Camera animation complete");
       });
 
       // Camera radius animation - TIME-BASED triggers for reliable behavior
@@ -1573,7 +1498,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
       {
         const currentRadius = camera.radius;
         const targetRadius = stateRadius ?? 24;
-        console.log(`🔭 [Bezier Animation] Starting zoom-out:`, currentRadius, "→", targetRadius);
 
         // Allow the transition
         camera.lowerRadiusLimit = 0;
@@ -1624,7 +1548,6 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         ]);
 
         scene.beginDirectAnimation(camera, [zoomOutAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
-          console.log("✅ [Bezier Animation] Zoom-out complete");
         });
       }
 
@@ -1634,19 +1557,15 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         // This ensures zoom-in starts so it completes roughly when ship arrives
         const zoomInDelay = Math.max(0, (duration - radiusAnimDuration) * 1000);
 
-        console.log(`🔍 [Bezier Animation] Scheduling zoom-in in ${zoomInDelay.toFixed(0)}ms`);
-
         setTimeout(() => {
           // Check if this animation is still valid (not superseded)
           if (thisAnimationId !== currentBezierAnimationId) {
-            console.log("⏭️ [Bezier Animation] Skipping zoom-in - animation was superseded");
             return;
           }
 
           const currentRadius = camera.radius;
           const currentLowerLimit = camera.lowerRadiusLimit ?? currentRadius;
           const currentUpperLimit = camera.upperRadiusLimit ?? currentRadius;
-          console.log(`🔍 [Bezier Animation] Starting zoom-in:`, currentRadius, "→", arrivalRadius);
 
           // Allow zooming all the way in
           camera.lowerRadiusLimit = 0;
@@ -1697,18 +1616,14 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
           ]);
 
           scene.beginDirectAnimation(camera, [zoomInAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
-            console.log("✅ [Bezier Animation] Zoom-in complete");
           });
         }, zoomInDelay);
-      } else {
-        console.log(`⏭️ [Bezier Animation] Skipping arrival zoom (skipArrivalZoom is set)`);
       }
     }
   }; // End of executeAnimation function
 
   // Apply delay if specified, otherwise execute immediately
   if (delay > 0) {
-    console.log(`⏱️ [Bezier Animation] Delaying animation by ${delay} seconds`);
     setTimeout(executeAnimation, delay * 1000);
   } else {
     executeAnimation();
@@ -1989,7 +1904,6 @@ export function BabylonCanvas() {
     isMobileRef.current = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
       ('ontouchstart' in window) ||
       (navigator.maxTouchPoints > 0);
-    console.log("📱 Mobile detected:", isMobileRef.current);
 
     // Engine
     const engine = new BABYLON.Engine(canvas, true, {
@@ -2070,7 +1984,6 @@ export function BabylonCanvas() {
     controlSphere.isVisible = false; // Invisible
     controlSphere.isPickable = true; // But pickable for raycasting
     controlSphereRef.current = controlSphere;
-    console.log("🎯 Control sphere created for mobile input");
 
     // IBL
     const env = BABYLON.CubeTexture.CreateFromPrefilteredData(
@@ -2131,7 +2044,6 @@ export function BabylonCanvas() {
     // Called when rockring GPU warmup is complete
     const markRockringGPUReady = () => {
       rockringGPUReady = true;
-      console.log("🎸 Rockring GPU warmup complete");
       // Check if all assets are loaded - if so, finish loading
       if (loadedCount >= totalAssets) {
         setTimeout(() => {
@@ -2237,25 +2149,13 @@ export function BabylonCanvas() {
             }
           });
 
-          // Debug: Log all mesh names to find anchor_1
-          console.log("🔍 Rockring meshes loaded:", meshes.map(m => m.name).join(", "));
-          const anchor1 = meshes.find(m => m.name === "anchor_1");
-          console.log("🔍 anchor_1 found in rockring:", anchor1 ? "YES" : "NO");
-          if (anchor1) {
-            console.log("🔍 anchor_1 position:", anchor1.position);
-          }
-
-
           // Find the Curve mesh and create particle effect
           const curveMesh = meshes.find(m => m.name === "Curve");
           if (curveMesh) {
-            console.log("🌟 Found Curve mesh in rockring2.glb");
-
             // Get vertices from the curve mesh
             const positions = curveMesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
             if (positions) {
               const vertexCount = positions.length / 3;
-              console.log(`🌟 Curve mesh has ${vertexCount} vertices`);
 
               // Store vertices in world space
               const worldMatrix = curveMesh.getWorldMatrix();
@@ -2265,7 +2165,6 @@ export function BabylonCanvas() {
                 const worldPos = BABYLON.Vector3.TransformCoordinates(localPos, worldMatrix);
                 vertices.push(worldPos);
               }
-              console.log(`🌟 Extracted ${vertices.length} vertices from Curve mesh`);
 
               // Create particle system for curve effect
               const curveParticles = new BABYLON.ParticleSystem("curveParticles", 1000, scene);
@@ -2322,16 +2221,10 @@ export function BabylonCanvas() {
 
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;
-              console.log("🌟 Curve particle system created (will start in state 4+)");
-            } else {
-              console.warn("⚠️ Curve mesh has no position data");
             }
 
             // Hide the Curve mesh itself
             curveMesh.isVisible = false;
-            console.log("🌟 Curve mesh hidden (only particles visible)");
-          } else {
-            console.warn("⚠️ Curve mesh not found in rockring2.glb");
           }
 
           rockRingRef.current = rockRing;
@@ -2359,7 +2252,6 @@ export function BabylonCanvas() {
 
           // Enable rockring (invisible due to alpha 0) to force GPU shader compilation
           rockRing.setEnabled(true);
-          console.log("🎸 Rockring enabled with alpha 0 for GPU warmup...");
 
           // Wait for a few render frames to ensure GPU compiles shaders
           let warmupFrames = 0;
@@ -2382,8 +2274,6 @@ export function BabylonCanvas() {
               const shouldBeEnabled = currentConfig.canvas.babylonScene?.rockRingEnabled === true;
               rockRing.setEnabled(shouldBeEnabled);
 
-              console.log("🎸 Rockring GPU warmup complete - shown normally (enabled:", shouldBeEnabled, ")");
-
               // Mark GPU warmup as complete (allows loading screen to finish)
               markRockringGPUReady();
             }
@@ -2403,8 +2293,6 @@ export function BabylonCanvas() {
       "anchors.glb",
       scene,
       (meshes) => {
-        console.log("⚓ Anchors loaded:", meshes.map(m => m.name).join(", "));
-
         // Extract positions and rotations from anchor meshes (desktop1-4, mobile1-4)
         const anchorNames = ['desktop1', 'desktop2', 'desktop3', 'desktop4', 'mobile1', 'mobile2', 'mobile3', 'mobile4'];
         anchorNames.forEach(name => {
@@ -2441,17 +2329,9 @@ export function BabylonCanvas() {
             forward.rotateByQuaternionToRef(rotation, forward);
 
             anchorDataRef.current[name] = { position, rotation, forward };
-            const eulerForLog = rotation.toEulerAngles();
-            console.log(`⚓ Anchor ${name}:`, {
-              position: position.toString(),
-              rotation: `x:${BABYLON.Tools.ToDegrees(eulerForLog.x).toFixed(1)}°, y:${BABYLON.Tools.ToDegrees(eulerForLog.y).toFixed(1)}°, z:${BABYLON.Tools.ToDegrees(eulerForLog.z).toFixed(1)}°`,
-              forward: forward.toString()
-            });
 
             // Hide the anchor mesh
             anchor.isVisible = false;
-          } else {
-            console.warn(`⚠️ Anchor mesh "${name}" not found in anchors.glb`);
           }
         });
 
@@ -2486,16 +2366,11 @@ export function BabylonCanvas() {
           }
 
           // Set position and scaling on shiproot
-          console.log("📦 ShipRoot loaded at position:", shipRoot.position.clone());
           // Initially place ship behind camera, will animate to correct position when entering state 3
           shipRoot.position.set(0, -4, 20);
           const s = shipRoot.scaling;
           shipRoot.scaling.set(Math.abs(s.x) * 1.1, Math.abs(s.y) * 1.1, Math.abs(s.z) * -1.1);
           shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
-
-          // Check if ship mesh has offset inside shipRoot
-          console.log("📦 ShipRoot position after set:", shipRoot.position);
-          console.log("📦 Spaceship mesh position:", spaceship.position);
 
           // Setup materials for transparency
           meshes.forEach(mesh => {
@@ -2514,17 +2389,12 @@ export function BabylonCanvas() {
           // This must happen BEFORE any bezier animations can change it
           shipInitialStateRef.current.position = shipRoot.position.clone();
           shipInitialStateRef.current.rotation = BABYLON.Quaternion.Identity();
-          console.log("💾 Saved ORIGINAL ship state on load:", {
-            position: shipInitialStateRef.current.position,
-            rotation: "Identity"
-          });
 
           updateProgress();
 
           // Create engine flame particle systems (two flames with offset)
           const emitter = scene.getTransformNodeByName("engineFlame");
           if (emitter) {
-            console.log("🔥 Found engineFlame emitter node");
             emitter.rotation.y = BABYLON.Tools.ToRadians(90);
             emitter.rotation.x = BABYLON.Tools.ToRadians(152);
             emitter.rotation.z = BABYLON.Tools.ToRadians(25);
@@ -2566,42 +2436,7 @@ export function BabylonCanvas() {
             // DON'T start flames here - ship is hidden by default!
             // Flames will be started by setShipAndFlamesVisibility when ship becomes visible
             flameParticleSystemRef.current = flame;
-            console.log("🔥 Engine flame particle system created (will start when ship becomes visible)");
 
-            /* // ===== SECOND FLAME (offset in Z) =====
-            // Create a second emitter as child of the first emitter
-            const emitter2 = new BABYLON.TransformNode("engineFlame2", scene);
-            emitter2.parent = emitter;
-            emitter2.position.z = FLAME_2_Z_OFFSET; // Offset along local Z axis
-            
-            const flame2 = new BABYLON.ParticleSystem("engineFlamePS2", 600, scene);
-            flame2.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
-            flame2.emitter = emitter2 as any;
-            flame2.updateSpeed = .04;
-            flame2.minEmitPower = 0.02;
-            flame2.maxEmitPower = 0.05;
-            flame2.emitRate = 1000;
-            
-            flame2.particleEmitterType = new BABYLON.PointParticleEmitter();
-            
-            // Identical settings to first flame
-            flame2.minSize = 0.2;
-            flame2.maxSize = 0.5;
-            flame2.minInitialRotation = Math.PI * 1;
-            flame2.maxInitialRotation = Math.PI * 3;
-            flame2.minLifeTime = 0.1;
-            flame2.maxLifeTime = 0.2;
-            flame2.gravity = new BABYLON.Vector3(0, 0, 0);
-            flame2.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-            flame2.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
-            flame2.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
-            flame2.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
-            
-            flame2.start();
-            flameParticleSystem2Ref.current = flame2;
-            console.log("🔥 Engine flame 2 particle system created and started at Z offset:", FLAME_2_Z_OFFSET); */
-          } else {
-            console.warn("⚠️ engineFlame transform node not found in spaceship model");
           }
         }
       },
@@ -2998,11 +2833,9 @@ export function BabylonCanvas() {
 
     // Load GEELY car asynchronously (doesn't block loading screen)
     const loadGEELYCarAsync = async () => {
-      console.log("🚗 Starting GEELY car loading (async)...");
 
       // Wait a bit to ensure rockring and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log("🚗 Waited 2s for scene to load, now loading car...");
 
       const gltfPath = "/assets/models/geely/";
       const carFile = "geelyEX2.gltf";
@@ -3012,17 +2845,13 @@ export function BabylonCanvas() {
         const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(gltfPath, carFile, scene);
         container.addAllToScene();
 
-        console.log("🚗 GEELY car model loaded, processing meshes...");
-
         if (!container.meshes.length) {
-          console.error("❌ No meshes found in GEELY car model");
           return;
         }
 
         // Get the root mesh (first mesh in the container)
         const carRoot = container.meshes[0];
         carRootRef.current = carRoot as any; // Store as AbstractMesh
-        console.log("🚗 Car root mesh:", carRoot.name);
 
         // Setup ambient texture coordinates for ALL materials (including variants)
         container.materials.forEach(mat => {
@@ -3047,9 +2876,7 @@ export function BabylonCanvas() {
         carMeshesRef.current = carMeshes;
 
         // Find the anchor_1 mesh from anchors.glb
-        console.log("🚗 Searching for anchor_1 mesh...");
         const anchorMesh = scene.getMeshByName("anchor_1");
-        console.log("🚗 Anchor search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
         if (anchorMesh) {
           // Store anchor reference
@@ -3113,15 +2940,11 @@ export function BabylonCanvas() {
           // Hide the anchor mesh but keep it enabled for position tracking
           anchorMesh.isVisible = false;
 
-          console.log(`🚗 GEELY car positioned at anchor_1: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
-          console.log(`🚗 Anchor mesh hidden but enabled for distance tracking`);
         } else {
           // Fallback to manual position if anchor not found
           carRoot.position.set(131, -6.7, 50);
           carRoot.scaling.set(1, 1, -1);
           modelOriginalScales.set(carRoot, carRoot.scaling.clone()); // Store original scale
-          console.warn("⚠️ anchor_1 mesh not found, positioning car at (131, -6.7, 50)");
-          console.log(`🚗 Car root position after manual set: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
         }
 
         // Warmup GPU for this model, then hide
@@ -3133,9 +2956,6 @@ export function BabylonCanvas() {
           mesh.setEnabled(false);
         });
         modelVisibilityRef.current.model1 = false;
-
-        console.log(`🚗 GEELY car loaded successfully! ${carMeshes.length} meshes (warmed up & hidden)`);
-        console.log(`🚗 Final car root position: (${carRoot.position.x.toFixed(2)}, ${carRoot.position.y.toFixed(2)}, ${carRoot.position.z.toFixed(2)})`);
 
         // Create atom indicator at anchor position
         if (anchorMesh) {
@@ -3149,7 +2969,6 @@ export function BabylonCanvas() {
             flameScale: atomConfig.flameScale
           });
           atomIndicatorsRef.current.atom1 = atom;
-          console.log("⚛️ Created atom indicator for GEELY car at anchor_1");
 
           // Handle atom visibility based on current state
           // Use current state from store (not captured 's') to avoid stale state during async loading
@@ -3160,7 +2979,6 @@ export function BabylonCanvas() {
           } else {
             // In explore states - ensure atom is explicitly enabled
             atom.root.setEnabled(true);
-            console.log("⚛️ Atom1 enabled (in explore state during creation)");
           }
         }
 
@@ -3171,15 +2989,11 @@ export function BabylonCanvas() {
 
         // Mark model as fully loaded
         modelLoadedRef.current.model1 = true;
-        console.log("✅ GEELY car (model1) marked as loaded");
 
         // If a loading ring is showing at this anchor, hide it
         if (loadingRingsRef.current.ring1) {
           loadingRingsRef.current.ring1.hide();
-          console.log("🔄 Hiding loading ring for model1 - model now loaded");
         }
-      } catch (error) {
-        console.error("❌ Error loading GEELY car:", error);
       }
     };
 
@@ -3218,7 +3032,6 @@ export function BabylonCanvas() {
         if (!chosenTrim.allowed.includes(newColor)) {
           // Auto-switch to first allowed color
           newColor = chosenTrim.allowed[0];
-          console.log(`🎨 Trim ${newTrim} requires color change to ${newColor}`);
         }
       }
 
@@ -3232,7 +3045,6 @@ export function BabylonCanvas() {
           );
           if (compatibleTrim) {
             newTrim = compatibleTrim[0];
-            console.log(`🎨 Color ${newColor} requires trim change to ${newTrim}`);
           }
         }
       }
@@ -3260,36 +3072,29 @@ export function BabylonCanvas() {
       currentColorRef.current = newColor;
       currentTrimRef.current = newTrim;
 
-      console.log(`🎨 Applied customization: ${newColor} / ${newTrim}`);
       return { finalColor: newColor, finalTrim: newTrim };
     };
 
     // Load Musecraft model asynchronously (anchor_2, state 5)
     const loadMusecraftAsync = async () => {
-      console.log("🎨 Starting Musecraft loading (async)...");
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 2500));
-      console.log("🎨 Loading musecraft.glb...");
 
       try {
         const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/musecraft/", "musecraft.glb", scene);
         container.addAllToScene();
 
-        console.log("🎨 Musecraft model loaded, processing meshes...");
 
         if (!container.meshes.length) {
-          console.error("❌ No meshes found in Musecraft model");
           return;
         }
 
         const modelRoot = container.meshes[0];
         musecraftRootRef.current = modelRoot as any;
-        console.log("🎨 Musecraft root mesh:", modelRoot.name);
 
         // Store animation groups and stop them initially (will be started by proximity detection)
         musecraftAnimationGroupsRef.current = container.animationGroups;
-        console.log(`🎨 Found ${container.animationGroups.length} animation groups:`, container.animationGroups.map(g => g.name));
         container.animationGroups.forEach(group => {
           group.stop();
           group.reset();
@@ -3304,9 +3109,7 @@ export function BabylonCanvas() {
         musecraftMeshesRef.current = modelMeshes;
 
         // Find the anchor_2 mesh from anchors.glb
-        console.log("🎨 Searching for anchor_2 mesh...");
         const anchorMesh = scene.getMeshByName("anchor_2");
-        console.log("🎨 Anchor_2 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
         if (anchorMesh) {
           musecraftAnchorRef.current = anchorMesh;
@@ -3328,8 +3131,6 @@ export function BabylonCanvas() {
 
           anchorMesh.isVisible = false;
 
-          console.log(`🎨 Musecraft positioned at anchor_2: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
-
           // Create atom indicator at anchor position
           const atomConfig = atomConfigRef.current.model2;
           const atom = createAtomIndicator({
@@ -3341,7 +3142,6 @@ export function BabylonCanvas() {
             flameScale: atomConfig.flameScale
           });
           atomIndicatorsRef.current.atom2 = atom;
-          console.log("⚛️ Created atom indicator for Musecraft at anchor_2");
 
           // Handle atom visibility based on current state
           // Use current state from store (not captured 's') to avoid stale state during async loading
@@ -3352,10 +3152,7 @@ export function BabylonCanvas() {
           } else {
             // In explore states - ensure atom is explicitly enabled
             atom.root.setEnabled(true);
-            console.log("⚛️ Atom2 enabled (in explore state during creation)");
           }
-        } else {
-          console.warn("⚠️ anchor_2 mesh not found for Musecraft");
         }
 
         // Warmup GPU for this model, then hide
@@ -3368,44 +3165,34 @@ export function BabylonCanvas() {
         });
         modelVisibilityRef.current.model2 = false;
 
-        console.log(`🎨 Musecraft loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
-
         // Mark model as fully loaded
         modelLoadedRef.current.model2 = true;
-        console.log("✅ Musecraft (model2) marked as loaded");
 
         // If a loading ring is showing at this anchor, hide it
         if (loadingRingsRef.current.ring2) {
           loadingRingsRef.current.ring2.hide();
-          console.log("🔄 Hiding loading ring for model2 - model now loaded");
         }
-      } catch (error) {
-        console.error("❌ Error loading Musecraft:", error);
       }
     };
 
     // Load Dioramas models asynchronously (anchor_3, state 6)
     // Loads 3 separate models: sesc-museum.gltf, sesc-island.gltf, mesc-museum.gltf
     const loadDioramasAsync = async () => {
-      console.log("🏛️ Starting Dioramas loading (async)...");
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 3000));
 
       const dioramaFiles = [
-        { name: "sesc-museum", file: "sesc-museum.gltf" },
-        { name: "sesc-island", file: "sesc-island.gltf" },
-        { name: "mesc-museum", file: "mesc-museum.gltf" }
+        { name: "sesc-museum", path: "SESC-Museum/", file: "sesc-museum.gltf" },
+        { name: "sesc-island", path: "SESC-Island/", file: "sesc-island.gltf" },
+        { name: "mesc-museum", path: "MESC-Museum/", file: "mesc-museum.gltf" }
       ];
 
       try {
         // Find the anchor_3 mesh first
-        console.log("🏛️ Searching for anchor_3 mesh...");
         const anchorMesh = scene.getMeshByName("anchor_3");
-        console.log("🏛️ Anchor_3 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
         if (!anchorMesh) {
-          console.warn("⚠️ anchor_3 mesh not found for Dioramas");
           return;
         }
 
@@ -3430,8 +3217,6 @@ export function BabylonCanvas() {
         dioramasRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
         modelOriginalScales.set(dioramasRoot as any, dioramasRoot.scaling.clone()); // Store original scale
 
-        console.log(`🏛️ Dioramas root positioned at anchor_3: (${dioramasRoot.position.x.toFixed(2)}, ${dioramasRoot.position.y.toFixed(2)}, ${dioramasRoot.position.z.toFixed(2)})`);
-
         // Create atom indicator at anchor position
         const atomConfig = atomConfigRef.current.model3;
         const atom = createAtomIndicator({
@@ -3443,7 +3228,6 @@ export function BabylonCanvas() {
           flameScale: atomConfig.flameScale
         });
         atomIndicatorsRef.current.atom3 = atom;
-        console.log("⚛️ Created atom indicator for Dioramas at anchor_3");
 
         // Handle atom visibility based on current state
         // Use current state from store (not captured 's') to avoid stale state during async loading
@@ -3454,28 +3238,23 @@ export function BabylonCanvas() {
         } else {
           // In explore states - ensure atom is explicitly enabled
           atom.root.setEnabled(true);
-          console.log("⚛️ Atom3 enabled (in explore state during creation)");
         }
 
         // Load each diorama model
         const allMeshes: BABYLON.AbstractMesh[] = [];
 
         for (let i = 0; i < dioramaFiles.length; i++) {
-          const { name, file } = dioramaFiles[i];
-          console.log(`🏛️ Loading ${name} (${file})...`);
+          const { name, path, file } = dioramaFiles[i];
 
           try {
             const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
-              "/assets/models/dioramas/",
+              `/assets/models/dioramas/${path}`,
               file,
               scene
             );
             container.addAllToScene();
 
-            console.log(`🏛️ ${name} loaded with ${container.meshes.length} meshes`);
-
             if (!container.meshes.length) {
-              console.error(`❌ No meshes found in ${name}`);
               continue;
             }
 
@@ -3509,10 +3288,6 @@ export function BabylonCanvas() {
               mesh.setEnabled(false);
             });
             dioramaModelsRef.current.meshes[i] = modelMeshes;
-
-            console.log(`🏛️ ${name} parented to dioramasRoot (hidden)`);
-          } catch (modelError) {
-            console.error(`❌ Error loading ${name}:`, modelError);
           }
         }
 
@@ -3537,48 +3312,35 @@ export function BabylonCanvas() {
         // Show only the first model (index 0) by default when becoming visible
         // This is handled by the model switching effect
 
-        console.log(`🏛️ Dioramas loaded successfully! Total ${allMeshes.length} meshes across ${dioramaFiles.length} models`);
-
         // Mark model as fully loaded
         modelLoadedRef.current.model3 = true;
-        console.log("✅ Dioramas (model3) marked as loaded");
 
         // If a loading ring is showing at this anchor, hide it
         if (loadingRingsRef.current.ring3) {
           loadingRingsRef.current.ring3.hide();
-          console.log("🔄 Hiding loading ring for model3 - model now loaded");
         }
-      } catch (error) {
-        console.error("❌ Error loading Dioramas:", error);
       }
     };
 
     // Load Petwheels model asynchronously (anchor_4, state 7)
     const loadPetwheelsAsync = async () => {
-      console.log("🐾 Starting Petwheels loading (async)...");
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 3500));
-      console.log("🐾 Loading petwheels.glb...");
 
       try {
         const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/petwheels/", "petwheels.gltf", scene);
         container.addAllToScene();
 
-        console.log("🐾 Petwheels model loaded, processing meshes...");
-
         if (!container.meshes.length) {
-          console.error("❌ No meshes found in Petwheels model");
           return;
         }
 
         const modelRoot = container.meshes[0];
         petwheelsRootRef.current = modelRoot as any;
-        console.log("🐾 Petwheels root mesh:", modelRoot.name);
 
         // Store animation groups and stop them initially (will be started by proximity detection)
         petwheelsAnimationGroupsRef.current = container.animationGroups;
-        console.log(`🐾 Found ${container.animationGroups.length} animation groups:`, container.animationGroups.map(g => g.name));
         container.animationGroups.forEach(group => {
           group.stop();
           group.reset();
@@ -3593,9 +3355,7 @@ export function BabylonCanvas() {
         petwheelsMeshesRef.current = modelMeshes;
 
         // Find the anchor_4 mesh from anchors.glb
-        console.log("🐾 Searching for anchor_4 mesh...");
         const anchorMesh = scene.getMeshByName("anchor_4");
-        console.log("🐾 Anchor_4 search result:", anchorMesh ? "FOUND" : "NOT FOUND");
 
         if (anchorMesh) {
           petwheelsAnchorRef.current = anchorMesh;
@@ -3617,7 +3377,6 @@ export function BabylonCanvas() {
 
           anchorMesh.isVisible = false;
 
-          console.log(`🐾 Petwheels positioned at anchor_4: (${modelRoot.position.x.toFixed(2)}, ${modelRoot.position.y.toFixed(2)}, ${modelRoot.position.z.toFixed(2)})`);
 
           // Create atom indicator at anchor position
           const atomConfig = atomConfigRef.current.model4;
@@ -3630,7 +3389,6 @@ export function BabylonCanvas() {
             flameScale: atomConfig.flameScale
           });
           atomIndicatorsRef.current.atom4 = atom;
-          console.log("⚛️ Created atom indicator for Petwheels at anchor_4");
 
           // Handle atom visibility based on current state
           // Use current state from store (not captured 's') to avoid stale state during async loading
@@ -3641,10 +3399,7 @@ export function BabylonCanvas() {
           } else {
             // In explore states - ensure atom is explicitly enabled
             atom.root.setEnabled(true);
-            console.log("⚛️ Atom4 enabled (in explore state during creation)");
           }
-        } else {
-          console.warn("⚠️ anchor_4 mesh not found for Petwheels");
         }
 
         // Warmup GPU for this model, then hide
@@ -3657,19 +3412,13 @@ export function BabylonCanvas() {
         });
         modelVisibilityRef.current.model4 = false;
 
-        console.log(`🐾 Petwheels loaded successfully! ${modelMeshes.length} meshes (warmed up & hidden)`);
-
         // Mark model as fully loaded
         modelLoadedRef.current.model4 = true;
-        console.log("✅ Petwheels (model4) marked as loaded");
 
         // If a loading ring is showing at this anchor, hide it
         if (loadingRingsRef.current.ring4) {
           loadingRingsRef.current.ring4.hide();
-          console.log("🔄 Hiding loading ring for model4 - model now loaded");
         }
-      } catch (error) {
-        console.error("❌ Error loading Petwheels:", error);
       }
     };
 
@@ -3688,7 +3437,6 @@ export function BabylonCanvas() {
     scene.onBeforeRenderObservable.add(() => {
       // Early return if ship not loaded yet
       if (!spaceshipRootRef.current) {
-        // console.log("⚠️ Ship not loaded yet, skipping distance check");
         return;
       }
 
@@ -3702,7 +3450,6 @@ export function BabylonCanvas() {
       }
 
       if (!targetPosition) {
-        // console.log("⚠️ Car/anchor not loaded yet");
         return;
       }
 
@@ -3741,10 +3488,8 @@ export function BabylonCanvas() {
 
       if (shouldBeVisible && !currentlyVisible) {
         useUI.getState().setDioramasPanelVisible(true);
-        console.log(`🏛️ Dioramas panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       } else if (!shouldBeVisible && currentlyVisible) {
         useUI.getState().setDioramasPanelVisible(false);
-        console.log(`🏛️ Dioramas panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       }
     });
 
@@ -3768,10 +3513,8 @@ export function BabylonCanvas() {
 
       if (shouldBeVisible && !currentlyVisible) {
         useUI.getState().setPetwheelsPanelVisible(true);
-        console.log(`🐾 Petwheels panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       } else if (!shouldBeVisible && currentlyVisible) {
         useUI.getState().setPetwheelsPanelVisible(false);
-        console.log(`🐾 Petwheels panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       }
     });
 
@@ -3795,10 +3538,8 @@ export function BabylonCanvas() {
 
       if (shouldBeVisible && !currentlyVisible) {
         useUI.getState().setMusecraftPanelVisible(true);
-        console.log(`🎵 Musecraft panel shown (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       } else if (!shouldBeVisible && currentlyVisible) {
         useUI.getState().setMusecraftPanelVisible(false);
-        console.log(`🎵 Musecraft panel hidden (SHIP distance to anchor: ${distance.toFixed(2)}m)`);
       }
     });
 
@@ -3868,16 +3609,12 @@ export function BabylonCanvas() {
 
     if (!scene || !canvas) return;
 
-    console.log("🚀 Spaceship controls effect triggered", { s, navigationMode, spaceship: !!spaceship });
-
     const ShipControls = shipControlsRef.current;
     const flame = flameParticleSystemRef.current;
 
     // Only enable controls in states 4-7 with free mode
     const inFreeExploreState = s >= S.state_4 && s <= S.state_7;
     const shouldEnableControls = inFreeExploreState && navigationMode === 'free' && !isInteriorView;
-
-    console.log("🚀 Control state:", { inFreeExploreState, navigationMode, shouldEnableControls });
 
     // Get ship animation timing to delay controls until animation completes
     const sceneConfig = config.canvas.babylonScene;
@@ -3894,7 +3631,6 @@ export function BabylonCanvas() {
 
     // Disable controls in guided mode but play idle animation
     if (!shouldEnableControls) {
-      console.log("🚀 Disabling controls - playing idle animation");
 
       // Clear keys and reset velocity
       ShipControls.keys = {};
@@ -3914,7 +3650,6 @@ export function BabylonCanvas() {
             }
           });
           idleAnim.play(true);
-          console.log("🎬 Playing IDLE animation in guided mode");
         }
       }
 
@@ -3923,7 +3658,6 @@ export function BabylonCanvas() {
 
     // Enable controls in free mode (with delay if ship is animating)
     if (!spaceship) {
-      console.log("🚀 No spaceship found, cannot enable controls");
       return;
     }
 
@@ -3953,7 +3687,6 @@ export function BabylonCanvas() {
       // Update pointer position immediately so edge detection works on first frame
       MC.pointerX = e.clientX;
       MC.pointerY = e.clientY;
-      console.log(`🖱️ Pointer down: button=${e.button}, isRightClick=${MC.isRightClick}, pos=(${e.clientX}, ${e.clientY})`);
     };
 
     handlePointerMove = (e: PointerEvent) => {
@@ -3973,7 +3706,6 @@ export function BabylonCanvas() {
       MC.previousYaw = 0; // Reset previous yaw
       // Clear side trigger visual effect when drag ends
       useUI.getState().setSideTrigger(null);
-      console.log("🚀 Drag control ended");
     };
 
     // Register pointer event handlers IMMEDIATELY (no delay)
@@ -3982,33 +3714,25 @@ export function BabylonCanvas() {
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerUp);
-    console.log("🖱️ Pointer handlers registered immediately for camera rotation");
 
     // Delay enabling ship MOVEMENT controls until ship animation completes
     // (camera rotation via edge detection still works immediately via the handlers above)
-    console.log(`🚀 Delaying ship movement controls by ${totalShipAnimTime}ms to let ship animation complete`);
     const controlsTimeoutId = setTimeout(() => {
-      console.log("🚀 Ship animation complete - enabling free mode ship movement");
 
       // Get shipRoot - this is required now
       let shipRoot = spaceshipRootRef.current;
       if (!shipRoot) {
         shipRoot = scene.getTransformNodeByName("shiproot");
         if (shipRoot) {
-          console.log("🚀 Found shiproot in scene");
           spaceshipRootRef.current = shipRoot;
           shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
         } else {
-          console.error("❌ shiproot not found! Cannot enable controls. Make sure shiproot is exported from Blender.");
           return;
         }
       }
 
       // Always use shipRoot as control target
       const controlTarget = shipRoot;
-      console.log("🚀 Control target:", controlTarget.name, "Position:", controlTarget.position);
-      console.log("🚀 Control target scaling:", controlTarget.scaling);
-      console.log("🚀 Control target rotation:", controlTarget.rotation);
 
       // Ensure quaternion is initialized, but DON'T reset existing rotation
       if (!controlTarget.rotationQuaternion) {
@@ -4031,38 +3755,27 @@ export function BabylonCanvas() {
         const euler = controlTarget.rotationQuaternion.toEulerAngles();
         ShipControls.pitch = euler.x;
         ShipControls.yawTarget = euler.y;
-        console.log("🚀 Initialized control angles from ship rotation:", { pitch: ShipControls.pitch, yaw: ShipControls.yawTarget });
       }
 
       // Setup camera following - parent pivot to shipRoot at rotation center
       const shipPivot = shipPivotRef.current;
 
       if (shipPivot && shipPivot.parent !== controlTarget) {
-        console.log("📷 Parenting shipPivot to shipRoot at center");
         shipPivot.setParent(controlTarget);
         // Different position for mobile vs desktop
         const pivotY = isMobileRef.current ? 1.17 : 0.9;
         shipPivot.position.set(0, pivotY, 0);
         shipPivot.rotationQuaternion = BABYLON.Quaternion.Identity();
-        console.log(`📱 Ship pivot Y offset: ${pivotY} (mobile: ${isMobileRef.current})`);
-
 
         // Parent smoke emitter to shipPivot so it follows the ship (like prototype)
         const smokeEmitter = smokeEmitterRef.current;
         if (smokeEmitter && !smokeEmitter.parent) {
           smokeEmitter.parent = shipPivot;
-          console.log("💨 Smoke emitter parented to shipPivot - will follow ship");
         }
 
         // Camera targets the center pivot (ship rotates correctly around its center)
         if (camera) {
           camera.lockedTarget = shipPivot;
-
-          // Adjust camera beta (vertical angle) to look down at the ship from above
-          // Beta of Math.PI/2 = horizontal, smaller values = looking down from above
-          // Look down at about 82 degrees
-
-          console.log("📷 Camera locked to shipPivot");
         }
       }
 
@@ -4076,20 +3789,11 @@ export function BabylonCanvas() {
       });
 
       // Check what animation groups exist in the scene
-      console.log("🎬 ALL animation groups in scene:", scene.animationGroups.map(g => g.name));
 
       const A = grab();
-      console.log("🎬 Animation groups found:", {
-        forward: A.fwd ? A.fwd.name : "NOT FOUND",
-        stop: A.brk ? A.brk.name : "NOT FOUND",
-        turnLeft: A.L ? A.L.name : "NOT FOUND",
-        turnRight: A.R ? A.R.name : "NOT FOUND",
-        idle: A.I ? A.I.name : "NOT FOUND"
-      });
 
       // Setup animation groups if they exist
       if (A.fwd && A.brk && A.L && A.R && A.I) {
-        console.log("🎬 ✅ All animations found! Setting up blending...");
         Object.values(A).forEach(g => {
           if (g) {
             g.enableBlending = true;
@@ -4097,25 +3801,11 @@ export function BabylonCanvas() {
             g.loopAnimation = true;
             g.stop();
             g.reset();
-            console.log(`🎬 Configured animation: ${g.name}`);
           }
         });
         A.I.play(true); // Start with idle
-        console.log("🎬 ▶️ Playing IDLE animation");
-      } else {
-        console.warn("⚠️ Some animation groups are missing!");
-        if (!A.fwd) console.warn("   Missing: forward");
-        if (!A.brk) console.warn("   Missing: stop");
-        if (!A.L) console.warn("   Missing: turnLeft");
-        if (!A.R) console.warn("   Missing: turnRight");
-        if (!A.I) console.warn("   Missing: idle");
-        console.warn("   Controls will work without animations");
       }
 
-      console.log("🔥 Flame particle system:", !!flame);
-      if (flame) {
-        console.log("🔥 Flame emitter:", flame.emitter);
-      }
 
       // Keyboard listeners (commented out - using drag controls for both mobile and desktop)
       // handleKeyDown = (e: KeyboardEvent) => {
@@ -4589,8 +4279,6 @@ export function BabylonCanvas() {
     const scene = sceneRef.current;
     if (!camera || !scene) return;
 
-    console.log('🎬 [State Change] Camera update triggered for state:', s);
-
     const isMobile = window.innerWidth < 768; // md breakpoint
     const cameraConfig = config.canvas.babylonCamera;
     if (cameraConfig) {
@@ -4600,17 +4288,6 @@ export function BabylonCanvas() {
       // Get beta and alpha from config if available
       const targetBeta = cameraConfig.beta ? (isMobile ? cameraConfig.beta.mobile : cameraConfig.beta.desktop) : undefined;
       const targetAlpha = cameraConfig.alpha ? (isMobile ? cameraConfig.alpha.mobile : cameraConfig.alpha.desktop) : undefined;
-
-      console.log('📋 [Camera Config]', {
-        state: s,
-        isMobile,
-        lowerLimit,
-        upperLimit,
-        targetBeta,
-        targetAlpha,
-        betaDegrees: targetBeta ? (targetBeta * 180 / Math.PI).toFixed(1) : 'N/A',
-        alphaDegrees: targetAlpha ? (targetAlpha * 180 / Math.PI).toFixed(1) : 'N/A'
-      });
 
       // Use config values for duration and delay, with fallbacks
       const duration = cameraConfig.animationDuration !== undefined ? cameraConfig.animationDuration : 0.4;
@@ -4765,11 +4442,9 @@ export function BabylonCanvas() {
 
       if (shouldEnableCurveParticles && !curveParticles.isStarted()) {
         curveParticles.start();
-        console.log("🌟 Curve particles started (state 4+)");
       } else if (!shouldEnableCurveParticles && curveParticles.isStarted()) {
         curveParticles.stop();
         curveParticles.reset(); // Immediately kill all active particles
-        console.log("🌟 Curve particles stopped and reset (state 3 or less)");
       }
     }
 
@@ -4798,7 +4473,6 @@ export function BabylonCanvas() {
       // For states 4-7, ensure shipPivot is parented to shipRoot so camera follows
       const isEnteringExploreState = s >= S.state_4 && s <= S.state_7;
       if (isEnteringExploreState && animShipPivot && animShipPivot.parent !== animShipRoot) {
-        console.log("📷 Parenting shipPivot to shipRoot for explore state");
         animShipPivot.setParent(animShipRoot);
         const pivotY = isMobile ? 1.17 : 0.9;
         animShipPivot.position.set(0, pivotY, 0);
@@ -4848,7 +4522,6 @@ export function BabylonCanvas() {
         const smokeEmitter = smokeEmitterRef.current;
         if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
           smokeEmitter.parent = animShipPivot;
-          console.log("💨 [Leaving Guided] Smoke emitter parented to shipPivot");
         }
 
         // Camera radius for travel (use destination state's lower limit)
@@ -4856,19 +4529,6 @@ export function BabylonCanvas() {
         const stateRadius = isMobile
           ? cameraConfig?.lowerRadiusLimit?.mobile ?? 20
           : cameraConfig?.lowerRadiusLimit?.desktop ?? 20;
-
-        // Determine state name for logging
-        const stateNames: Record<number, string> = {
-          [S.state_0]: 'state_0',
-          [S.state_3]: 'state_3',
-          [S.state_final]: 'state_final'
-        };
-
-        console.log(`⚓ [Leaving Guided] Bezier animation to ${stateNames[s] || `state_${s}`}:`, {
-          startPos: startPosition.toString(),
-          endPos: endPosition.toString(),
-          stateRadius
-        });
 
         // Use bezier with 2 second duration for leaving guided states
         // Skip arrival zoom and hide since destination states should show ship normally (or have it hidden via state config)
@@ -4912,7 +4572,6 @@ export function BabylonCanvas() {
           const smokeEmitter = smokeEmitterRef.current;
           if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
             smokeEmitter.parent = animShipPivot;
-            console.log("💨 [Guided Mode] Smoke emitter parented to shipPivot");
           }
 
           // Get camera radius from state config for zoom-out during travel
@@ -4925,15 +4584,6 @@ export function BabylonCanvas() {
           const isEnteringState4 = s === S.state_4;
           const isComingFromExploreStates = prevState === S.state_5 || prevState === S.state_6 || prevState === S.state_7;
           const animDelay = (isEnteringState4 && !isComingFromExploreStates) ? 1.2 : 0;
-
-          console.log(`⚓ [Guided Mode] Bezier animation to anchor ${anchorKey}:`, {
-            startPos: startPosition.toString(),
-            endPos: anchorData.position.toString(),
-            startForward: startForward.toString(),
-            endForward: anchorData.forward.toString(),
-            stateRadius,
-            delay: animDelay
-          });
 
           // Mark as not arrived - ship is about to travel
           guidedModeArrivedRef.current = false;
@@ -4955,7 +4605,6 @@ export function BabylonCanvas() {
             flameParticles: flameParticleSystemRef.current,
             onComplete: () => {
               guidedModeArrivedRef.current = true;
-              console.log("🎯 Ship arrived at anchor - model rotation enabled");
 
               // Check if model is loaded - if not, show loading ring
               const modelKey = `model${anchorIndex}` as 'model1' | 'model2' | 'model3' | 'model4';
@@ -4963,7 +4612,6 @@ export function BabylonCanvas() {
               const isModelLoaded = modelLoadedRef.current[modelKey];
 
               if (!isModelLoaded && scene) {
-                console.log(`⏳ Model ${modelKey} not loaded yet - showing loading ring`);
 
                 // Dispose any existing ring first
                 if (loadingRingsRef.current[ringKey]) {
@@ -4977,7 +4625,6 @@ export function BabylonCanvas() {
                   radius: 2.5
                 });
                 loadingRingsRef.current[ringKey] = loadingRing;
-                console.log(`🔄 Created loading ring at anchor for ${modelKey}`);
               }
             }
           });
@@ -5008,7 +4655,6 @@ export function BabylonCanvas() {
           const smokeEmitter = smokeEmitterRef.current;
           if (smokeEmitter && animShipPivot && smokeEmitter.parent !== animShipPivot) {
             smokeEmitter.parent = animShipPivot;
-            console.log("💨 [Free Mode] Smoke emitter parented to shipPivot");
           }
         }
 
@@ -5026,14 +4672,6 @@ export function BabylonCanvas() {
           const duration = shipConfig?.duration ?? 1.0;
           const delay = shipConfig?.delay ?? 0;
 
-          console.log(`🚀 [Ship Animation] State ${prevState} → State ${s} (${isMobile ? 'mobile' : 'desktop'}, ${currentNavigationMode}):`, {
-            targetPosition: targetPos,
-            duration,
-            delay,
-            fromState: prevState,
-            toState: s
-          });
-
           animateTransform({
             target: animShipRoot,
             scene,
@@ -5044,7 +4682,6 @@ export function BabylonCanvas() {
           });
         } else {
           // If no ship config, hide ship behind camera (for states without ship)
-          console.log(`🚀 [Ship Animation] State ${prevState} → State ${s}: No ship config, moving behind camera`);
           animateTransform({
             target: animShipRoot,
             scene,
@@ -5074,17 +4711,6 @@ export function BabylonCanvas() {
         const fogStart = fogConfig.fogStart;
         const duration = fogConfig.duration ?? 0.6;
         const delay = fogConfig.delay ?? 0;
-
-        console.log(`🌫️ [Fog Animation] State ${prevState} → State ${s}:`, {
-          currentFogEnd: scene.fogEnd,
-          currentFogStart: scene.fogStart,
-          targetFogEnd: fogEnd,
-          targetFogStart: fogStart,
-          duration,
-          delay,
-          fromState: prevState,
-          toState: s
-        });
 
         animateFog({
           scene,
@@ -5120,25 +4746,18 @@ export function BabylonCanvas() {
         } else {
           controlTarget.position.set(0, -.7, 0);
         }
-
-        console.log("🔄 Restored ship to original state:", {
-          position: controlTarget.position,
-          rotation: "Identity"
-        });
       }
 
       // Reset camera to initial default rotation (same as scene initialization)
       if (camera) {
         camera.alpha = -Math.PI * 1.5;
         camera.beta = Math.PI / 2;
-        console.log("🔄 Reset camera to initial rotation - alpha:", camera.alpha, "beta:", camera.beta);
       }
 
       // Reset ship pivot
       if (pivotToReset && pivotToReset.parent) {
         pivotToReset.setParent(null);
         pivotToReset.position.set(0, 0, 0);
-        console.log("🔄 Reset ship pivot (leaving explore states)");
       }
 
       // Reset smoke emitter
@@ -5146,13 +4765,11 @@ export function BabylonCanvas() {
       if (smokeEmitter && smokeEmitter.parent) {
         smokeEmitter.parent = null;
         smokeEmitter.position.set(0, 0, 25);
-        console.log("🔄 Reset smoke emitter (leaving explore states)");
       }
 
       // Keep camera locked to shipPivot (don't unlock)
       if (camera && !camera.lockedTarget) {
         camera.lockedTarget = pivotToReset;
-        console.log("🔄 Ensuring camera stays locked to shipPivot");
       }
 
       // Reset control angles
@@ -5172,13 +4789,6 @@ export function BabylonCanvas() {
       const isCurrentlyVisible = spaceshipContainer.isEnabled();
       const flames = flameParticleSystemRef.current;
       const flamesRunning = flames ? flames.isStarted() : false;
-
-      console.log(`🚀 [Spaceship Visibility Check] State ${prevState} → ${s}:`, {
-        shouldBeVisible,
-        isCurrentlyVisible,
-        flamesRunning,
-        hasFlamesRef: !!flames
-      });
 
       // Fade in when transitioning to state with spaceship enabled
       if (shouldBeVisible && !isCurrentlyVisible && spaceship) {
@@ -5316,7 +4926,6 @@ export function BabylonCanvas() {
           // First time entering state 4+ - start the animation
           rockRingAnimationStartedRef.current = true;
           animGroup.start(true, 1.7, 1, 2000);
-          console.log("🎸 Rockring animation started (state 4+)");
         } else if (!animGroup.isPlaying) {
           // Animation was started before but stopped - resume it
           animGroup.start(true, 1.7, 1, 2000);
@@ -5490,7 +5099,6 @@ export function BabylonCanvas() {
 
       // Only allow rotation if ship has arrived (guided mode check)
       if (isGuidedMode && !guidedModeArrivedRef.current) {
-        console.log("🔄 Model rotation blocked - ship still traveling");
         return;
       }
 
@@ -5513,8 +5121,6 @@ export function BabylonCanvas() {
           // User didn't click on the model, don't rotate
           return;
         }
-
-        console.log("🔄 [Free Mode] Model clicked - starting rotation");
 
         // Mark that we're rotating the model in free mode
         freeModeDraggingModelRef.current = true;
@@ -5611,7 +5217,6 @@ export function BabylonCanvas() {
             camera.inputs.addPointers();
             camera.attachControl(canvas, true);
           }
-          console.log("🔄 [Free Mode] Model rotation ended - controls restored");
         }
       }
     };
@@ -5796,7 +5401,6 @@ export function BabylonCanvas() {
       // Store original position if not already stored
       if (!modelZoomRef.current.originalPositions[key]) {
         modelZoomRef.current.originalPositions[key] = model.position.clone();
-        console.log(`🔍 Stored original position for ${key}:`, model.position.toString());
       }
 
       const originalPos = modelZoomRef.current.originalPositions[key]!;
@@ -5832,11 +5436,9 @@ export function BabylonCanvas() {
         const zoomDistance = anchorToShipDistance * modelZoomRef.current.zoomedInPercent;
         const offsetVector = directionToShip.scale(zoomDistance);
         endPos = originalPos.add(offsetVector);
-        console.log(`🔍 Zooming IN ${key} - moving ${(modelZoomRef.current.zoomedInPercent * 100).toFixed(0)}% closer (${zoomDistance.toFixed(1)} units)`);
       } else {
         // Zooming out: return to original position
         endPos = originalPos.clone();
-        console.log(`🔍 Zooming OUT ${key} - returning to default`);
       }
 
       animateModelPosition(model, startPos, endPos, modelZoomRef.current.animationDuration, () => {
@@ -5889,7 +5491,6 @@ export function BabylonCanvas() {
         // Store original position if not already stored
         if (!modelZoomRef.current.originalPositions[key]) {
           modelZoomRef.current.originalPositions[key] = model.position.clone();
-          console.log(`🔍 [Pinch] Stored original position for ${key}:`, model.position.toString());
         }
 
         const originalPos = modelZoomRef.current.originalPositions[key]!;
@@ -5925,11 +5526,9 @@ export function BabylonCanvas() {
           const zoomDistance = anchorToShipDistance * modelZoomRef.current.zoomedInPercent;
           const offsetVector = directionToShip.scale(zoomDistance);
           endPos = originalPos.add(offsetVector);
-          console.log(`🔍 [Pinch] Zooming IN ${key} - spreading fingers`);
         } else {
           // Zooming out: return to original position
           endPos = originalPos.clone();
-          console.log(`🔍 [Pinch] Zooming OUT ${key} - pinching fingers`);
         }
 
         animateModelPosition(model, startPos, endPos, modelZoomRef.current.animationDuration, () => {
@@ -5994,8 +5593,6 @@ export function BabylonCanvas() {
         // Reset zoom state
         modelZoomRef.current.isZoomedIn[key] = false;
       });
-
-      console.log("🔍 Model zoom reset (left explore state or guided mode)");
     }
   }, [s, navigationMode]);
 
@@ -6019,7 +5616,6 @@ export function BabylonCanvas() {
 
         if (model) {
           model.position.copyFrom(originalPos);
-          console.log(`🔍 Reset ${key} position back to original before state change`);
         }
       }
 
@@ -6029,7 +5625,6 @@ export function BabylonCanvas() {
     });
     modelZoomRef.current.isAnimating = false;
 
-    console.log("🔍 Model zoom positions cleared for state change");
   }, [s]);
 
   // Reset model zoom when entering interior view (for Geely car)
@@ -6043,7 +5638,6 @@ export function BabylonCanvas() {
         // Instantly reset to default position when entering interior view
         model.position.copyFrom(originalPos);
         modelZoomRef.current.isZoomedIn[key] = false;
-        console.log("🔍 Model zoom reset (entered interior view)");
       }
     }
   }, [isInteriorView, s]);
@@ -6076,7 +5670,6 @@ export function BabylonCanvas() {
         const animGroup = rockRingGroups[0];
         if (!animGroup.isPlaying) {
           animGroup.start(true, 1.7, 1, 2000);
-          console.log("🎸 [Mode Toggle] Restarted Rockring animation");
         }
       }
 
@@ -6086,7 +5679,6 @@ export function BabylonCanvas() {
         museGroups.forEach(group => {
           if (!group.isPlaying) {
             group.play(true);
-            console.log(`🎨 [Mode Toggle] Restarted Musecraft animation: ${group.name}`);
           }
         });
       }
@@ -6097,7 +5689,6 @@ export function BabylonCanvas() {
         petGroups.forEach(group => {
           if (!group.isPlaying) {
             group.play(true);
-            console.log(`🐾 [Mode Toggle] Restarted Petwheels animation: ${group.name}`);
           }
         });
       }
@@ -6117,7 +5708,6 @@ export function BabylonCanvas() {
 
         // Ensure shipPivot is parented to shipRoot for camera following
         if (shipPivot.parent !== shipRoot) {
-          console.log("📷 [Mode Toggle] Parenting shipPivot to shipRoot for guided mode animation");
           shipPivot.setParent(shipRoot);
           const pivotY = isMobile ? 1.17 : 0.9;
           shipPivot.position.set(0, pivotY, 0);
@@ -6132,7 +5722,6 @@ export function BabylonCanvas() {
         const smokeEmitter = smokeEmitterRef.current;
         if (smokeEmitter && smokeEmitter.parent !== shipPivot) {
           smokeEmitter.parent = shipPivot;
-          console.log("💨 [Mode Toggle] Smoke emitter parented to shipPivot for guided mode");
         }
 
         // Get camera radius from state config for zoom-out during travel
@@ -6140,12 +5729,6 @@ export function BabylonCanvas() {
         const stateRadius = isMobile
           ? cameraConfig?.lowerRadiusLimit?.mobile ?? 24
           : cameraConfig?.lowerRadiusLimit?.desktop ?? 24;
-
-        console.log(`⚓ [Mode Toggle] Animating to anchor ${anchorKey}:`, {
-          startPos: startPosition.toString(),
-          endPos: anchorData.position.toString(),
-          stateRadius
-        });
 
         // Mark as not arrived - ship is about to travel
         guidedModeArrivedRef.current = false;
@@ -6166,7 +5749,6 @@ export function BabylonCanvas() {
           flameParticles: flameParticleSystemRef.current,
           onComplete: () => {
             guidedModeArrivedRef.current = true;
-            console.log("🎯 Ship arrived at anchor - model rotation enabled");
           }
         });
       } else {
@@ -6207,10 +5789,6 @@ export function BabylonCanvas() {
         ? cameraConfig?.upperRadiusLimit?.mobile ?? 2
         : cameraConfig?.upperRadiusLimit?.desktop ?? 5;
 
-      console.log(`🔓 [Mode Toggle] Restoring camera radius for free mode:`, {
-        lowerLimit,
-        upperLimit
-      });
 
       const radiusEasing = new BABYLON.CubicEase();
       radiusEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
@@ -6352,7 +5930,6 @@ export function BabylonCanvas() {
       // Transition to visible (SHOW model + EXPAND atom)
       if (shouldBeVisible && !isCurrentlyVisible) {
         visibility[modelKey] = true;
-        console.log(`⚛️ [${modelKey}] Ship within range (${distance.toFixed(1)}m) - SHOWING model + EXPANDING atom`);
 
         // Expand atom with force=true to handle interruptions
         // This stops any running contract animation and starts expand from current state
@@ -6365,7 +5942,6 @@ export function BabylonCanvas() {
         const loadingRing = loadingRingsRef.current[ringKey];
         if (loadingRing) {
           loadingRing.hide(0.3);
-          console.log(`🔄 Hiding loading ring for ${modelKey} - model becoming visible`);
         }
 
         // Special handling for model3 (dioramas) - only show selected model
@@ -6383,7 +5959,6 @@ export function BabylonCanvas() {
             if (i === selectedIndex) {
               // Use scaleModelMeshes for dioramas too (it handles interruption)
               scaleModelMeshes(dioramaRoot, dioramaMeshes, scene, true, 2, () => {
-                console.log(`✨ diorama ${i} scale in complete`);
               });
             } else {
               // Keep other models hidden
@@ -6392,44 +5967,29 @@ export function BabylonCanvas() {
           }
         } else {
           // Standard scale in for other models (scaleModelMeshes handles interruption)
-          scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => {
-            console.log(`✨ ${modelKey} scale in complete`);
-          });
+          scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => { });
         }
 
         // Start musecraft animation when model becomes visible
         if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
           musecraftAnimationGroupsRef.current.forEach(group => {
             group.play(true); // Play in loop
-            console.log(`🎨 Started animation: ${group.name}`);
           });
         }
 
         // Initialize Musecraft interaction system (selection + gizmo) for model2
         if (modelKey === 'model2') {
-          console.log("🔍 [Musecraft DEBUG] model2 became visible, checking interaction init...");
-          console.log("🔍 [Musecraft DEBUG] musecraftRootRef.current:", musecraftRootRef.current?.name || "null");
-          console.log("🔍 [Musecraft DEBUG] sceneRef.current:", sceneRef.current ? "EXISTS" : "null");
-          console.log("🔍 [Musecraft DEBUG] isMusecraftInteractionInitialized():", isMusecraftInteractionInitialized());
 
           const root = musecraftRootRef.current;
           if (root && sceneRef.current && !isMusecraftInteractionInitialized()) {
-            console.log("🔍 [Musecraft DEBUG] Will initialize interaction in 100ms...");
             // Small delay to ensure meshes are fully enabled after scale animation starts
             setTimeout(() => {
-              console.log("🔍 [Musecraft DEBUG] Timeout fired, checking refs again...");
-              console.log("🔍 [Musecraft DEBUG] musecraftRootRef.current:", musecraftRootRef.current?.name || "null");
-              console.log("🔍 [Musecraft DEBUG] sceneRef.current:", sceneRef.current ? "EXISTS" : "null");
               if (musecraftRootRef.current && sceneRef.current) {
-                console.log("🔍 [Musecraft DEBUG] Calling initMusecraftInteraction now!");
                 initMusecraftInteraction(musecraftRootRef.current as BABYLON.AbstractMesh, sceneRef.current);
-              } else {
-                console.log("🔍 [Musecraft DEBUG] FAILED - refs became null");
               }
             }, 100);
           } else if (isMusecraftInteractionInitialized()) {
             // Already initialized from previous visit - re-select rocket and start flames
-            console.log("🔍 [Musecraft DEBUG] Already initialized - re-selecting rocket");
             setTimeout(() => {
               selectRocketByDefault();
               startRocketFlames();
@@ -6441,21 +6001,18 @@ export function BabylonCanvas() {
         if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
           petwheelsAnimationGroupsRef.current.forEach(group => {
             group.play(true); // Play in loop
-            console.log(`🐾 Started animation: ${group.name}`);
           });
         }
       }
       // Transition to hidden (HIDE model + CONTRACT atom)
       else if (!shouldBeVisible && isCurrentlyVisible) {
         visibility[modelKey] = false;
-        console.log(`⚛️ [${modelKey}] Ship left range (${distance.toFixed(1)}m) - HIDING model + CONTRACTING atom`);
 
         // Stop musecraft animation when model becomes hidden
         if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
           musecraftAnimationGroupsRef.current.forEach(group => {
             group.stop();
             group.reset();
-            console.log(`🎨 Stopped animation: ${group.name}`);
           });
         }
 
@@ -6470,7 +6027,6 @@ export function BabylonCanvas() {
           petwheelsAnimationGroupsRef.current.forEach(group => {
             group.stop();
             group.reset();
-            console.log(`🐾 Stopped animation: ${group.name}`);
           });
         }
 
@@ -6482,7 +6038,6 @@ export function BabylonCanvas() {
 
         // Scale out model (scaleModelMeshes handles interruption)
         scaleModelMeshes(modelRoot, meshes, scene, false, 2, () => {
-          console.log(`✨ ${modelKey} scale out complete`);
           // Exit interior view if this was the car
           if (modelKey === 'model1' && useUI.getState().isInteriorView) {
             useUI.getState().setIsInteriorView(false);
@@ -6580,8 +6135,6 @@ export function BabylonCanvas() {
     // Only switch models if the dioramas are currently visible
     if (!isModelVisible) return;
 
-    console.log(`🏛️ Switching to diorama model ${selectedDioramaModel}`);
-
     // For each diorama model
     for (let i = 0; i < dioramaModels.roots.length; i++) {
       const modelRoot = dioramaModels.roots[i];
@@ -6620,12 +6173,10 @@ export function BabylonCanvas() {
         modelRoot.animations = [scaleAnim];
         scene.beginAnimation(modelRoot, 0, totalFrames, false);
 
-        console.log(`🏛️ Showing diorama model ${i} with animation`);
       } else {
         // Hide other models instantly
         modelMeshes.forEach(mesh => mesh.setEnabled(false));
         modelRoot.scaling.set(1, 1, 1); // Reset scale for when it's shown again
-        console.log(`🏛️ Hiding diorama model ${i}`);
       }
     }
   }, [selectedDioramaModel]);
