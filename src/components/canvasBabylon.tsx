@@ -14,6 +14,8 @@ import {
   isMusecraftGizmoDragging,
   selectRocketByDefault
 } from "./MusecraftInteraction";
+import { startModelAnimations, stopModelAnimations } from "./modelAnimationController";
+import { getWorkplaceConfig } from "./workplaceConfig";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
@@ -815,7 +817,74 @@ function createLoadingRing(config: LoadingRingConfig): LoadingRing {
 const modelOriginalScales: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Vector3> = new Map();
 
 // Store original rotations for models (set when models are loaded, used for reset)
-const modelOriginalRotations: Map<BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
+const modelOriginalRotations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
+
+/**
+ * Checks if a lightmaps folder exists for a model and applies lightmaps to mesh materials.
+ * Lightmaps are named after the mesh object (e.g., "chair2_lightmap.png" for mesh "chair2")
+ * and are assigned to the material's lightmapTexture using UV channel 2 (coordinatesIndex = 1).
+ * 
+ * @param basePath The base path to the model folder (e.g., "/assets/models/meetkai/thanksgiving/")
+ * @param meshes Array of meshes from the loaded container
+ * @param scene The Babylon scene
+ */
+async function applyLightmapsToModel(
+  basePath: string,
+  meshes: BABYLON.AbstractMesh[],
+  scene: BABYLON.Scene
+): Promise<void> {
+  // Ensure basePath ends with /
+  const normalizedPath = basePath.endsWith('/') ? basePath : basePath + '/';
+  const lightmapsPath = `${normalizedPath}lightmaps/`;
+
+  // NOTE: We skip folder existence check - individual file checks with
+  // content-type verification are sufficient. HEAD requests to directories
+  // on Vite dev server return 200 even for non-existent paths.
+
+  // Try to load lightmaps for each mesh
+  for (const mesh of meshes) {
+    // Skip meshes without materials or the root __root__ mesh
+    if (!mesh.material || mesh.name === '__root__' || mesh.name.startsWith('__')) {
+      continue;
+    }
+
+    // Check if the mesh has a second UV set (UV2) - required for lightmaps
+    const uv2Data = mesh.getVerticesData(BABYLON.VertexBuffer.UV2Kind);
+    if (!uv2Data) {
+      continue; // No UV2, skip this mesh
+    }
+
+    // Construct the lightmap filename: {meshName}_lightmap.png
+    const meshName = mesh.name;
+    const lightmapUrl = `${lightmapsPath}${meshName}_lightmap.png`;
+
+    // Only apply to PBRMaterial
+    const pbrMat = mesh.material as BABYLON.PBRMaterial;
+    if (!pbrMat || !pbrMat.getClassName || pbrMat.getClassName() !== 'PBRMaterial') {
+      continue;
+    }
+
+    // Create the lightmap texture with proper callbacks
+    // invertY MUST be false for lightmaps to work correctly
+    new BABYLON.Texture(
+      lightmapUrl,
+      scene,
+      false, // noMipmap
+      false, // invertY - MUST be false for lightmaps!
+      BABYLON.Texture.TRILINEAR_SAMPLINGMODE,
+      () => {
+        // Success callback - apply the lightmap
+        const lightmapTexture = new BABYLON.Texture(lightmapUrl, scene, false, false);
+        pbrMat.lightmapTexture = lightmapTexture;
+        pbrMat.lightmapTexture.coordinatesIndex = 1; // Use UV2
+        pbrMat.useLightmapAsShadowmap = true;
+      },
+      () => {
+        // Error callback - lightmap not found, silently skip
+      }
+    );
+  }
+}
 
 /**
  * Warms up the GPU for a model by rendering it at tiny scale for several frames.
@@ -897,7 +966,8 @@ function scaleModelMeshes(
   const nearZeroScale = 0.001;
 
   // Get the original full scale (stored when model was loaded)
-  const fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, -1);
+  // Child models use (1,1,1), parent roots may use (1,1,-1) for Z flip
+  const fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, 1);
 
   // When scaling out, make sure we have the correct full scale stored
   if (!scaleIn && !modelOriginalScales.has(rootMesh)) {
@@ -1719,15 +1789,35 @@ export function BabylonCanvas() {
   const carAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
   const currentColorRef = useRef<string>("green");
   const currentTrimRef = useRef<string>("lightBlue");
-  const interiorCameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
-  const isInteriorView = useUI((st) => st.isInteriorView);
-  const selectedDioramaModel = useUI((st) => st.selectedDioramaModel);
+  const selectedProjectIndex = useUI((st) => st.selectedProjectIndex);
 
-  // Musecraft refs (anchor_2, state 5)
+  // Meetkai refs (anchor_1, state 4) - Multiple models with shared parent
+  const meetkaiRootRef = useRef<BABYLON.TransformNode | null>(null);
+  const meetkaiMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const meetkaiModelsRef = useRef<{
+    roots: (BABYLON.AbstractMesh | null)[];
+    meshes: BABYLON.AbstractMesh[][];
+  }>({
+    roots: [null, null, null, null],
+    meshes: [[], [], [], []]
+  });
+
+  // MoreThanReal refs (anchor_2, state 5) - Multiple models with shared parent
+  const moreThanRealRootRef = useRef<BABYLON.TransformNode | null>(null);
+  const moreThanRealMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const moreThanRealModelsRef = useRef<{
+    roots: (BABYLON.AbstractMesh | null)[];
+    meshes: BABYLON.AbstractMesh[][];
+  }>({
+    roots: [null, null, null],
+    meshes: [[], [], []]
+  });
+  // Legacy single-model refs still used by More Than Real loader
   const musecraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const musecraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
   const musecraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
   const musecraftAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
+
 
 
   // Dioramas refs (anchor_3, state 6) - Multiple models with shared parent
@@ -1744,62 +1834,97 @@ export function BabylonCanvas() {
   });
 
 
-  // Petwheels refs (anchor_4, state 7)
+  // UFSC refs (anchor_4, state 7) - Multiple models with shared parent
+  const ufscRootRef = useRef<BABYLON.TransformNode | null>(null);
+  const ufscMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const petwheelsAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const ufscModelsRef = useRef<{
+    roots: (BABYLON.AbstractMesh | null)[];
+    meshes: BABYLON.AbstractMesh[][];
+  }>({
+    roots: [null, null, null],
+    meshes: [[], [], []]
+  });
+  // Legacy single-model refs still used by loaders
   const petwheelsRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const petwheelsMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
-  const petwheelsAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
   const petwheelsAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
+  const personalAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
+
+  // Personal Projects refs (anchor_5, state 8) - Multiple models with shared parent
+  const personalRootRef = useRef<BABYLON.TransformNode | null>(null);
+  const personalMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const personalAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const personalModelsRef = useRef<{
+    roots: (BABYLON.AbstractMesh | null)[];
+    meshes: BABYLON.AbstractMesh[][];
+  }>({
+    roots: [null, null],
+    meshes: [[], []]
+  });
+
+  // Store animation groups per model ID for the animation controller
+  // Maps model IDs (e.g., 'petwheels', 'sika', 'pistons') to their animation groups
+  const modelAnimationGroupsRef = useRef<Map<string, BABYLON.AnimationGroup[]>>(new Map());
 
   // Atom indicators for each model anchor
   const atomIndicatorsRef = useRef<{
-    atom1: AtomIndicator | null; // For GEELY car (anchor_1)
-    atom2: AtomIndicator | null; // For Musecraft (anchor_2)
-    atom3: AtomIndicator | null; // For Dioramas (anchor_3)
-    atom4: AtomIndicator | null; // For Petwheels (anchor_4)
+    atom1: AtomIndicator | null; // For Meetkai (anchor_1)
+    atom2: AtomIndicator | null; // For More Than Real (anchor_2)
+    atom3: AtomIndicator | null; // For Baltha Maker (anchor_3)
+    atom4: AtomIndicator | null; // For UFSC (anchor_4)
+    atom5: AtomIndicator | null; // For Personal Projects (anchor_5)
   }>({
     atom1: null,
     atom2: null,
     atom3: null,
-    atom4: null
+    atom4: null,
+    atom5: null
   });
 
   // Model visibility state (to track which models are currently shown/hidden)
   const modelVisibilityRef = useRef<{
-    model1: boolean; // GEELY
-    model2: boolean; // Musecraft
-    model3: boolean; // Dioramas
-    model4: boolean; // Petwheels
+    model1: boolean; // Meetkai
+    model2: boolean; // More Than Real
+    model3: boolean; // Baltha Maker
+    model4: boolean; // UFSC
+    model5: boolean; // Personal Projects
   }>({
     model1: false,
     model2: false,
     model3: false,
-    model4: false
+    model4: false,
+    model5: false
   });
 
   // Loading rings for each anchor (shown when ship arrives but model isn't loaded yet)
   const loadingRingsRef = useRef<{
-    ring1: LoadingRing | null; // For GEELY car (anchor_1)
-    ring2: LoadingRing | null; // For Musecraft (anchor_2)
-    ring3: LoadingRing | null; // For Dioramas (anchor_3)
-    ring4: LoadingRing | null; // For Petwheels (anchor_4)
+    ring1: LoadingRing | null; // For Meetkai (anchor_1)
+    ring2: LoadingRing | null; // For More Than Real (anchor_2)
+    ring3: LoadingRing | null; // For Baltha Maker (anchor_3)
+    ring4: LoadingRing | null; // For UFSC (anchor_4)
+    ring5: LoadingRing | null; // For Personal Projects (anchor_5)
   }>({
     ring1: null,
     ring2: null,
     ring3: null,
-    ring4: null
+    ring4: null,
+    ring5: null
   });
 
   // Track whether each model has finished loading (different from visibility)
   const modelLoadedRef = useRef<{
-    model1: boolean; // GEELY
-    model2: boolean; // Musecraft
-    model3: boolean; // Dioramas
-    model4: boolean; // Petwheels
+    model1: boolean; // Meetkai
+    model2: boolean; // More Than Real
+    model3: boolean; // Baltha Maker
+    model4: boolean; // UFSC
+    model5: boolean; // Personal Projects
   }>({
     model1: false,
     model2: false,
     model3: false,
-    model4: false
+    model4: false,
+    model5: false
   });
 
   // Atom indicator configuration per model
@@ -1834,6 +1959,14 @@ export function BabylonCanvas() {
       expandedRingRadii: [5, 6, 8] as [number, number, number],
       rotationSpeed: .3,
       proximityDistance: 17,
+      flameScale: 3
+    },
+    // Personal Projects
+    model5: {
+      idleRingRadius: 2,
+      expandedRingRadii: [6, 7, 9] as [number, number, number],
+      rotationSpeed: 0.3,
+      proximityDistance: 20,
       flameScale: 3
     }
   });
@@ -1885,7 +2018,7 @@ export function BabylonCanvas() {
   });
 
   // Guided mode anchor data refs (position + rotation)
-  // Anchors are stored as { desktop1, desktop2, desktop3, desktop4, mobile1, mobile2, mobile3, mobile4 }
+  // Anchors are stored as { desktop1-5, mobile1-5 }
   const anchorDataRef = useRef<Record<string, AnchorData>>({});
 
 
@@ -2293,8 +2426,8 @@ export function BabylonCanvas() {
       "anchors.glb",
       scene,
       (meshes) => {
-        // Extract positions and rotations from anchor meshes (desktop1-4, mobile1-4)
-        const anchorNames = ['desktop1', 'desktop2', 'desktop3', 'desktop4', 'mobile1', 'mobile2', 'mobile3', 'mobile4'];
+        // Extract positions and rotations from anchor meshes (desktop1-5, mobile1-5)
+        const anchorNames = ['desktop1', 'desktop2', 'desktop3', 'desktop4', 'desktop5', 'mobile1', 'mobile2', 'mobile3', 'mobile4', 'mobile5'];
         anchorNames.forEach(name => {
           const anchor = meshes.find(m => m.name === name);
           if (anchor) {
@@ -2831,161 +2964,171 @@ export function BabylonCanvas() {
       }
     });
 
-    // Load GEELY car asynchronously (doesn't block loading screen)
-    const loadGEELYCarAsync = async () => {
+    // Load models for anchor_1 (state_4) asynchronously
+    // Uses workplaceConfig to determine which models to load (now Musecraft/Personal Projects)
+    const loadAnchor1ModelsAsync = async () => {
 
       // Wait a bit to ensure rockring and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      const gltfPath = "/assets/models/geely/";
-      const carFile = "geelyEX2.gltf";
+      // Get model paths from config
+      const config = getWorkplaceConfig(S.state_4);
+      if (!config) return;
+
+      const modelFiles = config.projects.map(project => {
+        // Extract directory path and filename from modelPath
+        // e.g., "/assets/models/personal/musecraft/musecraft.gltf" -> { basePath: "/assets/models/personal/musecraft/", file: "musecraft.gltf", id: "musecraft" }
+        const fullPath = project.modelPath;
+        const lastSlash = fullPath.lastIndexOf('/');
+        const basePath = fullPath.substring(0, lastSlash + 1);
+        const file = fullPath.substring(lastSlash + 1);
+        return { name: project.id, basePath, file };
+      });
 
       try {
-        // Load the car model as asset container
-        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(gltfPath, carFile, scene);
-        container.addAllToScene();
+        // Find the anchor_1 mesh first
+        const anchorMesh = scene.getMeshByName("anchor_1");
 
-        if (!container.meshes.length) {
+        if (!anchorMesh) {
           return;
         }
 
-        // Get the root mesh (first mesh in the container)
-        const carRoot = container.meshes[0];
-        carRootRef.current = carRoot as any; // Store as AbstractMesh
+        carAnchorRef.current = anchorMesh;
 
-        // Setup ambient texture coordinates for ALL materials (including variants)
-        container.materials.forEach(mat => {
-          const pbrMat = mat as BABYLON.PBRMaterial;
-          if (pbrMat.ambientTexture) {
-            pbrMat.ambientTexture.coordinatesIndex = 1;
-          }
-        });
+        // Create a shared parent TransformNode for all models at this anchor
+        const anchor1Root = new BABYLON.TransformNode("anchor1Root", scene);
+        carRootRef.current = anchor1Root as any;
+        meetkaiRootRef.current = anchor1Root;
 
-        // Stop all animations
-        container.animationGroups.forEach(group => {
-          group.stop();
-          group.reset();
-        });
+        // Position at anchor
+        const anchorPos = anchorMesh.getAbsolutePosition();
+        anchor1Root.position.copyFrom(anchorPos);
 
-        // Store all meshes (don't disable yet - set position first)
-        const carMeshes: BABYLON.AbstractMesh[] = [];
-        container.meshes.forEach(mesh => {
-          carMeshes.push(mesh);
-        });
+        // Apply rotation from anchor
+        anchor1Root.rotationQuaternion = BABYLON.Quaternion.Identity();
+        const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+        anchorWorldMatrix.decompose(undefined, anchor1Root.rotationQuaternion, undefined);
 
-        carMeshesRef.current = carMeshes;
-
-        // Find the anchor_1 mesh from anchors.glb
-        const anchorMesh = scene.getMeshByName("anchor_1");
-
-        if (anchorMesh) {
-          // Store anchor reference
-          carAnchorRef.current = anchorMesh;
-
-          // Position car root at anchor location
-          const anchorPos = anchorMesh.getAbsolutePosition();
-          carRoot.position.copyFrom(anchorPos);
-
-          // Apply rotation from anchor
-          // GLTF meshes use rotationQuaternion, so we must update that, not .rotation
-          if (!carRoot.rotationQuaternion) {
-            carRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-          }
-
-          // Get absolute rotation from anchor and apply to car
-          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
-          anchorWorldMatrix.decompose(undefined, carRoot.rotationQuaternion, undefined);
-
-          carRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
-          modelOriginalScales.set(carRoot, carRoot.scaling.clone()); // Store original scale
-          modelOriginalRotations.set(carRoot, carRoot.rotationQuaternion.clone()); // Store original rotation
-
-          // Create interior camera
-          if (!interiorCameraRef.current) {
-            const offset = new BABYLON.Vector3(0, 3.75, 0);
-            const rotatedOffset = offset.applyRotationQuaternion(carRoot.rotationQuaternion!);
-            const targetPos = anchorPos.add(rotatedOffset);
-
-            const iCam = new BABYLON.ArcRotateCamera(
-              "interiorCamera",
-              0,            // alpha
-              Math.PI / 2.3,  // beta
-              0,            // radius
-              targetPos,
-              scene
-            );
-            if (isMobile) {
-              iCam.fov = 1.8;
-            } else {
-              iCam.fov = 1.2;
-            }
-            iCam.minZ = 0.01;
-            iCam.lowerRadiusLimit = 0;
-            iCam.upperRadiusLimit = 0;
-            iCam.panningSensibility = 0; // Disable panning
-
-            // Sync rotation with car/anchor
-            // We calculate heading from the anchor's forward vector to be robust against scaling/quaternions
-            const anchorForward = anchorMesh.forward;
-            const heading = Math.atan2(anchorForward.x, anchorForward.z);
-
-            // ArcRotateCamera alpha 0 looks down -X axis (in Babylon left-handed)
-            // We want to convert our heading (angle from +Z) to alpha
-            // Formula: alpha = -heading - Math.PI/2
-            iCam.alpha = -heading;
-
-            interiorCameraRef.current = iCam;
-          }
-
-          // Hide the anchor mesh but keep it enabled for position tracking
-          anchorMesh.isVisible = false;
-
-        } else {
-          // Fallback to manual position if anchor not found
-          carRoot.position.set(131, -6.7, 50);
-          carRoot.scaling.set(1, 1, -1);
-          modelOriginalScales.set(carRoot, carRoot.scaling.clone()); // Store original scale
-        }
-
-        // Warmup GPU for this model, then hide
-        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
-        await warmupModelForGPU(carRoot, carMeshes, scene, 50);
-
-        // Initially hide all meshes - proximity detection will show them
-        carMeshes.forEach(mesh => {
-          mesh.setEnabled(false);
-        });
-        modelVisibilityRef.current.model1 = false;
+        anchor1Root.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+        modelOriginalScales.set(anchor1Root as any, anchor1Root.scaling.clone());
+        modelOriginalRotations.set(anchor1Root as any, anchor1Root.rotationQuaternion.clone());
 
         // Create atom indicator at anchor position
-        if (anchorMesh) {
-          const atomConfig = atomConfigRef.current.model1;
-          const atom = createAtomIndicator({
-            scene,
-            position: anchorMesh.getAbsolutePosition(),
-            idleRingRadius: atomConfig.idleRingRadius,
-            expandedRingRadii: atomConfig.expandedRingRadii,
-            rotationSpeed: atomConfig.rotationSpeed,
-            flameScale: atomConfig.flameScale
-          });
-          atomIndicatorsRef.current.atom1 = atom;
+        const atomConfig = atomConfigRef.current.model1;
+        const atom = createAtomIndicator({
+          scene,
+          position: anchorMesh.getAbsolutePosition(),
+          idleRingRadius: atomConfig.idleRingRadius,
+          expandedRingRadii: atomConfig.expandedRingRadii,
+          rotationSpeed: atomConfig.rotationSpeed,
+          flameScale: atomConfig.flameScale
+        });
+        atomIndicatorsRef.current.atom1 = atom;
 
-          // Handle atom visibility based on current state
-          // Use current state from store (not captured 's') to avoid stale state during async loading
-          const currentState = useUI.getState().state;
-          if (currentState < S.state_4 || currentState > S.state_7) {
-            // Not in explore states - hide atom
-            atom.root.setEnabled(false);
-          } else {
-            // In explore states - ensure atom is explicitly enabled
-            atom.root.setEnabled(true);
+        // Handle atom visibility based on current state
+        const currentState = useUI.getState().state;
+        if (currentState < S.state_4 || currentState > S.state_8) {
+          atom.root.setEnabled(false);
+        } else {
+          atom.root.setEnabled(true);
+        }
+
+        // Ensure refs have enough slots for all projects
+        meetkaiModelsRef.current.roots = new Array(modelFiles.length).fill(null);
+        meetkaiModelsRef.current.meshes = modelFiles.map(() => []);
+
+        // Load each model
+        const allMeshes: BABYLON.AbstractMesh[] = [];
+
+        for (let i = 0; i < modelFiles.length; i++) {
+          const { name, basePath, file } = modelFiles[i];
+
+          try {
+            const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+              basePath,
+              file,
+              scene
+            );
+            container.addAllToScene();
+
+            if (!container.meshes.length) {
+              continue;
+            }
+
+            // Get the root mesh of this model
+            const modelRoot = container.meshes[0];
+            meetkaiModelsRef.current.roots[i] = modelRoot;
+
+            // Reset model's local position/rotation since parent handles it
+            modelRoot.position.set(0, 0, 0);
+            if (!modelRoot.rotationQuaternion) {
+              modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+            modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
+            modelRoot.scaling.set(1, 1, 1);
+
+            // Store original scale for this child model so scaleModelMeshes uses correct target
+            modelOriginalScales.set(modelRoot, modelRoot.scaling.clone());
+
+            // Parent this model to the shared root
+            modelRoot.parent = anchor1Root;
+
+            // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            container.materials.forEach(mat => {
+              const pbrMat = mat as BABYLON.PBRMaterial;
+              if (pbrMat.ambientTexture) {
+                pbrMat.ambientTexture.coordinatesIndex = 1;
+              }
+              // Also check for occlusionTexture (glTF-specific runtime property)
+              const matAny = mat as any;
+              if (matAny.occlusionTexture) {
+                matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+            });
+
+            // Stop all animations initially and store them for later use
+            container.animationGroups.forEach(group => {
+              group.stop();
+              group.reset();
+            });
+
+            // Store animation groups per model ID for animation controller
+            if (container.animationGroups.length > 0) {
+              modelAnimationGroupsRef.current.set(name, [...container.animationGroups]);
+            }
+
+            // Store meshes for this model
+            const modelMeshes: BABYLON.AbstractMesh[] = [];
+            container.meshes.forEach(mesh => {
+              modelMeshes.push(mesh);
+              allMeshes.push(mesh);
+              // IMPORTANT: Hide immediately to prevent visibility flash
+              mesh.setEnabled(false);
+            });
+            meetkaiModelsRef.current.meshes[i] = modelMeshes;
+
+            // Apply lightmaps if lightmaps folder exists for this model
+            await applyLightmapsToModel(basePath, modelMeshes, scene);
+
+          } catch {
+            // Silent catch - error loading individual model
           }
         }
 
-        // Apply initial customization (green body, lightBlue trim)
-        setTimeout(() => {
-          customizeCar({ color: "green", trim: "lightBlue" });
-        }, 100);
+        // Store all meshes combined
+        carMeshesRef.current = allMeshes;
+
+        // Warmup GPU for all models
+        for (let i = 0; i < meetkaiModelsRef.current.roots.length; i++) {
+          const root = meetkaiModelsRef.current.roots[i];
+          const meshes = meetkaiModelsRef.current.meshes[i];
+          if (root && meshes.length > 0) {
+            await warmupModelForGPU(root, meshes, scene, 30);
+          }
+        }
+
+        // Hide anchor mesh
+        anchorMesh.isVisible = false;
 
         // Mark model as fully loaded
         modelLoadedRef.current.model1 = true;
@@ -2994,8 +3137,9 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring1) {
           loadingRingsRef.current.ring1.hide();
         }
+
       } catch {
-        // Silent catch - error loading GEELY car
+        // Silent catch - error loading models
       }
     };
 
@@ -3077,95 +3221,168 @@ export function BabylonCanvas() {
       return { finalColor: newColor, finalTrim: newTrim };
     };
 
-    // Load Musecraft model asynchronously (anchor_2, state 5)
-    const loadMusecraftAsync = async () => {
+    // Load models for anchor_2 (state_5) asynchronously
+    // Uses workplaceConfig to determine which models to load (now MeetKai)
+    const loadAnchor2ModelsAsync = async () => {
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 2500));
 
+      // Get model paths from config
+      const config = getWorkplaceConfig(S.state_5);
+      if (!config) return;
+
+      const modelFiles = config.projects.map(project => {
+        const fullPath = project.modelPath;
+        const lastSlash = fullPath.lastIndexOf('/');
+        const basePath = fullPath.substring(0, lastSlash + 1);
+        const file = fullPath.substring(lastSlash + 1);
+        return { name: project.id, basePath, file };
+      });
+
       try {
-        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/musecraft/", "musecraft.glb", scene);
-        container.addAllToScene();
+        // Find the anchor_2 mesh first
+        const anchorMesh = scene.getMeshByName("anchor_2");
 
-
-        if (!container.meshes.length) {
+        if (!anchorMesh) {
           return;
         }
 
-        const modelRoot = container.meshes[0];
-        musecraftRootRef.current = modelRoot as any;
+        musecraftAnchorRef.current = anchorMesh;
 
-        // Store animation groups and stop them initially (will be started by proximity detection)
-        musecraftAnimationGroupsRef.current = container.animationGroups;
-        container.animationGroups.forEach(group => {
-          group.stop();
-          group.reset();
+        // Create a shared parent TransformNode for all models at this anchor
+        const anchor2Root = new BABYLON.TransformNode("anchor2Root", scene);
+        musecraftRootRef.current = anchor2Root as any;
+        moreThanRealRootRef.current = anchor2Root as any;
+
+        // Position at anchor
+        const anchorPos = anchorMesh.getAbsolutePosition();
+        anchor2Root.position.copyFrom(anchorPos);
+
+        // Apply rotation from anchor
+        anchor2Root.rotationQuaternion = BABYLON.Quaternion.Identity();
+        const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+        anchorWorldMatrix.decompose(undefined, anchor2Root.rotationQuaternion, undefined);
+
+        anchor2Root.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+        modelOriginalScales.set(anchor2Root as any, anchor2Root.scaling.clone());
+        modelOriginalRotations.set(anchor2Root as any, anchor2Root.rotationQuaternion.clone());
+
+        // Create atom indicator at anchor position
+        const atomConfig = atomConfigRef.current.model2;
+        const atom = createAtomIndicator({
+          scene,
+          position: anchorMesh.getAbsolutePosition(),
+          idleRingRadius: atomConfig.idleRingRadius,
+          expandedRingRadii: atomConfig.expandedRingRadii,
+          rotationSpeed: atomConfig.rotationSpeed,
+          flameScale: atomConfig.flameScale
         });
+        atomIndicatorsRef.current.atom2 = atom;
 
-        // Store all meshes
-        const modelMeshes: BABYLON.AbstractMesh[] = [];
-        container.meshes.forEach(mesh => {
-          modelMeshes.push(mesh);
-        });
+        // Handle atom visibility based on current state
+        const currentState = useUI.getState().state;
+        if (currentState < S.state_4 || currentState > S.state_8) {
+          atom.root.setEnabled(false);
+        } else {
+          atom.root.setEnabled(true);
+        }
 
-        musecraftMeshesRef.current = modelMeshes;
+        // Ensure refs have enough slots for all projects
+        moreThanRealModelsRef.current.roots = new Array(modelFiles.length).fill(null);
+        moreThanRealModelsRef.current.meshes = modelFiles.map(() => []);
 
-        // Find the anchor_2 mesh from anchors.glb
-        const anchorMesh = scene.getMeshByName("anchor_2");
+        // Load each model
+        const allMeshes: BABYLON.AbstractMesh[] = [];
 
-        if (anchorMesh) {
-          musecraftAnchorRef.current = anchorMesh;
+        for (let i = 0; i < modelFiles.length; i++) {
+          const { name, basePath, file } = modelFiles[i];
 
-          // Position model root at anchor location
-          const anchorPos = anchorMesh.getAbsolutePosition();
-          modelRoot.position.copyFrom(anchorPos);
+          try {
+            const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+              basePath,
+              file,
+              scene
+            );
+            container.addAllToScene();
 
-          // Apply rotation from anchor
-          if (!modelRoot.rotationQuaternion) {
-            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-          }
+            if (!container.meshes.length) {
+              continue;
+            }
 
-          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
-          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
+            // Get the root mesh of this model
+            const modelRoot = container.meshes[0];
+            moreThanRealModelsRef.current.roots[i] = modelRoot;
 
-          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
-          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
+            // Reset model's local position/rotation since parent handles it
+            modelRoot.position.set(0, 0, 0);
+            if (!modelRoot.rotationQuaternion) {
+              modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+            modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
+            modelRoot.scaling.set(1, 1, 1);
 
-          anchorMesh.isVisible = false;
+            // Store original scale for this child model so scaleModelMeshes uses correct target
+            modelOriginalScales.set(modelRoot, modelRoot.scaling.clone());
 
-          // Create atom indicator at anchor position
-          const atomConfig = atomConfigRef.current.model2;
-          const atom = createAtomIndicator({
-            scene,
-            position: anchorMesh.getAbsolutePosition(),
-            idleRingRadius: atomConfig.idleRingRadius,
-            expandedRingRadii: atomConfig.expandedRingRadii,
-            rotationSpeed: atomConfig.rotationSpeed,
-            flameScale: atomConfig.flameScale
-          });
-          atomIndicatorsRef.current.atom2 = atom;
+            // Parent this model to the shared root
+            modelRoot.parent = anchor2Root;
 
-          // Handle atom visibility based on current state
-          // Use current state from store (not captured 's') to avoid stale state during async loading
-          const currentState = useUI.getState().state;
-          if (currentState < S.state_4 || currentState > S.state_7) {
-            // Not in explore states - hide atom
-            atom.root.setEnabled(false);
-          } else {
-            // In explore states - ensure atom is explicitly enabled
-            atom.root.setEnabled(true);
+            // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            container.materials.forEach(mat => {
+              const pbrMat = mat as BABYLON.PBRMaterial;
+              if (pbrMat.ambientTexture) {
+                pbrMat.ambientTexture.coordinatesIndex = 1;
+              }
+              // Also check for occlusionTexture (glTF-specific runtime property)
+              const matAny = mat as any;
+              if (matAny.occlusionTexture) {
+                matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+            });
+
+            // Stop all animations initially and store them for later use
+            container.animationGroups.forEach(group => {
+              group.stop();
+              group.reset();
+            });
+
+            // Store animation groups per model ID for animation controller
+            if (container.animationGroups.length > 0) {
+              modelAnimationGroupsRef.current.set(name, [...container.animationGroups]);
+            }
+
+            // Store meshes for this model
+            const modelMeshes: BABYLON.AbstractMesh[] = [];
+            container.meshes.forEach(mesh => {
+              modelMeshes.push(mesh);
+              allMeshes.push(mesh);
+              mesh.setEnabled(false);
+            });
+            moreThanRealModelsRef.current.meshes[i] = modelMeshes;
+
+            // Apply lightmaps if lightmaps folder exists for this model
+            await applyLightmapsToModel(basePath, modelMeshes, scene);
+
+          } catch {
+            // Silent catch - error loading individual model
           }
         }
 
-        // Warmup GPU for this model, then hide
-        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
-        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50);
+        // Store all meshes combined
+        musecraftMeshesRef.current = allMeshes;
 
-        // Initially hide all meshes - proximity detection will show them
-        modelMeshes.forEach(mesh => {
-          mesh.setEnabled(false);
-        });
-        modelVisibilityRef.current.model2 = false;
+        // Warmup GPU for all models
+        for (let i = 0; i < moreThanRealModelsRef.current.roots.length; i++) {
+          const root = moreThanRealModelsRef.current.roots[i];
+          const meshes = moreThanRealModelsRef.current.meshes[i];
+          if (root && meshes.length > 0) {
+            await warmupModelForGPU(root, meshes, scene, 30);
+          }
+        }
+
+        // Hide anchor mesh
+        anchorMesh.isVisible = false;
 
         // Mark model as fully loaded
         modelLoadedRef.current.model2 = true;
@@ -3174,23 +3391,30 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring2) {
           loadingRingsRef.current.ring2.hide();
         }
+
       } catch {
-        // Silent catch - error loading Musecraft model
+        // Silent catch - error loading models
       }
     };
 
-    // Load Dioramas models asynchronously (anchor_3, state 6)
-    // Loads 3 separate models: sesc-museum.gltf, sesc-island.gltf, mesc-museum.gltf
-    const loadDioramasAsync = async () => {
+    // Load models for anchor_3 (state_6) asynchronously
+    // Uses workplaceConfig to determine which models to load (now More Than Real)
+    const loadAnchor3ModelsAsync = async () => {
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      const dioramaFiles = [
-        { name: "sesc-museum", path: "SESC-Museum/", file: "sesc-museum.gltf" },
-        { name: "sesc-island", path: "SESC-Island/", file: "sesc-island.gltf" },
-        { name: "mesc-museum", path: "MESC-Museum/", file: "mesc-museum.gltf" }
-      ];
+      // Get model paths from config
+      const config = getWorkplaceConfig(S.state_6);
+      if (!config) return;
+
+      const modelFiles = config.projects.map(project => {
+        const fullPath = project.modelPath;
+        const lastSlash = fullPath.lastIndexOf('/');
+        const basePath = fullPath.substring(0, lastSlash + 1);
+        const file = fullPath.substring(lastSlash + 1);
+        return { name: project.id, basePath, file };
+      });
 
       try {
         // Find the anchor_3 mesh first
@@ -3203,23 +3427,24 @@ export function BabylonCanvas() {
         dioramasAnchorRef.current = anchorMesh;
         anchorMesh.isVisible = false;
 
-        // Create parent root TransformNode for all diorama models
-        const dioramasRoot = new BABYLON.TransformNode("dioramasRoot", scene);
-        dioramasRootRef.current = dioramasRoot;
+        // Create parent root TransformNode for all models at this anchor
+        const anchor3Root = new BABYLON.TransformNode("anchor3Root", scene);
+        dioramasRootRef.current = anchor3Root;
 
         // Position and rotate the parent root at anchor location
         const anchorPos = anchorMesh.getAbsolutePosition();
-        dioramasRoot.position.copyFrom(anchorPos);
+        anchor3Root.position.copyFrom(anchorPos);
 
         // Apply rotation from anchor
-        if (!dioramasRoot.rotationQuaternion) {
-          dioramasRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+        if (!anchor3Root.rotationQuaternion) {
+          anchor3Root.rotationQuaternion = BABYLON.Quaternion.Identity();
         }
         const anchorWorldMatrix = anchorMesh.getWorldMatrix();
-        anchorWorldMatrix.decompose(undefined, dioramasRoot.rotationQuaternion, undefined);
+        anchorWorldMatrix.decompose(undefined, anchor3Root.rotationQuaternion, undefined);
 
-        dioramasRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
-        modelOriginalScales.set(dioramasRoot as any, dioramasRoot.scaling.clone()); // Store original scale
+        anchor3Root.scaling.set(1, 1, -1); // Flip Z to match scene orientation
+        modelOriginalScales.set(anchor3Root as any, anchor3Root.scaling.clone()); // Store original scale
+        modelOriginalRotations.set(anchor3Root as any, anchor3Root.rotationQuaternion.clone()); // Store original rotation
 
         // Create atom indicator at anchor position
         const atomConfig = atomConfigRef.current.model3;
@@ -3234,25 +3459,26 @@ export function BabylonCanvas() {
         atomIndicatorsRef.current.atom3 = atom;
 
         // Handle atom visibility based on current state
-        // Use current state from store (not captured 's') to avoid stale state during async loading
         const currentState = useUI.getState().state;
-        if (currentState < S.state_4 || currentState > S.state_7) {
-          // Not in explore states - hide atom
+        if (currentState < S.state_4 || currentState > S.state_8) {
           atom.root.setEnabled(false);
         } else {
-          // In explore states - ensure atom is explicitly enabled
           atom.root.setEnabled(true);
         }
 
-        // Load each diorama model
+        // Ensure refs have enough slots for all projects
+        dioramaModelsRef.current.roots = new Array(modelFiles.length).fill(null);
+        dioramaModelsRef.current.meshes = modelFiles.map(() => []);
+
+        // Load each model
         const allMeshes: BABYLON.AbstractMesh[] = [];
 
-        for (let i = 0; i < dioramaFiles.length; i++) {
-          const { name, path, file } = dioramaFiles[i];
+        for (let i = 0; i < modelFiles.length; i++) {
+          const { name, basePath, file } = modelFiles[i];
 
           try {
             const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
-              `/assets/models/dioramas/${path}`,
+              basePath,
               file,
               scene
             );
@@ -3274,14 +3500,35 @@ export function BabylonCanvas() {
             modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
             modelRoot.scaling.set(1, 1, 1);
 
-            // Parent this model to the shared dioramas root
-            modelRoot.parent = dioramasRoot;
+            // Store original scale for this child model so scaleModelMeshes uses correct target
+            modelOriginalScales.set(modelRoot, modelRoot.scaling.clone());
+
+            // Parent this model to the shared root
+            modelRoot.parent = anchor3Root;
+
+            // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            container.materials.forEach(mat => {
+              const pbrMat = mat as BABYLON.PBRMaterial;
+              if (pbrMat.ambientTexture) {
+                pbrMat.ambientTexture.coordinatesIndex = 1;
+              }
+              // Also check for occlusionTexture (glTF-specific runtime property)
+              const matAny = mat as any;
+              if (matAny.occlusionTexture) {
+                matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+            });
 
             // Stop all animations
             container.animationGroups.forEach(group => {
               group.stop();
               group.reset();
             });
+
+            // Store animation groups per model ID for animation controller
+            if (container.animationGroups.length > 0) {
+              modelAnimationGroupsRef.current.set(name, [...container.animationGroups]);
+            }
 
             // Store meshes for this model
             const modelMeshes: BABYLON.AbstractMesh[] = [];
@@ -3292,8 +3539,11 @@ export function BabylonCanvas() {
               mesh.setEnabled(false);
             });
             dioramaModelsRef.current.meshes[i] = modelMeshes;
+
+            // Apply lightmaps if lightmaps folder exists for this model
+            await applyLightmapsToModel(basePath, modelMeshes, scene);
           } catch {
-            // Silent catch - error loading individual diorama model
+            // Silent catch - error loading individual model
           }
         }
 
@@ -3315,9 +3565,6 @@ export function BabylonCanvas() {
         });
         modelVisibilityRef.current.model3 = false;
 
-        // Show only the first model (index 0) by default when becoming visible
-        // This is handled by the model switching effect
-
         // Mark model as fully loaded
         modelLoadedRef.current.model3 = true;
 
@@ -3326,99 +3573,173 @@ export function BabylonCanvas() {
           loadingRingsRef.current.ring3.hide();
         }
       } catch {
-        // Silent catch - error loading Dioramas models
+        // Silent catch - error loading models
       }
     };
 
-    // Load Petwheels model asynchronously (anchor_4, state 7)
-    const loadPetwheelsAsync = async () => {
+    // Load models for anchor_4 (state_7) asynchronously
+    // Uses workplaceConfig to determine which models to load (now Baltha Maker)
+    const loadAnchor4ModelsAsync = async () => {
 
       // Wait a bit to ensure anchors and other assets are loaded
       await new Promise(resolve => setTimeout(resolve, 3500));
 
-      try {
-        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("/assets/models/petwheels/", "petwheels.gltf", scene);
-        container.addAllToScene();
+      // Get model paths from config
+      const config = getWorkplaceConfig(S.state_7);
+      if (!config) return;
 
-        if (!container.meshes.length) {
+      const modelFiles = config.projects.map(project => {
+        const fullPath = project.modelPath;
+        const lastSlash = fullPath.lastIndexOf('/');
+        const basePath = fullPath.substring(0, lastSlash + 1);
+        const file = fullPath.substring(lastSlash + 1);
+        return { name: project.id, basePath, file };
+      });
+
+      try {
+        // Find the anchor_4 mesh first
+        const anchorMesh = scene.getMeshByName("anchor_4");
+
+        if (!anchorMesh) {
           return;
         }
 
-        const modelRoot = container.meshes[0];
-        petwheelsRootRef.current = modelRoot as any;
+        petwheelsAnchorRef.current = anchorMesh;
 
-        // Store animation groups and stop them initially (will be started by proximity detection)
-        petwheelsAnimationGroupsRef.current = container.animationGroups;
-        container.animationGroups.forEach(group => {
-          group.stop();
-          group.reset();
+        // Create a shared parent TransformNode for all models at this anchor
+        const anchor4Root = new BABYLON.TransformNode("anchor4Root", scene);
+        petwheelsRootRef.current = anchor4Root as any;
+        ufscRootRef.current = anchor4Root;
+
+        // Position at anchor
+        const anchorPos = anchorMesh.getAbsolutePosition();
+        anchor4Root.position.copyFrom(anchorPos);
+
+        // Apply rotation from anchor
+        anchor4Root.rotationQuaternion = BABYLON.Quaternion.Identity();
+        const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+        anchorWorldMatrix.decompose(undefined, anchor4Root.rotationQuaternion, undefined);
+
+        anchor4Root.scaling.set(1, 1, -1);
+        modelOriginalScales.set(anchor4Root as any, anchor4Root.scaling.clone());
+        modelOriginalRotations.set(anchor4Root as any, anchor4Root.rotationQuaternion.clone());
+
+        // Create atom indicator at anchor position
+        const atomConfig = atomConfigRef.current.model4;
+        const atom = createAtomIndicator({
+          scene,
+          position: anchorMesh.getAbsolutePosition(),
+          idleRingRadius: atomConfig.idleRingRadius,
+          expandedRingRadii: atomConfig.expandedRingRadii,
+          rotationSpeed: atomConfig.rotationSpeed,
+          flameScale: atomConfig.flameScale
         });
+        atomIndicatorsRef.current.atom4 = atom;
 
-        // Store all meshes
-        const modelMeshes: BABYLON.AbstractMesh[] = [];
-        container.meshes.forEach(mesh => {
-          modelMeshes.push(mesh);
-        });
+        // Handle atom visibility based on current state
+        const currentState = useUI.getState().state;
+        if (currentState < S.state_4 || currentState > S.state_8) {
+          atom.root.setEnabled(false);
+        } else {
+          atom.root.setEnabled(true);
+        }
 
-        petwheelsMeshesRef.current = modelMeshes;
+        // Ensure refs have enough slots for all projects
+        ufscModelsRef.current.roots = new Array(modelFiles.length).fill(null);
+        ufscModelsRef.current.meshes = modelFiles.map(() => []);
 
-        // Find the anchor_4 mesh from anchors.glb
-        const anchorMesh = scene.getMeshByName("anchor_4");
+        // Load each model
+        const allMeshes: BABYLON.AbstractMesh[] = [];
 
-        if (anchorMesh) {
-          petwheelsAnchorRef.current = anchorMesh;
+        for (let i = 0; i < modelFiles.length; i++) {
+          const { name, basePath, file } = modelFiles[i];
 
-          // Position model root at anchor location
-          const anchorPos = anchorMesh.getAbsolutePosition();
-          modelRoot.position.copyFrom(anchorPos);
+          try {
+            const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+              basePath,
+              file,
+              scene
+            );
+            container.addAllToScene();
 
-          // Apply rotation from anchor
-          if (!modelRoot.rotationQuaternion) {
-            modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-          }
+            if (!container.meshes.length) {
+              continue;
+            }
 
-          const anchorWorldMatrix = anchorMesh.getWorldMatrix();
-          anchorWorldMatrix.decompose(undefined, modelRoot.rotationQuaternion, undefined);
+            // Get the root mesh of this model
+            const modelRoot = container.meshes[0];
+            ufscModelsRef.current.roots[i] = modelRoot;
 
-          modelRoot.scaling.set(1, 1, -1); // Flip Z to match scene orientation
-          modelOriginalScales.set(modelRoot, modelRoot.scaling.clone()); // Store original scale
+            // Reset model's local position/rotation since parent handles it
+            modelRoot.position.set(0, 0, 0);
+            if (!modelRoot.rotationQuaternion) {
+              modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+            modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
+            modelRoot.scaling.set(1, 1, 1);
 
-          anchorMesh.isVisible = false;
+            // Store original scale for this child model so scaleModelMeshes uses correct target
+            modelOriginalScales.set(modelRoot, modelRoot.scaling.clone());
 
+            // Parent this model to the shared root
+            modelRoot.parent = anchor4Root;
 
-          // Create atom indicator at anchor position
-          const atomConfig = atomConfigRef.current.model4;
-          const atom = createAtomIndicator({
-            scene,
-            position: anchorMesh.getAbsolutePosition(),
-            idleRingRadius: atomConfig.idleRingRadius,
-            expandedRingRadii: atomConfig.expandedRingRadii,
-            rotationSpeed: atomConfig.rotationSpeed,
-            flameScale: atomConfig.flameScale
-          });
-          atomIndicatorsRef.current.atom4 = atom;
+            // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            container.materials.forEach(mat => {
+              const pbrMat = mat as BABYLON.PBRMaterial;
+              if (pbrMat.ambientTexture) {
+                pbrMat.ambientTexture.coordinatesIndex = 1;
+              }
+              // Also check for occlusionTexture (glTF-specific runtime property)
+              const matAny = mat as any;
+              if (matAny.occlusionTexture) {
+                matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+            });
 
-          // Handle atom visibility based on current state
-          // Use current state from store (not captured 's') to avoid stale state during async loading
-          const currentState = useUI.getState().state;
-          if (currentState < S.state_4 || currentState > S.state_7) {
-            // Not in explore states - hide atom
-            atom.root.setEnabled(false);
-          } else {
-            // In explore states - ensure atom is explicitly enabled
-            atom.root.setEnabled(true);
+            // Stop all animations initially and store them for later use
+            container.animationGroups.forEach(group => {
+              group.stop();
+              group.reset();
+            });
+
+            // Store animation groups per model ID for animation controller
+            if (container.animationGroups.length > 0) {
+              modelAnimationGroupsRef.current.set(name, [...container.animationGroups]);
+            }
+
+            // Store meshes for this model
+            const modelMeshes: BABYLON.AbstractMesh[] = [];
+            container.meshes.forEach(mesh => {
+              modelMeshes.push(mesh);
+              allMeshes.push(mesh);
+              mesh.setEnabled(false);
+            });
+            ufscModelsRef.current.meshes[i] = modelMeshes;
+
+            // Apply lightmaps if lightmaps folder exists for this model
+            await applyLightmapsToModel(basePath, modelMeshes, scene);
+
+          } catch {
+            // Silent catch - error loading individual model
           }
         }
 
-        // Warmup GPU for this model, then hide
-        // This pre-compiles shaders and uploads buffers to prevent lag on first appearance
-        await warmupModelForGPU(modelRoot, modelMeshes, scene, 50);
+        // Store all meshes combined
+        petwheelsMeshesRef.current = allMeshes;
+        ufscMeshesRef.current = allMeshes;
 
-        // Initially hide all meshes - proximity detection will show them
-        modelMeshes.forEach(mesh => {
-          mesh.setEnabled(false);
-        });
-        modelVisibilityRef.current.model4 = false;
+        // Warmup GPU for all models
+        for (let i = 0; i < ufscModelsRef.current.roots.length; i++) {
+          const root = ufscModelsRef.current.roots[i];
+          const meshes = ufscModelsRef.current.meshes[i];
+          if (root && meshes.length > 0) {
+            await warmupModelForGPU(root, meshes, scene, 30);
+          }
+        }
+
+        // Hide anchor
+        anchorMesh.isVisible = false;
 
         // Mark model as fully loaded
         modelLoadedRef.current.model4 = true;
@@ -3427,22 +3748,198 @@ export function BabylonCanvas() {
         if (loadingRingsRef.current.ring4) {
           loadingRingsRef.current.ring4.hide();
         }
+
       } catch {
-        // Silent catch - error loading Petwheels model
+        // Silent catch - error loading models
+      }
+    };
+
+    // Load models for anchor_5 (state_8) asynchronously
+    // Uses workplaceConfig to determine which models to load (now UFSC)
+    const loadAnchor5ModelsAsync = async () => {
+
+      // Wait a bit to ensure anchors and other assets are loaded
+      await new Promise(resolve => setTimeout(resolve, 4000));
+
+      // Get model paths from config
+      const config = getWorkplaceConfig(S.state_8);
+      if (!config) return;
+
+      const modelFiles = config.projects.map(project => {
+        const fullPath = project.modelPath;
+        const lastSlash = fullPath.lastIndexOf('/');
+        const basePath = fullPath.substring(0, lastSlash + 1);
+        const file = fullPath.substring(lastSlash + 1);
+        return { name: project.id, basePath, file };
+      });
+
+      try {
+        // Find the anchor_5 mesh first
+        const anchorMesh = scene.getMeshByName("anchor_5");
+
+        if (!anchorMesh) {
+          return;
+        }
+
+        personalAnchorRef.current = anchorMesh;
+
+        // Create a shared parent TransformNode for all models at this anchor
+        const anchor5Root = new BABYLON.TransformNode("anchor5Root", scene);
+        personalRootRef.current = anchor5Root;
+
+        // Position at anchor
+        const anchorPos = anchorMesh.getAbsolutePosition();
+        anchor5Root.position.copyFrom(anchorPos);
+
+        // Apply rotation from anchor
+        anchor5Root.rotationQuaternion = BABYLON.Quaternion.Identity();
+        const anchorWorldMatrix = anchorMesh.getWorldMatrix();
+        anchorWorldMatrix.decompose(undefined, anchor5Root.rotationQuaternion, undefined);
+
+        anchor5Root.scaling.set(1, 1, -1);
+        modelOriginalScales.set(anchor5Root as any, anchor5Root.scaling.clone());
+        modelOriginalRotations.set(anchor5Root as any, anchor5Root.rotationQuaternion.clone());
+
+        // Create atom indicator at anchor position
+        const atomConfig = atomConfigRef.current.model5;
+        const atom = createAtomIndicator({
+          scene,
+          position: anchorMesh.getAbsolutePosition(),
+          idleRingRadius: atomConfig.idleRingRadius,
+          expandedRingRadii: atomConfig.expandedRingRadii,
+          rotationSpeed: atomConfig.rotationSpeed,
+          flameScale: atomConfig.flameScale
+        });
+        atomIndicatorsRef.current.atom5 = atom;
+
+        // Handle atom visibility based on current state
+        const currentState = useUI.getState().state;
+        if (currentState < S.state_4 || currentState > S.state_8) {
+          atom.root.setEnabled(false);
+        } else {
+          atom.root.setEnabled(true);
+        }
+
+        // Ensure refs have enough slots for all projects
+        personalModelsRef.current.roots = new Array(modelFiles.length).fill(null);
+        personalModelsRef.current.meshes = modelFiles.map(() => []);
+
+        // Load each model
+        const allMeshes: BABYLON.AbstractMesh[] = [];
+
+        for (let i = 0; i < modelFiles.length; i++) {
+          const { name, basePath, file } = modelFiles[i];
+
+          try {
+            const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(
+              basePath,
+              file,
+              scene
+            );
+            container.addAllToScene();
+
+            if (!container.meshes.length) {
+              continue;
+            }
+
+            // Get the root mesh of this model
+            const modelRoot = container.meshes[0];
+            personalModelsRef.current.roots[i] = modelRoot;
+
+            // Reset model's local position/rotation since parent handles it
+            modelRoot.position.set(0, 0, 0);
+            if (!modelRoot.rotationQuaternion) {
+              modelRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+            modelRoot.rotationQuaternion.copyFrom(BABYLON.Quaternion.Identity());
+            modelRoot.scaling.set(1, 1, 1);
+
+            // Store original scale for this child model so scaleModelMeshes uses correct target
+            modelOriginalScales.set(modelRoot, modelRoot.scaling.clone());
+
+            // Parent this model to the shared root
+            modelRoot.parent = anchor5Root;
+
+            // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            container.materials.forEach(mat => {
+              const pbrMat = mat as BABYLON.PBRMaterial;
+              if (pbrMat.ambientTexture) {
+                pbrMat.ambientTexture.coordinatesIndex = 1;
+              }
+              // Also check for occlusionTexture (glTF-specific runtime property)
+              const matAny = mat as any;
+              if (matAny.occlusionTexture) {
+                matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+            });
+
+            // Stop all animations
+            container.animationGroups.forEach(group => {
+              group.stop();
+              group.reset();
+            });
+
+            // Store animation groups per model ID for animation controller
+            if (container.animationGroups.length > 0) {
+              modelAnimationGroupsRef.current.set(name, [...container.animationGroups]);
+            }
+
+            // Store meshes for this model
+            const modelMeshes: BABYLON.AbstractMesh[] = [];
+            container.meshes.forEach(mesh => {
+              modelMeshes.push(mesh);
+              allMeshes.push(mesh);
+              mesh.setEnabled(false);
+            });
+            personalModelsRef.current.meshes[i] = modelMeshes;
+
+            // Apply lightmaps if lightmaps folder exists for this model
+            await applyLightmapsToModel(basePath, modelMeshes, scene);
+
+          } catch {
+            // Silent catch - error loading individual model
+          }
+        }
+
+        // Store all meshes combined
+        personalMeshesRef.current = allMeshes;
+
+        // Warmup GPU for all models
+        for (let i = 0; i < personalModelsRef.current.roots.length; i++) {
+          const root = personalModelsRef.current.roots[i];
+          const meshes = personalModelsRef.current.meshes[i];
+          if (root && meshes.length > 0) {
+            await warmupModelForGPU(root, meshes, scene, 30);
+          }
+        }
+
+        // Hide anchor
+        anchorMesh.isVisible = false;
+
+        // Mark model as fully loaded
+        modelLoadedRef.current.model5 = true;
+
+        // If a loading ring is showing at this anchor, hide it
+        if (loadingRingsRef.current.ring5) {
+          loadingRingsRef.current.ring5.hide();
+        }
+
+      } catch {
+        // Silent catch - error loading models
       }
     };
 
     // Start loading all models asynchronously (doesn't affect loading screen)
-    loadGEELYCarAsync();
-    loadMusecraftAsync();
-    loadDioramasAsync();
-    loadPetwheelsAsync();
+    // Each loader reads from workplaceConfig to get the correct model paths
+    loadAnchor1ModelsAsync();
+    loadAnchor2ModelsAsync();
+    loadAnchor3ModelsAsync();
+    loadAnchor4ModelsAsync();
+    loadAnchor5ModelsAsync();
 
-    // Register customizeCar callback in state so GeelyCustomizer can call it
-    useUI.getState().setGeelyCustomizeCallback(customizeCar);
-
-    // Distance-based visibility for GEELY customizer panel
-    const VISIBILITY_DISTANCE = 20; // Show panel when within 100 meters
+    // Distance-based visibility for unified Workplace panel
+    // Show the panel when near any of the 5 project anchors (anchor_1 to anchor_5)
+    const WORKPLACE_VISIBILITY_DISTANCE = 20; // Threshold distance to show panel
 
     scene.onBeforeRenderObservable.add(() => {
       // Early return if ship not loaded yet
@@ -3450,106 +3947,51 @@ export function BabylonCanvas() {
         return;
       }
 
-      // Use anchor position if available, otherwise use car position
-      let targetPosition: BABYLON.Vector3 | null = null;
-
-      if (carAnchorRef.current) {
-        targetPosition = carAnchorRef.current.getAbsolutePosition();
-      } else if (carRootRef.current) {
-        targetPosition = carRootRef.current.getAbsolutePosition();
-      }
-
-      if (!targetPosition) {
-        return;
-      }
-
-      // Calculate distance from SHIP to anchor/car (NOT camera!)
       const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
-      const distance = BABYLON.Vector3.Distance(shipPosition, targetPosition);
 
-      // Show/hide panel based on distance using state
-      const shouldBeVisible = distance <= VISIBILITY_DISTANCE;
-      const currentlyVisible = useUI.getState().geelyCustomizerVisible;
+      // Get all potential anchors with their corresponding states
+      // Config order: Musecraft (state_4) → MeetKai (state_5) → More Than Real (state_6) → Baltha Maker (state_7) → UFSC (state_8)
+      const anchorStateMap: { anchor: BABYLON.AbstractMesh | null; state: S }[] = [
+        { anchor: carAnchorRef.current, state: S.state_4 },       // anchor_1 - Musecraft (Personal Project)
+        { anchor: musecraftAnchorRef.current, state: S.state_5 }, // anchor_2 - MeetKai
+        { anchor: dioramasAnchorRef.current, state: S.state_6 },  // anchor_3 - More Than Real
+        { anchor: petwheelsAnchorRef.current, state: S.state_7 }, // anchor_4 - Baltha Maker
+        { anchor: personalAnchorRef.current, state: S.state_8 },  // anchor_5 - UFSC
+      ];
 
+      // Find nearest anchor and its distance
+      let nearestDistance = Infinity;
+      let nearestState: S | null = null;
+
+      for (const { anchor, state } of anchorStateMap) {
+        if (anchor) {
+          const distance = BABYLON.Vector3.Distance(shipPosition, anchor.getAbsolutePosition());
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestState = state;
+          }
+        }
+      }
+
+      // Determine if we should show the panel
+      const shouldBeVisible = nearestDistance <= WORKPLACE_VISIBILITY_DISTANCE;
+      const currentlyVisible = useUI.getState().workplacePanelVisible;
+      const currentActiveState = useUI.getState().activeWorkplaceState;
+
+      // Update panel visibility
       if (shouldBeVisible && !currentlyVisible) {
-        useUI.getState().setGeelyCustomizerVisible(true);
+        useUI.getState().setWorkplacePanelVisible(true);
       } else if (!shouldBeVisible && currentlyVisible) {
-        useUI.getState().setGeelyCustomizerVisible(false);
-      }
-    });
-
-    // Distance-based visibility for Dioramas panel
-    const DIORAMAS_VISIBILITY_DISTANCE = 20; // Same threshold as GEELY
-
-    scene.onBeforeRenderObservable.add(() => {
-      // Early return if ship or dioramas anchor not loaded yet
-      if (!spaceshipRootRef.current || !dioramasAnchorRef.current) {
-        return;
+        useUI.getState().setWorkplacePanelVisible(false);
       }
 
-      // Calculate distance from SHIP to dioramas anchor
-      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
-      const dioramasPosition = dioramasAnchorRef.current.getAbsolutePosition();
-      const distance = BABYLON.Vector3.Distance(shipPosition, dioramasPosition);
-
-      // Show/hide dioramas panel based on distance using state
-      const shouldBeVisible = distance <= DIORAMAS_VISIBILITY_DISTANCE;
-      const currentlyVisible = useUI.getState().dioramasPanelVisible;
-
-      if (shouldBeVisible && !currentlyVisible) {
-        useUI.getState().setDioramasPanelVisible(true);
-      } else if (!shouldBeVisible && currentlyVisible) {
-        useUI.getState().setDioramasPanelVisible(false);
-      }
-    });
-
-    // Distance-based visibility for Petwheels panel
-    const PETWHEELS_VISIBILITY_DISTANCE = 20; // Same threshold as others
-
-    scene.onBeforeRenderObservable.add(() => {
-      // Early return if ship or petwheels anchor not loaded yet
-      if (!spaceshipRootRef.current || !petwheelsAnchorRef.current) {
-        return;
-      }
-
-      // Calculate distance from SHIP to petwheels anchor
-      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
-      const petwheelsPosition = petwheelsAnchorRef.current.getAbsolutePosition();
-      const distance = BABYLON.Vector3.Distance(shipPosition, petwheelsPosition);
-
-      // Show/hide petwheels panel based on distance using state
-      const shouldBeVisible = distance <= PETWHEELS_VISIBILITY_DISTANCE;
-      const currentlyVisible = useUI.getState().petwheelsPanelVisible;
-
-      if (shouldBeVisible && !currentlyVisible) {
-        useUI.getState().setPetwheelsPanelVisible(true);
-      } else if (!shouldBeVisible && currentlyVisible) {
-        useUI.getState().setPetwheelsPanelVisible(false);
-      }
-    });
-
-    // Distance-based visibility for Musecraft panel
-    const MUSECRAFT_VISIBILITY_DISTANCE = 20; // Same threshold as others
-
-    scene.onBeforeRenderObservable.add(() => {
-      // Early return if ship or musecraft anchor not loaded yet
-      if (!spaceshipRootRef.current || !musecraftAnchorRef.current) {
-        return;
-      }
-
-      // Calculate distance from SHIP to musecraft anchor
-      const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
-      const musecraftPosition = musecraftAnchorRef.current.getAbsolutePosition();
-      const distance = BABYLON.Vector3.Distance(shipPosition, musecraftPosition);
-
-      // Show/hide musecraft panel based on distance using state
-      const shouldBeVisible = distance <= MUSECRAFT_VISIBILITY_DISTANCE;
-      const currentlyVisible = useUI.getState().musecraftPanelVisible;
-
-      if (shouldBeVisible && !currentlyVisible) {
-        useUI.getState().setMusecraftPanelVisible(true);
-      } else if (!shouldBeVisible && currentlyVisible) {
-        useUI.getState().setMusecraftPanelVisible(false);
+      // Update active workplace state (which anchor content to show)
+      // Only update when near an anchor
+      if (shouldBeVisible && nearestState !== null && nearestState !== currentActiveState) {
+        useUI.getState().setActiveWorkplaceState(nearestState);
+      } else if (!shouldBeVisible && currentActiveState !== null) {
+        // Clear active state when not near any anchor
+        useUI.getState().setActiveWorkplaceState(null);
       }
     });
 
@@ -3623,8 +4065,8 @@ export function BabylonCanvas() {
     const flame = flameParticleSystemRef.current;
 
     // Only enable controls in states 4-7 with free mode
-    const inFreeExploreState = s >= S.state_4 && s <= S.state_7;
-    const shouldEnableControls = inFreeExploreState && navigationMode === 'free' && !isInteriorView;
+    const inFreeExploreState = s >= S.state_4 && s <= S.state_8;
+    const shouldEnableControls = inFreeExploreState && navigationMode === 'free';
 
     // Get ship animation timing to delay controls until animation completes
     const sceneConfig = config.canvas.babylonScene;
@@ -4184,7 +4626,7 @@ export function BabylonCanvas() {
       }
 
     };
-  }, [s, navigationMode, isInteriorView]);
+  }, [s, navigationMode]);
 
   // Drag rotation interaction
   useEffect(() => {
@@ -4366,8 +4808,8 @@ export function BabylonCanvas() {
 
     // Track state transitions
     const prevState = prevStateRef.current;
-    const wasInExploreState = prevState >= S.state_4 && prevState <= S.state_7; // Was in states 4-7
-    const isNowInExploreState = s >= S.state_4 && s <= S.state_7; // Is now in states 4-7
+    const wasInExploreState = prevState >= S.state_4 && prevState <= S.state_8; // Was in states 4-7
+    const isNowInExploreState = s >= S.state_4 && s <= S.state_8; // Is now in states 4-7
     const isLeavingExploreState = wasInExploreState && !isNowInExploreState; // Leaving 4-7 to any non-explore state
     const isComingFromExploreToState3 = wasInExploreState && s === S.state_3; // States 4-7 → State 3
     const isGoingToStateFinal = s === S.state_final; // Any state → State Final
@@ -4481,7 +4923,7 @@ export function BabylonCanvas() {
       const shipConfig = sceneConfig?.shipAnimation;
 
       // For states 4-7, ensure shipPivot is parented to shipRoot so camera follows
-      const isEnteringExploreState = s >= S.state_4 && s <= S.state_7;
+      const isEnteringExploreState = s >= S.state_4 && s <= S.state_8;
       if (isEnteringExploreState && animShipPivot && animShipPivot.parent !== animShipRoot) {
         animShipPivot.setParent(animShipRoot);
         const pivotY = isMobile ? 1.17 : 0.9;
@@ -4496,12 +4938,12 @@ export function BabylonCanvas() {
       // Check if coming FROM guided state (4-7) TO any non-explore state while in guided mode
       // This includes state_0, state_3, and state_final
       const isLeavingGuidedExploreState = currentNavigationMode === 'guided' &&
-        prevState >= S.state_4 && prevState <= S.state_7 &&
+        prevState >= S.state_4 && prevState <= S.state_8 &&
         (s <= S.state_3 || s === S.state_final);
 
       // In guided mode for states 4-7, use bezier curve animation with anchor data
       const isGuidedModeState = currentNavigationMode === 'guided' &&
-        s >= S.state_4 && s <= S.state_7;
+        s >= S.state_4 && s <= S.state_8;
 
       if (isLeavingGuidedExploreState) {
         // Bezier animation from current position to destination state ship position
@@ -4560,8 +5002,8 @@ export function BabylonCanvas() {
           flameParticles: flameParticleSystemRef.current
         });
       } else if (isGuidedModeState) {
-        // Map states to anchor indices (state_4 = anchor1, state_5 = anchor2, etc.)
-        const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, or 4
+        // Map states to anchor indices (state_4 = anchor1, state_5 = anchor2, state_6 = anchor3, state_7 = anchor4, state_8 = anchor5)
+        const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, 4, or 5
         const anchorKey = isMobile ? `mobile${anchorIndex}` : `desktop${anchorIndex}`;
         const anchorData = anchorDataRef.current[anchorKey];
 
@@ -5026,7 +5468,7 @@ export function BabylonCanvas() {
     if (!canvas || !camera) return;
 
     // Only enable controls in states 4-7
-    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const inExploreState = s >= S.state_4 && s <= S.state_8;
     const isGuidedMode = navigationMode === 'guided';
 
     if (inExploreState) {
@@ -5066,7 +5508,7 @@ export function BabylonCanvas() {
     const camera = cameraRef.current;
     if (!canvas || !scene) return;
 
-    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const inExploreState = s >= S.state_4 && s <= S.state_8;
     const isGuidedMode = navigationMode === 'guided';
 
     // Only enable model rotation in explore states
@@ -5081,6 +5523,7 @@ export function BabylonCanvas() {
         case S.state_5: return musecraftRootRef.current;
         case S.state_6: return dioramasRootRef.current;
         case S.state_7: return petwheelsRootRef.current;
+        case S.state_8: return personalRootRef.current;
         default: return null;
       }
     };
@@ -5092,6 +5535,7 @@ export function BabylonCanvas() {
         case S.state_5: return musecraftMeshesRef.current;
         case S.state_6: return dioramasMeshesRef.current;
         case S.state_7: return petwheelsMeshesRef.current;
+        case S.state_8: return personalMeshesRef.current;
         default: return [];
       }
     };
@@ -5102,11 +5546,6 @@ export function BabylonCanvas() {
     const resistanceFactor = 6;
 
     const handlePointerDown = (e: PointerEvent) => {
-      // Disable rotation in interior view
-      if (useUI.getState().isInteriorView) {
-        return;
-      }
-
       // Only allow rotation if ship has arrived (guided mode check)
       if (isGuidedMode && !guidedModeArrivedRef.current) {
         return;
@@ -5156,7 +5595,6 @@ export function BabylonCanvas() {
     const handlePointerMove = (e: PointerEvent) => {
       if (!modelRotationRef.current.isDragging) return;
       if (isGuidedMode && !guidedModeArrivedRef.current) return;
-      if (useUI.getState().isInteriorView) return;
 
       const model = getCurrentModel();
       if (!model || !model.rotationQuaternion || !camera) return;
@@ -5322,7 +5760,7 @@ export function BabylonCanvas() {
     const shipPivot = shipPivotRef.current;
     if (!canvas || !scene || !shipPivot) return;
 
-    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const inExploreState = s >= S.state_4 && s <= S.state_8;
     const isGuidedMode = navigationMode === 'guided';
 
     // Only enable model zoom in guided mode during explore states
@@ -5390,11 +5828,6 @@ export function BabylonCanvas() {
     const handleWheel = (e: WheelEvent) => {
       // Only zoom when ship has arrived
       if (!guidedModeArrivedRef.current) {
-        return;
-      }
-
-      // Disable zoom in interior view
-      if (useUI.getState().isInteriorView) {
         return;
       }
 
@@ -5481,9 +5914,6 @@ export function BabylonCanvas() {
 
       // Only zoom when ship has arrived
       if (!guidedModeArrivedRef.current) return;
-
-      // Disable zoom in interior view
-      if (useUI.getState().isInteriorView) return;
 
       // Prevent toggling while animation is in progress
       if (modelZoomRef.current.isAnimating) return;
@@ -5576,7 +6006,7 @@ export function BabylonCanvas() {
 
   // Reset model zoom when state changes or when leaving guided mode
   useEffect(() => {
-    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const inExploreState = s >= S.state_4 && s <= S.state_8;
     const isGuidedMode = navigationMode === 'guided';
 
     // Reset zoom states when leaving explore states or guided mode
@@ -5637,21 +6067,6 @@ export function BabylonCanvas() {
 
   }, [s]);
 
-  // Reset model zoom when entering interior view (for Geely car)
-  useEffect(() => {
-    if (isInteriorView && s === S.state_4) {
-      const key = 'model1';
-      const originalPos = modelZoomRef.current.originalPositions[key];
-      const model = carRootRef.current;
-
-      if (originalPos && model && modelZoomRef.current.isZoomedIn[key]) {
-        // Instantly reset to default position when entering interior view
-        model.position.copyFrom(originalPos);
-        modelZoomRef.current.isZoomedIn[key] = false;
-      }
-    }
-  }, [isInteriorView, s]);
-
   // Handle navigation mode toggle - move ship to anchor when switching to guided mode in states 4-7
   const prevNavigationModeRef = useRef<'guided' | 'free'>(navigationMode);
   useEffect(() => {
@@ -5663,12 +6078,12 @@ export function BabylonCanvas() {
 
     const isMobile = window.innerWidth < 768;
 
-    // Switching from FREE to GUIDED mode in states 4-7
+    // Switching from FREE to GUIDED mode in states 4-8
     if (prevMode === 'free' && navigationMode === 'guided' &&
-      s >= S.state_4 && s <= S.state_7 &&
+      s >= S.state_4 && s <= S.state_8 &&
       scene && shipPivot && shipRoot) {
 
-      const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, or 4
+      const anchorIndex = s - S.state_4 + 1; // 1, 2, 3, 4, or 5
       const anchorKey = isMobile ? `mobile${anchorIndex}` : `desktop${anchorIndex}`;
       const anchorData = anchorDataRef.current[anchorKey];
 
@@ -5768,7 +6183,7 @@ export function BabylonCanvas() {
 
     // Switching from GUIDED to FREE mode in states 4-7
     if (prevMode === 'guided' && navigationMode === 'free' &&
-      s >= S.state_4 && s <= S.state_7 &&
+      s >= S.state_4 && s <= S.state_8 &&
       scene && camera) {
 
       // CRITICAL: Cancel any running bezier animation first!
@@ -5826,7 +6241,7 @@ export function BabylonCanvas() {
     if (!scene) return;
 
     // Only run proximity detection in explore states (4-7)
-    const inExploreState = s >= S.state_4 && s <= S.state_7;
+    const inExploreState = s >= S.state_4 && s <= S.state_8;
     if (!inExploreState) {
       // Hide all models, contract and hide all atoms when not in explore states
       const atoms = atomIndicatorsRef.current;
@@ -5853,6 +6268,11 @@ export function BabylonCanvas() {
         atoms.atom4.stopAnimations();
         atoms.atom4.contract(0.3, true);
         atoms.atom4.root.setEnabled(false);
+      }
+      if (atoms.atom5) {
+        atoms.atom5.stopAnimations();
+        atoms.atom5.contract(0.3, true);
+        atoms.atom5.root.setEnabled(false);
       }
 
       // Hide all models and stop any running scale animations
@@ -5885,10 +6305,15 @@ export function BabylonCanvas() {
         petwheelsMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model4 = false;
       }
-
-      // Exit interior view if active
-      if (useUI.getState().isInteriorView) {
-        useUI.getState().setIsInteriorView(false);
+      if (visibility.model5 && personalMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(personalRootRef.current!);
+        if (anim) anim.stop();
+        if (personalRootRef.current) modelScaleAnimations.delete(personalRootRef.current);
+        personalMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        visibility.model5 = false;
+        // Reset Musecraft interaction (gizmo, selection, flames) when leaving explore states
+        resetMusecraftInteraction();
+        stopRocketFlames();
       }
 
       // Dispose all loading rings when leaving explore states
@@ -5897,6 +6322,7 @@ export function BabylonCanvas() {
       if (rings.ring2) { rings.ring2.dispose(); rings.ring2 = null; }
       if (rings.ring3) { rings.ring3.dispose(); rings.ring3 = null; }
       if (rings.ring4) { rings.ring4.dispose(); rings.ring4 = null; }
+      if (rings.ring5) { rings.ring5.dispose(); rings.ring5 = null; }
 
       return;
     }
@@ -5907,15 +6333,16 @@ export function BabylonCanvas() {
     if (atoms.atom2) atoms.atom2.root.setEnabled(true);
     if (atoms.atom3) atoms.atom3.root.setEnabled(true);
     if (atoms.atom4) atoms.atom4.root.setEnabled(true);
+    if (atoms.atom5) atoms.atom5.root.setEnabled(true);
 
     // Proximity check function for a single model
     // Uses force mode on atom expand/contract to handle mid-animation interruptions
     const checkModelProximity = (
-      modelKey: 'model1' | 'model2' | 'model3' | 'model4',
+      modelKey: 'model1' | 'model2' | 'model3' | 'model4' | 'model5',
       rootRef: React.MutableRefObject<BABYLON.TransformNode | BABYLON.AbstractMesh | null>,
       meshesRef: React.MutableRefObject<BABYLON.AbstractMesh[]>,
       anchorRef: React.MutableRefObject<BABYLON.AbstractMesh | null>,
-      atomKey: 'atom1' | 'atom2' | 'atom3' | 'atom4'
+      atomKey: 'atom1' | 'atom2' | 'atom3' | 'atom4' | 'atom5'
     ) => {
       const shipRoot = spaceshipRootRef.current;
       if (!shipRoot) return;
@@ -5954,48 +6381,90 @@ export function BabylonCanvas() {
           loadingRing.hide(0.3);
         }
 
-        // Special handling for model3 (dioramas) - only show selected model
-        if (modelKey === 'model3') {
-          const selectedIndex = useUI.getState().selectedDioramaModel;
-          const dioramaModels = dioramaModelsRef.current;
+        // Reset parent root rotation to original anchor rotation when model becomes visible
+        // This ensures consistent initial orientation
+        if (rootRef.current && anchorRef.current && rootRef.current.rotationQuaternion) {
+          const anchorWorldMatrix = anchorRef.current.getWorldMatrix();
+          const originalRotation = BABYLON.Quaternion.Identity();
+          anchorWorldMatrix.decompose(undefined, originalRotation, undefined);
+          rootRef.current.rotationQuaternion.copyFrom(originalRotation);
+        }
 
-          // Show only the selected diorama model
-          for (let i = 0; i < dioramaModels.roots.length; i++) {
-            const dioramaRoot = dioramaModels.roots[i];
-            const dioramaMeshes = dioramaModels.meshes[i];
+        // Reset model rotation state so model starts with clean rotation
+        modelRotationRef.current.isDragging = false;
+        modelRotationRef.current.accumulatedYRotation = 0;
+        modelRotationRef.current.peekRotationX = 0;
+        modelRotationRef.current.velocityY = 0;
+        modelRotationRef.current.originalQuaternion = null;
 
-            if (!dioramaRoot || dioramaMeshes.length === 0) continue;
+        // Multi-model state handling - only show selected model, hide others
+        // Maps modelKey to its corresponding multi-model ref
+        const multiModelRefs: Record<string, React.MutableRefObject<{ roots: (BABYLON.AbstractMesh | null)[]; meshes: BABYLON.AbstractMesh[][] }>> = {
+          'model1': meetkaiModelsRef,
+          'model2': moreThanRealModelsRef,
+          'model3': dioramaModelsRef,
+          'model4': ufscModelsRef,
+          'model5': personalModelsRef
+        };
+
+        const modelsRef = multiModelRefs[modelKey];
+        if (modelsRef && modelsRef.current.roots.length > 0) {
+          // Multi-model state - only show selected model
+          const selectedIndex = useUI.getState().selectedProjectIndex;
+          const models = modelsRef.current;
+
+          for (let i = 0; i < models.roots.length; i++) {
+            const modelRoot = models.roots[i];
+            const modelMeshes = models.meshes[i];
+
+            if (!modelRoot || modelMeshes.length === 0) continue;
 
             if (i === selectedIndex) {
-              // Use scaleModelMeshes for dioramas too (it handles interruption)
-              scaleModelMeshes(dioramaRoot, dioramaMeshes, scene, true, 2, () => {
-              });
+              // Use scaleModelMeshes for the selected model
+              scaleModelMeshes(modelRoot, modelMeshes, scene, true, 2, () => { });
             } else {
               // Keep other models hidden
-              dioramaMeshes.forEach(m => m.setEnabled(false));
+              modelMeshes.forEach(m => m.setEnabled(false));
             }
           }
         } else {
-          // Standard scale in for other models (scaleModelMeshes handles interruption)
+          // Fallback for single-model states (scaleModelMeshes handles interruption)
           scaleModelMeshes(modelRoot, meshes, scene, true, 2, () => { });
         }
 
-        // Start musecraft animation when model becomes visible
-        if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
-          musecraftAnimationGroupsRef.current.forEach(group => {
-            group.play(true); // Play in loop
-          });
+        // Start model animations using animation controller
+        // Map modelKey to state to get project IDs - includes ALL 5 anchor states
+        const stateToConfig: Record<string, number> = {
+          'model1': S.state_4, // anchor_1 - Musecraft (Personal Projects)
+          'model2': S.state_5, // anchor_2 - MeetKai
+          'model3': S.state_6, // anchor_3 - More Than Real
+          'model4': S.state_7, // anchor_4 - Baltha Maker
+          'model5': S.state_8  // anchor_5 - UFSC
+        };
+
+        const stateNum = stateToConfig[modelKey];
+        if (stateNum !== undefined) {
+          const workplaceConfig = getWorkplaceConfig(stateNum);
+          const selectedIndex = useUI.getState().selectedProjectIndex;
+          const projectId = workplaceConfig?.projects[selectedIndex]?.id;
+
+          if (projectId) {
+            const animGroups = modelAnimationGroupsRef.current.get(projectId);
+            if (animGroups && animGroups.length > 0) {
+              startModelAnimations(projectId, animGroups, false);
+            }
+          }
         }
 
-        // Initialize Musecraft interaction system (selection + gizmo) for model2
-        if (modelKey === 'model2') {
+        // Initialize Musecraft interaction system (selection + gizmo) for model1 (Musecraft at state_4)
+        if (modelKey === 'model1') {
 
-          const root = musecraftRootRef.current;
+          const root = meetkaiModelsRef.current.roots[0]; // Musecraft is first (and only) model at anchor_1
           if (root && sceneRef.current && !isMusecraftInteractionInitialized()) {
             // Small delay to ensure meshes are fully enabled after scale animation starts
             setTimeout(() => {
-              if (musecraftRootRef.current && sceneRef.current) {
-                initMusecraftInteraction(musecraftRootRef.current as BABYLON.AbstractMesh, sceneRef.current);
+              if (meetkaiModelsRef.current.roots[0] && sceneRef.current) {
+                initMusecraftInteraction(meetkaiModelsRef.current.roots[0] as BABYLON.AbstractMesh, sceneRef.current);
               }
             }, 100);
           } else if (isMusecraftInteractionInitialized()) {
@@ -6006,38 +6475,36 @@ export function BabylonCanvas() {
             }, 100);
           }
         }
-
-        // Start petwheels animation when model becomes visible
-        if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
-          petwheelsAnimationGroupsRef.current.forEach(group => {
-            group.play(true); // Play in loop
-          });
-        }
       }
       // Transition to hidden (HIDE model + CONTRACT atom)
       else if (!shouldBeVisible && isCurrentlyVisible) {
         visibility[modelKey] = false;
 
-        // Stop musecraft animation when model becomes hidden
-        if (modelKey === 'model2' && musecraftAnimationGroupsRef.current.length > 0) {
-          musecraftAnimationGroupsRef.current.forEach(group => {
-            group.stop();
-            group.reset();
-          });
+        // Stop model animations using animation controller
+        // Map modelKey to state - includes ALL 5 anchor states
+        const stateToConfig: Record<string, number> = {
+          'model1': S.state_4, // anchor_1 - Musecraft (Personal Projects)
+          'model2': S.state_5, // anchor_2 - MeetKai
+          'model3': S.state_6, // anchor_3 - More Than Real
+          'model4': S.state_7, // anchor_4 - Baltha Maker
+          'model5': S.state_8  // anchor_5 - UFSC
+        };
+
+        const stateNum = stateToConfig[modelKey];
+        if (stateNum !== undefined) {
+          const workplaceConfig = getWorkplaceConfig(stateNum);
+          if (workplaceConfig) {
+            // Stop all animations for all projects in this state
+            workplaceConfig.projects.forEach(project => {
+              stopModelAnimations(project.id);
+            });
+          }
         }
 
-        // Reset Musecraft interaction when model2 becomes hidden (always, regardless of animations)
-        if (modelKey === 'model2') {
+        // Reset Musecraft interaction when model1 becomes hidden (Musecraft at state_4)
+        if (modelKey === 'model1') {
           resetMusecraftInteraction();
           stopRocketFlames();
-        }
-
-        // Stop petwheels animation when model becomes hidden
-        if (modelKey === 'model4' && petwheelsAnimationGroupsRef.current.length > 0) {
-          petwheelsAnimationGroupsRef.current.forEach(group => {
-            group.stop();
-            group.reset();
-          });
         }
 
         // Contract atom with force=true to handle interruptions
@@ -6047,12 +6514,7 @@ export function BabylonCanvas() {
         }
 
         // Scale out model (scaleModelMeshes handles interruption)
-        scaleModelMeshes(modelRoot, meshes, scene, false, 2, () => {
-          // Exit interior view if this was the car
-          if (modelKey === 'model1' && useUI.getState().isInteriorView) {
-            useUI.getState().setIsInteriorView(false);
-          }
-        });
+        scaleModelMeshes(modelRoot, meshes, scene, false, 2);
       }
     };
 
@@ -6063,6 +6525,7 @@ export function BabylonCanvas() {
       checkModelProximity('model2', musecraftRootRef, musecraftMeshesRef, musecraftAnchorRef, 'atom2');
       checkModelProximity('model3', dioramasRootRef, dioramasMeshesRef, dioramasAnchorRef, 'atom3');
       checkModelProximity('model4', petwheelsRootRef, petwheelsMeshesRef, petwheelsAnchorRef, 'atom4');
+      checkModelProximity('model5', personalRootRef, personalMeshesRef, personalAnchorRef, 'atom5');
     });
 
     return () => {
@@ -6070,101 +6533,97 @@ export function BabylonCanvas() {
     };
   }, [s]);
 
-  // Handle interior view toggle
-  useEffect(() => {
-    if (!sceneRef.current || !interiorCameraRef.current || !cameraRef.current) return;
-
-    const glassMesh = sceneRef.current.getMeshByName("glass");
-
-    if (isInteriorView) {
-      // Reset car rotation to original when entering interior view
-      const carRoot = carRootRef.current;
-      if (carRoot && carRoot.rotationQuaternion) {
-        const originalRotation = modelOriginalRotations.get(carRoot);
-        if (originalRotation) {
-          // Reset all rotation state immediately
-          modelRotationRef.current.accumulatedYRotation = 0;
-          modelRotationRef.current.peekRotationX = 0;
-          modelRotationRef.current.originalQuaternion = null;
-          modelRotationRef.current.isDragging = false;
-          // Apply original rotation instantly
-          carRoot.rotationQuaternion.copyFrom(originalRotation);
-        }
-      }
-
-      // Reset interior camera to fixed starting angle
-      // Calculate the fixed alpha based on the anchor's forward direction
-      const anchorMesh = carAnchorRef.current;
-      if (anchorMesh) {
-        const anchorForward = anchorMesh.forward;
-        const heading = Math.atan2(anchorForward.x, anchorForward.z);
-        interiorCameraRef.current.alpha = -heading + Math.PI / 2;
-      }
-      // Reset beta to the fixed starting value
-      interiorCameraRef.current.beta = Math.PI / 2.3;
-
-      sceneRef.current.activeCamera = interiorCameraRef.current;
-      interiorCameraRef.current.attachControl(ref.current, true);
-      cameraRef.current.detachControl();
-
-      // Disable glass in interior view
-      if (glassMesh) glassMesh.setEnabled(false);
-    } else {
-      // Reset car rotation to original when exiting interior view
-      const carRoot = carRootRef.current;
-      if (carRoot && carRoot.rotationQuaternion) {
-        const originalRotation = modelOriginalRotations.get(carRoot);
-        if (originalRotation) {
-          // Reset all rotation state immediately
-          modelRotationRef.current.accumulatedYRotation = 0;
-          modelRotationRef.current.peekRotationX = 0;
-          modelRotationRef.current.originalQuaternion = null;
-          modelRotationRef.current.isDragging = false;
-          // Apply original rotation instantly
-          carRoot.rotationQuaternion.copyFrom(originalRotation);
-        }
-      }
-
-      sceneRef.current.activeCamera = cameraRef.current;
-      cameraRef.current.attachControl(ref.current, true);
-      interiorCameraRef.current.detachControl();
-
-      // Enable glass in exterior view
-      if (glassMesh) glassMesh.setEnabled(true);
-    }
-  }, [isInteriorView]);
-
-  // Handle diorama model switching
+  // Handle model switching for all workplace states
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    const dioramaModels = dioramaModelsRef.current;
-    const isModelVisible = modelVisibilityRef.current.model3;
+    // Get the activeWorkplaceState to know which model set to switch
+    const activeState = useUI.getState().activeWorkplaceState;
+    if (activeState === null) return;
 
-    // Only switch models if the dioramas are currently visible
+    // Map state to model ref and visibility key
+    type ModelData = {
+      modelsRef: React.MutableRefObject<{ roots: (BABYLON.AbstractMesh | null)[]; meshes: BABYLON.AbstractMesh[][] }>;
+      visibilityKey: 'model1' | 'model2' | 'model3' | 'model4' | 'model5';
+    };
+
+    const stateToModelData: Partial<Record<S, ModelData>> = {
+      // Note: Refs are named historically but now load from workplaceConfig dynamically
+      // Config order: Musecraft → MeetKai → More Than Real → Baltha Maker → UFSC
+      [S.state_4]: { modelsRef: meetkaiModelsRef, visibilityKey: 'model1' },      // anchor_1: Musecraft
+      [S.state_5]: { modelsRef: moreThanRealModelsRef, visibilityKey: 'model2' }, // anchor_2: MeetKai
+      [S.state_6]: { modelsRef: dioramaModelsRef, visibilityKey: 'model3' },      // anchor_3: More Than Real
+      [S.state_7]: { modelsRef: ufscModelsRef, visibilityKey: 'model4' },         // anchor_4: Baltha Maker
+      [S.state_8]: { modelsRef: personalModelsRef, visibilityKey: 'model5' },     // anchor_5: UFSC
+    };
+
+    // Map state to parent root ref for rotation reset
+    const stateToParentRoot: Partial<Record<S, React.MutableRefObject<BABYLON.TransformNode | null>>> = {
+      [S.state_4]: meetkaiRootRef,
+      [S.state_5]: moreThanRealRootRef,
+      [S.state_6]: dioramasRootRef,
+      [S.state_7]: ufscRootRef,
+      [S.state_8]: personalRootRef,
+    };
+
+    // Map state to anchor ref for rotation recomputation
+    const stateToAnchorRef: Partial<Record<S, React.MutableRefObject<BABYLON.AbstractMesh | null>>> = {
+      [S.state_4]: carAnchorRef,
+      [S.state_5]: musecraftAnchorRef,
+      [S.state_6]: dioramasAnchorRef,
+      [S.state_7]: petwheelsAnchorRef,
+      [S.state_8]: personalAnchorRef,
+    };
+
+    const modelData = stateToModelData[activeState];
+    if (!modelData) return;
+
+    const { modelsRef, visibilityKey } = modelData;
+    const models = modelsRef.current;
+    const isModelVisible = modelVisibilityRef.current[visibilityKey];
+
+    // Only switch models if the state's model is currently visible
     if (!isModelVisible) return;
 
-    // For each diorama model
-    for (let i = 0; i < dioramaModels.roots.length; i++) {
-      const modelRoot = dioramaModels.roots[i];
-      const modelMeshes = dioramaModels.meshes[i];
+    // Reset parent root rotation to original by recomputing from anchor
+    const parentRootRef = stateToParentRoot[activeState];
+    const anchorRef = stateToAnchorRef[activeState];
+    if (parentRootRef?.current && anchorRef?.current && parentRootRef.current.rotationQuaternion) {
+      // Recompute original rotation from anchor
+      const anchor = anchorRef.current;
+      const anchorWorldMatrix = anchor.getWorldMatrix();
+      const originalRotation = BABYLON.Quaternion.Identity();
+      anchorWorldMatrix.decompose(undefined, originalRotation, undefined);
+      parentRootRef.current.rotationQuaternion.copyFrom(originalRotation);
+    }
+
+    // Reset model rotation state so new model starts with clean rotation
+    modelRotationRef.current.isDragging = false;
+    modelRotationRef.current.accumulatedYRotation = 0;
+    modelRotationRef.current.peekRotationX = 0;
+    modelRotationRef.current.velocityY = 0;
+    modelRotationRef.current.originalQuaternion = null;
+
+    // Switch models within this state
+    for (let i = 0; i < models.roots.length; i++) {
+      const modelRoot = models.roots[i];
+      const modelMeshes = models.meshes[i];
 
       if (!modelRoot || modelMeshes.length === 0) continue;
 
-      if (i === selectedDioramaModel) {
+      if (i === selectedProjectIndex) {
         // Show selected model with scale-up animation
-        // First set scale to near-zero
         modelRoot.scaling.set(0.001, 0.001, 0.001);
         modelMeshes.forEach(mesh => mesh.setEnabled(true));
 
         // Animate scale up quickly
         const fps = 60;
-        const duration = 0.3; // Quick animation
+        const duration = 0.3;
         const totalFrames = fps * duration;
 
         const scaleAnim = new BABYLON.Animation(
-          "dioramaScaleIn",
+          "modelScaleIn",
           "scaling",
           fps,
           BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
@@ -6183,13 +6642,31 @@ export function BabylonCanvas() {
         modelRoot.animations = [scaleAnim];
         scene.beginAnimation(modelRoot, 0, totalFrames, false);
 
+        // Start animations for the newly selected model
+        const workplaceConfig = getWorkplaceConfig(activeState);
+        const projectId = workplaceConfig?.projects[i]?.id;
+        if (projectId) {
+          const animGroups = modelAnimationGroupsRef.current.get(projectId);
+          if (animGroups && animGroups.length > 0) {
+            // isProjectSwitch = true tells sika to replay "Entrada" intro
+            startModelAnimations(projectId, animGroups, true);
+          }
+        }
+
       } else {
         // Hide other models instantly
         modelMeshes.forEach(mesh => mesh.setEnabled(false));
-        modelRoot.scaling.set(1, 1, 1); // Reset scale for when it's shown again
+        modelRoot.scaling.set(1, 1, 1);
+
+        // Stop animations for hidden models
+        const workplaceConfig = getWorkplaceConfig(activeState);
+        const projectId = workplaceConfig?.projects[i]?.id;
+        if (projectId) {
+          stopModelAnimations(projectId);
+        }
       }
     }
-  }, [selectedDioramaModel]);
+  }, [selectedProjectIndex]);
 
   return <canvas ref={ref} className="block w-full h-full" />;
 }

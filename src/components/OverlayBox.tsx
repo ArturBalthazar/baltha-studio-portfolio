@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { S, useUI } from "../state";
 import { useI18n } from "../i18n";
@@ -26,7 +26,12 @@ export function OverlayBox({
   const { t } = useI18n();
   const navigationMode = useUI((st) => st.navigationMode);
   const audioEnabled = useUI((st) => st.audioEnabled);
-  const { setNavigationMode, setAudioEnabled } = useUI();
+  const audioVolume = useUI((st) => st.audioVolume);
+  const { setNavigationMode, setAudioEnabled, setAudioVolume } = useUI();
+  const previousVolumeRef = useRef(0.5);
+
+  // Audio is effectively on if volume > 0
+  const isAudioOn = audioVolume > 0;
 
   useEffect(() => {
     if (visible) {
@@ -55,9 +60,19 @@ export function OverlayBox({
     onButtonClick?.(index);
   };
 
-  // Handle audio toggle
+  // Handle audio toggle - syncs with volume system
   const handleAudioToggle = () => {
-    setAudioEnabled(!audioEnabled);
+    if (isAudioOn) {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = audioVolume;
+      setAudioVolume(0);
+      setAudioEnabled(false);
+    } else {
+      // Unmute: restore previous volume
+      const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
+      setAudioVolume(restoreVolume);
+      setAudioEnabled(true);
+    }
   };
 
   // Only render for state 3
@@ -186,10 +201,10 @@ export function OverlayBox({
                       "flex items-center justify-center transition-all duration-300 hover:scale-105 select-none",
                       "pointer-events-auto"
                     )}
-                    title={audioEnabled ? t.controls.turnAudioOff : t.controls.turnAudioOn}
+                    title={isAudioOn ? t.controls.turnAudioOff : t.controls.turnAudioOn}
                   >
                     {/* non-selected (audio off) subtle outline */}
-                    {!audioEnabled && (
+                    {!isAudioOn && (
                       <div
                         className="pointer-events-none absolute inset-0 rounded-bigButton border-2 border-white/30"
                         aria-hidden
@@ -197,7 +212,7 @@ export function OverlayBox({
                     )}
 
                     {/* selected state (audio on): gradient + halo line + crisp line */}
-                    {audioEnabled && (
+                    {isAudioOn && (
                       <>
                         <div
                           className="absolute inset-0 rounded-bigButton"
@@ -221,8 +236,8 @@ export function OverlayBox({
                     {/* Audio icon */}
                     <span className="relative z-10 text-white flex items-center justify-center">
                       <img
-                        src={audioEnabled ? "/assets/images/audio_on.png" : "/assets/images/audio_off.png"}
-                        alt={audioEnabled ? "On" : "Off"}
+                        src={isAudioOn ? "/assets/images/audio_on.png" : "/assets/images/audio_off.png"}
+                        alt={isAudioOn ? "On" : "Off"}
                         className="w-[70%] h-[70%] object-contain"
                       />
                     </span>
@@ -230,7 +245,7 @@ export function OverlayBox({
 
                   {/* Audio Label - invisible but keeps layout */}
                   <span className="font-mono text-white/0 text-xs sm:text-base select-none">
-                    {audioEnabled ? t.state3.on : t.state3.off}
+                    {isAudioOn ? t.state3.on : t.state3.off}
                   </span>
                 </div>
               </div>

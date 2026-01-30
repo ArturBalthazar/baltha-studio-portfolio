@@ -81,6 +81,6 @@ export const state4Config: StateConfig = {
     showCustomizeBox: false,
     customizeBoxVisible: false,
     showBottomLeftControls: true, // Show info, audio, nav buttons
-    whiteBottomLabel: true // White "BALTHA STUDIO 2025" label
+    whiteBottomLabel: true // White "BALTHA STUDIO 2026" label
   }
 };

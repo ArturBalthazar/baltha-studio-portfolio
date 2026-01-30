@@ -19,18 +19,20 @@ interface NavigationMenuProps {
 // Menu items configuration - using labelKey for translation lookup
 interface MenuItem {
   id: string;
-  labelKey: 'welcome' | 'carCustomizer' | 'musecraftEditor' | 'digitalDioramas' | 'petwheels' | 'letsConnect';
+  labelKey: 'welcome' | 'musecraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc' | 'letsConnect';
+  label: string; // Hardcoded label for now (no translation)
   icon: string;
   pathPercent: number; // Position along the path (0-1)
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'what-we-do', labelKey: 'welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
-  { id: 'car-customizer', labelKey: 'carCustomizer', icon: '/assets/images/car.png', pathPercent: 0.18 },
-  { id: 'musecraft', labelKey: 'musecraftEditor', icon: '/assets/images/musecraft-outline.png', pathPercent: 0.39 },
-  { id: 'dioramas', labelKey: 'digitalDioramas', icon: '/assets/images/diorama.png', pathPercent: 0.57 },
-  { id: 'petwheels', labelKey: 'petwheels', icon: '/assets/images/dog.png', pathPercent: 0.76 },
-  { id: 'connect', labelKey: 'letsConnect', icon: '/assets/images/connect.png', pathPercent: 1 },
+  { id: 'welcome', labelKey: 'welcome', label: 'Welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
+  { id: 'musecraft', labelKey: 'musecraft', label: 'Musecraft', icon: '/assets/logos/musecraft-menu.png', pathPercent: 0.17 },
+  { id: 'meetkai', labelKey: 'meetkai', label: 'MeetKai Inc', icon: '/assets/logos/meetkai-menu.png', pathPercent: 0.34 },
+  { id: 'morethanreal', labelKey: 'morethanreal', label: 'More Than\nReal', icon: '/assets/logos/morethanreal-menu.png', pathPercent: 0.50 },
+  { id: 'balthamaker', labelKey: 'balthamaker', label: 'Baltha Maker', icon: '/assets/logos/balthamaker-menu.png', pathPercent: 0.67 },
+  { id: 'ufsc', labelKey: 'ufsc', label: 'UFSC', icon: '/assets/logos/ufsc-menu.png', pathPercent: 0.83 },
+  { id: 'connect', labelKey: 'letsConnect', label: "Let's\nConnect!", icon: '/assets/images/connect.png', pathPercent: 1 },
 ];
 
 // Desktop points - horizontal S-curve pattern (7 points)
@@ -175,7 +177,7 @@ const MOBILE_POINTS: Point[] = [
 
   // 10 — End point (bottom), no out handle
   {
-    x: 60, y: 75,
+    x: 70, y: 75,
     handleAngle: 0,      // Down
     handleInLength: 15
   }
@@ -786,11 +788,12 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
         const stateToMenuIndex: Record<number, number> = {
           [S.state_0]: 0,      // Welcome
           [S.state_3]: 0,      // Mode selection - still maps to Welcome
-          [S.state_4]: 1,      // Car Customizer
-          [S.state_5]: 2,      // Musecraft
-          [S.state_6]: 3,      // Dioramas
-          [S.state_7]: 4,      // Petwheels
-          [S.state_final]: 5,  // Connect
+          [S.state_4]: 1,      // Musecraft (Personal Project)
+          [S.state_5]: 2,      // MeetKai
+          [S.state_6]: 3,      // More Than Real
+          [S.state_7]: 4,      // Baltha Maker
+          [S.state_8]: 5,      // UFSC (Product Design)
+          [S.state_final]: 6,  // Connect
         };
         const menuIndex = stateToMenuIndex[currentState];
         const pos = menuPositions[menuIndex];
@@ -853,19 +856,20 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
 
               // Map menu items to states
               const stateMap: Record<string, S> = {
-                'what-we-do': S.state_0,      // Welcome
-                'car-customizer': S.state_4,   // Car Customizer
-                'musecraft': S.state_5,        // Musecraft
-                'dioramas': S.state_6,         // Dioramas
-                'petwheels': S.state_7,        // Petwheels
-                'connect': S.state_final,      // Connect
+                'welcome': S.state_0,            // Welcome
+                'musecraft': S.state_4,          // Musecraft (Personal Project)
+                'meetkai': S.state_5,            // MeetKai
+                'morethanreal': S.state_6,       // More Than Real
+                'balthamaker': S.state_7,        // Baltha Maker
+                'ufsc': S.state_8,               // UFSC (Product Design)
+                'connect': S.state_final,        // Connect
               };
 
               const targetState = stateMap[item.id];
               const currentState = useUI.getState().state;
 
               // If in state_final and clicking Welcome, reload the page
-              if (currentState === S.state_final && item.id === 'what-we-do') {
+              if (currentState === S.state_final && item.id === 'welcome') {
                 onClose();
                 window.location.reload();
                 return;
@@ -888,12 +892,12 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
           >
             <img
               src={item.icon}
-              alt={t.menu[item.labelKey]}
+              alt={item.label}
               className={cx(
                 "select-none mb-2",
-                // Car icon is slightly bigger
-                item.id === 'car-customizer'
-                  ? (isMobile ? "w-16 h-16" : "w-20 h-20")
+                // Size: Baltha Maker is 1.5x bigger
+                item.id === 'balthamaker'
+                  ? (isMobile ? "w-16 h-16" : "w-24 h-24")
                   : (isMobile ? "w-12 h-12" : "w-16 h-16")
               )}
               draggable={false}
@@ -904,7 +908,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
                 isMobile ? "text-sm" : "text-base"
               )}
             >
-              {t.menu[item.labelKey]}
+              {item.label}
             </span>
           </button>
         );

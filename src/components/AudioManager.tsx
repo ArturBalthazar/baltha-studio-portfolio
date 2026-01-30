@@ -10,6 +10,7 @@ export function AudioManager() {
   const audioHasStartedRef = useRef(false);
   const s = useUI((st) => st.state);
   const audioEnabled = useUI((st) => st.audioEnabled);
+  const audioVolume = useUI((st) => st.audioVolume);
 
   useEffect(() => {
     // Create audio element on mount
@@ -49,6 +50,14 @@ export function AudioManager() {
     };
   }, []);
 
+  // Sync volume changes in real-time (seamless, no interruption)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio && audioHasStartedRef.current && !audio.paused) {
+      audio.volume = audioVolume;
+    }
+  }, [audioVolume]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -69,9 +78,9 @@ export function AudioManager() {
         // Use play() with catch to handle autoplay restrictions
         audio.play();
 
-        // Fade in over 1.5 seconds to 50% volume
+        // Fade in over 1.5 seconds to target volume
         const fadeInDuration = 1500; // ms
-        const targetVolume = 0.5;
+        const targetVolume = useUI.getState().audioVolume;
         const startTime = performance.now();
 
         const fadeIn = () => {

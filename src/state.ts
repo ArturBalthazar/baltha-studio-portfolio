@@ -3,11 +3,12 @@ import { create } from "zustand";
 export enum S {
   state_0 = 0,
   state_3 = 1,  // Mode selection (skipping removed states 1 & 2)
-  state_4 = 2,  // Car Customizer
-  state_5 = 3,  // Musecraft Editor
-  state_6 = 4,  // Digital Dioramas
-  state_7 = 5,  // Petwheels
-  state_final = 6 // Contact/Connect state - always the last destination
+  state_4 = 2,  // Meetkai
+  state_5 = 3,  // More Than Real
+  state_6 = 4,  // Baltha Maker
+  state_7 = 5,  // UFSC (Product Design)
+  state_8 = 6,  // Personal Projects
+  state_final = 7 // Contact/Connect state - always the last destination
 }
 
 type UIState = {
@@ -25,32 +26,22 @@ type UIState = {
   setNavigationMode: (mode: 'guided' | 'free') => void;
   audioEnabled: boolean; // Global audio manager
   setAudioEnabled: (enabled: boolean) => void;
+  audioVolume: number; // Volume level 0-1
+  setAudioVolume: (volume: number) => void;
   loadingProgress: number;
   setLoadingProgress: (progress: number) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  geelyCustomizerVisible: boolean; // GEELY car customizer visibility
-  setGeelyCustomizerVisible: (visible: boolean) => void;
-  geelyCustomizeCallback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null;
-  setGeelyCustomizeCallback: (callback: ((params: { color?: string; trim?: string }) => { finalColor: string; finalTrim: string } | null) | null) => void;
-  isInteriorView: boolean;
-  setIsInteriorView: (isInterior: boolean) => void;
-  geelyColor: string;
-  setGeelyColor: (color: string) => void;
-  geelyVersion: string;
-  setGeelyVersion: (version: string) => void;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
   sideTrigger: 'left' | 'right' | null; // Which side trigger is active for visual effect
   setSideTrigger: (side: 'left' | 'right' | null) => void;
-  dioramasPanelVisible: boolean; // Dioramas panel visibility
-  setDioramasPanelVisible: (visible: boolean) => void;
-  selectedDioramaModel: number; // 0=sesc-museum, 1=sesc-island, 2=dioramas
-  setSelectedDioramaModel: (index: number) => void;
-  petwheelsPanelVisible: boolean; // Petwheels panel visibility
-  setPetwheelsPanelVisible: (visible: boolean) => void;
-  musecraftPanelVisible: boolean; // Musecraft panel visibility
-  setMusecraftPanelVisible: (visible: boolean) => void;
+  workplacePanelVisible: boolean; // Unified workplace panel visibility (for states 4-8)
+  setWorkplacePanelVisible: (visible: boolean) => void;
+  selectedProjectIndex: number; // Which project is selected within current workplace state
+  setSelectedProjectIndex: (index: number) => void;
+  activeWorkplaceState: S | null; // Which workplace anchor the ship is currently near (based on proximity)
+  setActiveWorkplaceState: (state: S | null) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -68,30 +59,20 @@ export const useUI = create<UIState>((set, get) => ({
   setNavigationMode: (mode) => set({ navigationMode: mode }),
   audioEnabled: true, // Audio on by default
   setAudioEnabled: (enabled) => set({ audioEnabled: enabled }),
+  audioVolume: 0.5, // Default 50% volume
+  setAudioVolume: (volume) => set({ audioVolume: volume }),
   loadingProgress: 0,
   setLoadingProgress: (progress) => set({ loadingProgress: progress }),
   isLoading: true,
   setIsLoading: (loading) => set({ isLoading: loading }),
-  geelyCustomizerVisible: false, // GEELY customizer hidden by default
-  setGeelyCustomizerVisible: (visible) => set({ geelyCustomizerVisible: visible }),
-  geelyCustomizeCallback: null,
-  setGeelyCustomizeCallback: (callback) => set({ geelyCustomizeCallback: callback }),
-  isInteriorView: false,
-  setIsInteriorView: (isInterior) => set({ isInteriorView: isInterior }),
-  geelyColor: 'green',
-  setGeelyColor: (color) => set({ geelyColor: color }),
-  geelyVersion: 'max',
-  setGeelyVersion: (version) => set({ geelyVersion: version }),
   menuOpen: false,
   setMenuOpen: (open) => set({ menuOpen: open }),
   sideTrigger: null,
   setSideTrigger: (side) => set({ sideTrigger: side }),
-  dioramasPanelVisible: false, // Dioramas panel hidden by default
-  setDioramasPanelVisible: (visible) => set({ dioramasPanelVisible: visible }),
-  selectedDioramaModel: 0, // Default to first model (sesc-museum)
-  setSelectedDioramaModel: (index) => set({ selectedDioramaModel: index }),
-  petwheelsPanelVisible: false, // Petwheels panel hidden by default
-  setPetwheelsPanelVisible: (visible) => set({ petwheelsPanelVisible: visible }),
-  musecraftPanelVisible: false, // Musecraft panel hidden by default
-  setMusecraftPanelVisible: (visible) => set({ musecraftPanelVisible: visible })
+  workplacePanelVisible: false, // Workplace panel hidden by default
+  setWorkplacePanelVisible: (visible) => set({ workplacePanelVisible: visible }),
+  selectedProjectIndex: 0, // Default to first project
+  setSelectedProjectIndex: (index) => set({ selectedProjectIndex: index }),
+  activeWorkplaceState: null, // No active workplace by default
+  setActiveWorkplaceState: (state) => set({ activeWorkplaceState: state })
 }));

@@ -110,8 +110,8 @@ export default function Connect() {
     };
 
     const handleLinkedInClick = () => {
-        const webUrl = "https://www.linkedin.com/company/balthastudio";
-        const appUrl = "linkedin://company/balthastudio";
+        const webUrl = "https://www.linkedin.com/in/artur-balthazar/";
+        const appUrl = "linkedin://in/artur-balthazar";
 
         // Simple mobile detection
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -371,7 +371,7 @@ export default function Connect() {
                                 "absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 text-xs font-mono tracking-wide transition-colors duration-500 select-none pointer-events-none text-brand-dark/70"
                             )}
                         >
-                            BALTHA STUDIO 2025
+                            BALTHA STUDIO 2026
                         </div>
                     </div>
                 </main>

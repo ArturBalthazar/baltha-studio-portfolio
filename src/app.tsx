@@ -6,10 +6,7 @@ import { BabylonCanvas } from "./components/canvasBabylon";
 import { TypingText } from "./components/TypingText";
 import { OverlayBox } from "./components/OverlayBox";
 import { BottomLeftControls } from "./components/BottomLeftControls";
-import { GeelyCustomizer } from "./components/GeelyCustomizer";
-import { DioramasPanel } from "./components/DioramasPanel";
-import { PetwheelsPanel } from "./components/PetwheelsPanel";
-import { MusecraftPanel } from "./components/MusecraftPanel";
+import { WorkplacePanel } from "./components/WorkplacePanel";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
 import { useUI, S } from "./state";
@@ -24,12 +21,8 @@ export default function App() {
   const s = useUI((st) => st.state);
   const chatOpen = useUI((st) => st.chatOpen);
   const menuOpen = useUI((st) => st.menuOpen);
-  const geelyCustomizerVisible = useUI((st) => st.geelyCustomizerVisible);
-  const dioramasPanelVisible = useUI((st) => st.dioramasPanelVisible);
-  const petwheelsPanelVisible = useUI((st) => st.petwheelsPanelVisible);
-  const musecraftPanelVisible = useUI((st) => st.musecraftPanelVisible);
-  const isInteriorView = useUI((st) => st.isInteriorView);
-  const { setChatOpen, setMenuOpen, setIsInteriorView } = useUI();
+  const workplacePanelVisible = useUI((st) => st.workplacePanelVisible);
+  const { setChatOpen, setMenuOpen } = useUI();
   const { t } = useI18n();
   const config = getStateConfig(s);
   const isFullscreen = config.canvas.fullscreen;
@@ -61,19 +54,15 @@ export default function App() {
       'state_5': S.state_5,
       'state_6': S.state_6,
       'state_7': S.state_7,
+      'state_8': S.state_8,
       'state_final': S.state_final,
     };
     return stateMap[name] ?? null;
   };
 
   const handlePrevious = () => {
-    // Exit interior view when navigating
-    if (navigationMode === 'guided' && isInteriorView) {
-      setIsInteriorView(false);
-    }
-
-    // In free mode, from states 4-7, go back to state_3
-    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+    // In free mode, from states 4-8, go back to state_3
+    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_8) {
       useUI.getState().setState(S.state_3);
       return;
     }
@@ -95,13 +84,8 @@ export default function App() {
   };
 
   const handleNext = () => {
-    // Exit interior view when navigating
-    if (navigationMode === 'guided' && isInteriorView) {
-      setIsInteriorView(false);
-    }
-
-    // In free mode, from states 4-7, go directly to state_final
-    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_7) {
+    // In free mode, from states 4-8, go directly to state_final
+    if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_8) {
       useUI.getState().setState(S.state_final);
       return;
     }
@@ -266,23 +250,14 @@ export default function App() {
                 <BottomLeftControls
                   visible={true}
                   delay={500}
-                  isState4={s >= S.state_4 && s <= S.state_7}
+                  isState4={s >= S.state_4 && s <= S.state_8}
                   chatOpen={chatOpen}
                   onChatToggle={() => setChatOpen(!chatOpen)}
                 />
               )}
 
-              {/* GEELY Car Customizer */}
-              <GeelyCustomizer visible={geelyCustomizerVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
-
-              {/* Dioramas Panel */}
-              <DioramasPanel visible={dioramasPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
-
-              {/* Petwheels Panel */}
-              <PetwheelsPanel visible={petwheelsPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
-
-              {/* Musecraft Panel */}
-              <MusecraftPanel visible={musecraftPanelVisible && s !== S.state_0 && s !== S.state_3 && s !== S.state_final} />
+              {/* Workplace Panel - unified panel for all portfolio states (4-8) */}
+              <WorkplacePanel visible={workplacePanelVisible && s >= S.state_4 && s <= S.state_8} />
 
               {/* Connect Overlay (State 5) */}
               {config.content.showConnectOverlay && (
@@ -300,7 +275,7 @@ export default function App() {
               config.content.whiteBottomLabel ? "text-brand-white" : "text-brand-dark/70"
             )}
           >
-            BALTHA STUDIO 2025
+            BALTHA STUDIO 2026
           </div>
 
         </main>
@@ -313,7 +288,7 @@ export default function App() {
           "fixed z-50 rounded-full",
           // mobile (centered via right hack you used) - hidden in State 4
           "bottom-[90px] -right-[50%] -translate-x-[25px]",
-          (s >= S.state_4 && s <= S.state_7) && "hidden sm:flex",
+          (s >= S.state_4 && s <= S.state_8) && "hidden sm:flex",
           // desktop: push farther right, small bottom tweak - always visible
           "sm:bottom-[70px] sm:-right-[100%] sm:-translate-x-[70px]",
           "flex items-center justify-center cursor-pointer",

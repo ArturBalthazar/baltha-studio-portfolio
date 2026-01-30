@@ -174,7 +174,7 @@ export interface ContentConfig {
   overlayContent?: OverlayContent;
   overlayBoxDimensions?: OverlayBoxDimensions;
   showBottomLeftControls?: boolean; // For state 5 - info, audio, navigation buttons
-  whiteBottomLabel?: boolean; // For state 5 - white "BALTHA STUDIO 2025" label
+  whiteBottomLabel?: boolean; // For state 5 - white "BALTHA STUDIO 2026" label
   showConnectOverlay?: boolean; // For state 5 - show "Let's Connect" overlay
 }
 

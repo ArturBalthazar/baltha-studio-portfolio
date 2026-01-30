@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
 
@@ -18,12 +18,38 @@ export function BottomLeftControls({
   onChatToggle
 }: BottomLeftControlsProps) {
   const audioEnabled = useUI((st) => st.audioEnabled);
+  const audioVolume = useUI((st) => st.audioVolume);
   const navigationMode = useUI((st) => st.navigationMode);
-  const { setAudioEnabled, setNavigationMode } = useUI();
+  const { setAudioEnabled, setAudioVolume, setNavigationMode } = useUI();
   const [infoOpen, setInfoOpen] = useState(false);
+  const [volumeSliderVisible, setVolumeSliderVisible] = useState(false);
+  const previousVolumeRef = useRef(0.5); // Store volume before muting
+
+  // Volume is effectively muted if it's 0
+  const isMuted = audioVolume === 0;
 
   const toggleAudio = () => {
-    setAudioEnabled(!audioEnabled);
+    if (isMuted) {
+      // Unmute: restore previous volume (or default to 0.5)
+      const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
+      setAudioVolume(restoreVolume);
+      setAudioEnabled(true);
+    } else {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = audioVolume;
+      setAudioVolume(0);
+      setAudioEnabled(false);
+    }
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    // Save previous volume if we're above 0 (for mute/unmute button)
+    if (audioVolume > 0) {
+      previousVolumeRef.current = audioVolume;
+    }
+    setAudioVolume(newVolume);
+    // Don't toggle audioEnabled during sliding - just update volume
+    // The audio will keep playing, just at different volume
   };
 
   const toggleNavigation = () => {
@@ -81,27 +107,86 @@ export function BottomLeftControls({
           />
         </button>
 
-        {/* Audio Toggle Button */}
-        <button
-          onClick={toggleAudio}
-          className={cx(
-            "control-btn relative w-[50px] h-[50px] rounded-full",
-            "flex items-center justify-center",
-            "backdrop-blur-[10px]",
-            "transition-all duration-300 hover:scale-[1.07]",
-            "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]"
-          )}
-          style={{
-            backgroundColor: '#08142830'
-          }}
-          aria-label={audioEnabled ? "Mute audio" : "Unmute audio"}
+        {/* Audio Control Container - Desktop has volume slider on hover */}
+        <div
+          className="relative"
+          onMouseEnter={() => setVolumeSliderVisible(true)}
+          onMouseLeave={() => setVolumeSliderVisible(false)}
         >
-          <img
-            src={audioEnabled ? "/assets/images/audio_on.png" : "/assets/images/audio_off.png"}
-            alt={audioEnabled ? "Audio On" : "Audio Off"}
-            className="w-[22px] h-[22px]"
-          />
-        </button>
+          {/* Invisible hover bridge - extends the hover zone upward */}
+          <div
+            className={cx(
+              "absolute bottom-full left-1/2 -translate-x-1/2",
+              "hidden sm:block",
+              "w-[180px] h-[55px]", // 45px slider + 10px gap
+              volumeSliderVisible ? "pointer-events-auto" : "pointer-events-none"
+            )}
+          >
+            {/* Volume Slider - positioned at bottom of bridge (just above button) */}
+            <div
+              className={cx(
+                "absolute bottom-[10px] left-0",
+                "flex items-center justify-center",
+                "w-[225px] h-[45px] rounded-full",
+                "backdrop-blur-[10px]",
+                "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]",
+                "transition-all duration-300",
+                volumeSliderVisible ? "opacity-100" : "opacity-0"
+              )}
+              style={{
+                backgroundColor: '#08142830'
+              }}
+            >
+              {/* Custom Range Slider */}
+              <div className="relative w-[180px] h-[6px] flex items-center">
+                <div
+                  className="absolute inset-0 rounded-full bg-white/20"
+                />
+                <div
+                  className="absolute left-0 top-0 h-full rounded-full bg-white/60"
+                  style={{ width: `${audioVolume * 100}%` }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={audioVolume}
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="Volume"
+                />
+                {/* Slider Knob */}
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-white shadow-md pointer-events-none"
+                  style={{ left: `calc(${audioVolume * 100}% - 8px)` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Audio Toggle Button */}
+          <button
+            onClick={toggleAudio}
+            className={cx(
+              "control-btn relative w-[50px] h-[50px] rounded-full",
+              "flex items-center justify-center",
+              "backdrop-blur-[10px]",
+              "transition-all duration-300 hover:scale-[1.07]",
+              "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]"
+            )}
+            style={{
+              backgroundColor: '#08142830'
+            }}
+            aria-label={audioEnabled ? "Mute audio" : "Unmute audio"}
+          >
+            <img
+              src={isMuted ? "/assets/images/audio_off.png" : "/assets/images/audio_on.png"}
+              alt={isMuted ? "Audio Off" : "Audio On"}
+              className="w-[22px] h-[22px]"
+            />
+          </button>
+        </div>
 
         {/* Navigation Mode Toggle - Pill Shape with Slider */}
         <div

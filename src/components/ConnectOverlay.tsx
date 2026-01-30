@@ -65,8 +65,8 @@ export function ConnectOverlay() {
     }, [emailExpanded]);
 
     const handleLinkedInClick = () => {
-        const webUrl = "https://www.linkedin.com/company/balthastudio";
-        const appUrl = "linkedin://company/balthastudio";
+        const webUrl = "https://www.linkedin.com/in/artur-balthazar/";
+        const appUrl = "linkedin://in/artur-balthazar";
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         if (isMobile) {

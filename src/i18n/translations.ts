@@ -138,7 +138,7 @@ export interface TranslationKeys {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "We design interactive web experiences tailored to your brand's essence and accessible to all."
+            welcomeText: "Hello, my name is Artur Balthazar, your professional 3D designer and software developer! 🚀"
         },
         menu: {
             welcome: "Welcome",
@@ -155,7 +155,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Audio",
             on: "-",
             off: "-",
-            typingText: "Welcome to Baltha Studio! Choose a navigation mode to continue..."
+            typingText: "Welcome to my portfolio! Choose a navigation mode to continue..."
         },
         controls: {
             turnAudioOff: "Turn audio off",
@@ -215,7 +215,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Director at Baltha Studio",
+            headerSubtitle: "Creator at Baltha Studio",
             placeholder: "Type your message here...",
             errorMessage: "Oops! Something went wrong.",
             suggestion1: "What is Baltha Studio specialized in?",

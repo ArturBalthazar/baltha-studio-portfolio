@@ -23,7 +23,7 @@ export const stateFinalConfig: StateConfig = {
     canvas: {
         clickable: true,
         nextState: null, // No next state from final
-        previousState: 'state_7', // Go back to state 7 in guided mode
+        previousState: 'state_8', // Go back to state 8 in guided mode
         babylonCamera: {
             lowerRadiusLimit: {
                 mobile: 4,
