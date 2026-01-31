@@ -176,8 +176,18 @@ def main():
         default=None,
         help="Process only a specific portfolio folder (e.g., 'morethanreal')"
     )
+    parser.add_argument(
+        '--exclude',
+        type=str,
+        nargs='+',
+        default=[],
+        help="Exclude specific project folders from processing (e.g., '--exclude seara dolcegusto')"
+    )
     
     args = parser.parse_args()
+    
+    # Normalize exclusion list to lowercase for case-insensitive matching
+    excluded_folders = [f.lower() for f in args.exclude]
     
     print("=" * 60)
     print("PORTFOLIO TEXTURE RESIZER")
@@ -186,6 +196,8 @@ def main():
     print(f"Models path: {MODELS_PATH}")
     if args.dry_run:
         print("MODE: DRY RUN (no changes will be made)")
+    if excluded_folders:
+        print(f"Excluding: {', '.join(args.exclude)}")
     print("=" * 60)
     print()
     
@@ -221,6 +233,12 @@ def main():
             continue
         
         for texture_path in textures:
+            # Check if this texture should be excluded based on its path
+            rel_path_parts = [part.lower() for part in texture_path.relative_to(folder_path).parts]
+            if any(excluded in rel_path_parts for excluded in excluded_folders):
+                total_stats['skipped'] += 1
+                continue
+            
             result = process_texture(texture_path, args.size, args.dry_run)
             total_stats[result['status']] += 1
             

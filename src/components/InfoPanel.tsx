@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import cx from "classnames";
+import { playShortClick } from "./ClickSoundManager";
 
 interface InfoPanelProps {
     visible: boolean;
@@ -52,7 +53,7 @@ export function InfoPanel({ visible, onClose }: InfoPanelProps) {
                         "absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300",
                         visible ? "opacity-100" : "opacity-0"
                     )}
-                    onClick={onClose}
+                    onClick={() => { playShortClick(); onClose(); }}
                 />
 
                 {/* Panel */}
@@ -76,7 +77,7 @@ export function InfoPanel({ visible, onClose }: InfoPanelProps) {
                                 {tabs.map((tab, index) => (
                                     <button
                                         key={tab}
-                                        onClick={() => setActiveTab(index as 0 | 1)}
+                                        onClick={() => { playShortClick(); setActiveTab(index as 0 | 1); }}
                                         className={cx(
                                             "px-4 py-2 rounded-full font-mono text-sm transition-all duration-300",
                                             activeTab === index
@@ -91,7 +92,7 @@ export function InfoPanel({ visible, onClose }: InfoPanelProps) {
 
                             {/* Close button */}
                             <button
-                                onClick={onClose}
+                                onClick={() => { playShortClick(); onClose(); }}
                                 className="w-6 h-6 flex items-center justify-center hover:opacity-70 transition-opacity"
                                 aria-label="Close"
                             >
@@ -141,7 +142,7 @@ export function InfoPanel({ visible, onClose }: InfoPanelProps) {
                                 {tabs.map((tab, index) => (
                                     <button
                                         key={tab}
-                                        onClick={() => setActiveTab(index as 0 | 1)}
+                                        onClick={() => { playShortClick(); setActiveTab(index as 0 | 1); }}
                                         className={cx(
                                             "px-3 py-1.5 rounded-full font-mono text-sm transition-all duration-300",
                                             activeTab === index
@@ -156,7 +157,7 @@ export function InfoPanel({ visible, onClose }: InfoPanelProps) {
 
                             {/* Close button */}
                             <button
-                                onClick={onClose}
+                                onClick={() => { playShortClick(); onClose(); }}
                                 className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity"
                                 aria-label="Close"
                             >

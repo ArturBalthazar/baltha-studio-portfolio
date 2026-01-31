@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
 import { useI18n } from "../i18n";
+import { playShortClick } from "./ClickSoundManager";
 
 // Typing Label Component
 const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
@@ -104,6 +105,7 @@ export function ConnectOverlay() {
 
     const handleCopyEmail = (e: React.MouseEvent) => {
         e.stopPropagation();
+        playShortClick();
         navigator.clipboard.writeText("artur@baltha.studio");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -111,10 +113,12 @@ export function ConnectOverlay() {
 
     const handleSendEmail = (e: React.MouseEvent) => {
         e.stopPropagation();
+        playShortClick();
         window.location.href = "mailto:artur@baltha.studio";
     };
 
     const handleEmailClick = () => {
+        playShortClick();
         setEmailExpanded(prev => !prev);
     };
 
@@ -159,6 +163,7 @@ export function ConnectOverlay() {
                         <button
                             key={index}
                             onClick={() => {
+                                playShortClick();
                                 if (link.type === 'link') {
                                     window.open(link.url, '_blank');
                                 } else if (link.action) {

@@ -9,6 +9,8 @@ import { BottomLeftControls } from "./components/BottomLeftControls";
 import { WorkplacePanel } from "./components/WorkplacePanel";
 import { Chat } from "./components/Chat";
 import { AudioManager } from "./components/AudioManager";
+import { ClickSoundManager, playShortClick } from "./components/ClickSoundManager";
+import { EngineSoundManager } from "./components/EngineSoundManager";
 import { useUI, S } from "./state";
 import { getStateConfig } from "./states";
 import { LoadingScreen } from "./components/LoadingScreen";
@@ -62,8 +64,11 @@ export default function App() {
   };
 
   const handlePrevious = () => {
+    playShortClick();
     // In free mode, from states 4-8, go back to state_3
+    // Switch to guided mode first so bezier animation triggers
     if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_8) {
+      useUI.getState().setNavigationMode('guided');
       useUI.getState().setState(S.state_3);
       return;
     }
@@ -85,8 +90,11 @@ export default function App() {
   };
 
   const handleNext = () => {
+    playShortClick();
     // In free mode, from states 4-8, go directly to state_final
+    // Switch to guided mode first so bezier animation triggers
     if (navigationMode === 'free' && s >= S.state_4 && s <= S.state_8) {
+      useUI.getState().setNavigationMode('guided');
       useUI.getState().setState(S.state_final);
       return;
     }
@@ -112,6 +120,10 @@ export default function App() {
       <LoadingScreen />
       {/* Global Audio Manager */}
       <AudioManager />
+      {/* Click Sound Manager */}
+      <ClickSoundManager />
+      {/* Engine Sound Manager - spaceship movement sounds */}
+      <EngineSoundManager />
 
       {/* Side Trigger Overlay - visual effect when at screen edge during ship control */}
       <SideTriggerOverlay />
@@ -287,7 +299,7 @@ export default function App() {
 
       {/* Chat FAB - Hidden in State 5 on mobile only (integrated into BottomLeftControls on mobile) */}
       <button
-        onClick={() => setChatOpen(!chatOpen)}
+        onClick={() => { playShortClick(); setChatOpen(!chatOpen); }}
         className={cx(
           "fixed z-50 rounded-full",
           // mobile (centered via right hack you used) - hidden in State 4

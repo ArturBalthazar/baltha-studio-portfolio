@@ -16,6 +16,7 @@ import {
 } from "./MusecraftInteraction";
 import { startModelAnimations, stopModelAnimations } from "./modelAnimationController";
 import { getWorkplaceConfig } from "./workplaceConfig";
+import { updateEngineVelocity, setGuidedAnimationActive } from "./EngineSoundManager";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
@@ -1121,6 +1122,11 @@ function cancelBezierAnimation(
   shipCurrentSpeed = 0;
   shipLastPosition = null;
 
+  // Notify engine sound manager that guided animation is no longer active
+  setGuidedAnimationActive(false);
+  // Keep current velocity for engine sound (free mode will take over tracking)
+  updateEngineVelocity(capturedSpeed);
+
   // Stop keyframe animations on the ship (frees it from the bezier path)
   if (target && scene) {
     scene.stopAnimation(target);
@@ -1329,6 +1335,7 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
 
     // Set up velocity tracking for this animation
     shipLastPosition = target.position.clone();
+    setGuidedAnimationActive(true); // Notify engine sound that animation is starting
     bezierVelocityObserver = scene.onBeforeRenderObservable.add(() => {
       if (thisAnimationId !== currentBezierAnimationId) {
         // This animation was superseded, clean up observer
@@ -1336,6 +1343,8 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
           scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
           bezierVelocityObserver = null;
         }
+        setGuidedAnimationActive(false); // Animation ended
+        updateEngineVelocity(0); // Reset velocity
         return;
       }
 
@@ -1345,6 +1354,8 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         if (deltaTime > 0) {
           shipCurrentVelocity = currentPos.subtract(shipLastPosition).scale(1 / deltaTime);
           shipCurrentSpeed = shipCurrentVelocity.length();
+          // Report velocity to engine sound manager
+          updateEngineVelocity(shipCurrentSpeed);
         }
       }
       shipLastPosition = currentPos;
@@ -1469,6 +1480,9 @@ function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
         bezierVelocityObserver = null;
         shipCurrentSpeed = 0;
         shipLastPosition = null;
+        // Notify engine sound manager that animation ended
+        setGuidedAnimationActive(false);
+        updateEngineVelocity(0);
       }
 
       // Only hide ship if:
@@ -2021,6 +2035,18 @@ export function BabylonCanvas() {
   // Anchors are stored as { desktop1-5, mobile1-5 }
   const anchorDataRef = useRef<Record<string, AnchorData>>({});
 
+  // Distance-based fade for atoms and floating particles
+  // When the ship is too far from center, these effects fade out smoothly
+  const distanceFadeRef = useRef({
+    currentRatio: 1, // Current fade ratio (0 = invisible, 1 = fully visible)
+    fadeStartDistance: 90, // Distance at which fade starts
+    fadeEndDistance: 140, // Distance at which fully invisible
+    baseEmitRates: {
+      curveParticles: 600, // Will be set correctly when particles are created
+      atomFlames: 100 // Base emit rate for atom flames
+    }
+  });
+
 
 
   // GEELY Car customization configuration imported from shared file
@@ -2354,6 +2380,8 @@ export function BabylonCanvas() {
 
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;
+              // Store base emit rate for distance-based fading
+              distanceFadeRef.current.baseEmitRates.curveParticles = curveParticles.emitRate;
             }
 
             // Hide the Curve mesh itself
@@ -3329,6 +3357,7 @@ export function BabylonCanvas() {
             modelRoot.parent = anchor2Root;
 
             // Setup ambient texture coordinates for materials (AO map UV2 fix)
+            // Also fix transparent/glass materials to prevent z-sorting artifacts
             container.materials.forEach(mat => {
               const pbrMat = mat as BABYLON.PBRMaterial;
               if (pbrMat.ambientTexture) {
@@ -3338,6 +3367,18 @@ export function BabylonCanvas() {
               const matAny = mat as any;
               if (matAny.occlusionTexture) {
                 matAny.occlusionTexture.coordinatesIndex = 1;
+              }
+              // Fix for transparent materials (glass, etc.) - enable depth pre-pass to fix z-sorting artifacts
+              if (pbrMat.alpha < 1 || pbrMat.transparencyMode === BABYLON.Material.MATERIAL_ALPHABLEND ||
+                pbrMat.transparencyMode === BABYLON.Material.MATERIAL_ALPHATEST ||
+                pbrMat.transparencyMode === BABYLON.Material.MATERIAL_ALPHATESTANDBLEND) {
+                pbrMat.needDepthPrePass = true;
+              }
+            });
+            // Also check mesh names for glass-related meshes and apply depth pre-pass fix
+            container.meshes.forEach(mesh => {
+              if (mesh.name.toLowerCase().includes('glass') && mesh.material) {
+                mesh.material.needDepthPrePass = true;
               }
             });
 
@@ -3993,6 +4034,58 @@ export function BabylonCanvas() {
         // Clear active state when not near any anchor
         useUI.getState().setActiveWorkplaceState(null);
       }
+
+      // ===== DISTANCE-BASED FADE FOR ATOMS AND FLOATING PARTICLES =====
+      // When ship is far from center, fade out atoms and curve particles smoothly
+      const sceneCenter = BABYLON.Vector3.Zero();
+      const distanceFromCenter = BABYLON.Vector3.Distance(shipPosition, sceneCenter);
+      const fadeConfig = distanceFadeRef.current;
+
+      // Calculate target fade ratio based on distance
+      let targetRatio = 1;
+      if (distanceFromCenter >= fadeConfig.fadeEndDistance) {
+        targetRatio = 0;
+      } else if (distanceFromCenter > fadeConfig.fadeStartDistance) {
+        // Linear interpolation between start and end distances
+        const fadeRange = fadeConfig.fadeEndDistance - fadeConfig.fadeStartDistance;
+        const distanceIntoFade = distanceFromCenter - fadeConfig.fadeStartDistance;
+        targetRatio = 1 - (distanceIntoFade / fadeRange);
+      }
+
+      // Smooth interpolation towards target ratio (prevents abrupt changes)
+      const smoothSpeed = 3; // Higher = faster transition
+      const dt = scene.getEngine().getDeltaTime() * 0.001;
+      fadeConfig.currentRatio += (targetRatio - fadeConfig.currentRatio) * Math.min(1, dt * smoothSpeed);
+
+      // Clamp to valid range
+      fadeConfig.currentRatio = Math.max(0, Math.min(1, fadeConfig.currentRatio));
+
+      // Apply fade to curve particles (floating particles in center)
+      const curveParticles = curveParticleSystemRef.current;
+      if (curveParticles && curveParticles.isStarted()) {
+        const baseRate = fadeConfig.baseEmitRates.curveParticles;
+        curveParticles.emitRate = baseRate * fadeConfig.currentRatio;
+      }
+
+      // Apply fade to all atom indicators (5 atoms for 5 anchors)
+      const atoms = atomIndicatorsRef.current;
+      const atomKeys = ['atom1', 'atom2', 'atom3', 'atom4', 'atom5'] as const;
+
+      atomKeys.forEach(key => {
+        const atom = atoms[key];
+        if (!atom) return;
+
+        // Fade flame particle emit rate
+        if (atom.flame) {
+          const baseFlameRate = fadeConfig.baseEmitRates.atomFlames;
+          atom.flame.emitRate = baseFlameRate * fadeConfig.currentRatio;
+        }
+
+        // Scale the entire atom root to fade rings and all elements together
+        // This provides a smooth fade effect for LinesMesh (rings) which don't support visibility well
+        const scaleValue = Math.max(0.001, fadeConfig.currentRatio); // Prevent zero scale
+        atom.root.scaling.setAll(scaleValue);
+      });
     });
 
 
@@ -4090,6 +4183,9 @@ export function BabylonCanvas() {
       ShipControls.yawTarget = 0;
       ShipControls.pitchVel = 0;
       ShipControls.velocity.set(0, 0, 0); // Reset velocity when disabling controls
+
+      // Reset engine sound velocity when switching away from free mode
+      updateEngineVelocity(0);
 
       // Play idle animation in guided mode if spaceship is loaded
       if (spaceship) {
@@ -4494,6 +4590,9 @@ export function BabylonCanvas() {
             const movement = ShipControls.velocity.scale(dt);
             controlTarget.position.addInPlace(movement);
 
+            // Report velocity to engine sound manager
+            updateEngineVelocity(ShipControls.velocity.length());
+
           } else {
             // Idle when not dragging - apply drag to velocity
             ShipControls.velocity.x += (0 - ShipControls.velocity.x) * Math.min(1, dt * ShipControls.drag);
@@ -4503,6 +4602,9 @@ export function BabylonCanvas() {
             // Continue applying velocity even when not dragging (coasting)
             const movement = ShipControls.velocity.scale(dt);
             controlTarget.position.addInPlace(movement);
+
+            // Report velocity to engine sound manager (even when coasting)
+            updateEngineVelocity(ShipControls.velocity.length());
 
             if (A.I) play(A.I, wStep);
             // Reset yaw tracking
@@ -5472,28 +5574,29 @@ export function BabylonCanvas() {
     const isGuidedMode = navigationMode === 'guided';
 
     if (inExploreState) {
-      // Get camera animation duration to delay enabling controls until animation completes
-      const cameraConfig = config.canvas.babylonCamera;
-      const animDuration = cameraConfig?.animationDuration ?? 0.4;
-      const animDelay = cameraConfig?.animationDelay ?? 0;
-      const totalAnimTime = (animDuration + animDelay) * 1000; // Convert to ms
+      if (isGuidedMode) {
+        // In guided mode: delay camera controls until camera animation completes
+        const cameraConfig = config.canvas.babylonCamera;
+        const animDuration = cameraConfig?.animationDuration ?? 0.4;
+        const animDelay = cameraConfig?.animationDelay ?? 0;
+        const totalAnimTime = (animDuration + animDelay) * 1000; // Convert to ms
 
-      // Wait for camera animation to complete before enabling controls
-      const timeoutId = setTimeout(() => {
-        if (isGuidedMode) {
-          // In guided mode: enable mouse wheel for zoom (radius limits are animated elsewhere to control zooming)
+        const timeoutId = setTimeout(() => {
+          // Enable mouse wheel for zoom only (radius limits are animated elsewhere to control zooming)
           camera.inputs.clear();
           camera.inputs.addMouseWheel();
           camera.attachControl(canvas, true);
-        } else {
-          // In free mode: enable all controls
-          camera.inputs.addMouseWheel();
-          camera.inputs.addPointers();
-          camera.attachControl(canvas, true);
-        }
-      }, totalAnimTime);
+        }, totalAnimTime);
 
-      return () => clearTimeout(timeoutId);
+        return () => clearTimeout(timeoutId);
+      } else {
+        // In free mode: enable ALL controls IMMEDIATELY (no delay)
+        // This allows camera rotation/drag to work right away when switching to free mode
+        camera.inputs.clear();
+        camera.inputs.addMouseWheel();
+        camera.inputs.addPointers();
+        camera.attachControl(canvas, true);
+      }
     } else {
       camera.detachControl();
       camera.inputs.clear();
@@ -5511,8 +5614,9 @@ export function BabylonCanvas() {
     const inExploreState = s >= S.state_4 && s <= S.state_8;
     const isGuidedMode = navigationMode === 'guided';
 
-    // Only enable model rotation in explore states
-    if (!inExploreState) {
+    // Only enable model rotation in guided mode during explore states
+    // In free mode, model rotation is disabled to avoid interfering with ship controls
+    if (!inExploreState || !isGuidedMode) {
       return;
     }
 

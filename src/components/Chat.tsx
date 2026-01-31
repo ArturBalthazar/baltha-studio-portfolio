@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
 import { useI18n } from "../i18n";
+import { getProjectConfig } from "./workplaceConfig";
 
 interface ChatAction {
   label: string;
@@ -23,6 +24,7 @@ interface ChatContext {
   workplaceVisible: boolean;              // Workplace panel visible
   workplaceState?: number;                // Active workplace state (which anchor ship is near)
   projectIndex?: number;                  // Selected project index within current workplace
+  projectId?: string;                     // Current project ID for context loading
 }
 
 interface ChatProps {
@@ -72,12 +74,20 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
   // Build context object for the current state
   const buildContext = (): ChatContext => {
+    // Get current project ID if viewing a workplace
+    let projectId: string | undefined;
+    if (workplacePanelVisible && activeWorkplaceState !== null) {
+      const projectConfig = getProjectConfig(activeWorkplaceState, selectedProjectIndex);
+      projectId = projectConfig?.id;
+    }
+
     return {
       state: state === S.state_final ? 99 : state,
       navMode: navigationMode,
       workplaceVisible: workplacePanelVisible,
       workplaceState: activeWorkplaceState !== null ? activeWorkplaceState : undefined,
       projectIndex: workplacePanelVisible ? selectedProjectIndex : undefined,
+      projectId,
     };
   };
 

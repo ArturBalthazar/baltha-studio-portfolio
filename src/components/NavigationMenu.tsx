@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import cx from "classnames";
 import { useUI, S } from "../state";
 import { useI18n } from "../i18n";
+import { playShortClick } from "./ClickSoundManager";
 
 interface Point {
   x: number;           // percentage (0-100)
@@ -853,6 +854,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
             }}
             onClick={(e) => {
               e.stopPropagation();
+              playShortClick();
 
               // Map menu items to states
               const stateMap: Record<string, S> = {

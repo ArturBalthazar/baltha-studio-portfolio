@@ -359,11 +359,11 @@ function TechStack({ block }: { block: TechStackBlock }) {
                             key={item.id}
                             className="flex flex-col items-center gap-1.5 w-16"
                         >
-                            <div className="w-12 h-12 bg-white/5 flex items-center justify-center transition-all duration-200">
+                            <div className="w-12 h-12 bg-white/10 flex border border-white/50 items-center rounded-lg justify-center transition-all duration-200">
                                 <img
                                     src={getIconPath(item.id)}
                                     alt={item.label}
-                                    className="w-full h-full object-contain rounded-lg border-8 border-white opacity-80"
+                                    className="w-[80%] h-[80%] object-contain "
                                     onError={() => handleIconError(item.id)}
                                 />
                             </div>

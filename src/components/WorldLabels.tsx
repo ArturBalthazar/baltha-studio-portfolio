@@ -14,6 +14,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as BABYLON from 'babylonjs';
 import { useUI, S } from '../state';
 import { workplaceConfigs } from './workplaceConfig';
+import { playShortClick } from './ClickSoundManager';
 
 // Anchor configuration - maps section states to anchor mesh names
 const ANCHOR_CONFIG: { state: S; anchorName: string }[] = [
@@ -50,12 +51,24 @@ export const WorldLabels: React.FC = () => {
     const currentState = useUI((st) => st.state);
 
     const [labels, setLabels] = useState<LabelData[]>([]);
+    const [isVisible, setIsVisible] = useState(false); // For fade-in animation
     const sceneRef = useRef<BABYLON.Scene | null>(null);
     const cameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
     const observerRef = useRef<BABYLON.Observer<BABYLON.Scene> | null>(null);
 
     // Only show in free mode and during portfolio states (4-8 only, NOT in state 0, 3, or final)
     const shouldRender = navigationMode === 'free' && currentState >= S.state_4 && currentState <= S.state_8;
+
+    // Handle fade-in/out animation when shouldRender changes
+    useEffect(() => {
+        if (shouldRender) {
+            // Delay the visibility to allow for fade-in animation
+            const timer = setTimeout(() => setIsVisible(true), 1000);
+            return () => clearTimeout(timer);
+        } else {
+            setIsVisible(false);
+        }
+    }, [shouldRender]);
 
     // Get section names from workplaceConfig
     const getSectionName = useCallback((state: S): string => {
@@ -221,14 +234,29 @@ export const WorldLabels: React.FC = () => {
         };
     }, [shouldRender, updateLabels]);
 
+    // Handle label click - switch to guided mode and navigate to section
+    const handleLabelClick = useCallback((targetState: S) => {
+        // Play click sound
+        playShortClick();
+
+        // Switch to guided mode
+        useUI.getState().setNavigationMode('guided');
+
+        // Navigate to the target state
+        useUI.getState().setState(targetState);
+    }, []);
+
     if (!shouldRender || labels.length === 0) {
         return null;
     }
 
     return (
         <div
-            className="absolute inset-0 pointer-events-none overflow-hidden z-0"
-            aria-hidden="true"
+            className="absolute inset-0 overflow-hidden z-0 transition-opacity duration-500"
+            style={{
+                pointerEvents: 'none',
+                opacity: isVisible ? 1 : 0,
+            }}
         >
             {labels.map((label) => (
                 <div
@@ -240,15 +268,19 @@ export const WorldLabels: React.FC = () => {
                         opacity: label.visible ? label.opacity : 0,
                         visibility: label.visible ? 'visible' : 'hidden',
                         transform: `translate(-50%, -50%) scale(${label.visible ? label.scale : 0.8})`,
+                        pointerEvents: label.visible ? 'auto' : 'none',
                     }}
                 >
-                    {/* Label container - white border, dark backdrop */}
-                    <div className="relative px-3 py-1 border border-white/20 rounded-md backdrop-blur-md bg-brand-dark/20">
+                    {/* Label container - white border, dark backdrop, clickable */}
+                    <button
+                        onClick={() => handleLabelClick(label.state)}
+                        className="relative px-3 py-1 border border-white/20 rounded-md backdrop-blur-md bg-brand-dark/20 cursor-pointer transition-all duration-200 hover:border-white/50 hover:bg-brand-dark/40 hover:scale-105 active:scale-95"
+                    >
                         {/* Label text */}
                         <span className="text-white text-sm font-mono tracking-wide whitespace-nowrap">
                             {label.sectionName}
                         </span>
-                    </div>
+                    </button>
                 </div>
             ))}
         </div>

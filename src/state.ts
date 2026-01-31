@@ -44,6 +44,8 @@ type UIState = {
   setActiveWorkplaceState: (state: S | null) => void;
   videoPlaying: boolean; // Whether a YouTube video is currently playing
   setVideoPlaying: (playing: boolean) => void;
+  clickSoundActivated: boolean; // Whether click sounds have been activated (from state_3 onwards, persists)
+  setClickSoundActivated: (activated: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -78,5 +80,7 @@ export const useUI = create<UIState>((set, get) => ({
   activeWorkplaceState: null, // No active workplace by default
   setActiveWorkplaceState: (state) => set({ activeWorkplaceState: state }),
   videoPlaying: false, // No video playing by default
-  setVideoPlaying: (playing) => set({ videoPlaying: playing })
+  setVideoPlaying: (playing) => set({ videoPlaying: playing }),
+  clickSoundActivated: false, // Click sounds not activated until reaching state_3
+  setClickSoundActivated: (activated) => set({ clickSoundActivated: activated })
 }));

@@ -2,10 +2,11 @@ const express = require('express');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const { buildSystemPrompt, getContextSummary } = require('./chatbot-contexts.cjs');
 
 // Load environment variables from .env file
 dotenv.config();
-console.log('API Key:', process.env.OPENAI_API_KEY);
+console.log('API Key loaded:', process.env.OPENAI_API_KEY ? 'Yes' : 'No');
 
 const app = express();
 
@@ -42,60 +43,61 @@ setInterval(() => {
 
 // POST /chat endpoint
 app.post('/chat', async (req, res) => {
-    const userId = req.body.userId || 'default'; // Assuming a userId is provided, or use 'default' for testing
+    const userId = req.body.userId || 'default';
     const userMessage = req.body.message;
-    const context = req.body.context || {}; // Context from client about current UI state
+    const context = req.body.context || {};
 
-    console.log(`Received message from ${userId}:`, userMessage);
-    if (Object.keys(context).length > 0) {
-        console.log(`Context:`, context);
+    console.log(`\n--- Chat Request from ${userId} ---`);
+    console.log(`Message: "${userMessage}"`);
+
+    const contextSummary = getContextSummary(context);
+    if (contextSummary) {
+        console.log(`Context: ${contextSummary}`);
     }
 
     // Update session timestamp (keeps session alive)
     sessionTimestamps[userId] = Date.now();
 
-    // Initialize conversation history and token tracking if not present
+    // Build dynamic system prompt based on context and message content
+    // Include message hint for keyword-based context loading
+    const systemPromptContext = {
+        ...context,
+        messageHint: userMessage
+    };
+    const systemPrompt = buildSystemPrompt(systemPromptContext);
+
+    // Initialize or update conversation with new system prompt
     if (!conversations[userId]) {
-        conversations[userId] = [
-            {
-                role: "system",
-                content: `Short answers. You are the AI representative of Artur Balthazar, creative director at Baltha Studio, a creative tech studio specialized in brand-oriented interactive web experiences and custom real-time graphics software; you act as a helpful but sales-driven assistant who asks relevant, strategic questions, keeps the conversation focused on how Baltha Studio can help the user, and naturally guides them toward getting in touch; you understand our website and can explain or guide users through it when useful, knowing it is built with Babylon.js and designed as a live showcase of our capabilities: a navigable space scene with a spaceship, global UI elements accessible at all times (chat button, header menu with site map, and home logo), and four showcased projects — a Geely EX2 interactive car configurator, a web-based 3D editor powered by Babylon.js, past 3D printing projects that reflect our technical background, and PetWheels, a parametric 3D-printable wheelchair for dogs developed as a capstone project and not an active product — with users able to switch between guided mode (automatic navigation through projects) and free mode (manual spaceship movement by clicking in 3D space), using this experience to build credibility, spark interest, and lead users toward contacting Baltha Studio. CONTEXT: Messages may have [ctx:...] with state/location. Key: state=current area, nav=mode, panel=visible panel, color=car color(green/gray/white/silver), version=car trim(pro/max), view=interior. Use context naturally, don't mention format. ACTIONS: When contact is relevant, append action buttons: [ACTIONS][{"label":"WhatsApp","type":"whatsapp"},{"label":"Email","type":"email"}][/ACTIONS]. Types: whatsapp,email,linkedin,instagram,home. Only add when user asks about contact/getting in touch. Keep labels short. Max 2-3 buttons per response.`
-            }
-        ];
-        tokenUsage[userId] = 0;  // Initialize token count for the user
+        conversations[userId] = [];
+        tokenUsage[userId] = 0;
     }
 
-    // Build compact context string from context object
-    // Format: [ctx: state=X navMode=Y panel=Z ...]
+    // Build compact context string for the message
     let contextParts = [];
 
-    // State mapping: 0=loading, 1=intro, 2=hero, 3=overlay, 4-7=content areas, 99=contact
+    // State mapping for readability
     const stateNames = {
-        0: 'loading', 1: 'intro', 2: 'hero', 3: 'overlay',
-        4: 'geely-area', 5: 'musecraft-area', 6: 'dioramas-area', 7: 'petwheels-area',
-        99: 'contact'
+        0: 'loading', 1: 'mode-select', 2: 'musecraft',
+        3: 'meetkai', 4: 'morethanreal', 5: 'balthamaker',
+        6: 'ufsc', 7: 'contact', 99: 'contact'
     };
+
     if (context.state !== undefined) {
         contextParts.push(`state=${stateNames[context.state] || context.state}`);
     }
     if (context.navMode) {
         contextParts.push(`nav=${context.navMode}`);
     }
-    if (context.geelyVisible) {
-        contextParts.push('panel=geely-customizer');
-        if (context.geelyColor) contextParts.push(`color=${context.geelyColor}`);
-        if (context.geelyVersion) contextParts.push(`version=${context.geelyVersion}`);
-        if (context.geelyInterior) contextParts.push('view=interior');
-    }
-    if (context.dioramaVisible) {
-        contextParts.push(`panel=dioramas`);
-        if (context.dioramaModel) contextParts.push(`model=${context.dioramaModel}`);
-    }
-    if (context.petwheelsVisible) {
-        contextParts.push('panel=petwheels');
-    }
-    if (context.musecraftVisible) {
-        contextParts.push('panel=musecraft');
+    if (context.workplaceVisible && context.workplaceState !== undefined) {
+        const workplaceNames = {
+            2: 'musecraft', 3: 'meetkai', 4: 'morethanreal',
+            5: 'balthamaker', 6: 'ufsc'
+        };
+        contextParts.push(`viewing=${workplaceNames[context.workplaceState] || 'workplace'}`);
+
+        if (context.projectIndex !== undefined) {
+            contextParts.push(`project-idx=${context.projectIndex}`);
+        }
     }
 
     // Construct the message with context if available
@@ -104,13 +106,17 @@ app.post('/chat', async (req, res) => {
         messageWithContext = `[ctx: ${contextParts.join(' ')}] ${userMessage}`;
     }
 
-    // Append the user's message to the conversation
-    conversations[userId].push({ role: "user", content: messageWithContext });
+    // Build messages array with fresh system prompt + conversation history
+    const messages = [
+        { role: "system", content: systemPrompt },
+        ...conversations[userId],
+        { role: "user", content: messageWithContext }
+    ];
 
     try {
         const response = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: "gpt-4o-mini",
-            messages: conversations[userId], // Send the entire conversation history
+            messages: messages,
             max_tokens: 400
         }, {
             headers: {
@@ -121,21 +127,26 @@ app.post('/chat', async (req, res) => {
 
         const botMessage = response.data.choices[0].message.content.trim();
 
-        // Append the bot's response to the conversation history
+        // Store only user and assistant messages (not system prompt) to keep history lean
+        conversations[userId].push({ role: "user", content: messageWithContext });
         conversations[userId].push({ role: "assistant", content: botMessage });
+
+        // Limit conversation history to last 20 messages to prevent context overflow
+        if (conversations[userId].length > 20) {
+            conversations[userId] = conversations[userId].slice(-20);
+        }
 
         // Log the token usage from this interaction
         const tokensUsed = response.data.usage.total_tokens;
-        tokenUsage[userId] += tokensUsed; // Add to the user's total token count
+        tokenUsage[userId] += tokensUsed;
 
-        console.log(`Response from OpenAI for ${userId}:`, botMessage);
-        console.log(`Tokens used in this request: ${tokensUsed}`);
-        console.log(`Total tokens used in conversation with ${userId}: ${tokenUsage[userId]}`);
+        console.log(`Response: "${botMessage.substring(0, 100)}${botMessage.length > 100 ? '...' : ''}"`);
+        console.log(`Tokens: ${tokensUsed} (session total: ${tokenUsage[userId]})`);
 
         res.json({
             response: botMessage,
             tokensUsedInThisRequest: tokensUsed,
-            totalTokensUsed: tokenUsage[userId]  // Return the total token usage
+            totalTokensUsed: tokenUsage[userId]
         });
     } catch (error) {
         console.error('Error communicating with OpenAI:', error.response ? error.response.data : error.message);
@@ -143,6 +154,13 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-app.listen(8081, () => {
-    console.log('Server running on port 8081');
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', sessions: Object.keys(conversations).length });
+});
+
+const PORT = process.env.PORT || 8081;
+app.listen(PORT, () => {
+    console.log(`\n🚀 Chatbot server running on port ${PORT}`);
+    console.log('📦 Using modular context system');
 });

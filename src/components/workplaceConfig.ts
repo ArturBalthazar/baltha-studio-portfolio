@@ -238,7 +238,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'react', label: 'React' },
@@ -353,7 +353,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
@@ -441,7 +441,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
@@ -528,7 +528,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
@@ -716,9 +716,10 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
                         ]
@@ -770,9 +771,10 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'fusion360', label: 'Fusion 360' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
@@ -823,9 +825,10 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
                         ]
@@ -891,12 +894,13 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' },
-                            { id: '3dscanning', label: 'Photogrammetry' }
+                            { id: '3dscanning', label: '3D Scanning' }
                         ]
                     }
                 ]
@@ -935,7 +939,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         type: 'text',
                         paragraphs: [
                             'This project was developed for SESC Florianópolis Museum, representing a 1:41m scale version of the actual museum building. The model now sits in the museum\'s entrance hall, attracting the eyes of everyone who visits.',
-                            'One of the reasons this work was so valuable to me was because I had the opportunity to integrate many different technical skills: architecture, design engineering, technical CAD modeling, and NURBS modeling. In fact, it was the first moment I actually got in touch with NURBS, and since then I never stopped working with it.'
+                            'One of the reasons this work was so valuable to me was because I had the opportunity to integrate many different technical Skills with: architecture, design engineering, technical CAD modeling, and NURBS modeling. In fact, it was the first moment I actually got in touch with NURBS, and since then I never stopped working with it.'
                         ]
                     },
                     // 3D Modeling section
@@ -981,7 +985,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },
@@ -1049,7 +1053,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },
@@ -1125,7 +1129,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },
@@ -1255,7 +1259,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },
@@ -1318,7 +1322,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },
@@ -1418,7 +1422,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Softwares, tools and languages
                     {
                         type: 'tech-stack',
-                        title: 'Knowledge Base',
+                        title: 'Skills with:',
                         showSeparator: true,
                         items: [
                             { id: 'fusion360', label: 'Fusion 360' },

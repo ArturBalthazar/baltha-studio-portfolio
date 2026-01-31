@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import cx from "classnames";
 import { S, useUI } from "../state";
 import { useI18n } from "../i18n";
+import { playShortClick } from "./ClickSoundManager";
 
 interface OverlayBoxProps {
   visible: boolean;
@@ -53,6 +54,9 @@ export function OverlayBox({
 
   // Handle button clicks
   const handleInternalButtonClick = (index: number) => {
+    // Play click sound
+    playShortClick();
+
     // Update global navigation mode
     setNavigationMode(index === 0 ? 'guided' : 'free');
 
@@ -62,6 +66,9 @@ export function OverlayBox({
 
   // Handle audio toggle - syncs with volume system
   const handleAudioToggle = () => {
+    // Play click sound
+    playShortClick();
+
     if (isAudioOn) {
       // Mute: save current volume and set to 0
       previousVolumeRef.current = audioVolume;

@@ -138,7 +138,7 @@ export interface TranslationKeys {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and developer 🚀"
+            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D developer and designer 🚀"
         },
         menu: {
             welcome: "Welcome",
@@ -215,12 +215,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Creator at Baltha Studio",
+            headerSubtitle: "Creative Technologist & 3D Artist",
             placeholder: "Type your message here...",
             errorMessage: "Oops! Something went wrong.",
-            suggestion1: "What is Baltha Studio specialized in?",
-            suggestion2: "Which projects have you worked on?",
-            suggestion3: "How do I get in touch or start a project?"
+            suggestion1: "Tell me about yourself and your work",
+            suggestion2: "What projects have you worked on?",
+            suggestion3: "How can I get in touch?"
         },
         common: {
             previous: "Previous",
@@ -310,12 +310,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Diretor na Baltha Studio",
+            headerSubtitle: "Tecnólogo Criativo & Artista 3D",
             placeholder: "Digite sua mensagem aqui...",
             errorMessage: "Ops! Algo deu errado.",
-            suggestion1: "Qual a especialidade da Baltha Studio?",
-            suggestion2: "Em quais projetos vocês já trabalharam?",
-            suggestion3: "Como entro em contato ou inicio um projeto?"
+            suggestion1: "Me conte sobre você e seu trabalho",
+            suggestion2: "Em quais projetos você já trabalhou?",
+            suggestion3: "Como posso entrar em contato?"
         },
         common: {
             previous: "Anterior",
@@ -405,12 +405,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Director de Baltha Studio",
+            headerSubtitle: "Tecnólogo Creativo & Artista 3D",
             placeholder: "Escribe tu mensaje aquí...",
             errorMessage: "¡Ups! Algo salió mal.",
-            suggestion1: "¿En qué se especializa Baltha Studio?",
-            suggestion2: "¿En qué proyectos han trabajado?",
-            suggestion3: "¿Cómo me pongo en contacto o inicio un proyecto?"
+            suggestion1: "Cuéntame sobre ti y tu trabajo",
+            suggestion2: "¿En qué proyectos has trabajado?",
+            suggestion3: "¿Cómo puedo ponerme en contacto?"
         },
         common: {
             previous: "Anterior",
@@ -500,12 +500,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Direktor bei Baltha Studio",
+            headerSubtitle: "Kreativtechnologe & 3D-Künstler",
             placeholder: "Schreiben Sie Ihre Nachricht hier...",
             errorMessage: "Ups! Etwas ist schief gelaufen.",
-            suggestion1: "Worauf ist Baltha Studio spezialisiert?",
-            suggestion2: "An welchen Projekten haben Sie gearbeitet?",
-            suggestion3: "Wie kann ich mich melden oder ein Projekt starten?"
+            suggestion1: "Erzähl mir über dich und deine Arbeit",
+            suggestion2: "An welchen Projekten hast du gearbeitet?",
+            suggestion3: "Wie kann ich dich kontaktieren?"
         },
         common: {
             previous: "Zurück",
@@ -595,12 +595,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Directeur chez Baltha Studio",
+            headerSubtitle: "Technologue Créatif & Artiste 3D",
             placeholder: "Tapez votre message ici...",
             errorMessage: "Oups! Quelque chose s'est mal passé.",
-            suggestion1: "Quelle est la spécialité de Baltha Studio?",
+            suggestion1: "Parlez-moi de vous et de votre travail",
             suggestion2: "Sur quels projets avez-vous travaillé?",
-            suggestion3: "Comment puis-je vous contacter ou démarrer un projet?"
+            suggestion3: "Comment puis-je vous contacter?"
         },
         common: {
             previous: "Précédent",
@@ -690,12 +690,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Baltha Studio总监",
+            headerSubtitle: "创意技术专家 & 3D艺术家",
             placeholder: "在这里输入您的消息...",
             errorMessage: "糟糕！出了点问题。",
-            suggestion1: "Baltha Studio专注于什么?",
-            suggestion2: "你们参与过哪些项目?",
-            suggestion3: "如何联系或启动项目?"
+            suggestion1: "介绍一下你自己和你的工作",
+            suggestion2: "你参与过哪些项目?",
+            suggestion3: "我如何联系你?"
         },
         common: {
             previous: "上一个",

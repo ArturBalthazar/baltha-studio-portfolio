@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
 import { InfoPanel } from "./InfoPanel";
+import { playShortClick } from "./ClickSoundManager";
 
 interface BottomLeftControlsProps {
   visible: boolean;
@@ -30,6 +31,7 @@ export function BottomLeftControls({
   const isMuted = audioVolume === 0;
 
   const toggleAudio = () => {
+    playShortClick();
     if (isMuted) {
       // Unmute: restore previous volume (or default to 0.5)
       const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
@@ -54,11 +56,13 @@ export function BottomLeftControls({
   };
 
   const toggleNavigation = () => {
+    playShortClick();
     const newMode = navigationMode === 'guided' ? 'free' : 'guided';
     setNavigationMode(newMode);
   };
 
   const toggleInfo = () => {
+    playShortClick();
     setInfoOpen(!infoOpen);
   };
 
@@ -244,7 +248,7 @@ export function BottomLeftControls({
         {/* Chat Button (only in State 4 on mobile) */}
         {isState4 && onChatToggle && (
           <button
-            onClick={onChatToggle}
+            onClick={() => { playShortClick(); onChatToggle(); }}
             className={cx(
               "control-btn relative w-[50px] h-[50px] rounded-full",
               "flex items-center justify-center",

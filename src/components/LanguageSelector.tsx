@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import cx from "classnames";
 import { useI18n, LanguageCode } from "../i18n";
+import { playShortClick } from "./ClickSoundManager";
 
 interface Language {
     code: LanguageCode;
@@ -56,6 +57,7 @@ export function LanguageSelector({ visible, isWhite = false, isLarge = false }: 
     }, [visible]);
 
     const handleLanguageSelect = (lang: Language) => {
+        playShortClick();
         setLanguage(lang.code);
         setIsOpen(false);
     };
@@ -70,7 +72,7 @@ export function LanguageSelector({ visible, isWhite = false, isLarge = false }: 
         >
             {/* Toggle Button - Pill shape similar to navigation toggle */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => { playShortClick(); setIsOpen(!isOpen); }}
                 className={cx(
                     "relative flex items-center gap-1 rounded-[25px]",
                     "backdrop-blur-[10px]",

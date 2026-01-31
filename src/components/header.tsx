@@ -4,6 +4,7 @@ import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 import { LanguageSelector } from "./LanguageSelector";
 import { useI18n } from "../i18n";
+import { playShortClick } from "./ClickSoundManager";
 
 type Props = { showWelcome?: boolean };
 
@@ -20,7 +21,14 @@ export function Header({ showWelcome = true }: Props) {
   const isWhite = config.header.whiteIcons;
   const isCollapsed = config.header.collapsed;
 
+  // Header buttons should only make click sounds when not in states 0, 3, or final
+  const shouldPlayClickSound = s !== S.state_0 && s !== S.state_3 && s !== S.state_final;
+
   const handleLogoClick = () => {
+    // Play click sound only in allowed states
+    if (shouldPlayClickSound) {
+      playShortClick();
+    }
     // Check if we're on the connect page
     const path = window.location.pathname;
     if (path.startsWith("/connect") || path.startsWith("/welcome")) {
@@ -31,6 +39,14 @@ export function Header({ showWelcome = true }: Props) {
       setNavigationMode('guided');
       setState(S.state_0);
     }
+  };
+
+  const handleMenuClick = () => {
+    // Play click sound only in allowed states
+    if (shouldPlayClickSound) {
+      playShortClick();
+    }
+    setMenuOpen(!menuOpen);
   };
 
   return (
@@ -92,7 +108,7 @@ export function Header({ showWelcome = true }: Props) {
           <LanguageSelector visible={true} isWhite={!!isWhite} isLarge={showWelcomeText} />
 
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={handleMenuClick}
             className="cursor-pointer hover:scale-105 transition-transform duration-200 relative"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
           >

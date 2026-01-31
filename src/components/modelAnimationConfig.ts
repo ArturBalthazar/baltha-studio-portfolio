@@ -48,10 +48,10 @@ export const modelAnimationConfigs: Record<string, ModelAnimationConfig> = {
         blendDuration: 2, // 2 second blend between animations (adjust as needed)
         cycleAnimations: [
             // MostrandoProduto animations have higher priority (3x more likely)
-            { name: '2.MostrandoProdutos.A', priority: 3 },
+            { name: '2.MostrandoProdutos.A', priority: 1 },
             { name: '2.MostrandoProdutos.B', priority: 2 },
             // GirandoPazinha triggers DescruzandoBraços after
-            { name: '6.GirandoPazinha.B', mustFollowWith: '4.DescruzandoBraços.B', priority: 2 },
+            { name: '6.GirandoPazinha.B', mustFollowWith: '4.DescruzandoBraços.B', priority: 1 },
             // DescruzandoBraços is ONLY used after GirandoPazinha, never standalone
             { name: '4.DescruzandoBraços.B', followUpOnly: true },
             // Alongando has normal priority

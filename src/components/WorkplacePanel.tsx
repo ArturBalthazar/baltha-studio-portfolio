@@ -3,9 +3,24 @@ import cx from "classnames";
 import { useUI, S } from "../state";
 import { getWorkplaceConfig, WorkplaceConfig, ProjectConfig, isSingleProjectSection } from "./workplaceConfig";
 import { ProjectContent } from "./ProjectContent";
+import { playShortClick } from "./ClickSoundManager";
 
 interface WorkplacePanelProps {
     visible: boolean;
+}
+
+// Collapse arrow component
+function CollapseArrow({ isCollapsed }: { isCollapsed: boolean }) {
+    return (
+        <img
+            src="/assets/images/arrow.png"
+            alt={isCollapsed ? "Expand" : "Collapse"}
+            className={cx(
+                "w-4 h-4 opacity-60 transition-transform duration-300",
+                isCollapsed ? "rotate-180" : "rotate-0"
+            )}
+        />
+    );
 }
 
 // Custom scrollbar styles
@@ -19,6 +34,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
     const activeWorkplaceState = useUI((st) => st.activeWorkplaceState);
     const selectedProjectIndex = useUI((st) => st.selectedProjectIndex);
     const setSelectedProjectIndex = useUI((st) => st.setSelectedProjectIndex);
+    const navigationMode = useUI((st) => st.navigationMode);
 
     // Get workplace config based on which anchor the ship is near (not navigation state)
     const currentConfig = activeWorkplaceState !== null ? getWorkplaceConfig(activeWorkplaceState) : null;
@@ -30,6 +46,9 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
     const lastValidConfig = useRef<WorkplaceConfig | null>(null);
     const [shouldRender, setShouldRender] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+
+    // Collapse state - default based on navigation mode
+    const [isCollapsed, setIsCollapsed] = useState(navigationMode === 'free');
 
     // Ref for scrollable content container
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +95,17 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
         }
     }, [selectedProjectIndex]);
 
+    // Auto-expand/collapse when navigation mode changes
+    useEffect(() => {
+        setIsCollapsed(navigationMode === 'free');
+    }, [navigationMode]);
+
+    // Handle header click to toggle collapse
+    const handleHeaderClick = () => {
+        playShortClick();
+        setIsCollapsed(!isCollapsed);
+    };
+
     // Use current config if available, otherwise use last valid for fade-out
     const workplaceConfig = currentConfig || lastValidConfig.current;
 
@@ -86,6 +116,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
 
     const handlePrevious = () => {
         if (isAnimating || projectCount <= 1) return;
+        playShortClick();
         setIsAnimating(true);
         const newIndex = selectedProjectIndex === 0 ? projectCount - 1 : selectedProjectIndex - 1;
         setSelectedProjectIndex(newIndex);
@@ -94,6 +125,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
 
     const handleNext = () => {
         if (isAnimating || projectCount <= 1) return;
+        playShortClick();
         setIsAnimating(true);
         const newIndex = selectedProjectIndex === projectCount - 1 ? 0 : selectedProjectIndex + 1;
         setSelectedProjectIndex(newIndex);
@@ -104,18 +136,26 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
         <>
             {/* Desktop: Left side panel */}
             <div className={cx(
-                "hidden md:flex absolute top-18 bottom-20 left-16 w-[35%]",
+                "hidden md:flex absolute left-16 w-[35%]",
                 "flex-col rounded-xl overflow-hidden",
                 "bg-[rgba(12,20,40,0.75)] backdrop-blur-lg",
                 "border border-white/30",
                 "transition-all duration-500",
                 isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10 pointer-events-none"
             )}
-                style={{ maxHeight: 'calc(100vh - 9.5rem)' }}
+                style={{
+                    top: '4.5rem',
+                    bottom: isCollapsed ? 'auto' : '5rem',
+                    height: isCollapsed ? 'auto' : undefined,
+                    maxHeight: isCollapsed ? 'none' : 'calc(100vh - 9.5rem)'
+                }}
             >
-                {/* Fixed Header - Company Info */}
-                <div className="flex-shrink-0 px-5 pt-4 pb-3">
-                    {/* Two-column layout: Logo | Text Info (3 rows) */}
+                {/* Fixed Header - Company Info (clickable to toggle collapse) */}
+                <div
+                    className="flex-shrink-0 px-5 pt-4 pb-3 cursor-pointer"
+                    onClick={handleHeaderClick}
+                >
+                    {/* Two-column layout: Logo | Text Info (3 rows) | Arrow */}
                     <div className="flex items-start gap-4">
                         {/* Left column: Logo */}
                         {workplaceConfig.showCompanyLogo && workplaceConfig.companyLogoPath && (
@@ -127,12 +167,18 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                             />
                         )}
 
-                        {/* Right column: Three rows of text */}
-                        <div className="flex flex-col justify-center min-w-0">
-                            {/* Row 1: Company Name */}
-                            <h2 className="font-sans text-xl font-semibold text-white -mb-1.5">
-                                {workplaceConfig.companyName}
-                            </h2>
+                        {/* Right column: Three rows of text + arrow at title level */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                            {/* Row 1: Company Name + Arrow */}
+                            <div className="flex items-center justify-between">
+                                <h2 className="font-sans text-xl font-semibold text-white -mb-1.5">
+                                    {workplaceConfig.companyName}
+                                </h2>
+                                {/* Collapse arrow indicator - aligned with title */}
+                                <div className="flex-shrink-0 ml-2">
+                                    <CollapseArrow isCollapsed={isCollapsed} />
+                                </div>
+                            </div>
 
                             {/* Row 2: Period • Location */}
                             {(workplaceConfig.period || workplaceConfig.location) && (
@@ -156,66 +202,69 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                         </div>
                     </div>
 
-                    <div className="h-px bg-white/40 w-full mt-3" />
+                    {/* Separator - only show when expanded */}
+                    {!isCollapsed && <div className="h-px bg-white/40 w-full mt-3" />}
                 </div>
 
-                {/* Scrollable Content - Project Details */}
-                <div
-                    ref={scrollContainerRef}
-                    className="flex-1 overflow-y-auto px-5 min-h-0"
-                    style={scrollbarStyles}
-                >
-                    <style>{`
-                        .workplace-scroll::-webkit-scrollbar {
-                            width: 6px;
-                        }
-                        .workplace-scroll::-webkit-scrollbar-track {
-                            background: transparent;
-                        }
-                        .workplace-scroll::-webkit-scrollbar-thumb {
-                            background: rgba(255,255,255,0.3);
-                            border-radius: 3px;
-                        }
-                        .workplace-scroll::-webkit-scrollbar-thumb:hover {
-                            background: rgba(255,255,255,0.5);
-                        }
-                    `}</style>
-                    <div className="flex flex-col gap-4 workplace-scroll pb-2">
-                        {/* Project Info - Two column layout: Logo | Title + Description */}
-                        {!isSingleProjectSection(workplaceConfig) && (
-                            <div className="flex items-start gap-4 pt-2">
-                                {/* Left column: Logo */}
-                                {currentProject?.showLogo && currentProject?.logoPath && (
-                                    <img
-                                        src={currentProject.logoPath}
-                                        alt={currentProject.title}
-                                        className="h-12 w-auto object-contain rounded-3xl border border-white"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
-                                )}
-                                {/* Right column: Title (row 1) + Description (row 2) */}
-                                <div className="flex flex-col gap-1 flex-1 min-w-0">
-                                    <h3 className="font-sans text-lg font-medium text-white leading-tight">
-                                        {currentProject?.title}
-                                    </h3>
-                                    <p className="font-mono text-sm font-light text-white/70 leading-snug">
-                                        {currentProject?.description}
-                                    </p>
+                {/* Scrollable Content - Project Details (hidden when collapsed) */}
+                {!isCollapsed && (
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex-1 overflow-y-auto px-5 min-h-0"
+                        style={scrollbarStyles}
+                    >
+                        <style>{`
+                            .workplace-scroll::-webkit-scrollbar {
+                                width: 6px;
+                            }
+                            .workplace-scroll::-webkit-scrollbar-track {
+                                background: transparent;
+                            }
+                            .workplace-scroll::-webkit-scrollbar-thumb {
+                                background: rgba(255,255,255,0.3);
+                                border-radius: 3px;
+                            }
+                            .workplace-scroll::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255,255,255,0.5);
+                            }
+                        `}</style>
+                        <div className="flex flex-col gap-4 workplace-scroll pb-2">
+                            {/* Project Info - Two column layout: Logo | Title + Description */}
+                            {!isSingleProjectSection(workplaceConfig) && (
+                                <div className="flex items-start gap-4 pt-2">
+                                    {/* Left column: Logo */}
+                                    {currentProject?.showLogo && currentProject?.logoPath && (
+                                        <img
+                                            src={currentProject.logoPath}
+                                            alt={currentProject.title}
+                                            className="h-12 w-auto object-contain rounded-3xl border border-white"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    )}
+                                    {/* Right column: Title (row 1) + Description (row 2) */}
+                                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                        <h3 className="font-sans text-lg font-medium text-white leading-tight">
+                                            {currentProject?.title}
+                                        </h3>
+                                        <p className="font-mono text-sm font-light text-white/70 leading-snug">
+                                            {currentProject?.description}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Project Content */}
-                        <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                            {/* Project Content */}
+                            <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Fixed Footer - Arrows and dots (only if multiple projects) */}
+                {/* Fixed Footer - Arrows and dots (visible even when collapsed for project switching) */}
                 {projectCount > 1 && (
-                    <div className="flex-shrink-0 px-5 py-2 border-t border-white/20">
+                    <div className="flex-shrink-0 px-5 py-0.5 border-t border-white/20">
                         <div className="flex items-center justify-center gap-4">
                             <button
-                                onClick={handlePrevious}
+                                onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Previous project"
                             >
@@ -231,8 +280,10 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                                 {workplaceConfig.projects.map((_, index) => (
                                     <button
                                         key={index}
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             if (!isAnimating && index !== selectedProjectIndex) {
+                                                playShortClick();
                                                 setIsAnimating(true);
                                                 setSelectedProjectIndex(index);
                                                 setTimeout(() => setIsAnimating(false), 300);
@@ -250,7 +301,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                             </div>
 
                             <button
-                                onClick={handleNext}
+                                onClick={(e) => { e.stopPropagation(); handleNext(); }}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Next project"
                             >
@@ -273,10 +324,13 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                 selectedIndex={selectedProjectIndex}
                 projectCount={projectCount}
                 isAnimating={isAnimating}
+                isCollapsed={isCollapsed}
+                onToggleCollapse={handleHeaderClick}
                 onPrevious={handlePrevious}
                 onNext={handleNext}
                 onDotClick={(index) => {
                     if (!isAnimating && index !== selectedProjectIndex) {
+                        playShortClick();
                         setIsAnimating(true);
                         setSelectedProjectIndex(index);
                         setTimeout(() => setIsAnimating(false), 300);
@@ -295,6 +349,8 @@ function MobileWorkplacePanel({
     selectedIndex,
     projectCount,
     isAnimating,
+    isCollapsed,
+    onToggleCollapse,
     onPrevious,
     onNext,
     onDotClick
@@ -305,6 +361,8 @@ function MobileWorkplacePanel({
     selectedIndex: number;
     projectCount: number;
     isAnimating: boolean;
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
     onPrevious: () => void;
     onNext: () => void;
     onDotClick: (index: number) => void;
@@ -315,7 +373,7 @@ function MobileWorkplacePanel({
 
     // Draggable resize state
     const MIN_HEIGHT_VH = 50; // Minimum height in vh (subtract 100px for header offset)
-    const BOTTOM_SAFE_ZONE = 100; // Pixels from bottom to stop (for bottom buttons)
+    const BOTTOM_SAFE_ZONE = 110; // Pixels from bottom to stop (for bottom buttons)
     const TOP_OFFSET = 64; // top-16 = 4rem = 64px
 
     const [panelHeight, setPanelHeight] = useState<number | null>(null);
@@ -325,7 +383,7 @@ function MobileWorkplacePanel({
 
     // Calculate min and max heights
     const getMinHeight = () => {
-        return (window.innerHeight * MIN_HEIGHT_VH / 100) - 100;
+        return (window.innerHeight * MIN_HEIGHT_VH / 100) - 90;
     };
 
     const getMaxHeight = () => {
@@ -418,10 +476,12 @@ function MobileWorkplacePanel({
     // Check if this is personal projects (no period/location)
     const isPersonalProjects = !workplaceConfig.period && !workplaceConfig.location;
 
-    // Calculate current height style
-    const heightStyle = panelHeight !== null
-        ? { height: `${panelHeight}px`, maxHeight: 'none' }
-        : { maxHeight: "calc(50vh - 100px)" };
+    // Calculate current height style - collapsed uses auto height
+    const heightStyle = isCollapsed
+        ? { height: 'auto', maxHeight: 'auto' }
+        : panelHeight !== null
+            ? { height: `${panelHeight}px`, maxHeight: 'none' }
+            : { maxHeight: "calc(50vh - 90px)" };
 
     return (
         <div
@@ -445,14 +505,13 @@ function MobileWorkplacePanel({
                 )}
                 style={{ maxHeight: "100%" }}
             >
-                {/* Scrollable content - everything scrolls together */}
+                {/* Header - clickable to toggle collapse */}
                 <div
-                    ref={mobileScrollRef}
-                    className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
-                    style={scrollbarStyles}
+                    className="px-4 py-3 cursor-pointer"
+                    onClick={onToggleCollapse}
                 >
                     {/* Two-column layout: Logo | Text Info */}
-                    <div className="flex items-start gap-3 mb-3">
+                    <div className="flex items-start gap-3">
                         {/* Left column: Logo */}
                         {workplaceConfig.showCompanyLogo && workplaceConfig.companyLogoPath && (
                             <img
@@ -463,12 +522,18 @@ function MobileWorkplacePanel({
                             />
                         )}
 
-                        {/* Right column: Two rows of text */}
-                        <div className="flex flex-col justify-center min-w-0">
-                            {/* Row 1: Company Name */}
-                            <h2 className="font-sans text-xl font-semibold text-white">
-                                {workplaceConfig.companyName}
-                            </h2>
+                        {/* Right column: Text info + arrow */}
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                            {/* Row 1: Company Name + Arrow */}
+                            <div className="flex items-center justify-between">
+                                <h2 className="font-sans text-xl font-semibold text-white">
+                                    {workplaceConfig.companyName}
+                                </h2>
+                                {/* Collapse arrow indicator */}
+                                <div className="flex-shrink-0 ml-2">
+                                    <CollapseArrow isCollapsed={isCollapsed} />
+                                </div>
+                            </div>
 
                             {/* Row 2: Period • Location */}
                             {(workplaceConfig.period || workplaceConfig.location) && (
@@ -488,54 +553,60 @@ function MobileWorkplacePanel({
                     </div>
 
                     {/* Role - Full width below the two columns */}
-                    <p className="text-white/90 text-sm font-mono mb-3">
+                    <p className="text-white/90 text-sm font-mono mt-1">
                         {workplaceConfig.role}
                     </p>
 
-                    {/* Separator and Project Header - Only show if multiple projects */}
-                    {!isSingleProjectSection(workplaceConfig) && (
-                        <>
-                            <div className="h-px bg-white/30 w-full mb-3" />
-
-                            {/* Project Info - Two column layout (same as desktop) */}
-                            <div className="flex items-start gap-3 mb-3">
-                                {/* Left column: Logo */}
-                                {currentProject?.showLogo && currentProject?.logoPath && (
-                                    <img
-                                        src={currentProject.logoPath}
-                                        alt={currentProject.title}
-                                        className="h-10 w-auto object-contain rounded-3xl border border-white flex-shrink-0"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
-                                )}
-                                {/* Right column: Title + Description */}
-                                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                                    <h3 className="font-sans text-base font-medium text-white leading-tight">
-                                        {currentProject?.title}
-                                    </h3>
-                                    <p className="font-mono text-xs font-light text-white/70 leading-snug">
-                                        {currentProject?.description}
-                                    </p>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Separator for single-project sections */}
-                    {isSingleProjectSection(workplaceConfig) && (
-                        <div className="h-px bg-white/20 w-full mb-3" />
-                    )}
-
-                    {/* Project Content */}
-                    <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                    {/* Separator - only when expanded */}
+                    {!isCollapsed && <div className="h-px bg-white/30 w-full mt-3" />}
                 </div>
 
-                {/* Fixed Footer - Arrows and dots (only if multiple projects) */}
+                {/* Scrollable content - hidden when collapsed */}
+                {!isCollapsed && (
+                    <div
+                        ref={mobileScrollRef}
+                        className="flex-1 overflow-y-auto px-4 pb-3 min-h-0"
+                        style={scrollbarStyles}
+                    >
+                        {/* Separator and Project Header - Only show if multiple projects */}
+                        {!isSingleProjectSection(workplaceConfig) && (
+                            <>
+                                {/* Project Info - Two column layout (same as desktop) */}
+                                <div className="flex items-start gap-3 mb-3">
+                                    {/* Left column: Logo */}
+                                    {currentProject?.showLogo && currentProject?.logoPath && (
+                                        <img
+                                            src={currentProject.logoPath}
+                                            alt={currentProject.title}
+                                            className="h-10 w-auto object-contain rounded-3xl border border-white flex-shrink-0"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    )}
+                                    {/* Right column: Title + Description */}
+                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                        <h3 className="font-sans text-base font-medium text-white leading-tight">
+                                            {currentProject?.title}
+                                        </h3>
+                                        <p className="font-mono text-xs font-light text-white/70 leading-snug">
+                                            {currentProject?.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+
+                        {/* Project Content */}
+                        <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                    </div>
+                )}
+
+                {/* Fixed Footer - Arrows and dots (visible even when collapsed for project switching) */}
                 {projectCount > 1 && (
                     <div className="flex-shrink-0 px-3 pb-1 border-t border-white/20">
                         <div className="flex items-center justify-center gap-3">
                             <button
-                                onClick={onPrevious}
+                                onClick={(e) => { e.stopPropagation(); onPrevious(); }}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Previous project"
                             >
@@ -551,7 +622,7 @@ function MobileWorkplacePanel({
                                 {workplaceConfig.projects.map((_, index) => (
                                     <button
                                         key={index}
-                                        onClick={() => onDotClick(index)}
+                                        onClick={(e) => { e.stopPropagation(); onDotClick(index); }}
                                         className={cx(
                                             "h-2 rounded-full transition-all duration-300 cursor-pointer",
                                             index === selectedIndex
@@ -564,7 +635,7 @@ function MobileWorkplacePanel({
                             </div>
 
                             <button
-                                onClick={onNext}
+                                onClick={(e) => { e.stopPropagation(); onNext(); }}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Next project"
                             >
@@ -578,12 +649,14 @@ function MobileWorkplacePanel({
                     </div>
                 )}
 
-                {/* Drag Handle for resizing */}
+            </div>
+
+            {/* Drag Handle for resizing - outside the panel, hidden when collapsed */}
+            {!isCollapsed && (
                 <div
                     className={cx(
-                        "flex-shrink-0 flex items-center justify-center -mt-1 pb-2 cursor-ns-resize",
-                        "select-none touch-none",
-                        isDragging ? "bg-white/10" : "hover:bg-white/5"
+                        "flex items-center justify-center py-1 cursor-ns-resize",
+                        "select-none touch-none"
                     )}
                     onMouseDown={handleMouseDown}
                     onTouchStart={handleTouchStart}
@@ -591,11 +664,11 @@ function MobileWorkplacePanel({
                 >
                     {/* Pill indicator */}
                     <div className={cx(
-                        "w-20 h-1.5 rounded-full transition-colors duration-200",
-                        isDragging ? "bg-white/60" : "bg-white/30"
+                        "w-20 h-[5px] rounded-full transition-colors duration-200",
+                        isDragging ? "bg-white/70" : "bg-white/40"
                     )} />
                 </div>
-            </div>
+            )}
         </div>
     );
 }
