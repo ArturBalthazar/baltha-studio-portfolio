@@ -441,7 +441,7 @@ function MobileWorkplacePanel({
                 className={cx(
                     "relative flex flex-col rounded-xl overflow-hidden",
                     "bg-[rgba(12,20,40,0.9)] backdrop-blur-lg",
-                    "border-2 border-white/30"
+                    "border border-white/30"
                 )}
                 style={{ maxHeight: "100%" }}
             >
