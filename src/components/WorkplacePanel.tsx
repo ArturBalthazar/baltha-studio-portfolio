@@ -311,6 +311,102 @@ function MobileWorkplacePanel({
 }) {
     // Ref for scrollable content container
     const mobileScrollRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    // Draggable resize state
+    const MIN_HEIGHT_VH = 50; // Minimum height in vh (subtract 100px for header offset)
+    const BOTTOM_SAFE_ZONE = 100; // Pixels from bottom to stop (for bottom buttons)
+    const TOP_OFFSET = 64; // top-16 = 4rem = 64px
+
+    const [panelHeight, setPanelHeight] = useState<number | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartY = useRef<number>(0);
+    const dragStartHeight = useRef<number>(0);
+
+    // Calculate min and max heights
+    const getMinHeight = () => {
+        return (window.innerHeight * MIN_HEIGHT_VH / 100) - 100;
+    };
+
+    const getMaxHeight = () => {
+        // Max height = viewport height - top offset - bottom safe zone
+        return window.innerHeight - TOP_OFFSET - BOTTOM_SAFE_ZONE;
+    };
+
+    // Handle drag start
+    const handleDragStart = (clientY: number) => {
+        setIsDragging(true);
+        dragStartY.current = clientY;
+        dragStartHeight.current = panelHeight ?? getMinHeight();
+    };
+
+    // Handle drag move
+    const handleDragMove = (clientY: number) => {
+        if (!isDragging) return;
+
+        const deltaY = clientY - dragStartY.current;
+        const newHeight = Math.min(
+            getMaxHeight(),
+            Math.max(getMinHeight(), dragStartHeight.current + deltaY)
+        );
+        setPanelHeight(newHeight);
+    };
+
+    // Handle drag end
+    const handleDragEnd = () => {
+        setIsDragging(false);
+    };
+
+    // Mouse event handlers
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        handleDragStart(e.clientY);
+    };
+
+    // Touch event handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        handleDragStart(e.touches[0].clientY);
+    };
+
+    // Global mouse/touch move and up handlers
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            handleDragMove(e.clientY);
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            handleDragMove(e.touches[0].clientY);
+        };
+
+        const handleMouseUp = () => {
+            handleDragEnd();
+        };
+
+        const handleTouchEnd = () => {
+            handleDragEnd();
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('touchmove', handleTouchMove, { passive: true });
+        document.addEventListener('touchend', handleTouchEnd);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isDragging]);
+
+    // Reset panel height when visibility changes
+    useEffect(() => {
+        if (!visible) {
+            setPanelHeight(null);
+        }
+    }, [visible]);
 
     // Scroll to top when project changes
     useEffect(() => {
@@ -322,17 +418,23 @@ function MobileWorkplacePanel({
     // Check if this is personal projects (no period/location)
     const isPersonalProjects = !workplaceConfig.period && !workplaceConfig.location;
 
+    // Calculate current height style
+    const heightStyle = panelHeight !== null
+        ? { height: `${panelHeight}px`, maxHeight: 'none' }
+        : { maxHeight: "calc(50vh - 100px)" };
+
     return (
         <div
+            ref={panelRef}
             className={cx(
                 "md:hidden absolute top-16 left-3 right-3",
                 "flex flex-col rounded-xl overflow-hidden",
-                "transition-all duration-300",
+                isDragging ? "" : "transition-all duration-300",
                 visible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 -translate-y-10 pointer-events-none"
             )}
-            style={{ maxWidth: "380px", margin: "0 auto", maxHeight: "calc(50vh - 100px)" }}
+            style={{ maxWidth: "380px", margin: "0 auto", ...heightStyle }}
         >
             {/* Panel content */}
             <div
@@ -475,6 +577,24 @@ function MobileWorkplacePanel({
                         </div>
                     </div>
                 )}
+
+                {/* Drag Handle for resizing */}
+                <div
+                    className={cx(
+                        "flex-shrink-0 flex items-center justify-center -mt-1 pb-2 cursor-ns-resize",
+                        "select-none touch-none",
+                        isDragging ? "bg-white/10" : "hover:bg-white/5"
+                    )}
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
+                    aria-label="Drag to resize panel"
+                >
+                    {/* Pill indicator */}
+                    <div className={cx(
+                        "w-20 h-1.5 rounded-full transition-colors duration-200",
+                        isDragging ? "bg-white/60" : "bg-white/30"
+                    )} />
+                </div>
             </div>
         </div>
     );
