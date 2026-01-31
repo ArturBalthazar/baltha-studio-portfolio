@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
+import { InfoPanel } from "./InfoPanel";
 
 interface BottomLeftControlsProps {
   visible: boolean;
@@ -89,8 +90,7 @@ export function BottomLeftControls({
             "flex items-center justify-center",
             "backdrop-blur-[10px]",
             "transition-all duration-300 hover:scale-[1.07]",
-            "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]",
-            infoOpen && "glow-info"
+            "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]"
           )}
           style={{
             backgroundColor: '#08142830'
@@ -284,6 +284,9 @@ export function BottomLeftControls({
           </button>
         )}
       </div>
+
+      {/* Info Panel */}
+      <InfoPanel visible={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 }

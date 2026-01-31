@@ -15,6 +15,7 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { ConnectOverlay } from "./components/ConnectOverlay";
 import { NavigationMenu } from "./components/NavigationMenu";
 import { SideTriggerOverlay } from "./components/SideTriggerOverlay";
+import { WorldLabels } from "./components/WorldLabels";
 import { useI18n } from "./i18n";
 
 export default function App() {
@@ -158,6 +159,9 @@ export default function App() {
                 isOpen={menuOpen}
                 onClose={() => setMenuOpen(false)}
               />
+
+              {/* World-space section labels (free mode only) */}
+              <WorldLabels />
 
               {/* Typing text overlay - appears at top-left */}
               {config.content.showTypingText && (

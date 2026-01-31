@@ -138,7 +138,7 @@ export interface TranslationKeys {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "Hello, my name is Artur Balthazar, your professional 3D designer and software developer! 🚀"
+            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and developer 🚀"
         },
         menu: {
             welcome: "Welcome",
@@ -155,7 +155,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Audio",
             on: "-",
             off: "-",
-            typingText: "Welcome to my portfolio! Choose a navigation mode to continue..."
+            typingText: "Choose a navigation mode to continue..."
         },
         controls: {
             turnAudioOff: "Turn audio off",

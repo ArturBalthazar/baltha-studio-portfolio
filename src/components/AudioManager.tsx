@@ -4,13 +4,17 @@ import { useUI, S } from "../state";
 /**
  * Global audio manager that handles background music playback
  * Starts playing when entering state 4, then continues forever (like particles and rockring)
+ * 
+ * Also handles video ducking - fades music when YouTube videos are playing
  */
 export function AudioManager() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioHasStartedRef = useRef(false);
+  const fadeAnimationRef = useRef<number | null>(null);
   const s = useUI((st) => st.state);
   const audioEnabled = useUI((st) => st.audioEnabled);
   const audioVolume = useUI((st) => st.audioVolume);
+  const videoPlaying = useUI((st) => st.videoPlaying);
 
   useEffect(() => {
     // Create audio element on mount
@@ -43,6 +47,9 @@ export function AudioManager() {
     return () => {
       // Cleanup on unmount
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (fadeAnimationRef.current) {
+        cancelAnimationFrame(fadeAnimationRef.current);
+      }
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -50,10 +57,48 @@ export function AudioManager() {
     };
   }, []);
 
-  // Sync volume changes in real-time (seamless, no interruption)
+  // Handle video ducking - fade out when video plays, fade in when it stops
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio && audioHasStartedRef.current && !audio.paused) {
+    if (!audio || !audioHasStartedRef.current || audio.paused) return;
+
+    // Cancel any ongoing fade animation
+    if (fadeAnimationRef.current) {
+      cancelAnimationFrame(fadeAnimationRef.current);
+      fadeAnimationRef.current = null;
+    }
+
+    const userVolume = useUI.getState().audioVolume;
+    const startVolume = audio.volume;
+    const targetVolume = videoPlaying ? 0 : userVolume;
+    const fadeDuration = videoPlaying ? 800 : 1000; // Faster fade out, slower fade in
+    const startTime = performance.now();
+
+    const fade = () => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / fadeDuration, 1);
+
+      // Ease out cubic for smooth fade
+      const eased = 1 - Math.pow(1 - progress, 3);
+      audio.volume = startVolume + (targetVolume - startVolume) * eased;
+
+      if (progress < 1) {
+        fadeAnimationRef.current = requestAnimationFrame(fade);
+      } else {
+        audio.volume = targetVolume;
+        fadeAnimationRef.current = null;
+      }
+    };
+
+    fade();
+  }, [videoPlaying]);
+
+  // Sync volume changes in real-time (seamless, no interruption)
+  // Only sync if no video is playing (otherwise the ducking effect handles it)
+  useEffect(() => {
+    const audio = audioRef.current;
+    const isVideoPlaying = useUI.getState().videoPlaying;
+    if (audio && audioHasStartedRef.current && !audio.paused && !isVideoPlaying) {
       audio.volume = audioVolume;
     }
   }, [audioVolume]);

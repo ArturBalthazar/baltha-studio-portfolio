@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ContentBlock, HeroImageBlock, TextBlock, ImageBlock, ImageGridBlock, ImageCompareBlock, VideoBlock, FeatureCardBlock, FloatImageBlock, TechStackBlock } from './workplaceConfig';
+import { useUI } from '../state';
 
 interface ProjectContentProps {
     contentBlocks?: ContentBlock[];
@@ -135,13 +136,90 @@ function ImageGrid({ block }: { block: ImageGridBlock }) {
     );
 }
 
-// Render a video (YouTube embed or local)
+// Render a video (YouTube embed or local) with play state detection
 function VideoContent({ block }: { block: VideoBlock }) {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const { setVideoPlaying } = useUI();
+
+    // Handle YouTube IFrame API messages for play state detection
+    useEffect(() => {
+        if (!block.isYoutube) return;
+
+        // Listen for messages from YouTube iframe
+        const handleMessage = (event: MessageEvent) => {
+            // Only handle messages from YouTube
+            if (event.origin !== 'https://www.youtube.com') return;
+
+            try {
+                const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+                // Look for player state changes
+                // State values: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+                if (data.event === 'onStateChange') {
+                    const playerState = data.info;
+                    if (playerState === 1) {
+                        // Video started playing
+                        setVideoPlaying(true);
+                    } else if (playerState === 0 || playerState === 2 || playerState === -1) {
+                        // Video ended, paused, or unstarted
+                        setVideoPlaying(false);
+                    }
+                }
+
+                // Also check for infoDelivery events (alternative state reporting)
+                if (data.info && typeof data.info.playerState !== 'undefined') {
+                    const playerState = data.info.playerState;
+                    if (playerState === 1) {
+                        setVideoPlaying(true);
+                    } else if (playerState === 0 || playerState === 2 || playerState === -1) {
+                        setVideoPlaying(false);
+                    }
+                }
+            } catch {
+                // Ignore parse errors from other messages
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        // Enable JS API by posting a message to the iframe once it loads
+        const enableJsApi = () => {
+            if (iframeRef.current?.contentWindow) {
+                // Request video info and enable event listening
+                iframeRef.current.contentWindow.postMessage(
+                    JSON.stringify({ event: 'listening' }),
+                    'https://www.youtube.com'
+                );
+            }
+        };
+
+        // Wait for iframe to load
+        const iframe = iframeRef.current;
+        if (iframe) {
+            iframe.addEventListener('load', enableJsApi);
+        }
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+            if (iframe) {
+                iframe.removeEventListener('load', enableJsApi);
+            }
+            // Reset video playing state when component unmounts
+            setVideoPlaying(false);
+        };
+    }, [block.isYoutube, setVideoPlaying]);
+
     if (block.isYoutube) {
+        // Add enablejsapi=1 to URL to enable JS API
+        const srcWithApi = block.src.includes('?')
+            ? `${block.src}&enablejsapi=1&origin=${window.location.origin}`
+            : `${block.src}?enablejsapi=1&origin=${window.location.origin}`;
+
         return (
             <div className="w-full aspect-video rounded-lg overflow-hidden border border-white/20">
                 <iframe
-                    src={block.src}
+                    ref={iframeRef}
+                    src={srcWithApi}
                     title="YouTube video"
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

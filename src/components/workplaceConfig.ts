@@ -270,96 +270,9 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
         description: "As a 3D Technical Artist at Meetkai, I developed interactive 3D experiences and virtual environments for various clients.",
         projects: [
             {
-                id: "byd",
-                title: "BYD Virtual Dealership",
-                description: "3D web visualizer for BYD",
-                showLogo: true,
-                modelPath: "/assets/models/meetkai/byd/byd.gltf",
-                logoPath: "/assets/logos/byd.png",
-                contentBlocks: [
-                    // Hero image: LA Dealership facade
-                    {
-                        type: 'hero-image',
-                        src: '/assets/models/meetkai/byd/content/facade.png',
-                        alt: 'BYD Los Angeles Virtual Dealership'
-                    },
-                    // Project introduction
-                    {
-                        type: 'text',
-                        paragraphs: [
-                            'The BYD Virtual Dealership brings real showrooms into an interactive 3D web experience. Users can explore dealerships in Los Angeles, Singapore, the Philippines, and virtual test tracks—touring vehicles, customizing colors, and even taking virtual test drives, all from their browser.'
-                        ]
-                    },
-                    // My involvement & BYD Seagull
-                    {
-                        type: 'text',
-                        title: 'My Role & The BYD Seagull',
-                        paragraphs: [
-                            'I played a major role in the 3D side of this project, particularly with vehicle modeling and optimization. We typically received existing car models that needed optimization with proper textures, materials, and animations for web delivery.',
-                            'For the BYD Seagull specifically, we didn\'t have an existing model—so I recreated the entire car from scratch. This became one of my favorite pieces of work: I modeled everything from the exterior body, interior cabin, materials, to all interactive animations.'
-                        ]
-                    },
-                    // Modeling process image
-                    {
-                        type: 'image',
-                        src: '/assets/models/meetkai/byd/content/image1.png',
-                        alt: 'BYD Seagull 3D Modeling Process',
-                        caption: 'Exterior modeling stages: from reference blueprints to final mesh topology'
-                    },
-                    // Interior text
-                    {
-                        type: 'text',
-                        paragraphs: [
-                            'The entire interior was modeled with attention to detail—seats, dashboard, steering wheel, door panels, and all trim pieces—to create an immersive experience when users explore the car from inside.'
-                        ]
-                    },
-                    // Final renders
-                    {
-                        type: 'image',
-                        src: '/assets/models/meetkai/byd/content/image2.png',
-                        alt: 'BYD Seagull Final 3D Renders',
-                        caption: 'Final renders showing exterior and fully detailed interior'
-                    },
-                    // Philippines dealership section
-                    {
-                        type: 'text',
-                        title: 'Philippines Dealership',
-                        paragraphs: [
-                            'I was also the 3D lead for the Philippines Dealership digital twin at Quezon Avenue. This involved recreating the entire dealership architecture and showroom environment where all the car models are showcased.'
-                        ]
-                    },
-                    // Dealership images stacked
-                    {
-                        type: 'image-grid',
-                        columns: 1,
-                        images: [
-                            {
-                                src: '/assets/models/meetkai/byd/content/image3.png',
-                                alt: 'Philippines Dealership 3D Render'
-                            },
-                            {
-                                src: '/assets/models/meetkai/byd/content/image4.png',
-                                alt: 'Philippines Dealership Web View'
-                            }
-                        ]
-                    },
-                    // Softwares, tools and languages
-                    {
-                        type: 'tech-stack',
-                        title: 'Knowledge Base',
-                        showSeparator: true,
-                        items: [
-                            { id: 'blender', label: 'Blender' },
-                            { id: 'substance3d', label: 'Substance 3D' },
-                            { id: 'photoshop', label: 'Photoshop' }
-                        ]
-                    }
-                ]
-            },
-            {
                 id: "thanksgiving",
                 title: "Survive Thanksgiving",
-                description: "Interactive minigame experience",
+                description: "Gamified movie experience",
                 showLogo: true,
                 modelPath: "/assets/models/meetkai/thanksgiving/thanksgiving.gltf",
                 logoPath: "/assets/logos/sony.png",
@@ -443,6 +356,95 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         title: 'Knowledge Base',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
+                            { id: 'blender', label: 'Blender' },
+                            { id: 'substance3d', label: 'Substance 3D' },
+                            { id: 'photoshop', label: 'Photoshop' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: "byd",
+                title: "BYD Virtual Dealership",
+                description: "3D web visualizer for BYD",
+                showLogo: true,
+                modelPath: "/assets/models/meetkai/byd/byd.gltf",
+                logoPath: "/assets/logos/byd.png",
+                contentBlocks: [
+                    // Hero image: LA Dealership facade
+                    {
+                        type: 'hero-image',
+                        src: '/assets/models/meetkai/byd/content/facade.png',
+                        alt: 'BYD Los Angeles Virtual Dealership'
+                    },
+                    // Project introduction
+                    {
+                        type: 'text',
+                        paragraphs: [
+                            'The BYD Virtual Dealership brings real showrooms into an interactive 3D web experience. Users can explore dealerships in Los Angeles, Singapore, the Philippines, and virtual test tracks—touring vehicles, customizing colors, and even taking virtual test drives, all from their browser.'
+                        ]
+                    },
+                    // My involvement & BYD Seagull
+                    {
+                        type: 'text',
+                        title: 'My Role & The BYD Seagull',
+                        paragraphs: [
+                            'I played a major role in the 3D side of this project, particularly with vehicle modeling and optimization. We typically received existing car models that needed optimization with proper textures, materials, and animations for web delivery.',
+                            'For the BYD Seagull specifically, we didn\'t have an existing model—so I recreated the entire car from scratch. This became one of my favorite pieces of work: I modeled everything from the exterior body, interior cabin, materials, to all interactive animations.'
+                        ]
+                    },
+                    // Modeling process image
+                    {
+                        type: 'image',
+                        src: '/assets/models/meetkai/byd/content/image1.png',
+                        alt: 'BYD Seagull 3D Modeling Process',
+                        caption: 'Exterior modeling stages: from reference blueprints to final mesh topology'
+                    },
+                    // Interior text
+                    {
+                        type: 'text',
+                        paragraphs: [
+                            'The entire interior was modeled with attention to detail—seats, dashboard, steering wheel, door panels, and all trim pieces—to create an immersive experience when users explore the car from inside.'
+                        ]
+                    },
+                    // Final renders
+                    {
+                        type: 'image',
+                        src: '/assets/models/meetkai/byd/content/image2.png',
+                        alt: 'BYD Seagull Final 3D Renders',
+                        caption: 'Final renders showing exterior and fully detailed interior'
+                    },
+                    // Philippines dealership section
+                    {
+                        type: 'text',
+                        title: 'Philippines Dealership',
+                        paragraphs: [
+                            'I was also the 3D lead for the Philippines Dealership digital twin at Quezon Avenue. This involved recreating the entire dealership architecture and showroom environment where all the car models are showcased.'
+                        ]
+                    },
+                    // Dealership images stacked
+                    {
+                        type: 'image-grid',
+                        columns: 1,
+                        images: [
+                            {
+                                src: '/assets/models/meetkai/byd/content/image3.png',
+                                alt: 'Philippines Dealership 3D Render'
+                            },
+                            {
+                                src: '/assets/models/meetkai/byd/content/image4.png',
+                                alt: 'Philippines Dealership Web View'
+                            }
+                        ]
+                    },
+                    // Softwares, tools and languages
+                    {
+                        type: 'tech-stack',
+                        title: 'Knowledge Base',
+                        showSeparator: true,
+                        items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'substance3d', label: 'Substance 3D' },
                             { id: 'photoshop', label: 'Photoshop' }
@@ -529,6 +531,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         title: 'Knowledge Base',
                         showSeparator: true,
                         items: [
+                            { id: 'babylonjs', label: 'Babylon.js' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'substance3d', label: 'Substance 3D' },
                             { id: 'photoshop', label: 'Photoshop' }
@@ -1117,7 +1120,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         type: 'image',
                         src: '/assets/models/balthamaker/mesc/content/mesc3.png',
                         alt: 'Finished MESC Museum scale model',
-                        caption: 'The completed scale model ready for display'
+                        caption: 'The completed scale model ready for display (I know it looks like AI with this solar beam, but it\'s not)'
                     },
                     // Softwares, tools and languages
                     {

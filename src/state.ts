@@ -42,6 +42,8 @@ type UIState = {
   setSelectedProjectIndex: (index: number) => void;
   activeWorkplaceState: S | null; // Which workplace anchor the ship is currently near (based on proximity)
   setActiveWorkplaceState: (state: S | null) => void;
+  videoPlaying: boolean; // Whether a YouTube video is currently playing
+  setVideoPlaying: (playing: boolean) => void;
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -74,5 +76,7 @@ export const useUI = create<UIState>((set, get) => ({
   selectedProjectIndex: 0, // Default to first project
   setSelectedProjectIndex: (index) => set({ selectedProjectIndex: index }),
   activeWorkplaceState: null, // No active workplace by default
-  setActiveWorkplaceState: (state) => set({ activeWorkplaceState: state })
+  setActiveWorkplaceState: (state) => set({ activeWorkplaceState: state }),
+  videoPlaying: false, // No video playing by default
+  setVideoPlaying: (playing) => set({ videoPlaying: playing })
 }));

@@ -157,6 +157,14 @@
 					},
 					"indices":11,
 					"material":2
+				},
+				{
+					"attributes":{
+						"POSITION":12
+					},
+					"indices":13,
+					"material":2,
+					"mode":1
 				}
 			]
 		}
@@ -339,6 +347,28 @@
 			"componentType":5123,
 			"count":7554,
 			"type":"SCALAR"
+		},
+		{
+			"bufferView":12,
+			"componentType":5126,
+			"count":2,
+			"max":[
+				-0.056016258895397186,
+				0.0657573789358139,
+				0.024352218955755234
+			],
+			"min":[
+				-0.056016258895397186,
+				0.0656588226556778,
+				0.024352218955755234
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":13,
+			"componentType":5123,
+			"count":2,
+			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
@@ -413,6 +443,18 @@
 			"byteLength":15108,
 			"byteOffset":247512,
 			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":24,
+			"byteOffset":262620,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":4,
+			"byteOffset":262644,
+			"target":34963
 		}
 	],
 	"samplers":[
@@ -423,7 +465,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":262620,
+			"byteLength":262648,
 			"uri":"seara.bin"
 		}
 	]
