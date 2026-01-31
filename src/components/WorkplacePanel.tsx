@@ -421,7 +421,7 @@ function MobileWorkplacePanel({
     // Calculate current height style
     const heightStyle = panelHeight !== null
         ? { height: `${panelHeight}px`, maxHeight: 'none' }
-        : { maxHeight: "calc(50vh - 100px)" };
+        : { maxHeight: "calc(50vh - 120px)" };
 
     return (
         <div
