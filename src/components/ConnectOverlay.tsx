@@ -106,7 +106,7 @@ export function ConnectOverlay() {
     const handleCopyEmail = (e: React.MouseEvent) => {
         e.stopPropagation();
         playShortClick();
-        navigator.clipboard.writeText("artur@baltha.studio");
+        navigator.clipboard.writeText("arturbalthazar@gmail.com");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -114,7 +114,7 @@ export function ConnectOverlay() {
     const handleSendEmail = (e: React.MouseEvent) => {
         e.stopPropagation();
         playShortClick();
-        window.location.href = "mailto:artur@baltha.studio";
+        window.location.href = "mailto:arturbalthazar@gmail.com";
     };
 
     const handleEmailClick = () => {
@@ -259,7 +259,7 @@ export function ConnectOverlay() {
                                 {/* Email address pill */}
                                 <div className="bg-brand-white rounded-lg py-2 px-4 mt-2 mb-3 border-b border-brand-dark/40">
                                     <p className="text-brand-dark font-mono text-sm text-center tracking-tight">
-                                        artur@baltha.studio
+                                        arturbalthazar@gmail.com
                                     </p>
                                 </div>
 

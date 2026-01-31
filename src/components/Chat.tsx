@@ -6,7 +6,8 @@ import { getProjectConfig } from "./workplaceConfig";
 
 interface ChatAction {
   label: string;
-  type: 'whatsapp' | 'email' | 'linkedin' | 'instagram' | 'home';
+  type: 'whatsapp' | 'email' | 'linkedin' | 'instagram' | 'home' | 'contact' | 'navigate';
+  target?: string; // For navigate type - section or project ID
 }
 
 interface Message {
@@ -154,12 +155,41 @@ export function Chat({ className = "", onClose }: ChatProps) {
 
   // Action handlers
   const handleAction = (action: ChatAction) => {
+    // Navigation target mapping (projects → their parent state + project index)
+    const navigationMap: Record<string, { state: S; projectIndex?: number }> = {
+      // Sections
+      musecraft: { state: S.state_4 },
+      meetkai: { state: S.state_5 },
+      morethanreal: { state: S.state_6 },
+      balthamaker: { state: S.state_7 },
+      ufsc: { state: S.state_8 },
+      contact: { state: S.state_final },
+      // MeetKai projects
+      thanksgiving: { state: S.state_5, projectIndex: 0 },
+      byd: { state: S.state_5, projectIndex: 1 },
+      pistons: { state: S.state_5, projectIndex: 2 },
+      meetkaisuite: { state: S.state_5, projectIndex: 3 },
+      // More Than Real projects
+      chevrolet: { state: S.state_6, projectIndex: 0 },
+      dolcegusto: { state: S.state_6, projectIndex: 1 },
+      sika: { state: S.state_6, projectIndex: 2 },
+      seara: { state: S.state_6, projectIndex: 3 },
+      // Baltha Maker projects
+      sesc: { state: S.state_7, projectIndex: 0 },
+      starwars: { state: S.state_7, projectIndex: 1 },
+      mesc: { state: S.state_7, projectIndex: 2 },
+      // UFSC projects
+      petwheels: { state: S.state_8, projectIndex: 0 },
+      durare: { state: S.state_8, projectIndex: 1 },
+      zenic: { state: S.state_8, projectIndex: 2 },
+    };
+
     switch (action.type) {
       case 'whatsapp':
         window.open('https://wa.me/554891287795?text=Hello%2C%20I%27d%20like%20to%20get%20in%20touch%21', '_blank');
         break;
       case 'email':
-        window.location.href = 'mailto:artur@baltha.studio';
+        window.location.href = 'mailto:arturbalthazar@gmail.com';
         break;
       case 'linkedin':
         window.open('https://www.linkedin.com/in/artur-balthazar/', '_blank');
@@ -170,6 +200,21 @@ export function Chat({ className = "", onClose }: ChatProps) {
       case 'home':
         useUI.getState().setNavigationMode('guided');
         useUI.getState().setState(S.state_0);
+        break;
+      case 'contact':
+        // Navigate to contact section
+        useUI.getState().setNavigationMode('guided');
+        useUI.getState().setState(S.state_final);
+        break;
+      case 'navigate':
+        if (action.target && navigationMap[action.target]) {
+          const nav = navigationMap[action.target];
+          useUI.getState().setNavigationMode('guided');
+          useUI.getState().setState(nav.state);
+          if (nav.projectIndex !== undefined) {
+            useUI.getState().setSelectedProjectIndex(nav.projectIndex);
+          }
+        }
         break;
     }
   };

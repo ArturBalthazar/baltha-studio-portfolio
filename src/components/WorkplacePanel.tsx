@@ -81,12 +81,14 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
         }
     }, [visible, currentConfig]);
 
-    // Reset project index when active workplace changes
+    // Reset project index and collapse state when active workplace changes
     useEffect(() => {
         if (activeWorkplaceState !== null) {
             setSelectedProjectIndex(0);
+            // Reset collapse state based on current navigation mode
+            setIsCollapsed(navigationMode === 'free');
         }
-    }, [activeWorkplaceState, setSelectedProjectIndex]);
+    }, [activeWorkplaceState, setSelectedProjectIndex, navigationMode]);
 
     // Scroll to top when project changes
     useEffect(() => {
