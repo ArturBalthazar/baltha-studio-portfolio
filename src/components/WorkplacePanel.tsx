@@ -4,6 +4,19 @@ import { useUI, S } from "../state";
 import { getWorkplaceConfig, WorkplaceConfig, ProjectConfig, isSingleProjectSection } from "./workplaceConfig";
 import { ProjectContent } from "./ProjectContent";
 import { playShortClick } from "./ClickSoundManager";
+import { useI18n } from "../i18n";
+import { WorkplaceTranslation } from "../i18n/translations";
+
+// Map workplace config IDs to translation keys
+type WorkplaceTranslationKey = 'musecraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc';
+
+const WORKPLACE_ID_TO_TRANSLATION_KEY: Record<string, WorkplaceTranslationKey> = {
+    'personal': 'musecraft',
+    'meetkai': 'meetkai',
+    'morethanreal': 'morethanreal',
+    'balthamaker': 'balthamaker',
+    'ufsc': 'ufsc'
+};
 
 interface WorkplacePanelProps {
     visible: boolean;
@@ -36,8 +49,15 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
     const setSelectedProjectIndex = useUI((st) => st.setSelectedProjectIndex);
     const navigationMode = useUI((st) => st.navigationMode);
 
+    // Get translations
+    const { t } = useI18n();
+
     // Get workplace config based on which anchor the ship is near (not navigation state)
     const currentConfig = activeWorkplaceState !== null ? getWorkplaceConfig(activeWorkplaceState) : null;
+
+    // Get workplace translations based on config ID
+    const workplaceKey = currentConfig ? WORKPLACE_ID_TO_TRANSLATION_KEY[currentConfig.id] : null;
+    const workplaceTranslations = workplaceKey ? t.workplaces[workplaceKey] : null;
 
     // For animation when switching projects
     const [isAnimating, setIsAnimating] = useState(false);
@@ -116,6 +136,11 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
     const currentProject = workplaceConfig.projects[selectedProjectIndex] || workplaceConfig.projects[0];
     const projectCount = workplaceConfig.projects.length;
 
+    // Get project translations if available
+    const projectTranslations = (workplaceTranslations && currentProject)
+        ? workplaceTranslations.projects[currentProject.id]
+        : null;
+
     const handlePrevious = () => {
         if (isAnimating || projectCount <= 1) return;
         playShortClick();
@@ -174,7 +199,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                             {/* Row 1: Company Name + Arrow */}
                             <div className="flex items-center justify-between">
                                 <h2 className="font-sans text-xl font-semibold text-white -mb-1.5">
-                                    {workplaceConfig.companyName}
+                                    {workplaceTranslations?.companyName || workplaceConfig.companyName}
                                 </h2>
                                 {/* Collapse arrow indicator - aligned with title */}
                                 <div className="flex-shrink-0 ml-2">
@@ -199,7 +224,7 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
 
                             {/* Row 3: Role */}
                             <p className="text-white/90 text-sm font-mono">
-                                {workplaceConfig.role}
+                                {workplaceTranslations?.role || workplaceConfig.role}
                             </p>
                         </div>
                     </div>
@@ -246,16 +271,16 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                                     {/* Right column: Title (row 1) + Description (row 2) */}
                                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                                         <h3 className="font-sans text-lg font-medium text-white leading-tight">
-                                            {currentProject?.title}
+                                            {projectTranslations?.title || currentProject?.title}
                                         </h3>
                                         <p className="font-mono text-sm font-light text-white/70 leading-snug">
-                                            {currentProject?.description}
+                                            {projectTranslations?.description || currentProject?.description}
                                         </p>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Project Content */}
+                            {/* Project Content - Always uses English from config for now */}
                             <ProjectContent contentBlocks={currentProject?.contentBlocks} />
                         </div>
                     </div>
@@ -327,6 +352,8 @@ export function WorkplacePanel({ visible }: WorkplacePanelProps) {
                 projectCount={projectCount}
                 isAnimating={isAnimating}
                 isCollapsed={isCollapsed}
+                workplaceTranslations={workplaceTranslations}
+                projectTranslations={projectTranslations}
                 onToggleCollapse={handleHeaderClick}
                 onPrevious={handlePrevious}
                 onNext={handleNext}
@@ -352,6 +379,8 @@ function MobileWorkplacePanel({
     projectCount,
     isAnimating,
     isCollapsed,
+    workplaceTranslations,
+    projectTranslations,
     onToggleCollapse,
     onPrevious,
     onNext,
@@ -364,6 +393,8 @@ function MobileWorkplacePanel({
     projectCount: number;
     isAnimating: boolean;
     isCollapsed: boolean;
+    workplaceTranslations: WorkplaceTranslation | null;
+    projectTranslations: { title: string; description: string; content: string[] } | null | undefined;
     onToggleCollapse: () => void;
     onPrevious: () => void;
     onNext: () => void;
@@ -538,7 +569,7 @@ function MobileWorkplacePanel({
                                 {/* Row 1: Company Name + Arrow */}
                                 <div className="flex items-center justify-between">
                                     <h2 className="font-sans text-xl font-semibold text-white">
-                                        {workplaceConfig.companyName}
+                                        {workplaceTranslations?.companyName || workplaceConfig.companyName}
                                     </h2>
                                     {/* Collapse arrow indicator */}
                                     <div className="flex-shrink-0 ml-2">
@@ -565,7 +596,7 @@ function MobileWorkplacePanel({
 
                         {/* Role - Full width below the two columns */}
                         <p className="text-white/90 text-sm font-mono mt-1">
-                            {workplaceConfig.role}
+                            {workplaceTranslations?.role || workplaceConfig.role}
                         </p>
 
                         {/* Separator - only when expanded */}
@@ -592,10 +623,10 @@ function MobileWorkplacePanel({
                                         {/* Right column: Title + Description */}
                                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                                             <h3 className="font-sans text-base font-medium text-white leading-tight">
-                                                {currentProject?.title}
+                                                {projectTranslations?.title || currentProject?.title}
                                             </h3>
                                             <p className="font-mono text-xs font-light text-white/70 leading-snug">
-                                                {currentProject?.description}
+                                                {projectTranslations?.description || currentProject?.description}
                                             </p>
                                         </div>
                                     </div>
@@ -603,7 +634,9 @@ function MobileWorkplacePanel({
                             )}
 
                             {/* Project Content */}
-                            <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                            <ProjectContent
+                                contentBlocks={currentProject?.contentBlocks}
+                            />
                         </div>
                     )}
                 </div>

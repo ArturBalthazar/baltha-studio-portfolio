@@ -99,7 +99,7 @@ export function OverlayBox({
         className={cx(
           "relative shrink-0 rounded-canvas transition-all duration-1000",
           // State 3 dimensions - auto width and height to wrap content
-          "w-auto h-auto",
+          "w-[auto] h-auto",
           "translate-y-[0%] sm:-translate-y-[calc(60%-100px)]"
         )}
       >
@@ -123,7 +123,7 @@ export function OverlayBox({
         <div className="pointer-events-none absolute inset-0 rounded-canvas border-[1px] border-white/45 select-none" aria-hidden />
 
         {/* MAIN CONTENT */}
-        <div className="relative z-10 w-full translate-y-[8px] sm:-translate-y-0 rounded-canvas px-4 py-2 sm:px-10 sm:py-8 flex flex-col text-center pointer-events-none select-none">
+        <div className="relative z-10 w-full translate-y-[8px] sm:-translate-y-0 rounded-canvas px-8 py-2 sm:px-10 sm:py-8 flex flex-col text-center pointer-events-none select-none">
 
           {/* STATE 3 CONTENT - Navigation Mode and Audio */}
           <div className="flex flex-col text-center select-none opacity-100">
@@ -133,10 +133,10 @@ export function OverlayBox({
               {/* Navigation Mode Section */}
               <div className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                 {/* Navigation Mode Title */}
-                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-1 sm:mb-2">{state3Content.title}</h2>
+                <h2 className="font-sans text-white text-lg sm:text-2xl font-medium select-none mb-3 sm:mb-2">{state3Content.title}</h2>
 
                 {/* Navigation Mode Buttons */}
-                <div className="flex gap-3 sm:gap-6">
+                <div className="flex gap-5 sm:gap-6">
                   {state3Content.buttons.map((button, index) => (
                     <div key={`state3-${index}`} className="flex flex-col items-center gap-1 sm:gap-2 pointer-events-none">
                       <button

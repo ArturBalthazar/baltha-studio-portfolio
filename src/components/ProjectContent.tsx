@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ContentBlock, HeroImageBlock, TextBlock, ImageBlock, ImageGridBlock, ImageCompareBlock, VideoBlock, FeatureCardBlock, FloatImageBlock, TechStackBlock } from './workplaceConfig';
 import { useUI } from '../state';
+import { useI18n } from '../i18n';
 
 interface ProjectContentProps {
     contentBlocks?: ContentBlock[];
+    translatedContent?: string[];  // Array of translated text strings (titles, paragraphs) in order
 }
 
 // Render a hero image - full width, prominent
@@ -21,20 +23,27 @@ function HeroImage({ block }: { block: HeroImageBlock }) {
 }
 
 // Render a text block with optional title
-function TextContent({ block }: { block: TextBlock }) {
+function TextContent({ block, translatedTitle, translatedParagraphs }: {
+    block: TextBlock;
+    translatedTitle?: string;
+    translatedParagraphs?: string[];
+}) {
+    const title = translatedTitle || block.title;
+    const paragraphs = translatedParagraphs || block.paragraphs;
+
     return (
         <>
             {block.showSeparator && (
                 <div className="w-full h-px bg-white/20" />
             )}
             <div className="flex flex-col gap-2">
-                {block.title && (
+                {title && (
                     <h4 className="font-sans text-base font-semibold text-white/90 leading-tight">
-                        {block.title}
+                        {title}
                     </h4>
                 )}
                 <div className="flex flex-col gap-2">
-                    {block.paragraphs.map((paragraph, idx) => (
+                    {paragraphs.map((paragraph, idx) => (
                         <p
                             key={idx}
                             className="font-mono text-sm text-white/70 leading-relaxed"
@@ -241,8 +250,14 @@ function VideoContent({ block }: { block: VideoBlock }) {
 }
 
 // Render a feature card with image and text side by side
-function FeatureCard({ block }: { block: FeatureCardBlock }) {
+function FeatureCard({ block, translatedTitle, translatedParagraphs }: {
+    block: FeatureCardBlock;
+    translatedTitle?: string;
+    translatedParagraphs?: string[];
+}) {
     const imageOnLeft = block.imagePosition !== 'right';
+    const title = translatedTitle || block.title;
+    const paragraphs = translatedParagraphs || block.paragraphs;
 
     const imageElement = (
         <div className="w-2/5 flex-shrink-0">
@@ -260,10 +275,10 @@ function FeatureCard({ block }: { block: FeatureCardBlock }) {
     const textElement = (
         <div className="w-3/5 flex flex-col gap-2 justify-center">
             <h4 className="font-sans text-base font-semibold text-white/90 leading-tight">
-                {block.title}
+                {title}
             </h4>
             <div className="flex flex-col gap-2">
-                {block.paragraphs.map((paragraph, idx) => (
+                {paragraphs.map((paragraph, idx) => (
                     <p
                         key={idx}
                         className="font-mono text-sm text-white/70 leading-relaxed"
@@ -298,8 +313,12 @@ function FeatureCard({ block }: { block: FeatureCardBlock }) {
 }
 
 // Render a float image with text wrapping around it (like Word)
-function FloatImage({ block }: { block: FloatImageBlock }) {
+function FloatImage({ block, translatedParagraphs }: {
+    block: FloatImageBlock;
+    translatedParagraphs?: string[];
+}) {
     const floatClass = block.imagePosition === 'right' ? 'float-right ml-4' : 'float-left mr-4';
+    const paragraphs = translatedParagraphs || block.paragraphs;
 
     return (
         <div className="overflow-hidden">
@@ -313,7 +332,7 @@ function FloatImage({ block }: { block: FloatImageBlock }) {
                     />
                 </div>
             </div>
-            {block.paragraphs.map((paragraph, idx) => (
+            {paragraphs.map((paragraph, idx) => (
                 <p
                     key={idx}
                     className="font-mono text-sm text-white/70 leading-relaxed mb-2"
@@ -505,7 +524,7 @@ function ImageCompare({ block }: { block: ImageCompareBlock }) {
 }
 
 // Main component that renders content blocks
-export function ProjectContent({ contentBlocks }: ProjectContentProps) {
+export function ProjectContent({ contentBlocks, translatedContent }: ProjectContentProps) {
     if (!contentBlocks || contentBlocks.length === 0) {
         // Fallback placeholder
         return (
@@ -517,32 +536,100 @@ export function ProjectContent({ contentBlocks }: ProjectContentProps) {
         );
     }
 
+    // Track index into translatedContent array
+    // Each text item (paragraph or title) consumes one index
+    let translationIndex = 0;
+
+    // Helper to get translated text for a block
+    const getTranslatedTexts = (paragraphCount: number, hasTitle: boolean) => {
+        if (!translatedContent) return { title: undefined, paragraphs: undefined };
+
+        let translatedTitle: string | undefined;
+        let translatedParagraphs: string[] | undefined;
+
+        // If block has a title, it's the first item
+        if (hasTitle && translatedContent[translationIndex]) {
+            translatedTitle = translatedContent[translationIndex];
+            translationIndex++;
+        }
+
+        // Get translated paragraphs
+        if (paragraphCount > 0) {
+            translatedParagraphs = [];
+            for (let i = 0; i < paragraphCount; i++) {
+                if (translatedContent[translationIndex]) {
+                    translatedParagraphs.push(translatedContent[translationIndex]);
+                    translationIndex++;
+                }
+            }
+        }
+
+        return { title: translatedTitle, paragraphs: translatedParagraphs };
+    };
+
+    const renderBlock = (block: ContentBlock, index: number) => {
+        switch (block.type) {
+            case 'hero-image':
+                return <HeroImage key={index} block={block} />;
+            case 'text': {
+                const { title, paragraphs } = getTranslatedTexts(
+                    block.paragraphs.length,
+                    !!block.title
+                );
+                return (
+                    <TextContent
+                        key={index}
+                        block={block}
+                        translatedTitle={title}
+                        translatedParagraphs={paragraphs}
+                    />
+                );
+            }
+            case 'image':
+                return <ImageContent key={index} block={block} />;
+            case 'image-grid':
+                return <ImageGrid key={index} block={block} />;
+            case 'image-compare':
+                return <ImageCompare key={index} block={block} />;
+            case 'video':
+                return <VideoContent key={index} block={block} />;
+            case 'feature-card': {
+                const { title, paragraphs } = getTranslatedTexts(
+                    block.paragraphs.length,
+                    true // feature-card always has title
+                );
+                return (
+                    <FeatureCard
+                        key={index}
+                        block={block}
+                        translatedTitle={title}
+                        translatedParagraphs={paragraphs}
+                    />
+                );
+            }
+            case 'float-image': {
+                const { paragraphs } = getTranslatedTexts(
+                    block.paragraphs.length,
+                    false // float-image has no title
+                );
+                return (
+                    <FloatImage
+                        key={index}
+                        block={block}
+                        translatedParagraphs={paragraphs}
+                    />
+                );
+            }
+            case 'tech-stack':
+                return <TechStack key={index} block={block} />;
+            default:
+                return null;
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4">
-            {contentBlocks.map((block, index) => {
-                switch (block.type) {
-                    case 'hero-image':
-                        return <HeroImage key={index} block={block} />;
-                    case 'text':
-                        return <TextContent key={index} block={block} />;
-                    case 'image':
-                        return <ImageContent key={index} block={block} />;
-                    case 'image-grid':
-                        return <ImageGrid key={index} block={block} />;
-                    case 'image-compare':
-                        return <ImageCompare key={index} block={block} />;
-                    case 'video':
-                        return <VideoContent key={index} block={block} />;
-                    case 'feature-card':
-                        return <FeatureCard key={index} block={block} />;
-                    case 'float-image':
-                        return <FloatImage key={index} block={block} />;
-                    case 'tech-stack':
-                        return <TechStack key={index} block={block} />;
-                    default:
-                        return null;
-                }
-            })}
+            {contentBlocks.map((block, index) => renderBlock(block, index))}
         </div>
     );
 }

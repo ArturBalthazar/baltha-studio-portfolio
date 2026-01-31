@@ -432,7 +432,7 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
   for (let i = 0; i < 3; i++) {
     // Create circle points (64 segments for smoothness)
     const segments = 64;
-    const radius = idleRingRadius * (1 + i * 0.15); // Slightly different sizes
+    const radius = idleRingRadius; // All rings same size when collapsed
     const points: BABYLON.Vector3[] = [];
     // Create vertex colors with alpha for transparency (performant - no extra material needed)
     const colors: BABYLON.Color4[] = [];
@@ -458,6 +458,11 @@ function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
 
     ring.parent = root;
     ring.isPickable = false; // Allow clicks to pass through to models behind
+
+    // Disable fog on the ring material
+    if (ring.material) {
+      (ring.material as any).disableFog = true;
+    }
 
     // Apply initial orientation
     const orient = ringOrientations[i];
@@ -2114,8 +2119,8 @@ export function BabylonCanvas() {
     }
     camera.fov = camFov;
 
-    camera.minZ = .7;    // how close things can be before clipping
-    camera.maxZ = 7500;   // how far things can be seen
+    camera.minZ = .1;    // how close things can be before clipping
+    camera.maxZ = 1000;   // how far things can be seen
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;
@@ -2619,8 +2624,8 @@ export function BabylonCanvas() {
     stars.emitter = starsEmitter;
 
     // Custom spawn function for stars with forbidden radius that follows shipRoot
-    const forbiddenRadius = 3000;
-    const totalRadius = 3500;
+    const forbiddenRadius = 800;
+    const totalRadius = 1000;
     const forbiddenRadiusSq = forbiddenRadius * forbiddenRadius;
 
     // Debug counter for logging
@@ -2678,8 +2683,8 @@ export function BabylonCanvas() {
     stars.addColorGradient(0.7, new BABYLON.Color4(1, 0.9, 0.7, 0.8));
     stars.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
 
-    stars.minSize = 20;
-    stars.maxSize = 50;
+    stars.minSize = 6;
+    stars.maxSize = 15;
     stars.minLifeTime = 3;
     stars.maxLifeTime = 10;
     stars.emitRate = 0; // Start disabled

@@ -25,10 +25,11 @@ export interface TranslationKeys {
     // Navigation Menu
     menu: {
         welcome: string;
-        carCustomizer: string;
-        musecraftEditor: string;
-        digitalDioramas: string;
-        petwheels: string;
+        musecraft: string;
+        meetkai: string;
+        morethanreal: string;
+        balthamaker: string;
+        ufsc: string;
         letsConnect: string;
     };
 
@@ -50,54 +51,13 @@ export interface TranslationKeys {
         information: string;
     };
 
-    // GEELY Customizer (State 4)
-    geely: {
-        title: string;
-        subtitle: string;
-        bodyColor: string;
-        version: string;
-        interiorView: string;
-        exteriorView: string;
-        tapToSeeMore: string;
-    };
-
-    // Musecraft Panel (State 5)
-    musecraft: {
-        title: string;
-        subtitle: string;
-        text1: string;
-        text2: string;
-        text3: string;
-    };
-
-    // Dioramas Panel (State 6)
-    dioramas: {
-        subtitle: string;
-        subtitleMobile: string;
-        // Dynamic titles are handled separately
-        florianopolisMuseum: {
-            title: string;
-            text1: string;
-            text2: string;
-        };
-        santaCatarinaIsland: {
-            title: string;
-            text1: string;
-            text2: string;
-        };
-        catarinenseMuseum: {
-            title: string;
-            text1: string;
-            text2: string;
-        };
-    };
-
-    // Petwheels Panel (State 7)
-    petwheels: {
-        title: string;
-        subtitle: string;
-        text1: string;
-        text2: string;
+    // Workplaces - Portfolio panel content
+    workplaces: {
+        musecraft: WorkplaceTranslation;
+        meetkai: WorkplaceTranslation;
+        morethanreal: WorkplaceTranslation;
+        balthamaker: WorkplaceTranslation;
+        ufsc: WorkplaceTranslation;
     };
 
     // Connect Overlay (State Final)
@@ -131,7 +91,22 @@ export interface TranslationKeys {
         close: string;
         open: string;
         goToModel: string;
+        skillsWith: string;
     };
+}
+
+// Workplace translation structure
+export interface WorkplaceTranslation {
+    companyName: string;
+    role: string;
+    projects: Record<string, ProjectTranslation>;
+}
+
+// Project translation structure  
+export interface ProjectTranslation {
+    title: string;
+    description: string;
+    content: string[];  // Array of translatable text (paragraphs, titles, captions)
 }
 
 // All translations organized by language
@@ -142,10 +117,11 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Welcome",
-            carCustomizer: "Car\nCustomizer",
-            musecraftEditor: "Musecraft\nEditor",
-            digitalDioramas: "Digital\nDioramas",
-            petwheels: "Petwheels",
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
             letsConnect: "Let's\nConnect!"
         },
         state3: {
@@ -162,46 +138,115 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             turnAudioOn: "Turn audio on",
             information: "Information"
         },
-        geely: {
-            title: "GEELY Customizer",
-            subtitle: "We create everything from 3D car configurators to test-drive tracks, virtual showrooms and much more.",
-            bodyColor: "Body Color",
-            version: "Version",
-            interiorView: "Interior view",
-            exteriorView: "Exterior view",
-            tapToSeeMore: "Tap to see more"
-        },
-        musecraft: {
-            title: "Musecraft Editor",
-            subtitle: "Create interactive 3D scenes for the web in our collaborative web editor.",
-            text1: "A powerful web-based 3D scene editor designed to create interactive, real-time experiences directly for the browser.",
-            text2: "Musecraft allows designers, developers, and studios to fully assemble 3D scenes, define interactions, manage assets, and deploy experiences without the friction of traditional game engines or heavyweight pipelines.",
-            text3: "Built on modern web technologies and powered by AI tools, it bridges design, development and 3D art into a single low-code workflow."
-        },
-        dioramas: {
-            subtitle: "In 2018, Baltha Studio started as a 3D printing business, and then moved to the digital space.",
-            subtitleMobile: "In 2018, Baltha Studio started as a 3D printing business before moving to the digital space.",
-            florianopolisMuseum: {
-                title: "Florianópolis Museum",
-                text1: "We partnered with SESC to build a 3D printable scale model of the Florianópolis Museum that was about to open in the historic center of city.",
-                text2: "This is a 100cm x 85cm x 60cm model placed in the entrance room of the museum. Entirely covered with epoxy resin, it's intended to last for several years as a tactile model."
+        workplaces: {
+            musecraft: {
+                companyName: "Musecraft Editor",
+                role: "Creator & Lead Developer",
+                projects: {
+                    musecraft: {
+                        title: "Musecraft Editor",
+                        description: "Web-based Babylon.js Editor",
+                        content: [
+                            "Musecraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative creation of interactive scenes for the web.",
+                            "It started as my personal project to explore AI-powered creative tools, and has since evolved into a comprehensive platform. The stack is React and TypeScript on the frontend, Babylon.js for rendering, and Supabase handling authentication, real-time sync, and secure cloud storage.",
+                            "Cloud and Local Storage",
+                            "Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access API. Work on local folders like a desktop app, or sync assets to cloud storage for team access.",
+                            "Real-Time Collaboration",
+                            "Create teams with role-based permissions and collaborate in real-time. Multiple users can edit the same scene simultaneously—selections, transforms, and changes sync instantly with presence indicators.",
+                            "3D Editing Environment",
+                            "Full scene authoring with meshes, PBR materials, lights, cameras, physics, animations, and spatial audio. Includes a play mode to test scenes with physics and scripted behaviors without leaving the editor.",
+                            "Integrated UI Editor",
+                            "Design HTML/CSS interfaces directly in the 3D environment and anchor them to scene objects. Includes a style editor, animation support, and responsive breakpoints for building interactive 3D web experiences.",
+                            "AI-Powered Scripting",
+                            "Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language—the AI generates executable scripts with full context of your scene and the Musecraft API.",
+                            "Addon Architecture",
+                            "Extensible API inspired by Blender's addon system. Addons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio, and history systems with sandboxed permissions.",
+                            "Export to GitHub",
+                            "Export projects directly to GitHub as ready-to-deploy web applications. Includes snapshot-based versioning for saving and reverting scene states—a complete pipeline from creation to publication."
+                        ]
+                    }
+                }
             },
-            santaCatarinaIsland: {
-                title: "Santa Catarina Island",
-                text1: "Also as part of the Florianópolis Museum project with SESC, we created this 3m x 1m scale model of the Santa Catarina Island where the museum lives.",
-                text2: "This is also a tactile model of the real island relief, with a vertical scale factor of 2.5x, and and entire room dedicated for it."
+            meetkai: {
+                companyName: "Meetkai Inc.",
+                role: "3D Designer and Tools Developer",
+                projects: {
+                    thanksgiving: {
+                        title: "Survive Thanksgiving",
+                        description: "Gamified movie experience",
+                        content: [
+                            "Thanksgiving is a Sony horror film featuring a masked killer on the loose during the holiday. Sony and MeetKai partnered to create an interactive web experience to help market the movie worldwide.",
+                            "I worked on key 3D elements: the Basement scene (the movie's climatic finale), all in-game cutscene videos, and an optimized 3D crowd system for the external areas.",
+                            "The Basement",
+                            "The basement is where the movie's final scene takes place, a long dinner table set for a twisted Thanksgiving feast. I designed and built this entire environment, from the eerie table settings to the dim lighting that sets the horror mood.",
+                            "External Crowds",
+                            "The outdoor areas needed a living, breathing crowd to sell the Black Friday chaos. I created an optimized 3D crowd system that runs smoothly even on mobile, achieved through armature aggregation and animation track merging to keep draw calls minimal while maintaining natural movement.",
+                            "Cutscenes",
+                            "Throughout the game, cutscene videos play when the player encounters the killer. I created all of these sequences in short and intense moments that tie the gameplay to the film's horror atmosphere. Here are a few examples:"
+                        ]
+                    },
+                    byd: {
+                        title: "BYD Virtual Dealership",
+                        description: "3D web visualizer for BYD",
+                        content: [
+                            "The BYD Virtual Dealership brings real showrooms into an interactive 3D web experience. Users can explore dealerships in Los Angeles, Singapore, the Philippines, and virtual test tracks—touring vehicles, customizing colors, and even taking virtual test drives, all from their browser.",
+                            "My Role & The BYD Seagull",
+                            "I played a major role in the 3D side of this project, particularly with vehicle modeling and optimization. We typically received existing car models that needed optimization with proper textures, materials, and animations for web delivery.",
+                            "For the BYD Seagull specifically, we didn't have an existing model—so I recreated the entire car from scratch. This became one of my favorite pieces of work: I modeled everything from the exterior body, interior cabin, materials, to all interactive animations.",
+                            "The entire interior was modeled with attention to detail—seats, dashboard, steering wheel, door panels, and all trim pieces—to create an immersive experience when users explore the car from inside.",
+                            "Philippines Dealership",
+                            "I was also the 3D lead for the Philippines Dealership digital twin at Quezon Avenue. This involved recreating the entire dealership architecture and showroom environment where all the car models are showcased."
+                        ]
+                    },
+                    pistons: {
+                        title: "Pistons Virtual Store",
+                        description: "Virtual merchandise store",
+                        content: [
+                            "The Pistons Virtual Store is an interactive 3D web experience for Detroit Pistons official merchandise. Users can explore jerseys, hoodies, headwear, and gifts across three immersive environments.",
+                            "I was the 3D lead on this project and handled most of the UX design decisions as well. I created all three environments optimized for real-time web rendering. Beyond the environments, I also created various interactive assets used throughout the experience.",
+                            "The Virtual Store",
+                            "The main showroom features product displays organized by category—jerseys showcased on mannequins, headwear on shelving units, and gift items arranged throughout the space.",
+                            "Lighting was key to selling the atmosphere. Carefully baked lightmaps bring out the product displays and make the space feel inviting.",
+                            "The Court",
+                            "The basketball court features a full arena complete with an animated crowd. I used a lightweight technique where the crowd is rendered as flat planes with atlas textures that swap between animation frames, creating the illusion of a cheering 3D audience while keeping performance optimized for the web.",
+                            "The Locker Room",
+                            "The locker room was designed as a virtual event space where Pistons players could appear on screen during scheduled meet-and-greet events. Because of this, it's more spacious than a typical locker room, adapted to accommodate virtual gatherings with fans.",
+                            "The environment showcases the team's championship legacy with banners, player lockers, and an immersive atmosphere."
+                        ]
+                    },
+                    meetkaisuite: {
+                        title: "MeetKai Suite (Blender Addon)",
+                        description: "Blender addon for VR scene exports",
+                        content: [
+                            "I developed MeetKai Suite out of my own initiative after recognizing the team could benefit from automation tools that simply did not exist at the time. I joined MeetKai in 2023 and by the end of that year, after absorbing how things were done, I started building these tools.",
+                            "Since then, it has fundamentally transformed our 3D asset creation pipeline for web. The addon is now a standard tool within the team and is used extensively throughout our 3D production process.",
+                            "Material Aggregator & Object Remesher",
+                            "Merges multiple materials into a single optimized texture set, with integrated geometry remeshing. One-click \"Apply and Aggregate\" finalizes mesh and textures together, drastically reducing draw calls.",
+                            "Auto Bake",
+                            "Streamlines texture baking with preset workflows. Supports color, roughness, metalness, and normal maps with direct or indirect contributions—all configurable per channel.",
+                            "Multi-Format Exporter",
+                            "Export directly to GLB, separate GLTF, or Splat format with mesh, camera, and light filtering, as well as custom naming conventions.",
+                            "Optimizations",
+                            "Includes batch object name cleanup, texture resizing, lightmap packing, armature aggregation, and animation optimizer—essential housekeeping for web-ready assets."
+                        ]
+                    }
+                }
             },
-            catarinenseMuseum: {
-                title: "Santa Catarina School Museum",
-                text1: "Also an important building of the historic center of Florianópolis is the Santa Catarina School, which later became not only a museum, but a center for creativity and innovation with the CoCreation Lab, a startup incubator coworking space.",
-                text2: "Following the previous trend, we were also contacted to make a 3D printable scale model of the building."
+            morethanreal: {
+                companyName: "More Than Real",
+                role: "3D Designer for AR",
+                projects: {}
+            },
+            balthamaker: {
+                companyName: "Baltha Maker",
+                role: "3D Printing Designer and Founder",
+                projects: {}
+            },
+            ufsc: {
+                companyName: "UFSC",
+                role: "Product Design Undergraduate",
+                projects: {}
             }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "A patented, fully 3D printable parametric wheelchair for dogs.",
-            text1: "A customizable parametric wheelchair for dogs that is fully 3D printable, Petwheels was born from the capstone project of Artur Balthazar, product designer and creative director at Baltha Studio.",
-            text2: "The product differs from every other in the market due to its flexible lateral bars and was patented as such. It quickly gained attention from the Brazilian media and some units were sold."
         },
         connect: {
             title: "Let's connect!",
@@ -227,7 +272,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "Next",
             close: "Close",
             open: "Open",
-            goToModel: "Go to model"
+            goToModel: "Go to model",
+            skillsWith: "Skills with:"
         }
     },
 
@@ -237,10 +283,11 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Início",
-            carCustomizer: "Configurador\nde Carros",
-            musecraftEditor: "Editor\nMusecraft",
-            digitalDioramas: "Dioramas\nDigitais",
-            petwheels: "Petwheels",
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
             letsConnect: "Vamos\nConectar!"
         },
         state3: {
@@ -257,46 +304,115 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             turnAudioOn: "Ligar áudio",
             information: "Informações"
         },
-        geely: {
-            title: "Configurador GEELY",
-            subtitle: "Criamos desde configuradores 3D de carros a pistas de test-drive, showrooms virtuais e muito mais.",
-            bodyColor: "Cor",
-            version: "Versão",
-            interiorView: "Vista interior",
-            exteriorView: "Vista exterior",
-            tapToSeeMore: "Toque para ver mais"
-        },
-        musecraft: {
-            title: "Editor Musecraft",
-            subtitle: "Crie cenas 3D interativas para a web em nosso editor colaborativo.",
-            text1: "Um poderoso editor de cenas 3D baseado na web, projetado para criar experiências interativas em tempo real diretamente para o navegador.",
-            text2: "Musecraft permite que designers, desenvolvedores e estúdios montem cenas 3D completas, definam interações, gerenciem assets e implementem experiências sem a fricção de engines de jogos tradicionais ou pipelines pesados.",
-            text3: "Construído em tecnologias web modernas e alimentado por ferramentas de IA, ele conecta design, desenvolvimento e arte 3D em um único fluxo de trabalho low-code."
-        },
-        dioramas: {
-            subtitle: "Em 2018, Baltha Studio começou como um negócio de impressão 3D e depois migrou para o espaço digital.",
-            subtitleMobile: "Em 2018, Baltha Studio começou como um negócio de impressão 3D antes de migrar para o espaço digital.",
-            florianopolisMuseum: {
-                title: "Museu de Florianópolis",
-                text1: "Fiz parceria com o SESC para construir uma maquete imprimível em 3D do Museu de Florianópolis que estava prestes a abrir no centro histórico da cidade.",
-                text2: "Esta é uma maquete de 100cm x 85cm x 60cm colocada na sala de entrada do museu. Totalmente coberta com resina epóxi, foi projetada para durar vários anos como modelo tátil."
+        workplaces: {
+            musecraft: {
+                companyName: "Musecraft Editor",
+                role: "Criador & Desenvolvedor Principal",
+                projects: {
+                    musecraft: {
+                        title: "Musecraft Editor",
+                        description: "Editor 3D baseado em Babylon.js",
+                        content: [
+                            "Musecraft é um editor 3D baseado na web, alimentado por Babylon.js, que permite a criação colaborativa em tempo real de cenas interativas para a web.",
+                            "Começou como meu projeto pessoal para explorar ferramentas criativas com IA, e desde então evoluiu para uma plataforma completa. A stack é React e TypeScript no frontend, Babylon.js para renderização, e Supabase cuidando de autenticação, sincronização em tempo real e armazenamento seguro na nuvem.",
+                            "Armazenamento Local e na Nuvem",
+                            "Projetos podem viver na nuvem via Supabase ou totalmente offline usando a API File System Access do navegador. Trabalhe em pastas locais como um app desktop, ou sincronize assets na nuvem para acesso da equipe.",
+                            "Colaboração em Tempo Real",
+                            "Crie equipes com permissões baseadas em papéis e colabore em tempo real. Múltiplos usuários podem editar a mesma cena simultaneamente—seleções, transformações e mudanças sincronizam instantaneamente com indicadores de presença.",
+                            "Ambiente de Edição 3D",
+                            "Autoria completa de cenas com meshes, materiais PBR, luzes, câmeras, física, animações e áudio espacial. Inclui um modo de reprodução para testar cenas com física e comportamentos scriptados sem sair do editor.",
+                            "Editor de UI Integrado",
+                            "Projete interfaces HTML/CSS diretamente no ambiente 3D e ancore-as a objetos da cena. Inclui editor de estilos, suporte a animações e breakpoints responsivos para construir experiências web 3D interativas.",
+                            "Scripting com IA",
+                            "Editor de código Monaco com assistência de IA integrada. Descreva o que você quer em linguagem natural—a IA gera scripts executáveis com contexto completo da sua cena e da API do Musecraft.",
+                            "Arquitetura de Addons",
+                            "API extensível inspirada no sistema de addons do Blender. Addons podem registrar menus, injetar painéis, se inscrever em eventos e acessar sistemas de cena, física, animação, áudio e histórico com permissões isoladas.",
+                            "Exportar para GitHub",
+                            "Exporte projetos diretamente para o GitHub como aplicações web prontas para deploy. Inclui versionamento baseado em snapshots para salvar e reverter estados de cena—um pipeline completo da criação à publicação."
+                        ]
+                    }
+                }
             },
-            santaCatarinaIsland: {
-                title: "Ilha de Santa Catarina",
-                text1: "Também como parte do projeto do Museu de Florianópolis com o SESC, criei esta maquete de 3m x 1m da Ilha de Santa Catarina onde o museu está localizado.",
-                text2: "Este também é um modelo tátil do relevo real da ilha, com um fator de escala vertical de 2,5x e uma sala inteira dedicada a ele."
+            meetkai: {
+                companyName: "Meetkai Inc.",
+                role: "Designer 3D e Desenvolvedor de Ferramentas",
+                projects: {
+                    thanksgiving: {
+                        title: "Survive Thanksgiving",
+                        description: "Experiência cinematográfica gamificada",
+                        content: [
+                            "Thanksgiving é um filme de terror da Sony com um assassino mascarado à solta durante o feriado. A Sony e a MeetKai se uniram para criar uma experiência web interativa para ajudar a promover o filme mundialmente.",
+                            "Trabalhei em elementos 3D chave: a cena do Porão (o clímax final do filme), todos os vídeos de cutscenes do jogo, e um sistema otimizado de multidão 3D para as áreas externas.",
+                            "O Porão",
+                            "O porão é onde a cena final do filme acontece, uma longa mesa de jantar preparada para uma festa de Thanksgiving macabra. Eu projetei e construí todo esse ambiente, desde os cenários assustadores da mesa até a iluminação sombria que cria o clima de terror.",
+                            "Multidões Externas",
+                            "As áreas externas precisavam de uma multidão viva e pulsante para vender o caos da Black Friday. Criei um sistema de multidão 3D otimizado que roda suavemente mesmo em dispositivos móveis, alcançado através de agregação de armaduras e mesclagem de faixas de animação para manter os draw calls mínimos mantendo movimentos naturais.",
+                            "Cutscenes",
+                            "Ao longo do jogo, vídeos de cutscenes tocam quando o jogador encontra o assassino. Criei todas essas sequências em momentos curtos e intensos que conectam a jogabilidade à atmosfera de terror do filme. Aqui estão alguns exemplos:"
+                        ]
+                    },
+                    byd: {
+                        title: "Concessionária Virtual BYD",
+                        description: "Visualizador web 3D para BYD",
+                        content: [
+                            "A Concessionária Virtual BYD traz showrooms reais para uma experiência web 3D interativa. Os usuários podem explorar concessionárias em Los Angeles, Singapura, Filipinas e pistas de teste virtuais—visitando veículos, personalizando cores e até fazendo test drives virtuais, tudo no navegador.",
+                            "Meu Papel e o BYD Seagull",
+                            "Tive um papel importante no lado 3D deste projeto, particularmente na modelagem e otimização de veículos. Normalmente recebíamos modelos de carros existentes que precisavam de otimização com texturas, materiais e animações adequadas para entrega web.",
+                            "Para o BYD Seagull especificamente, não tínhamos um modelo existente—então recriei o carro inteiro do zero. Este se tornou um dos meus trabalhos favoritos: modelei tudo, desde a carroceria externa, cabine interna, materiais, até todas as animações interativas.",
+                            "O interior inteiro foi modelado com atenção aos detalhes—bancos, painel, volante, painéis das portas e todos os acabamentos—para criar uma experiência imersiva quando os usuários exploram o carro por dentro.",
+                            "Concessionária Filipinas",
+                            "Também fui o líder 3D para o gêmeo digital da Concessionária das Filipinas na Avenida Quezon. Isso envolveu recriar toda a arquitetura da concessionária e o ambiente do showroom onde todos os modelos de carros são expostos."
+                        ]
+                    },
+                    pistons: {
+                        title: "Loja Virtual Pistons",
+                        description: "Loja virtual de merchandise",
+                        content: [
+                            "A Loja Virtual Pistons é uma experiência web 3D interativa para merchandise oficial do Detroit Pistons. Os usuários podem explorar camisetas, moletons, bonés e presentes em três ambientes imersivos.",
+                            "Fui o líder 3D neste projeto e também tomei a maioria das decisões de UX design. Criei todos os três ambientes otimizados para renderização web em tempo real. Além dos ambientes, também criei diversos assets interativos usados ao longo da experiência.",
+                            "A Loja Virtual",
+                            "O showroom principal apresenta displays de produtos organizados por categoria—camisetas expostas em manequins, bonés em prateleiras, e itens de presente distribuídos pelo espaço.",
+                            "A iluminação foi crucial para criar a atmosfera. Lightmaps cuidadosamente bakeados destacam os displays de produtos e fazem o espaço parecer convidativo.",
+                            "A Quadra",
+                            "A quadra de basquete apresenta uma arena completa com uma multidão animada. Usei uma técnica leve onde a multidão é renderizada como planos achatados com texturas atlas que alternam entre frames de animação, criando a ilusão de uma plateia 3D torcendo enquanto mantém a performance otimizada para web.",
+                            "O Vestiário",
+                            "O vestiário foi projetado como um espaço de eventos virtuais onde jogadores dos Pistons poderiam aparecer na tela durante eventos de meet-and-greet agendados. Por isso, é mais espaçoso que um vestiário típico, adaptado para acomodar encontros virtuais com fãs.",
+                            "O ambiente mostra o legado de campeonatos do time com banners, armários de jogadores, e uma atmosfera imersiva."
+                        ]
+                    },
+                    meetkaisuite: {
+                        title: "MeetKai Suite (Addon Blender)",
+                        description: "Addon Blender para exportação de cenas VR",
+                        content: [
+                            "Desenvolvi o MeetKai Suite por iniciativa própria após reconhecer que a equipe poderia se beneficiar de ferramentas de automação que simplesmente não existiam na época. Entrei na MeetKai em 2023 e até o final daquele ano, após absorver como as coisas eram feitas, comecei a construir essas ferramentas.",
+                            "Desde então, transformou fundamentalmente nosso pipeline de criação de assets 3D para web. O addon agora é uma ferramenta padrão dentro da equipe e é usado extensivamente em todo nosso processo de produção 3D.",
+                            "Agregador de Materiais e Remesher de Objetos",
+                            "Mescla múltiplos materiais em um único conjunto de texturas otimizado, com remeshing de geometria integrado. Um clique em \"Apply and Aggregate\" finaliza mesh e texturas juntos, reduzindo drasticamente os draw calls.",
+                            "Auto Bake",
+                            "Simplifica o baking de texturas com workflows predefinidos. Suporta mapas de cor, roughness, metalness e normais com contribuições diretas ou indiretas—todos configuráveis por canal.",
+                            "Exportador Multi-Formato",
+                            "Exporte diretamente para GLB, GLTF separado, ou formato Splat com filtragem de mesh, câmera e luz, assim como convenções de nomenclatura personalizadas.",
+                            "Otimizações",
+                            "Inclui limpeza em lote de nomes de objetos, redimensionamento de texturas, empacotamento de lightmaps, agregação de armaduras, e otimizador de animações—manutenção essencial para assets prontos para web."
+                        ]
+                    }
+                }
             },
-            catarinenseMuseum: {
-                title: "Museu da Escola Catarinense",
-                text1: "Também um edifício importante do centro histórico de Florianópolis é a Escola Catarinense, que mais tarde se tornou não apenas um museu, mas um centro de criatividade e inovação com o CoCreation Lab, um espaço de coworking incubador de startups.",
-                text2: "Seguindo a tendência anterior, também fui contatado para fazer uma maquete imprimível em 3D do edifício."
+            morethanreal: {
+                companyName: "More Than Real",
+                role: "Designer 3D para AR",
+                projects: {}
+            },
+            balthamaker: {
+                companyName: "Baltha Maker",
+                role: "Designer de Impressão 3D e Fundador",
+                projects: {}
+            },
+            ufsc: {
+                companyName: "UFSC",
+                role: "Graduando em Design de Produto",
+                projects: {}
             }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "Uma cadeira de rodas paramétrica patenteada e totalmente imprimível em 3D para cães.",
-            text1: "Uma cadeira de rodas paramétrica personalizável para cães que é totalmente imprimível em 3D, Petwheels nasceu do meu projeto de conclusão de curso em Design de Produto na UFSC.",
-            text2: "O produto se diferencia de todos os outros no mercado devido às suas barras laterais flexíveis e foi patenteado como tal. Rapidamente ganhou atenção da mídia brasileira e algumas unidades foram vendidas."
         },
         connect: {
             title: "Vamos conectar!",
@@ -322,20 +438,22 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "Próximo",
             close: "Fechar",
             open: "Abrir",
-            goToModel: "Ir para modelo"
+            goToModel: "Ir para modelo",
+            skillsWith: "Habilidades com:"
         }
     },
 
     ES: {
         header: {
-            welcomeText: "Diseñamos experiencias web interactivas adaptadas a la esencia de tu marca y accesibles para todos."
+            welcomeText: "¡Bienvenido a Baltha Studio! Soy Artur Balthazar, tu desarrollador y diseñador 3D profesional 🚀"
         },
         menu: {
             welcome: "Inicio",
-            carCustomizer: "Configurador\nde Autos",
-            musecraftEditor: "Editor\nMusecraft",
-            digitalDioramas: "Dioramas\nDigitales",
-            petwheels: "Petwheels",
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
             letsConnect: "¡Conectemos!"
         },
         state3: {
@@ -345,53 +463,19 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Audio",
             on: "-",
             off: "-",
-            typingText: "¡Bienvenido a Baltha Studio! Elige un modo de navegación para continuar..."
+            typingText: "Elige un modo de navegación para continuar..."
         },
         controls: {
             turnAudioOff: "Apagar audio",
             turnAudioOn: "Encender audio",
             information: "Información"
         },
-        geely: {
-            title: "Configurador GEELY",
-            subtitle: "Creamos desde configuradores 3D de autos hasta pistas de prueba, salas de exposición virtuales y mucho más.",
-            bodyColor: "Color de Carrocería",
-            version: "Versión",
-            interiorView: "Vista interior",
-            exteriorView: "Vista exterior",
-            tapToSeeMore: "Toca para ver más"
-        },
-        musecraft: {
-            title: "Editor Musecraft",
-            subtitle: "Crea escenas 3D interactivas para la web en nuestro editor colaborativo.",
-            text1: "Un potente editor de escenas 3D basado en web diseñado para crear experiencias interactivas en tiempo real directamente para el navegador.",
-            text2: "Musecraft permite a diseñadores, desarrolladores y estudios ensamblar completamente escenas 3D, definir interacciones, gestionar assets e implementar experiencias sin la fricción de los motores de juegos tradicionales o pipelines pesados.",
-            text3: "Construido con tecnologías web modernas y potenciado por herramientas de IA, conecta diseño, desarrollo y arte 3D en un único flujo de trabajo low-code."
-        },
-        dioramas: {
-            subtitle: "En 2018, Baltha Studio comenzó como un negocio de impresión 3D y luego se trasladó al espacio digital.",
-            subtitleMobile: "En 2018, Baltha Studio comenzó como un negocio de impresión 3D antes de trasladarse al espacio digital.",
-            florianopolisMuseum: {
-                title: "Museo de Florianópolis",
-                text1: "Nos asociamos con SESC para construir una maqueta imprimible en 3D del Museo de Florianópolis que estaba a punto de abrir en el centro histórico de la ciudad.",
-                text2: "Esta es una maqueta de 100cm x 85cm x 60cm colocada en la sala de entrada del museo. Completamente cubierta con resina epoxi, está diseñada para durar varios años como modelo táctil."
-            },
-            santaCatarinaIsland: {
-                title: "Isla de Santa Catarina",
-                text1: "También como parte del proyecto del Museo de Florianópolis con SESC, creamos esta maqueta de 3m x 1m de la Isla de Santa Catarina donde se encuentra el museo.",
-                text2: "Este también es un modelo táctil del relieve real de la isla, con un factor de escala vertical de 2.5x, y una sala entera dedicada a él."
-            },
-            catarinenseMuseum: {
-                title: "Museo de la Escuela Catarinense",
-                text1: "También un edificio importante del centro histórico de Florianópolis es la Escuela Catarinense, que luego se convirtió no solo en un museo, sino en un centro de creatividad e innovación con el CoCreation Lab, un espacio de coworking incubador de startups.",
-                text2: "Siguiendo la tendencia anterior, también nos contactaron para hacer una maqueta imprimible en 3D del edificio."
-            }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "Una silla de ruedas paramétrica patentada y totalmente imprimible en 3D para perros.",
-            text1: "Una silla de ruedas paramétrica personalizable para perros que es totalmente imprimible en 3D, Petwheels nació del proyecto de fin de carrera de Artur Balthazar, diseñador de productos y director creativo de Baltha Studio.",
-            text2: "El producto se diferencia de todos los demás en el mercado debido a sus barras laterales flexibles y fue patentado como tal. Rápidamente ganó atención de los medios brasileños y se vendieron algunas unidades."
+        workplaces: {
+            musecraft: { companyName: "Musecraft Editor", role: "Creador y Desarrollador Principal", projects: {} },
+            meetkai: { companyName: "Meetkai Inc.", role: "Diseñador 3D y Desarrollador de Herramientas", projects: {} },
+            morethanreal: { companyName: "More Than Real", role: "Diseñador 3D para AR", projects: {} },
+            balthamaker: { companyName: "Baltha Maker", role: "Diseñador de Impresión 3D y Fundador", projects: {} },
+            ufsc: { companyName: "UFSC", role: "Estudiante de Diseño de Producto", projects: {} }
         },
         connect: {
             title: "¡Conectemos!",
@@ -417,21 +501,23 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "Siguiente",
             close: "Cerrar",
             open: "Abrir",
-            goToModel: "Ir al modelo"
+            goToModel: "Ir al modelo",
+            skillsWith: "Habilidades con:"
         }
     },
 
     DE: {
         header: {
-            welcomeText: "Wir gestalten interaktive Web-Erlebnisse, die auf die Essenz Ihrer Marke zugeschnitten und für alle zugänglich sind."
+            welcomeText: "Willkommen bei Baltha Studio! Ich bin Artur Balthazar, dein professioneller 3D-Entwickler und Designer 🚀"
         },
         menu: {
             welcome: "Willkommen",
-            carCustomizer: "Auto\nKonfigurator",
-            musecraftEditor: "Musecraft\nEditor",
-            digitalDioramas: "Digitale\nDioramen",
-            petwheels: "Petwheels",
-            letsConnect: "Kontakt\naufnehmen!"
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
+            letsConnect: "Lass uns\nvernetzen!"
         },
         state3: {
             navigationTitle: "Navigation",
@@ -440,56 +526,22 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Audio",
             on: "-",
             off: "-",
-            typingText: "Willkommen bei Baltha Studio! Wählen Sie einen Navigationsmodus, um fortzufahren..."
+            typingText: "Wähle einen Navigationsmodus, um fortzufahren..."
         },
         controls: {
             turnAudioOff: "Audio ausschalten",
             turnAudioOn: "Audio einschalten",
             information: "Information"
         },
-        geely: {
-            title: "GEELY Konfigurator",
-            subtitle: "Wir erstellen alles von 3D-Autokonfiguratoren bis hin zu Testfahrtstrecken, virtuellen Ausstellungsräumen und vielem mehr.",
-            bodyColor: "Karosseriefarbe",
-            version: "Version",
-            interiorView: "Innenansicht",
-            exteriorView: "Außenansicht",
-            tapToSeeMore: "Tippen für mehr"
-        },
-        musecraft: {
-            title: "Musecraft Editor",
-            subtitle: "Erstellen Sie interaktive 3D-Szenen für das Web in unserem kollaborativen Web-Editor.",
-            text1: "Ein leistungsstarker webbasierter 3D-Szenen-Editor, der für die Erstellung interaktiver Echtzeit-Erlebnisse direkt für den Browser konzipiert wurde.",
-            text2: "Musecraft ermöglicht Designern, Entwicklern und Studios, 3D-Szenen vollständig zusammenzustellen, Interaktionen zu definieren, Assets zu verwalten und Erlebnisse bereitzustellen – ohne die Reibung traditioneller Game-Engines oder schwerfälliger Pipelines.",
-            text3: "Aufgebaut auf modernen Web-Technologien und unterstützt von KI-Tools, verbindet es Design, Entwicklung und 3D-Kunst in einem einzigen Low-Code-Workflow."
-        },
-        dioramas: {
-            subtitle: "Im Jahr 2018 begann Baltha Studio als 3D-Druck-Unternehmen und wechselte dann in den digitalen Raum.",
-            subtitleMobile: "Im Jahr 2018 begann Baltha Studio als 3D-Druck-Unternehmen, bevor es in den digitalen Raum wechselte.",
-            florianopolisMuseum: {
-                title: "Florianópolis Museum",
-                text1: "Wir haben uns mit SESC zusammengetan, um ein 3D-druckbares Modell des Florianópolis Museums zu bauen, das im historischen Zentrum der Stadt eröffnet werden sollte.",
-                text2: "Dies ist ein 100cm x 85cm x 60cm großes Modell, das im Eingangsbereich des Museums platziert wurde. Vollständig mit Epoxidharz überzogen, ist es als taktiles Modell für mehrere Jahre gedacht."
-            },
-            santaCatarinaIsland: {
-                title: "Santa Catarina Insel",
-                text1: "Ebenfalls als Teil des Florianópolis Museum-Projekts mit SESC haben wir dieses 3m x 1m große Modell der Santa Catarina Insel erstellt, auf der sich das Museum befindet.",
-                text2: "Dies ist ebenfalls ein taktiles Modell des echten Inselreliefs mit einem vertikalen Skalierungsfaktor von 2,5x und einem ganzen Raum, der ihm gewidmet ist."
-            },
-            catarinenseMuseum: {
-                title: "Santa Catarina Schulmuseum",
-                text1: "Ein weiteres wichtiges Gebäude im historischen Zentrum von Florianópolis ist die Santa Catarina Schule, die später nicht nur ein Museum wurde, sondern auch ein Zentrum für Kreativität und Innovation mit dem CoCreation Lab, einem Startup-Inkubator-Coworking-Space.",
-                text2: "Dem vorherigen Trend folgend wurden wir auch kontaktiert, um ein 3D-druckbares Modell des Gebäudes zu erstellen."
-            }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "Ein patentierter, vollständig 3D-druckbarer parametrischer Rollstuhl für Hunde.",
-            text1: "Ein anpassbarer parametrischer Rollstuhl für Hunde, der vollständig 3D-druckbar ist. Petwheels entstand aus dem Abschlussprojekt von Artur Balthazar, Produktdesigner und Kreativdirektor bei Baltha Studio.",
-            text2: "Das Produkt unterscheidet sich von allen anderen auf dem Markt durch seine flexiblen Seitenstangen und wurde als solches patentiert. Es erlangte schnell Aufmerksamkeit in den brasilianischen Medien und einige Einheiten wurden verkauft."
+        workplaces: {
+            musecraft: { companyName: "Musecraft Editor", role: "Schöpfer und Hauptentwickler", projects: {} },
+            meetkai: { companyName: "Meetkai Inc.", role: "3D-Designer und Tools-Entwickler", projects: {} },
+            morethanreal: { companyName: "More Than Real", role: "3D-Designer für AR", projects: {} },
+            balthamaker: { companyName: "Baltha Maker", role: "3D-Druck-Designer und Gründer", projects: {} },
+            ufsc: { companyName: "UFSC", role: "Produktdesign-Student", projects: {} }
         },
         connect: {
-            title: "Kontakt aufnehmen!",
+            title: "Lass uns vernetzen!",
             email: "E-Mail",
             copy: "Kopieren",
             copied: "Kopiert!",
@@ -512,21 +564,23 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "Weiter",
             close: "Schließen",
             open: "Öffnen",
-            goToModel: "Zum Modell"
+            goToModel: "Zum Modell",
+            skillsWith: "Kenntnisse mit:"
         }
     },
 
     FR: {
         header: {
-            welcomeText: "Nous concevons des expériences web interactives adaptées à l'essence de votre marque et accessibles à tous."
+            welcomeText: "Bienvenue chez Baltha Studio! Je suis Artur Balthazar, votre développeur et designer 3D professionnel 🚀"
         },
         menu: {
             welcome: "Accueil",
-            carCustomizer: "Configurateur\nAuto",
-            musecraftEditor: "Éditeur\nMusecraft",
-            digitalDioramas: "Dioramas\nNumériques",
-            petwheels: "Petwheels",
-            letsConnect: "Contactez-\nnous!"
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
+            letsConnect: "Connectons-\nnous!"
         },
         state3: {
             navigationTitle: "Navigation",
@@ -535,56 +589,22 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Audio",
             on: "-",
             off: "-",
-            typingText: "Bienvenue chez Baltha Studio! Choisissez un mode de navigation pour continuer..."
+            typingText: "Choisissez un mode de navigation pour continuer..."
         },
         controls: {
             turnAudioOff: "Désactiver l'audio",
             turnAudioOn: "Activer l'audio",
             information: "Informations"
         },
-        geely: {
-            title: "Configurateur GEELY",
-            subtitle: "Nous créons tout, des configurateurs 3D de voitures aux pistes d'essai, salles d'exposition virtuelles et bien plus encore.",
-            bodyColor: "Couleur de Carrosserie",
-            version: "Version",
-            interiorView: "Vue intérieure",
-            exteriorView: "Vue extérieure",
-            tapToSeeMore: "Appuyez pour en voir plus"
-        },
-        musecraft: {
-            title: "Éditeur Musecraft",
-            subtitle: "Créez des scènes 3D interactives pour le web dans notre éditeur collaboratif.",
-            text1: "Un puissant éditeur de scènes 3D basé sur le web conçu pour créer des expériences interactives en temps réel directement pour le navigateur.",
-            text2: "Musecraft permet aux designers, développeurs et studios d'assembler entièrement des scènes 3D, de définir des interactions, de gérer des assets et de déployer des expériences sans la friction des moteurs de jeu traditionnels ou des pipelines lourds.",
-            text3: "Construit sur des technologies web modernes et alimenté par des outils d'IA, il relie design, développement et art 3D dans un workflow low-code unique."
-        },
-        dioramas: {
-            subtitle: "En 2018, Baltha Studio a débuté comme entreprise d'impression 3D, puis s'est tourné vers l'espace numérique.",
-            subtitleMobile: "En 2018, Baltha Studio a débuté comme entreprise d'impression 3D avant de se tourner vers l'espace numérique.",
-            florianopolisMuseum: {
-                title: "Musée de Florianópolis",
-                text1: "Nous nous sommes associés à SESC pour construire une maquette imprimable en 3D du Musée de Florianópolis qui allait ouvrir dans le centre historique de la ville.",
-                text2: "C'est une maquette de 100cm x 85cm x 60cm placée dans la salle d'entrée du musée. Entièrement recouverte de résine époxy, elle est conçue pour durer plusieurs années comme modèle tactile."
-            },
-            santaCatarinaIsland: {
-                title: "Île de Santa Catarina",
-                text1: "Également dans le cadre du projet du Musée de Florianópolis avec SESC, nous avons créé cette maquette de 3m x 1m de l'île de Santa Catarina où se trouve le musée.",
-                text2: "C'est aussi un modèle tactile du relief réel de l'île, avec un facteur d'échelle vertical de 2,5x, et une salle entière qui lui est dédiée."
-            },
-            catarinenseMuseum: {
-                title: "Musée de l'École Catarinense",
-                text1: "Un autre bâtiment important du centre historique de Florianópolis est l'École Catarinense, qui est ensuite devenue non seulement un musée, mais aussi un centre de créativité et d'innovation avec le CoCreation Lab, un espace de coworking incubateur de startups.",
-                text2: "Suivant la tendance précédente, nous avons également été contactés pour réaliser une maquette imprimable en 3D du bâtiment."
-            }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "Un fauteuil roulant paramétrique breveté et entièrement imprimable en 3D pour chiens.",
-            text1: "Un fauteuil roulant paramétrique personnalisable pour chiens entièrement imprimable en 3D, Petwheels est né du projet de fin d'études d'Artur Balthazar, designer produit et directeur créatif chez Baltha Studio.",
-            text2: "Le produit se distingue de tous les autres sur le marché grâce à ses barres latérales flexibles et a été breveté comme tel. Il a rapidement attiré l'attention des médias brésiliens et quelques unités ont été vendues."
+        workplaces: {
+            musecraft: { companyName: "Musecraft Editor", role: "Créateur et Développeur Principal", projects: {} },
+            meetkai: { companyName: "Meetkai Inc.", role: "Designer 3D et Développeur d'Outils", projects: {} },
+            morethanreal: { companyName: "More Than Real", role: "Designer 3D pour AR", projects: {} },
+            balthamaker: { companyName: "Baltha Maker", role: "Designer Impression 3D et Fondateur", projects: {} },
+            ufsc: { companyName: "UFSC", role: "Étudiant en Design de Produit", projects: {} }
         },
         connect: {
-            title: "Contactez-nous!",
+            title: "Connectons-nous!",
             email: "E-mail",
             copy: "Copier",
             copied: "Copié!",
@@ -607,21 +627,23 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "Suivant",
             close: "Fermer",
             open: "Ouvrir",
-            goToModel: "Aller au modèle"
+            goToModel: "Aller au modèle",
+            skillsWith: "Compétences avec:"
         }
     },
 
     ZH: {
         header: {
-            welcomeText: "我们设计符合您品牌精髓且人人可用的互动网页体验。"
+            welcomeText: "欢迎来到Baltha Studio！我是Artur Balthazar，您的专业3D开发者和设计师 🚀"
         },
         menu: {
             welcome: "欢迎",
-            carCustomizer: "汽车\n配置器",
-            musecraftEditor: "Musecraft\n编辑器",
-            digitalDioramas: "数字\n透视模型",
-            petwheels: "Petwheels",
-            letsConnect: "联系\n我们!"
+            musecraft: "Musecraft",
+            meetkai: "MeetKai",
+            morethanreal: "More Than\nReal",
+            balthamaker: "Baltha\nMaker",
+            ufsc: "UFSC",
+            letsConnect: "联系\n我!"
         },
         state3: {
             navigationTitle: "导航",
@@ -630,56 +652,22 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "音频",
             on: "-",
             off: "-",
-            typingText: "欢迎来到Baltha Studio！选择导航模式以继续..."
+            typingText: "选择导航模式以继续..."
         },
         controls: {
             turnAudioOff: "关闭音频",
             turnAudioOn: "开启音频",
             information: "信息"
         },
-        geely: {
-            title: "吉利配置器",
-            subtitle: "我们创建从3D汽车配置器到试驾赛道、虚拟展厅等一切内容。",
-            bodyColor: "车身颜色",
-            version: "版本",
-            interiorView: "内饰视图",
-            exteriorView: "外观视图",
-            tapToSeeMore: "点击查看更多"
-        },
-        musecraft: {
-            title: "Musecraft 编辑器",
-            subtitle: "在我们的协作网页编辑器中为网页创建交互式3D场景。",
-            text1: "一款功能强大的基于网页的3D场景编辑器，专为直接在浏览器中创建交互式实时体验而设计。",
-            text2: "Musecraft允许设计师、开发者和工作室完整组装3D场景、定义交互、管理资产并部署体验──无需传统游戏引擎或繁重管道的摩擦。",
-            text3: "基于现代网页技术并由AI工具驱动，它将设计、开发和3D艺术融合到单一的低代码工作流程中。"
-        },
-        dioramas: {
-            subtitle: "2018年，Baltha Studio从3D打印业务起步，随后转向数字领域。",
-            subtitleMobile: "2018年，Baltha Studio从3D打印业务起步，之后转向数字领域。",
-            florianopolisMuseum: {
-                title: "弗洛里亚诺波利斯博物馆",
-                text1: "我们与SESC合作，为即将在城市历史中心开放的弗洛里亚诺波利斯博物馆制作了3D可打印比例模型。",
-                text2: "这是一个100cm x 85cm x 60cm的模型，放置在博物馆入口大厅。完全覆盖环氧树脂，作为触觉模型可使用数年。"
-            },
-            santaCatarinaIsland: {
-                title: "圣卡塔琳娜岛",
-                text1: "同样作为与SESC合作的弗洛里亚诺波利斯博物馆项目的一部分，我们创建了博物馆所在的圣卡塔琳娜岛3m x 1m比例模型。",
-                text2: "这也是真实岛屿地形的触觉模型，垂直比例因子为2.5倍，并有一个专门的房间展示。"
-            },
-            catarinenseMuseum: {
-                title: "圣卡塔琳娜学校博物馆",
-                text1: "弗洛里亚诺波利斯历史中心另一座重要建筑是圣卡塔琳娜学校，后来它不仅成为博物馆，还成为创意创新中心──CoCreation Lab，一个创业孵化器共享办公空间。",
-                text2: "延续之前的趋势，我们也被联系制作该建筑的3D可打印比例模型。"
-            }
-        },
-        petwheels: {
-            title: "Petwheels",
-            subtitle: "一款获得专利的全3D可打印参数化狗轮椅。",
-            text1: "一款可定制的参数化狗轮椅，完全3D可打印，Petwheels诞生于Artur Balthazar的毕业设计项目，他是Baltha Studio的产品设计师和创意总监。",
-            text2: "该产品因其灵活的侧杆而与市场上所有其他产品不同，并因此获得专利。它迅速引起巴西媒体的关注，并售出了一些单位。"
+        workplaces: {
+            musecraft: { companyName: "Musecraft Editor", role: "创作者和主要开发者", projects: {} },
+            meetkai: { companyName: "Meetkai Inc.", role: "3D设计师和工具开发者", projects: {} },
+            morethanreal: { companyName: "More Than Real", role: "AR 3D设计师", projects: {} },
+            balthamaker: { companyName: "Baltha Maker", role: "3D打印设计师和创始人", projects: {} },
+            ufsc: { companyName: "UFSC", role: "产品设计学生", projects: {} }
         },
         connect: {
-            title: "联系我们！",
+            title: "联系我！",
             email: "邮箱",
             copy: "复制",
             copied: "已复制！",
@@ -702,7 +690,8 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             next: "下一个",
             close: "关闭",
             open: "打开",
-            goToModel: "前往模型"
+            goToModel: "前往模型",
+            skillsWith: "技能:"
         }
     }
 };

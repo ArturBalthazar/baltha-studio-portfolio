@@ -26,15 +26,16 @@ const ANCHOR_CONFIG: { state: S; anchorName: string }[] = [
 ];
 
 // Distance thresholds for label visibility (tweakable)
-const INNER_RADIUS = 25;   // Hide when closer than this (slightly before WORKPLACE_VISIBILITY_DISTANCE of 20)
-const OUTER_RADIUS = 100;  // Hide when farther than this
+const INNER_RADIUS = 30;   // Hide when closer than this (slightly before WORKPLACE_VISIBILITY_DISTANCE of 20)
+const OUTER_RADIUS = 110;  // Hide when farther than this
 
-// Label positioning offset (world units above anchor)
-const LABEL_Y_OFFSET = 5;
+// Label positioning offset (world units above anchor) - scales with distance
+const LABEL_Y_OFFSET_MIN = 3.4;   // Y offset when at inner radius (close)
+const LABEL_Y_OFFSET_MAX = 6;   // Y offset when at outer radius (far)
 
 // Scale range for distance-based sizing
-const MIN_SCALE = 0.6;   // Scale when at outer radius
-const MAX_SCALE = 1.2;   // Scale when at inner radius
+const MIN_SCALE = .4;   // Scale when at outer radius
+const MAX_SCALE = 1.3;   // Scale when at inner radius
 
 interface LabelData {
     state: S;
@@ -47,7 +48,6 @@ interface LabelData {
 }
 
 export const WorldLabels: React.FC = () => {
-    const navigationMode = useUI((st) => st.navigationMode);
     const currentState = useUI((st) => st.state);
 
     const [labels, setLabels] = useState<LabelData[]>([]);
@@ -56,8 +56,8 @@ export const WorldLabels: React.FC = () => {
     const cameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
     const observerRef = useRef<BABYLON.Observer<BABYLON.Scene> | null>(null);
 
-    // Only show in free mode and during portfolio states (4-8 only, NOT in state 0, 3, or final)
-    const shouldRender = navigationMode === 'free' && currentState >= S.state_4 && currentState <= S.state_8;
+    // Show in both guided and free modes during portfolio states (4-8 only, NOT in state 0, 3, or final)
+    const shouldRender = currentState >= S.state_4 && currentState <= S.state_8;
 
     // Handle fade-in/out animation when shouldRender changes
     useEffect(() => {
@@ -77,6 +77,7 @@ export const WorldLabels: React.FC = () => {
     }, []);
 
     // Calculate screen position from world position
+    // Uses visualViewport API for robust mobile support
     const worldToScreen = useCallback((
         worldPos: BABYLON.Vector3,
         scene: BABYLON.Scene,
@@ -86,16 +87,23 @@ export const WorldLabels: React.FC = () => {
         const canvas = engine.getRenderingCanvas();
         if (!canvas) return null;
 
-        // Get viewport dimensions
-        const width = engine.getRenderWidth();
-        const height = engine.getRenderHeight();
+        // Get the actual CSS viewport dimensions
+        // Use visualViewport API when available (more accurate on mobile)
+        // Falls back to window.innerWidth/Height
+        const viewport = window.visualViewport;
+        const cssWidth = viewport ? viewport.width : window.innerWidth;
+        const cssHeight = viewport ? viewport.height : window.innerHeight;
 
-        // Project world position to screen
+        // Get engine render dimensions (canvas buffer size)
+        const renderWidth = engine.getRenderWidth();
+        const renderHeight = engine.getRenderHeight();
+
+        // Project world position to screen using engine dimensions
         const screenPos = BABYLON.Vector3.Project(
             worldPos,
             BABYLON.Matrix.Identity(),
             scene.getTransformMatrix(),
-            new BABYLON.Viewport(0, 0, width, height)
+            new BABYLON.Viewport(0, 0, renderWidth, renderHeight)
         );
 
         // Check if behind camera (rough check using dot product)
@@ -103,12 +111,15 @@ export const WorldLabels: React.FC = () => {
         const toPoint = worldPos.subtract(camera.position).normalize();
         const behindCamera = BABYLON.Vector3.Dot(cameraForward, toPoint) < 0;
 
-        // Convert to CSS pixels (account for device pixel ratio)
-        const dpr = window.devicePixelRatio || 1;
+        // Convert from render coordinates to CSS pixels
+        // This properly handles the difference between canvas buffer size
+        // and the actual CSS viewport on real mobile devices
+        const scaleX = cssWidth / renderWidth;
+        const scaleY = cssHeight / renderHeight;
 
         return {
-            x: screenPos.x / dpr,
-            y: screenPos.y / dpr,
+            x: screenPos.x * scaleX,
+            y: screenPos.y * scaleY,
             behindCamera
         };
     }, []);
@@ -133,16 +144,23 @@ export const WorldLabels: React.FC = () => {
             const anchor = scene.getMeshByName(anchorName);
             if (!anchor) continue;
 
-            // Get world position with Y offset
+            // Get anchor world position
             const anchorWorldPos = anchor.getAbsolutePosition();
-            const labelWorldPos = anchorWorldPos.add(new BABYLON.Vector3(0, LABEL_Y_OFFSET, 0));
+
+            // Calculate distance from camera first (needed for dynamic Y offset)
+            const distance = getDistanceToAnchor(anchorWorldPos, camera);
+
+            // Calculate dynamic Y offset based on distance (closer = smaller offset, farther = larger offset)
+            // This prevents the button from appearing too high above the atom when close
+            const distanceRatio = Math.max(0, Math.min(1, (distance - INNER_RADIUS) / (OUTER_RADIUS - INNER_RADIUS)));
+            const dynamicYOffset = LABEL_Y_OFFSET_MIN + (distanceRatio * (LABEL_Y_OFFSET_MAX - LABEL_Y_OFFSET_MIN));
+            const labelWorldPos = anchorWorldPos.add(new BABYLON.Vector3(0, dynamicYOffset, 0));
 
             // Calculate screen position
             const screenPos = worldToScreen(labelWorldPos, scene, camera);
             if (!screenPos) continue;
 
-            // Calculate distance from camera
-            const distance = getDistanceToAnchor(anchorWorldPos, camera);
+            // Distance already calculated above for dynamic Y offset
 
             // Determine visibility based on distance thresholds
             let visible = false;
@@ -291,5 +309,6 @@ export const WorldLabels: React.FC = () => {
 export const WORLD_LABELS_CONFIG = {
     INNER_RADIUS,
     OUTER_RADIUS,
-    LABEL_Y_OFFSET
+    LABEL_Y_OFFSET_MIN,
+    LABEL_Y_OFFSET_MAX
 };

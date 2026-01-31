@@ -720,6 +720,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
+                            { id: 'spark', label: 'Spark AR' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
                         ]
@@ -775,6 +776,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
+                            { id: 'spark', label: 'Spark AR' },
                             { id: 'fusion360', label: 'Fusion 360' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
@@ -829,6 +831,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
+                            { id: 'spark', label: 'Spark AR' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' }
                         ]
@@ -898,6 +901,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         showSeparator: true,
                         items: [
                             { id: 'babylonjs', label: 'Babylon.js' },
+                            { id: 'spark', label: 'Spark AR' },
                             { id: 'blender', label: 'Blender' },
                             { id: 'photoshop', label: 'Photoshop' },
                             { id: '3dscanning', label: '3D Scanning' }
