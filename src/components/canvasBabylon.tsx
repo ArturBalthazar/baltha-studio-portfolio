@@ -2114,8 +2114,8 @@ export function BabylonCanvas() {
     }
     camera.fov = camFov;
 
-    camera.minZ = 0.1;    // how close things can be before clipping
-    camera.maxZ = 15000;   // how far things can be seen
+    camera.minZ = .7;    // how close things can be before clipping
+    camera.maxZ = 7500;   // how far things can be seen
 
     // Set initial camera limits
     const isMobile = window.innerWidth < 768;

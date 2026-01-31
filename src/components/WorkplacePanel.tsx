@@ -507,108 +507,123 @@ function MobileWorkplacePanel({
                 )}
                 style={{ maxHeight: "100%" }}
             >
-                {/* Header - clickable to toggle collapse */}
+                {/* Scrollable container - wraps header and content */}
                 <div
-                    className="px-4 py-3 cursor-pointer"
-                    onClick={onToggleCollapse}
+                    ref={mobileScrollRef}
+                    className={cx(
+                        "flex-1 overflow-y-auto min-h-0",
+                        isCollapsed ? "overflow-hidden" : ""
+                    )}
+                    style={scrollbarStyles}
                 >
-                    {/* Two-column layout: Logo | Text Info */}
-                    <div className="flex items-start gap-3">
-                        {/* Left column: Logo */}
-                        {workplaceConfig.showCompanyLogo && workplaceConfig.companyLogoPath && (
-                            <img
-                                src={workplaceConfig.companyLogoPath}
-                                alt={workplaceConfig.companyName}
-                                className="h-12 w-auto object-contain rounded-md border border-white/80 flex-shrink-0"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                        )}
-
-                        {/* Right column: Text info + arrow */}
-                        <div className="flex flex-col justify-center min-w-0 flex-1">
-                            {/* Row 1: Company Name + Arrow */}
-                            <div className="flex items-center justify-between">
-                                <h2 className="font-sans text-xl font-semibold text-white">
-                                    {workplaceConfig.companyName}
-                                </h2>
-                                {/* Collapse arrow indicator */}
-                                <div className="flex-shrink-0 ml-2">
-                                    <CollapseArrow isCollapsed={isCollapsed} />
-                                </div>
-                            </div>
-
-                            {/* Row 2: Period • Location */}
-                            {(workplaceConfig.period || workplaceConfig.location) && (
-                                <div className="flex items-center gap-x-1.5 mt-0.5 flex-wrap">
-                                    {workplaceConfig.period && (
-                                        <span className="text-white/60 text-xs font-mono whitespace-nowrap">{workplaceConfig.period}</span>
-                                    )}
-                                    {workplaceConfig.period && workplaceConfig.location && (
-                                        <span className="text-white/60 text-xs">•</span>
-                                    )}
-                                    {workplaceConfig.location && (
-                                        <span className="text-white/60 text-xs font-mono whitespace-nowrap">{workplaceConfig.location}</span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Role - Full width below the two columns */}
-                    <p className="text-white/90 text-sm font-mono mt-1">
-                        {workplaceConfig.role}
-                    </p>
-
-                    {/* Separator - only when expanded */}
-                    {!isCollapsed && <div className="h-px bg-white/30 w-full mt-3" />}
-                </div>
-
-                {/* Scrollable content - hidden when collapsed */}
-                {!isCollapsed && (
+                    {/* Header - scrolls with content, still clickable to toggle collapse */}
                     <div
-                        ref={mobileScrollRef}
-                        className="flex-1 overflow-y-auto px-4 pb-3 min-h-0"
-                        style={scrollbarStyles}
+                        className="px-4 py-3 cursor-pointer"
+                        onClick={onToggleCollapse}
                     >
-                        {/* Separator and Project Header - Only show if multiple projects */}
-                        {!isSingleProjectSection(workplaceConfig) && (
-                            <>
-                                {/* Project Info - Two column layout (same as desktop) */}
-                                <div className="flex items-start gap-3 mb-3">
-                                    {/* Left column: Logo */}
-                                    {currentProject?.showLogo && currentProject?.logoPath && (
-                                        <img
-                                            src={currentProject.logoPath}
-                                            alt={currentProject.title}
-                                            className="h-10 w-auto object-contain rounded-3xl border border-white flex-shrink-0"
-                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                        />
-                                    )}
-                                    {/* Right column: Title + Description */}
-                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                                        <h3 className="font-sans text-base font-medium text-white leading-tight">
-                                            {currentProject?.title}
-                                        </h3>
-                                        <p className="font-mono text-xs font-light text-white/70 leading-snug">
-                                            {currentProject?.description}
-                                        </p>
+                        {/* Two-column layout: Logo | Text Info */}
+                        <div className="flex items-start gap-3">
+                            {/* Left column: Logo */}
+                            {workplaceConfig.showCompanyLogo && workplaceConfig.companyLogoPath && (
+                                <img
+                                    src={workplaceConfig.companyLogoPath}
+                                    alt={workplaceConfig.companyName}
+                                    className="h-12 w-auto object-contain rounded-md border border-white/80 flex-shrink-0"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                            )}
+
+                            {/* Right column: Text info + arrow */}
+                            <div className="flex flex-col justify-center min-w-0 flex-1">
+                                {/* Row 1: Company Name + Arrow */}
+                                <div className="flex items-center justify-between">
+                                    <h2 className="font-sans text-xl font-semibold text-white">
+                                        {workplaceConfig.companyName}
+                                    </h2>
+                                    {/* Collapse arrow indicator */}
+                                    <div className="flex-shrink-0 ml-2">
+                                        <CollapseArrow isCollapsed={isCollapsed} />
                                     </div>
                                 </div>
-                            </>
-                        )}
 
+                                {/* Row 2: Period • Location */}
+                                {(workplaceConfig.period || workplaceConfig.location) && (
+                                    <div className="flex items-center gap-x-1.5 mt-0.5 flex-wrap">
+                                        {workplaceConfig.period && (
+                                            <span className="text-white/60 text-xs font-mono whitespace-nowrap">{workplaceConfig.period}</span>
+                                        )}
+                                        {workplaceConfig.period && workplaceConfig.location && (
+                                            <span className="text-white/60 text-xs">•</span>
+                                        )}
+                                        {workplaceConfig.location && (
+                                            <span className="text-white/60 text-xs font-mono whitespace-nowrap">{workplaceConfig.location}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                        {/* Project Content */}
-                        <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                        {/* Role - Full width below the two columns */}
+                        <p className="text-white/90 text-sm font-mono mt-1">
+                            {workplaceConfig.role}
+                        </p>
+
+                        {/* Separator - only when expanded */}
+                        {!isCollapsed && <div className="h-px bg-white/30 w-full mt-3" />}
                     </div>
-                )}
 
-                {/* Fixed Footer - Arrows and dots (visible even when collapsed for project switching) */}
+                    {/* Content - hidden when collapsed */}
+                    {!isCollapsed && (
+                        <div className="px-4 pb-3">
+                            {/* Separator and Project Header - Only show if multiple projects */}
+                            {!isSingleProjectSection(workplaceConfig) && (
+                                <>
+                                    {/* Project Info - Two column layout (same as desktop) */}
+                                    <div className="flex items-start gap-3 mb-3">
+                                        {/* Left column: Logo */}
+                                        {currentProject?.showLogo && currentProject?.logoPath && (
+                                            <img
+                                                src={currentProject.logoPath}
+                                                alt={currentProject.title}
+                                                className="h-10 w-auto object-contain rounded-3xl border border-white flex-shrink-0"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
+                                        )}
+                                        {/* Right column: Title + Description */}
+                                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                            <h3 className="font-sans text-base font-medium text-white leading-tight">
+                                                {currentProject?.title}
+                                            </h3>
+                                            <p className="font-mono text-xs font-light text-white/70 leading-snug">
+                                                {currentProject?.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Project Content */}
+                            <ProjectContent contentBlocks={currentProject?.contentBlocks} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Fixed Footer - entire area is draggable, nav buttons sit on top */}
                 {projectCount > 1 && (
-                    <div className="flex-shrink-0 px-3 pb-1 border-t border-white/20">
-                        <div className="flex items-center justify-center gap-3">
+                    <div
+                        className={cx(
+                            "flex-shrink-0 px-3 border-t border-white/20 cursor-ns-resize select-none touch-none",
+                            !isCollapsed ? "py-1" : "pb-1"
+                        )}
+                        onMouseDown={!isCollapsed ? handleMouseDown : undefined}
+                        onTouchStart={!isCollapsed ? handleTouchStart : undefined}
+                    >
+                        {/* Navigation controls - higher z-index to capture clicks */}
+                        <div className="flex items-center justify-center gap-3 relative z-10">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onPrevious(); }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Previous project"
                             >
@@ -619,25 +634,25 @@ function MobileWorkplacePanel({
                                 />
                             </button>
 
-                            {/* Navigation dots */}
+                            {/* Navigation dots - non-interactive, allows drag through */}
                             <div className="flex items-center gap-2">
                                 {workplaceConfig.projects.map((_, index) => (
-                                    <button
+                                    <div
                                         key={index}
-                                        onClick={(e) => { e.stopPropagation(); onDotClick(index); }}
                                         className={cx(
-                                            "h-2 rounded-full transition-all duration-300 cursor-pointer",
+                                            "h-2 rounded-full transition-all duration-300",
                                             index === selectedIndex
                                                 ? "bg-white w-4"
-                                                : "bg-white/40 hover:bg-white/60 w-2"
+                                                : "bg-white/40 w-2"
                                         )}
-                                        aria-label={`Go to project ${index + 1}`}
                                     />
                                 ))}
                             </div>
 
                             <button
                                 onClick={(e) => { e.stopPropagation(); onNext(); }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
                                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200 cursor-pointer"
                                 aria-label="Next project"
                             >
@@ -648,29 +663,48 @@ function MobileWorkplacePanel({
                                 />
                             </button>
                         </div>
+
+                        {/* Drag indicator pill with shadow - only show when expanded */}
+                        {!isCollapsed && (
+                            <div className="flex items-center justify-center pt-1 pb-0.5">
+                                <div
+                                    className={cx(
+                                        "w-20 h-[5px] rounded-full transition-colors duration-200",
+                                        isDragging ? "bg-white/70" : "bg-white/40"
+                                    )}
+                                    style={{
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3)'
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
+                {/* Fallback drag handle when there's only 1 project */}
+                {projectCount <= 1 && !isCollapsed && (
+                    <div
+                        className={cx(
+                            "flex items-center justify-center py-1 cursor-ns-resize",
+                            "select-none touch-none border-t border-white/20"
+                        )}
+                        onMouseDown={handleMouseDown}
+                        onTouchStart={handleTouchStart}
+                        aria-label="Drag to resize panel"
+                    >
+                        {/* Pill indicator with shadow */}
+                        <div
+                            className={cx(
+                                "w-20 h-[5px] rounded-full transition-colors duration-200",
+                                isDragging ? "bg-white/70" : "bg-white/40"
+                            )}
+                            style={{
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3)'
+                            }}
+                        />
+                    </div>
+                )}
             </div>
-
-            {/* Drag Handle for resizing - outside the panel, hidden when collapsed */}
-            {!isCollapsed && (
-                <div
-                    className={cx(
-                        "flex items-center justify-center py-1 cursor-ns-resize",
-                        "select-none touch-none"
-                    )}
-                    onMouseDown={handleMouseDown}
-                    onTouchStart={handleTouchStart}
-                    aria-label="Drag to resize panel"
-                >
-                    {/* Pill indicator */}
-                    <div className={cx(
-                        "w-20 h-[5px] rounded-full transition-colors duration-200",
-                        isDragging ? "bg-white/70" : "bg-white/40"
-                    )} />
-                </div>
-            )}
         </div>
     );
 }

@@ -233,7 +233,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
 
     PT: {
         header: {
-            welcomeText: "Criamos experiências web interativas com a essência da sua marca e acessíveis a todos."
+            welcomeText: "Bem-vindo ao Baltha Studio! Sou Artur Balthazar, seu desenvolvedor e designer 3D profissional 🚀"
         },
         menu: {
             welcome: "Início",
@@ -250,7 +250,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             audioTitle: "Áudio",
             on: "-",
             off: "-",
-            typingText: "Bem-vindo a Baltha Studio! Escolha um modo de navegação para continuar..."
+            typingText: "Escolha um modo de navegação para continuar..."
         },
         controls: {
             turnAudioOff: "Desligar áudio",
@@ -278,24 +278,24 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             subtitleMobile: "Em 2018, Baltha Studio começou como um negócio de impressão 3D antes de migrar para o espaço digital.",
             florianopolisMuseum: {
                 title: "Museu de Florianópolis",
-                text1: "Fizemos parceria com o SESC para construir uma maquete imprimível em 3D do Museu de Florianópolis que estava prestes a abrir no centro histórico da cidade.",
+                text1: "Fiz parceria com o SESC para construir uma maquete imprimível em 3D do Museu de Florianópolis que estava prestes a abrir no centro histórico da cidade.",
                 text2: "Esta é uma maquete de 100cm x 85cm x 60cm colocada na sala de entrada do museu. Totalmente coberta com resina epóxi, foi projetada para durar vários anos como modelo tátil."
             },
             santaCatarinaIsland: {
                 title: "Ilha de Santa Catarina",
-                text1: "Também como parte do projeto do Museu de Florianópolis com o SESC, criamos esta maquete de 3m x 1m da Ilha de Santa Catarina onde o museu está localizado.",
+                text1: "Também como parte do projeto do Museu de Florianópolis com o SESC, criei esta maquete de 3m x 1m da Ilha de Santa Catarina onde o museu está localizado.",
                 text2: "Este também é um modelo tátil do relevo real da ilha, com um fator de escala vertical de 2,5x e uma sala inteira dedicada a ele."
             },
             catarinenseMuseum: {
                 title: "Museu da Escola Catarinense",
                 text1: "Também um edifício importante do centro histórico de Florianópolis é a Escola Catarinense, que mais tarde se tornou não apenas um museu, mas um centro de criatividade e inovação com o CoCreation Lab, um espaço de coworking incubador de startups.",
-                text2: "Seguindo a tendência anterior, também fomos contatados para fazer uma maquete imprimível em 3D do edifício."
+                text2: "Seguindo a tendência anterior, também fui contatado para fazer uma maquete imprimível em 3D do edifício."
             }
         },
         petwheels: {
             title: "Petwheels",
             subtitle: "Uma cadeira de rodas paramétrica patenteada e totalmente imprimível em 3D para cães.",
-            text1: "Uma cadeira de rodas paramétrica personalizável para cães que é totalmente imprimível em 3D, Petwheels nasceu do projeto de conclusão de curso de Artur Balthazar, designer de produto e diretor criativo do Baltha Studio.",
+            text1: "Uma cadeira de rodas paramétrica personalizável para cães que é totalmente imprimível em 3D, Petwheels nasceu do meu projeto de conclusão de curso em Design de Produto na UFSC.",
             text2: "O produto se diferencia de todos os outros no mercado devido às suas barras laterais flexíveis e foi patenteado como tal. Rapidamente ganhou atenção da mídia brasileira e algumas unidades foram vendidas."
         },
         connect: {
