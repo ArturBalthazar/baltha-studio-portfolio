@@ -532,7 +532,7 @@ function MobileWorkplacePanel({
 
                 {/* Fixed Footer - Arrows and dots (only if multiple projects) */}
                 {projectCount > 1 && (
-                    <div className="flex-shrink-0 px-3 py-1 border-t border-white/20">
+                    <div className="flex-shrink-0 px-3 pb-1 border-t border-white/20">
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={onPrevious}
