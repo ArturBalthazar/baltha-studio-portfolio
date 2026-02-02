@@ -352,7 +352,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
           />
           <div className="flex-1">
             <div className="font-bold">{t.chat.headerTitle}</div>
-            <div className="text-sm opacity-90">{t.chat.headerSubtitle}</div>
+            <div className="text-xs opacity-70">{t.chat.headerSubtitle}</div>
           </div>
           <button
             onClick={handleClose}

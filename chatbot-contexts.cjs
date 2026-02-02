@@ -16,8 +16,9 @@ STYLE:
 - Conversational, 1-3 sentences.
 - Use "I" for Artur.
 - Don't make up info - use context or pull cards.
+- For readability: use line breaks between topics, **bold** only for key names, use • for topics.
 
-PORTFOLIO STRUCTURE (IMPORTANT!):
+PORTFOLIO STRUCTURE (don't mention this directly, just use it to understand the structure):
 The portfolio has SECTIONS (companies/workplaces) containing PROJECTS:
 - musecraft: Personal project section (Musecraft Editor)
 - meetkai: MeetKai Inc. - contains: thanksgiving, byd, pistons, meetkaisuite
@@ -25,6 +26,7 @@ The portfolio has SECTIONS (companies/workplaces) containing PROJECTS:
 - balthamaker: Baltha Maker - Artur's own 3D printing business - contains: sesc, starwars, mesc
 - ufsc: UFSC Product Design - contains: petwheels, durare, zenic
 
+The portfolio has SECTIONS (companies/workplaces) containing PROJECTS:
 SECTIONS are companies, PROJECTS are individual portfolio items within them!
 
 CONTEXT [ctx: state=X project=Y]:
@@ -35,26 +37,21 @@ The context tells you EXACTLY where the user is!
 
 BEFORE NAVIGATING: CHECK THE CONTEXT! If project=chevrolet, they're ALREADY at Chevrolet - don't navigate there again!
 
-NAVIGATION ACTIONS (CRITICAL):
+NAVIGATION ACTIONS:
 When navigating, add action tags at the end:
-"Sure, let's check out BYD!" [ACTIONS][{"type":"auto_goto","target":"byd"}][/ACTIONS]
-"Here are options:" [ACTIONS][{"label":"Petwheels","type":"goto","target":"petwheels"},{"label":"BYD","type":"goto","target":"byd"}][/ACTIONS]
-"Contact me:" [ACTIONS][{"label":"WhatsApp","type":"whatsapp"},{"label":"Email","type":"email"}][/ACTIONS]
+- User asks to navigate somewhere (specific or random): "Sure, let's check out [project/section name]!" [ACTIONS][{"type":"auto_goto","target":"[project/section]"}][/ACTIONS]
+- User asks generally about sections/projects: [ACTIONS][{"label":"Petwheels","type":"goto","target":"petwheels"},{"label":"BYD","type":"goto","target":"byd"}][/ACTIONS]
+- User wants to go home: [ACTIONS][{"type":"home"}][/ACTIONS]
+- User asks wants to contact Artur: "Contact via Whatsapp, Linkedin or Email" [ACTIONS][{"type":"auto_goto","target":"contact"}][/ACTIONS]
+- User asks for a specific contact method (e.g. "WhatsApp"): [ACTIONS][{"label":"WhatsApp","type":"whatsapp"}][/ACTIONS]
 
-Valid targets: musecraft, meetkai, morethanreal, balthamaker, ufsc, contact, thanksgiving, byd, pistons, meetkaisuite, chevrolet, dolcegusto, sika, seara, sesc, starwars, mesc, petwheels, durare, zenic
+Valid targets: home, contact, musecraft, meetkai, morethanreal, balthamaker, ufsc, thanksgiving, byd, pistons, meetkaisuite, chevrolet, dolcegusto, sika, seara, sesc, starwars, mesc, petwheels, durare, zenic
 
 CARDS (PULL BEFORE ANSWERING!):
-When asked about a project, PULL the card first! Don't guess!
-- project_[id]: Pull when asked about a specific project
-- extras: Fun facts about Artur
-- personal, education, experience, skills: Background info
-
-QUICK FACTS:
-- Artur: 3D designer & web/tools developer, Brazil
-- MeetKai Inc: Current job
-- MeetKai Suite: Artur's Blender addon
-- Baltha Maker: Artur's own 3D printing studio (NOT a project he "worked on" - it's HIS business!)
-- Fun highlights: Thanksgiving horror game, BYD virtual dealerships, patented dog wheelchair`;
+When asked, check if it any of the cards is diretly related to the question, if so, pull it.
+- project_[id]: Pull when asked about a projects
+- extras: diverse facts about Artur
+- personal, education, experience, skills: Background info`;
 
 // =============================================================================
 // INFORMATION CARDS
@@ -168,30 +165,30 @@ Not in Portfolio:
 
 // Project card generator - extracts text from workplaceConfig content blocks
 function generateProjectCard(projectId, projectConfig, workplaceConfig) {
-    if (!projectConfig) return null;
+  if (!projectConfig) return null;
 
-    let content = `[CARD: PROJECT - ${projectConfig.title.toUpperCase()}]\n`;
-    content += `Company: ${workplaceConfig.companyName}\n`;
-    content += `Period: ${workplaceConfig.period}\n`;
-    content += `Role: ${workplaceConfig.role}\n\n`;
+  let content = `[CARD: PROJECT - ${projectConfig.title.toUpperCase()}]\n`;
+  content += `Company: ${workplaceConfig.companyName}\n`;
+  content += `Period: ${workplaceConfig.period}\n`;
+  content += `Role: ${workplaceConfig.role}\n\n`;
 
-    // Extract text from content blocks
-    if (projectConfig.contentBlocks) {
-        for (const block of projectConfig.contentBlocks) {
-            if (block.type === 'text') {
-                if (block.title) content += `${block.title}:\n`;
-                if (block.paragraphs) {
-                    content += block.paragraphs.join('\n') + '\n\n';
-                }
-            } else if (block.type === 'feature-card') {
-                content += `${block.title}: ${block.paragraphs.join(' ')}\n\n`;
-            } else if (block.type === 'float-image') {
-                content += block.paragraphs.join('\n') + '\n\n';
-            }
+  // Extract text from content blocks
+  if (projectConfig.contentBlocks) {
+    for (const block of projectConfig.contentBlocks) {
+      if (block.type === 'text') {
+        if (block.title) content += `${block.title}:\n`;
+        if (block.paragraphs) {
+          content += block.paragraphs.join('\n') + '\n\n';
         }
+      } else if (block.type === 'feature-card') {
+        content += `${block.title}: ${block.paragraphs.join(' ')}\n\n`;
+      } else if (block.type === 'float-image') {
+        content += block.paragraphs.join('\n') + '\n\n';
+      }
     }
+  }
 
-    return content.trim();
+  return content.trim();
 }
 
 // =============================================================================
@@ -199,38 +196,38 @@ function generateProjectCard(projectId, projectConfig, workplaceConfig) {
 // =============================================================================
 
 const STATIC_CARDS = {
-    personal: CARD_PERSONAL,
-    education: CARD_EDUCATION,
-    experience: CARD_EXPERIENCE,
-    skills: CARD_SKILLS,
-    extras: CARD_EXTRAS
+  personal: CARD_PERSONAL,
+  education: CARD_EDUCATION,
+  experience: CARD_EXPERIENCE,
+  skills: CARD_SKILLS,
+  extras: CARD_EXTRAS
 };
 
 // Function calling definition for OpenAI
 const FUNCTION_DEFINITION = {
-    name: "get_cards",
-    description: "Request information cards to answer the user's question. Only call when you need specific info you don't have. Max 3 cards.",
-    parameters: {
-        type: "object",
-        properties: {
-            cards: {
-                type: "array",
-                items: {
-                    type: "string",
-                    enum: [
-                        "personal", "education", "experience", "skills", "extras",
-                        "project_musecraft", "project_thanksgiving", "project_byd",
-                        "project_pistons", "project_meetkaisuite", "project_chevrolet",
-                        "project_dolcegusto", "project_sika", "project_seara",
-                        "project_sesc", "project_starwars", "project_mesc",
-                        "project_petwheels", "project_durare", "project_zenic"
-                    ]
-                },
-                description: "Array of card names to retrieve. Usually 1, max 3."
-            }
+  name: "get_cards",
+  description: "Request information cards to answer the user's question. Only call when you need specific info you don't have. Max 3 cards.",
+  parameters: {
+    type: "object",
+    properties: {
+      cards: {
+        type: "array",
+        items: {
+          type: "string",
+          enum: [
+            "personal", "education", "experience", "skills", "extras",
+            "project_musecraft", "project_thanksgiving", "project_byd",
+            "project_pistons", "project_meetkaisuite", "project_chevrolet",
+            "project_dolcegusto", "project_sika", "project_seara",
+            "project_sesc", "project_starwars", "project_mesc",
+            "project_petwheels", "project_durare", "project_zenic"
+          ]
         },
-        required: ["cards"]
-    }
+        description: "Array of card names to retrieve. Usually 1, max 3."
+      }
+    },
+    required: ["cards"]
+  }
 };
 
 // =============================================================================
@@ -238,8 +235,8 @@ const FUNCTION_DEFINITION = {
 // =============================================================================
 
 module.exports = {
-    BASE_PROMPT,
-    STATIC_CARDS,
-    FUNCTION_DEFINITION,
-    generateProjectCard
+  BASE_PROMPT,
+  STATIC_CARDS,
+  FUNCTION_DEFINITION,
+  generateProjectCard
 };
