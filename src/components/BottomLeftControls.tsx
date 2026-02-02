@@ -280,7 +280,7 @@ export function BottomLeftControls({
             "nav-toggle relative w-[90px] h-[50px] rounded-[25px]",
             "flex items-center justify-between px-[14px]",
             "backdrop-blur-[10px]",
-            "transition-all duration-300 hover:scale-[1.02]",
+            "transition-all duration-300",
             "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.45)]",
             "cursor-pointer overflow-hidden",
             navigationMode

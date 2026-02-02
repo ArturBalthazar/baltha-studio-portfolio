@@ -26,15 +26,15 @@ const ANCHOR_CONFIG: { state: S; anchorName: string }[] = [
 ];
 
 // Distance thresholds for label visibility (tweakable)
-const INNER_RADIUS = 30;   // Hide when closer than this (slightly before WORKPLACE_VISIBILITY_DISTANCE of 20)
-const OUTER_RADIUS = 110;  // Hide when farther than this
+const INNER_RADIUS = 26;   // Hide when closer than this (slightly before WORKPLACE_VISIBILITY_DISTANCE of 20)
+const OUTER_RADIUS = 150;  // Hide when farther than this
 
 // Label positioning offset (world units above anchor) - scales with distance
 const LABEL_Y_OFFSET_MIN = 3.4;   // Y offset when at inner radius (close)
 const LABEL_Y_OFFSET_MAX = 6;   // Y offset when at outer radius (far)
 
 // Scale range for distance-based sizing
-const MIN_SCALE = .4;   // Scale when at outer radius
+const MIN_SCALE = .2;   // Scale when at outer radius
 const MAX_SCALE = 1.3;   // Scale when at inner radius
 
 interface LabelData {
