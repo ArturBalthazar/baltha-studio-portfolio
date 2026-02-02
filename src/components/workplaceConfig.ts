@@ -744,7 +744,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         title: '3D Development',
                         showSeparator: true,
                         paragraphs: [
-                            'The model was optimized for real-time rendering: baked lightmaps, texture atlases, and rigged animations for the truck bed mechanisms showcase the versatile tailgate configurations.'
+                            'The model was optimized for real-time rendering: polycount reduction, baked AO maps, texture atlases, and rigged animations for the truck bed mechanisms showcase the versatile tailgate configurations.'
                         ]
                     },
                     // 3D Model in Blender
