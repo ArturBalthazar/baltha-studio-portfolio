@@ -260,12 +260,12 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         chat: {
             headerTitle: "Artur Balthazar",
-            headerSubtitle: "Creative Technologist & 3D Artist",
+            headerSubtitle: "3D Designer & Creative Technologist",
             placeholder: "Type your message here...",
             errorMessage: "Oops! Something went wrong.",
-            suggestion1: "Tell me about yourself and your work",
-            suggestion2: "What projects have you worked on?",
-            suggestion3: "How can I get in touch?"
+            suggestion1: "Show me a random project",
+            suggestion2: "Tell me more about you and your skills",
+            suggestion3: "How can I get in touch with you?"
         },
         common: {
             previous: "Previous",

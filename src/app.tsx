@@ -202,7 +202,7 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-all duration-200 hover:scale-[1.1] opacity-50 hover:opacity-100 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
@@ -217,7 +217,7 @@ export default function App() {
                 <button
                   onClick={handleNext}
                   className={cx(
-                    "absolute top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-[right,transform,opacity] duration-[500ms,200ms,200ms] hover:scale-[1.1] opacity-15 hover:opacity-90 pointer-events-auto select-none",
+                    "absolute top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-[right,transform,opacity] duration-[500ms,200ms,200ms] hover:scale-[1.1] opacity-50 hover:opacity-100 pointer-events-auto select-none",
                     // Move arrow left when chat is open in states 4-7 on desktop
                     // Chat width is calc(25% - 24px) + right-4 (16px) + gap (16px) = calc(25% + 8px)
                     chatOpen && s >= S.state_4 && s <= S.state_7 ? "right-[calc(25%+8px)]" : "right-4"
@@ -236,7 +236,7 @@ export default function App() {
               {s > S.state_0 && (
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute left-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-80 pointer-events-auto select-none"
                   aria-label="Previous state"
                 >
                   <img
@@ -250,7 +250,7 @@ export default function App() {
               {s < S.state_final && config.canvas.nextState !== null && (
                 <button
                   onClick={handleNext}
-                  className="absolute right-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-50 pointer-events-auto select-none"
+                  className="absolute right-3 z-50 top-1/2 -translate-y-1/2 md:hidden flex w-12 h-16 items-center justify-center text-white text-xl transition-all duration-200 opacity-80 pointer-events-auto select-none"
                   aria-label="Next state"
                 >
                   <img

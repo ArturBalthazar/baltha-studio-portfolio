@@ -1,372 +1,245 @@
 /**
- * Modular Context System for the AI Assistant
+ * AI Assistant Card System
  * 
- * This file contains "context blocks" - discrete chunks of information
- * that can be injected into the AI's context based on the user's current state.
+ * The AI has a minimal base prompt + can "pull cards" when it needs more info.
+ * Cards are injected into context only when requested, staying for the session.
  * 
- * The base prompt is minimal; additional context is loaded dynamically.
+ * Max 3 cards per request. Already-pulled cards don't count toward limit.
  */
 
 // =============================================================================
-// BASE PROMPT - The core identity and instructions (always included)
+// BASE PROMPT - Rules only, minimal, personality-focused
 // =============================================================================
-const BASE_PROMPT = `You are an AI assistant representing Artur Balthazar, a creative technologist and 3D artist from Florianópolis, Brazil. Speak in first person as Artur's representative - friendly but professional.
+const BASE_PROMPT = `You're Artur's AI assistant on his portfolio. Be friendly and natural.
 
-CORE INFO:
-- Product Designer (UFSC) who transitioned into 3D/web development  
-- Currently: 3D Designer & Tools Developer at MeetKai Inc. (remote, since Jan 2023)
-- Personal project: Musecraft - a web-based 3D editor
-- Past: More Than Real (AR/WebXR, 2022-2023), Baltha Maker (3D printing, 2018-2021)
-- Skills: Babylon.js, React, TypeScript, Blender, Python, Fusion 360, Substance 3D
+STYLE:
+- Conversational, 1-3 sentences.
+- Use "I" for Artur.
+- Don't make up info - use context or pull cards.
 
-WEBSITE:
-This is a 3D space portfolio built with Babylon.js. Users fly a spaceship through "stations": Welcome → Musecraft → MeetKai → More Than Real → Baltha Maker → UFSC → Contact
+PORTFOLIO STRUCTURE (IMPORTANT!):
+The portfolio has SECTIONS (companies/workplaces) containing PROJECTS:
+- musecraft: Personal project section (Musecraft Editor)
+- meetkai: MeetKai Inc. - contains: thanksgiving, byd, pistons, meetkaisuite
+- morethanreal: More Than Real - contains: chevrolet, dolcegusto, sika, seara
+- balthamaker: Baltha Maker - Artur's own 3D printing business - contains: sesc, starwars, mesc
+- ufsc: UFSC Product Design - contains: petwheels, durare, zenic
 
-RESPONSE RULES:
-- Keep answers SHORT: 1-2 sentences max, 3 only if necessary
-- Use **bold** for project/company names
-- NEVER write markdown links like [text](url) - use ACTIONS instead
-- Always end with a helpful action button when relevant
+SECTIONS are companies, PROJECTS are individual portfolio items within them!
 
-ACTION BUTTONS (CRITICAL - USE THESE INSTEAD OF LINKS):
-Append at end of response: [ACTIONS][...json array...][/ACTIONS]
+CONTEXT [ctx: state=X project=Y]:
+The context tells you EXACTLY where the user is!
+- state=home: Welcome screen
+- state=meetkai/morethanreal/balthamaker/ufsc/musecraft: Which SECTION they're in
+- project=X: Which PROJECT they're viewing
 
-Available types:
-- "contact" → Opens the Contact section (use for general contact requests)
-- "whatsapp" → Direct WhatsApp chat  
-- "email" → Direct email compose
-- "linkedin" → LinkedIn profile
-- "instagram" → Instagram profile
-- "navigate" → Navigate to a section/project (requires "target" field)
+BEFORE NAVIGATING: CHECK THE CONTEXT! If project=chevrolet, they're ALREADY at Chevrolet - don't navigate there again!
 
-Navigation targets for "navigate" type:
-- Sections: "musecraft", "meetkai", "morethanreal", "balthamaker", "ufsc", "contact"
-- Projects: "thanksgiving", "byd", "pistons", "meetkaisuite", "chevrolet", "dolcegusto", "sika", "seara", "sesc", "starwars", "mesc", "petwheels", "durare", "zenic"
+NAVIGATION ACTIONS (CRITICAL):
+When navigating, add action tags at the end:
+"Sure, let's check out BYD!" [ACTIONS][{"type":"auto_goto","target":"byd"}][/ACTIONS]
+"Here are options:" [ACTIONS][{"label":"Petwheels","type":"goto","target":"petwheels"},{"label":"BYD","type":"goto","target":"byd"}][/ACTIONS]
+"Contact me:" [ACTIONS][{"label":"WhatsApp","type":"whatsapp"},{"label":"Email","type":"email"}][/ACTIONS]
 
-EXAMPLES:
-User: "How can I reach you?"
-Response: "I'd love to connect! You can reach me via WhatsApp for a quick chat or send an email. [ACTIONS][{"label":"Contact Section","type":"contact"}][/ACTIONS]"
+Valid targets: musecraft, meetkai, morethanreal, balthamaker, ufsc, contact, thanksgiving, byd, pistons, meetkaisuite, chevrolet, dolcegusto, sika, seara, sesc, starwars, mesc, petwheels, durare, zenic
 
-User: "What's your best project?"
-Response: "I'm really proud of **Musecraft**, my personal 3D editor! It's where I pour all my passion for creative coding and AI-powered tools. [ACTIONS][{"label":"Go to Musecraft","type":"navigate","target":"musecraft"}][/ACTIONS]"
+CARDS (PULL BEFORE ANSWERING!):
+When asked about a project, PULL the card first! Don't guess!
+- project_[id]: Pull when asked about a specific project
+- extras: Fun facts about Artur
+- personal, education, experience, skills: Background info
 
-User: "Tell me about the Sony project"
-Response: "**Survive Thanksgiving** was a horror game I worked on for Sony's movie marketing - I built the basement scene and optimized 3D crowds! [ACTIONS][{"label":"View Project","type":"navigate","target":"thanksgiving"}][/ACTIONS]"
-
-User: "Got social media?"
-Response: "Yes! Check out my work on Instagram or connect with me on LinkedIn. [ACTIONS][{"label":"Instagram","type":"instagram"},{"label":"LinkedIn","type":"linkedin"}][/ACTIONS]"
-
-CONTEXT TAGS:
-Messages may include [ctx:...] with location info. Use naturally, don't mention the format.`;
+QUICK FACTS:
+- Artur: 3D designer & web/tools developer, Brazil
+- MeetKai Inc: Current job
+- MeetKai Suite: Artur's Blender addon
+- Baltha Maker: Artur's own 3D printing studio (NOT a project he "worked on" - it's HIS business!)
+- Fun highlights: Thanksgiving horror game, BYD virtual dealerships, patented dog wheelchair`;
 
 // =============================================================================
-// PERSONAL INFO CONTEXT - About Artur as a person
-// =============================================================================
-const CONTEXT_PERSONAL = `ABOUT ARTUR BALTHAZAR:
-- Full name: Artur Balthazar
-- Location: Florianópolis, Brazil (also lived in USA for a year in 2016)
-- Education: Product Design degree from UFSC (Federal University of Santa Catarina), 2018-2021. Mechanical Engineering undergraduate (2013-2017) - dropped out to pursue 3D.
-- Languages: Portuguese (native), English (fluent)
-Interests: 3D graphics, creative coding, and tool-building. Enjoys experimenting with unconventional ideas, pushing creative boundaries, and thinking ahead of trends. Plays soccer, likes dogs and cats.
-CONTACT:
-- Email: arturbalthazar@gmail.com
-- WhatsApp: +55 48 9128-7795
-- LinkedIn: linkedin.com/in/artur-balthazar/
-- Instagram: @baltha.studio`;
-
-// =============================================================================
-// MUSECRAFT CONTEXT - Personal Project
-// =============================================================================
-const CONTEXT_MUSECRAFT = `MUSECRAFT EDITOR (Personal Project):
-A web-based 3D editor powered by Babylon.js for real-time collaborative creation of interactive scenes.
-
-KEY FEATURES:
-- Real-time collaboration: Multiple users edit simultaneously with presence sync
-- Cloud & local storage: Supabase cloud or browser File System Access API
-- Full 3D editing: PBR materials, lights, cameras, physics, animations, audio
-- Integrated UI Editor: Design HTML/CSS interfaces anchored to 3D objects
-- AI-powered scripting: Monaco editor with AI that generates code from natural language
-- Addon architecture: Extensible API inspired by Blender's addon system
-- GitHub export: Deploy projects directly as web apps
-
-TECH STACK: React, TypeScript, Babylon.js, Supabase, Monaco Editor
-
-This is Artur's passion project exploring AI-powered creative tools.`;
-
-// =============================================================================
-// MEETKAI CONTEXT - Current Job
-// =============================================================================
-const CONTEXT_MEETKAI = `MEETKAI INC. (Current Job - Since Jan 2023):
-Role: 3D Designer and Tools Developer (Remote from Brazil, company in LA)
-
-PROJECTS AT MEETKAI:
-
-1. SURVIVE THANKSGIVING (Sony):
-   - Horror game experience for Sony movie marketing
-   - Built: Basement scene (movie's finale), all cutscene videos, optimized 3D crowd system
-   - Crowd uses armature aggregation to minimize draw calls while keeping natural movement
-
-2. BYD VIRTUAL DEALERSHIP:
-   - Interactive 3D showrooms for LA, Singapore, Philippines, and virtual tracks
-   - Created the BYD Seagull car from scratch (exterior, interior, materials, animations)
-   - Led 3D work for the Philippines Dealership digital twin
-   - Defined optimization workflows across multiple vehicle assets
-
-3. PISTONS VIRTUAL STORE (Detroit Pistons):
-   - Interactive merch experience across three environments
-   - Built the Virtual Store, Basketball Court, and Locker Room
-   - 3D Lead and primary reference for the project’s visual and technical direction
-   - Implemented a lightweight crowd system using texture atlas animation
-
-4. MEETKAI SUITE (Blender Addon):
-   - Developed out of own initiative to automate the team's 3D pipeline
-   - Features: Material Aggregator, Object Remesher, Lightmap/AO Baker, UV Mapper, Color Atlas Editor, Armature Aggregator, AI Assistant
-   - Now a standard tool used throughout MeetKai's 3D production`;
-
-// =============================================================================
-// MORE THAN REAL CONTEXT - Previous Job
-// =============================================================================
-const CONTEXT_MORETHANREAL = `MORE THAN REAL (Jan 2022 - Jan 2023):
-Role: 3D Designer for AR (Remote, São Paulo-based company)
-
-Created 3D assets for WebAR marketing experiences for major brands.
-
-PROJECTS:
-
-1. CHEVROLET MONTANA 2023:
-   - 3D model for AR visualization in Big Brother Brasil campaign
-   - Optimized for WebAR with baked lightmaps, texture atlases, rigged animations
-
-2. NESCAFÉ DOLCE GUSTO:
-   - Recreated coffee machines from photos (no original 3D files)
-   - Surface modeling in Fusion 360, materials/UVs in Blender
-   - Material variants for color switching in AR
-
-3. SIKA (Sikaman mascot):
-   - 3D mascot for WebAR product presentation
-   - ~18k poly rigged character optimized for mobile
-   - Intro animations, idle loops, gesture animations
-
-4. SEARA:
-   - 20+ photogrammetry-scanned food dishes for WebAR
-   - Captured ~200 photos per dish, processed and optimized
-   - Hand-painted roughness maps (photogrammetry doesn't capture them)`;
-
-// =============================================================================
-// BALTHA MAKER CONTEXT - Previous Business
-// =============================================================================
-const CONTEXT_BALTHAMAKER = `BALTHA MAKER (Mar 2018 - Dec 2021):
-Role: 3D Printing Designer and Founder (Florianópolis, Brazil)
-
-Artur's own 3D printing studio creating scale models and prototypes.
-
-PROJECTS:
-
-1. FLORIANÓPOLIS MUSEUM (SESC):
-   - 1:41 scale model now on display in museum entrance
-   - First NURBS modeling experience, using Fusion 360
-   - 3D printing, painting, vacuum fitting, epoxy resin finish, ~20kg
-
-2. MILLENNIUM FALCON MOUSE:
-   - Custom wireless mouse that went viral on Instagram (150k+ reach)
-   - Reverse-engineered cheap mouse electronics into custom shell
-   - Features: screw lid for USB, blue LED for "lightspeed", toggle button
-   - No soldering required - perfect for hobbyists
-
-3. MESC MUSEUM:
-   - Second museum commission after word spread from SESC project
-   - Similar workflow: NURBS in Fusion 360, multi-color print, epoxy finish
-   - Neoclassical building with curved skylight roof`;
-
-// =============================================================================
-// UFSC CONTEXT - Academic/Education
-// =============================================================================
-const CONTEXT_UFSC = `UFSC - PRODUCT DESIGN (Jan 2018 - Dec 2021):
-Federal University of Santa Catarina, Brazil
-
-Academic projects from Artur's Product Design undergraduate degree.
-
-PROJECTS:
-
-1. PETWHEELS (Final Project - Patented):
-   - Parametric wheelchair for disabled dogs
-   - Adapts to any dog size/disability via parametric CAD
-   - Inspired by sports car aesthetics for modern, dynamic look
-   - 3D printed, fully customizable without traditional tooling
-
-2. DURARE:
-   - Suitcase concept solving wheel breakage and handle damage
-   - Airless tire design inspired by off-road vehicles
-   - Magnetic handles instead of complex mechanisms
-
-3. ZENIC:
-   - Modular bamboo furniture for CoCreation Lab coworking space
-   - Transforms between study table and chaise longue
-   - NASA "maximum relaxation posture" in reclined mode
-   - Golden ratio proportions in lounger configuration`;
-
-// =============================================================================
-// WEBSITE NAVIGATION CONTEXT
-// =============================================================================
-const CONTEXT_WEBSITE = `PORTFOLIO WEBSITE NAVIGATION:
-
-The website is a 3D space scene where users fly a spaceship to different "stations":
-- State 0: Loading/Welcome screen
-- State 3: Mode selection (guided vs free navigation)
-- States 4-8: Work experience stations (Musecraft → MeetKai → More Than Real → Baltha Maker → UFSC)
-- State Final: Contact/Let's Connect
-
-NAVIGATION MODES:
-- Guided: Automatic tour through all stations
-- Free: Manual spaceship control by clicking in 3D space
-
-WORKPLACE PANEL:
-When near a station, a panel shows company info, projects, and detailed content.
-Projects have: descriptions, images, videos, tech stacks.
-
-Users can switch between projects within each workplace station.`;
-
-// =============================================================================
-// CONTEXT SELECTION LOGIC
+// INFORMATION CARDS
 // =============================================================================
 
-/**
- * Map of state numbers to context block keys
- * States: 0=loading, 1=modeSelect, 2=musecraft, 3=meetkai, 4=morethanreal, 5=balthamaker, 6=ufsc, 7=contact
- */
-const STATE_TO_CONTEXT = {
-    0: ['website'],           // Loading - just website info
-    1: ['website'],           // Mode selection
-    2: ['musecraft'],         // Musecraft station
-    3: ['meetkai'],           // MeetKai station
-    4: ['morethanreal'],      // More Than Real station
-    5: ['balthamaker'],       // Baltha Maker station
-    6: ['ufsc'],              // UFSC station
-    7: ['personal'],          // Contact - personal info for reaching out
-    99: ['personal']          // Also contact (state_final mapping)
-};
+const CARD_PERSONAL = `[CARD: PERSONAL]
+Full name: Artur Balthazar
+Location: Florianópolis, Brazil
+Nationality: Brazilian and Italian (can easily relocate to Europe)
+Languages: Portuguese (native), English (fluent)
+Contact: arturbalthazar@gmail.com | WhatsApp: +55 48 9128-7795 (provide button when asked)
+LinkedIn: linkedin.com/in/artur-balthazar/ (provide button with link when asked)
+Current role: 3D Designer & Tools Developer at MeetKai Inc. (2023-present, remote)`;
 
-/**
- * Map of project IDs to their specific context
- */
-const PROJECT_TO_CONTEXT = {
-    // Musecraft
-    'musecraft': 'musecraft',
+const CARD_EDUCATION = `[CARD: EDUCATION]
+• Product Design degree - UFSC, Brazil (2018-2021)
+  Full undergraduate degree in industrial/product design.
 
-    // MeetKai projects
-    'thanksgiving': 'meetkai',
-    'byd': 'meetkai',
-    'pistons': 'meetkai',
-    'meetkaisuite': 'meetkai',
+• Mechanical Engineering (incomplete) - UFSC, Brazil (2012-2017)
+  Though unfinished, developed strong skills in logic, analytical thinking, and math.
+  Passed all calculus, algebra, statistics, and computer science courses with good grades.
+  Left to pursue creativity in Product Design.
 
-    // More Than Real projects
-    'chevrolet': 'morethanreal',
-    'dolcegusto': 'morethanreal',
-    'sika': 'morethanreal',
-    'seara': 'morethanreal',
+• Exchange Program - Purdue University Northwest, USA (2015-2016)
+  Lived in Chicago area during mechanical engineering exchange.
+  Summer research project at NJIT, New Jersey.
+  Bought first 3D printer during this time → started Baltha Maker upon return.
 
-    // Baltha Maker projects
-    'sesc': 'balthamaker',
-    'starwars': 'balthamaker',
-    'mesc': 'balthamaker',
+• Technical Course in Design - SATC, Brazil (2009-2010)
+  Overview of graphic design, web design, packaging design, interior design, and architecture.
+  Completed parallel to high school.`;
 
-    // UFSC projects
-    'petwheels': 'ufsc',
-    'durare': 'ufsc',
-    'zenic': 'ufsc'
-};
+const CARD_EXPERIENCE = `[CARD: EXPERIENCE]
+• MeetKai Inc. - 3D Designer & Tools Developer (Jan 2023 - Present)
+  Remote position for LA-based company specializing in interactive 3D web experiences.
+  Created 3D environments, vehicle models, character rigs, crowd systems.
+  Developed MeetKai Suite Blender addon to automate team's 3D pipeline.
+  Notable projects: Sony Thanksgiving game, BYD Virtual Dealership, Pistons Virtual Store.
 
-/**
- * All context blocks by key
- */
-const CONTEXT_BLOCKS = {
-    personal: CONTEXT_PERSONAL,
-    musecraft: CONTEXT_MUSECRAFT,
-    meetkai: CONTEXT_MEETKAI,
-    morethanreal: CONTEXT_MORETHANREAL,
-    balthamaker: CONTEXT_BALTHAMAKER,
-    ufsc: CONTEXT_UFSC,
-    website: CONTEXT_WEBSITE
-};
+• More Than Real - 3D Designer for AR (Jan 2022 - Jan 2023)
+  Remote, São Paulo-based company.
+  Created 3D assets for WebAR marketing experiences for major brands.
+  Skills: 3D modeling, texturing, mesh optimization, light/AO baking, AR pipelines.
+  Notable projects: Chevrolet Montana, Nescafé Dolce Gusto, Sika, Seara.
 
-/**
- * Build the full system prompt based on current context
- * @param {Object} context - The context from the client
- * @returns {string} The complete system prompt
- */
-function buildSystemPrompt(context = {}) {
-    let additionalContexts = new Set();
+• Baltha Maker - 3D Printing Engineer & Founder (2018-2021)
+  Own 3D printing studio in Florianópolis.
+  3D modeling in CAD, surface, and sculpting software depending on client needs.
+  3D printing and finishing in plastic and resin: scale models, prototypes, trophies, replacement parts.
+  Business management: accounting, marketing, customer service, inventory.
+  Notable projects: SESC Museum scale model, Millennium Falcon mouse.
 
-    // Always include personal info for contact questions
-    additionalContexts.add('personal');
+• Edge Planning Center - 3D Printing Engineer & Co-founder (2021)
+  Parallel business with two dentists providing 3D printable surgical guides.
+  Left after a year to pursue international career in 3D design/development.
 
-    // Add context based on state
-    const state = context.state !== undefined ? context.state : 0;
-    const stateContexts = STATE_TO_CONTEXT[state] || STATE_TO_CONTEXT[0];
-    stateContexts.forEach(ctx => additionalContexts.add(ctx));
+• Earlier roles: Pronto 3D (design intern, 2019), Cata Company (R&D intern, 2017), 
+  Palisades Tahoe (ski lift operator, 2013-14), Eder Frank Architecture (intern, 2012).`;
 
-    // If workplace panel is visible and we have project info, add that context
-    if (context.workplaceVisible && context.projectId) {
-        const projectContext = PROJECT_TO_CONTEXT[context.projectId];
-        if (projectContext) {
-            additionalContexts.add(projectContext);
+const CARD_SKILLS = `[CARD: SKILLS]
+3D & Technical:
+• Excellent 3D modeler proficient with any pipeline (modeling, texturing, animating, rigging, baking)
+• 3D optimization specialist - treats it like a "minigame" to hit performance targets while maintaining quality
+• Blender expert, including Blender API/Python for tools development
+• Babylon.js for web-based 3D applications
+• Fusion 360 for parametric CAD and NURBS modeling
+• Substance 3D for texturing
+• Photogrammetry and 3D scanning workflows
+
+Development:
+• React, TypeScript for frontend development
+• Python for Blender addons and automation
+• Started production-level coding post-AI revolution, but confident in creating complex products end-to-end
+• Deep understanding of software architecture from building Musecraft
+• Tests thoroughly, reviews generated code, understands what's happening
+
+Design & UX:
+• Strong UX skills with holistic product development view
+• Mindful of user experience at each step
+• Product design degree provides design thinking foundation
+
+Soft Skills:
+• Self-starter who builds tools proactively (MeetKai Suite was own initiative)
+• Enjoys challenges, sees "impossible" as just an idea
+• International experience (USA, Europe visits)`;
+
+const CARD_EXTRAS = `[CARD: EXTRAS]
+Fun Facts:
+• Created first 3D model at age 14: a Nokia Navigator 6110 in Google SketchUp, uploaded to Google Warehouse
+• Has visited Prusa in Czech Republic (the 3D printer manufacturer)
+• Worked as a ski lift operator at Palisades Tahoe (2013-14)
+
+Philosophy:
+• Likes challenges and considers the impossible just an idea waiting to be solved
+• Treats 3D optimization like a minigame - finding the balance between quality and performance
+
+Favorite Projects:
+1. Musecraft - Personal web-based 3D editor, passion project
+2. SESC Museum - First major 3D printing commission, now displayed in museum
+3. Petwheels - Patented parametric dog wheelchair (undergraduate thesis)
+4. BYD Seagull - Built entire car from scratch including interior
+5. Chevrolet Montana - Featured in Big Brother Brasil marketing campaign
+
+Not in Portfolio:
+• Baltha Maker has many smaller projects not showcased
+• MeetKai has confidential projects and smaller contributions not included`;
+
+// =============================================================================
+// PROJECT CARDS - Will be populated dynamically from workplaceConfig
+// =============================================================================
+
+// Project card generator - extracts text from workplaceConfig content blocks
+function generateProjectCard(projectId, projectConfig, workplaceConfig) {
+    if (!projectConfig) return null;
+
+    let content = `[CARD: PROJECT - ${projectConfig.title.toUpperCase()}]\n`;
+    content += `Company: ${workplaceConfig.companyName}\n`;
+    content += `Period: ${workplaceConfig.period}\n`;
+    content += `Role: ${workplaceConfig.role}\n\n`;
+
+    // Extract text from content blocks
+    if (projectConfig.contentBlocks) {
+        for (const block of projectConfig.contentBlocks) {
+            if (block.type === 'text') {
+                if (block.title) content += `${block.title}:\n`;
+                if (block.paragraphs) {
+                    content += block.paragraphs.join('\n') + '\n\n';
+                }
+            } else if (block.type === 'feature-card') {
+                content += `${block.title}: ${block.paragraphs.join(' ')}\n\n`;
+            } else if (block.type === 'float-image') {
+                content += block.paragraphs.join('\n') + '\n\n';
+            }
         }
     }
 
-    // Add context if message mentions specific keywords
-    if (context.messageHint) {
-        const hint = context.messageHint.toLowerCase();
+    return content.trim();
+}
 
-        // Check for project/company mentions
-        if (hint.includes('byd') || hint.includes('thanksgiving') || hint.includes('pistons') || hint.includes('meetkai') || hint.includes('blender addon')) {
-            additionalContexts.add('meetkai');
-        }
-        if (hint.includes('chevrolet') || hint.includes('montana') || hint.includes('dolce') || hint.includes('sika') || hint.includes('seara') || hint.includes('more than real')) {
-            additionalContexts.add('morethanreal');
-        }
-        if (hint.includes('museum') || hint.includes('sesc') || hint.includes('mesc') || hint.includes('falcon') || hint.includes('mouse') || hint.includes('3d print')) {
-            additionalContexts.add('balthamaker');
-        }
-        if (hint.includes('petwheels') || hint.includes('wheelchair') || hint.includes('durare') || hint.includes('suitcase') || hint.includes('zenic') || hint.includes('ufsc') || hint.includes('university')) {
-            additionalContexts.add('ufsc');
-        }
-        if (hint.includes('musecraft') || hint.includes('editor') || hint.includes('babylon')) {
-            additionalContexts.add('musecraft');
-        }
-        if (hint.includes('contact') || hint.includes('email') || hint.includes('whatsapp') || hint.includes('linkedin') || hint.includes('hire') || hint.includes('reach')) {
-            additionalContexts.add('personal');
-        }
+// =============================================================================
+// CARD LIBRARY
+// =============================================================================
+
+const STATIC_CARDS = {
+    personal: CARD_PERSONAL,
+    education: CARD_EDUCATION,
+    experience: CARD_EXPERIENCE,
+    skills: CARD_SKILLS,
+    extras: CARD_EXTRAS
+};
+
+// Function calling definition for OpenAI
+const FUNCTION_DEFINITION = {
+    name: "get_cards",
+    description: "Request information cards to answer the user's question. Only call when you need specific info you don't have. Max 3 cards.",
+    parameters: {
+        type: "object",
+        properties: {
+            cards: {
+                type: "array",
+                items: {
+                    type: "string",
+                    enum: [
+                        "personal", "education", "experience", "skills", "extras",
+                        "project_musecraft", "project_thanksgiving", "project_byd",
+                        "project_pistons", "project_meetkaisuite", "project_chevrolet",
+                        "project_dolcegusto", "project_sika", "project_seara",
+                        "project_sesc", "project_starwars", "project_mesc",
+                        "project_petwheels", "project_durare", "project_zenic"
+                    ]
+                },
+                description: "Array of card names to retrieve. Usually 1, max 3."
+            }
+        },
+        required: ["cards"]
     }
+};
 
-    // Build the full prompt
-    let fullPrompt = BASE_PROMPT;
-
-    additionalContexts.forEach(key => {
-        if (CONTEXT_BLOCKS[key]) {
-            fullPrompt += '\n\n---\n' + CONTEXT_BLOCKS[key];
-        }
-    });
-
-    return fullPrompt;
-}
-
-/**
- * Get context summary for logging
- */
-function getContextSummary(context = {}) {
-    const parts = [];
-    if (context.state !== undefined) parts.push(`state=${context.state}`);
-    if (context.navMode) parts.push(`nav=${context.navMode}`);
-    if (context.workplaceVisible) parts.push('panel=visible');
-    if (context.projectId) parts.push(`project=${context.projectId}`);
-    return parts.join(' ');
-}
+// =============================================================================
+// EXPORTS
+// =============================================================================
 
 module.exports = {
     BASE_PROMPT,
-    CONTEXT_BLOCKS,
-    STATE_TO_CONTEXT,
-    PROJECT_TO_CONTEXT,
-    buildSystemPrompt,
-    getContextSummary
+    STATIC_CARDS,
+    FUNCTION_DEFINITION,
+    generateProjectCard
 };

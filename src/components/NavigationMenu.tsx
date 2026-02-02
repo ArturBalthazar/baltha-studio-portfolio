@@ -878,6 +878,12 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
               }
 
               if (targetState !== undefined) {
+                // Set pending navigation to suppress panel expansion during travel
+                useUI.getState().setPendingProjectNavigation({
+                  targetState: targetState,
+                  projectIndex: 0
+                });
+
                 // First, switch to guided mode if currently in free mode
                 const currentMode = useUI.getState().navigationMode;
                 if (currentMode === 'free') {

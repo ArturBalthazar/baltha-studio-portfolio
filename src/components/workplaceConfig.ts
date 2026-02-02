@@ -72,7 +72,10 @@ export interface FloatImageBlock {
     imageSrc: string;
     imageAlt?: string;
     imagePosition?: 'left' | 'right';  // Default is 'left'
+    width?: '2/5' | '1/2' | 'full';  // Image width: '2/5' (40%), '1/2' (50%), 'full' (100% below text). Default is '2/5'
+    title?: string;  // Optional section title
     paragraphs: string[];  // Text that wraps around the image
+    showSeparator?: boolean;  // Show a separator line above this block
 }
 
 // Tech stack block - displays a grid of software/tools icons with labels
@@ -90,6 +93,14 @@ export interface TechStackBlock {
 
 export type ContentBlock = HeroImageBlock | TextBlock | ImageBlock | ImageGridBlock | ImageCompareBlock | VideoBlock | FeatureCardBlock | FloatImageBlock | TechStackBlock;
 
+// Title button for external links, actions, etc. displayed next to project/company titles
+export interface TitleButton {
+    icon: string;          // Icon filename (e.g., 'link.png', 'discord.png', 'youtube.png') - stored in /assets/images/
+    url?: string;          // External URL to open in new tab
+    action?: string;       // Internal action identifier (e.g., 'open-chat', 'navigate-to', etc.)
+    tooltip?: string;      // Optional tooltip text on hover
+}
+
 export interface ProjectConfig {
     id: string;
     title: string;
@@ -99,6 +110,8 @@ export interface ProjectConfig {
     logoPath?: string;  // Optional project logo
     // Rich content blocks for project showcase
     contentBlocks?: ContentBlock[];
+    // Optional action buttons next to the project title
+    titleButtons?: TitleButton[];
 }
 
 export interface WorkplaceConfig {
@@ -112,6 +125,8 @@ export interface WorkplaceConfig {
     role: string;  // User's role at this company (for mobile display)
     description: string;
     projects: ProjectConfig[];
+    // Optional action buttons next to the company title
+    titleButtons?: TitleButton[];
 }
 
 // Helper function to check if a workplace has only one project (single-project mode)
@@ -132,7 +147,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
         companyName: "Musecraft Editor",
         showCompanyLogo: true,
         companyLogoPath: "/assets/logos/musecraft.png",
-        period: "Jul, 2025 - Oct, 2025",
+        period: "Independent Project",
         location: "At home",
         workStyle: "Personal Project",
         role: "Creator & Lead Developer",
@@ -143,6 +158,11 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                 title: "Musecraft Editor",
                 description: "Web-based Babylon.js Editor",
                 showLogo: true,
+                titleButtons: [
+                    { icon: 'link.png', url: 'https://musecraft.xyz', tooltip: 'Visit Website' },
+                    { icon: 'youtube.png', url: 'https://www.youtube.com/@Musecraft-Editor', tooltip: 'YouTube Channel' },
+                    { icon: 'discord.png', url: 'https://discord.gg/eFxZfEWB', tooltip: 'Join Discord' }
+                ],
                 modelPath: "/assets/models/personal/musecraft/musecraft.gltf",
                 logoPath: "/assets/logos/musecraft.png",
                 contentBlocks: [
@@ -150,7 +170,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     {
                         type: 'text',
                         paragraphs: [
-                            'Musecraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative creation of interactive scenes for the web.',
+                            'Musecraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative work and creation of interactive 3D scenes for the web.',
                         ]
                     },
                     // Hero image
@@ -163,45 +183,46 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     {
                         type: 'text',
                         paragraphs: [
-                            'It started as my personal project to explore AI-powered creative tools, and has since evolved into a comprehensive platform. The stack is React and TypeScript on the frontend, Babylon.js for rendering, and Supabase handling authentication, real-time sync, and secure cloud storage.'
+                            'It started as a personal project to explore AI-powered creative tools and has since evolved into a fully functional platform, built with React and TypeScript on the frontend, Babylon.js for real-time rendering, and Supabase for authentication, real-time sync, and secure cloud storage.'
                         ]
                     },
                     // Demo video
                     {
                         type: 'video',
-                        src: 'https://www.youtube.com/embed/hJzn17Rf2zM',
+                        src: 'https://www.youtube.com/embed/6g6zZgZ-FrE',
                         isYoutube: true
                     },
                     // Project & Asset Management
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image1.png',
+                        imageAlt: 'Cloud and Local Storage',
+                        imagePosition: 'left',
+                        width: '1/2',
                         title: 'Cloud and Local Storage',
                         paragraphs: [
-                            'Projects can live in the cloud via Supabase or entirely offline using the browser\'s File System Access API. Work on local folders like a desktop app, or sync assets to cloud storage for team access.'
-                        ],
-                        showSeparator: true
-                    },
-                    // Team collaboration
-                    {
-                        type: 'text',
-                        title: 'Real-Time Collaboration',
-                        paragraphs: [
-                            'Create teams with role-based permissions and collaborate in real-time. Multiple users can edit the same scene simultaneously—selections, transforms, and changes sync instantly with presence indicators.'
+                            'Projects can live in the cloud via Supabase or entirely offline using the browser\'s File System Access. Work on local folders like a desktop app, or sync assets to cloud storage for team access.'
                         ],
                         showSeparator: true
                     },
                     // 3D Editor Capabilities
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image3.png',
+                        imageAlt: '3D Editing Environment',
+                        width: 'full',
                         title: '3D Editing Environment',
                         paragraphs: [
-                            'Full scene authoring with meshes, PBR materials, lights, cameras, physics, animations, and spatial audio. Includes a play mode to test scenes with physics and scripted behaviors without leaving the editor.'
+                            'Full scene authoring with meshes, PBR materials, lights, cameras, physics, animations, and spatial audio. Includes a play mode to test scenes with physics and scripted behaviors without leaving the editor. The interface is intentionally designed to feel familiar to Blender users, reducing friction for 3D artists transitioning to the platform.'
                         ],
                         showSeparator: true
                     },
                     // UI Editor
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image4.png',
+                        imageAlt: 'Integrated UI Editor',
+                        width: 'full',
                         title: 'Integrated UI Editor',
                         paragraphs: [
                             'Design HTML/CSS interfaces directly in the 3D environment and anchor them to scene objects. Includes a style editor, animation support, and responsive breakpoints for building interactive 3D web experiences.'
@@ -210,16 +231,36 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     },
                     // AI-Powered Scripting
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image5.png',
+                        imageAlt: 'AI-Powered Scripting',
+                        imagePosition: 'left',
+                        width: '1/2',
                         title: 'AI-Powered Scripting',
                         paragraphs: [
-                            'Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language—the AI generates executable scripts with full context of your scene and the Musecraft API.'
+                            'Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language and the AI generates executable scripts with full context of your scene and the Musecraft API.'
+                        ],
+                        showSeparator: true
+                    },
+                    // Team collaboration
+                    {
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image2.png',
+                        imageAlt: 'Real-Time Collaboration',
+                        width: 'full',
+                        title: 'Real-Time Collaboration',
+                        paragraphs: [
+                            'Create teams with role-based permissions and collaborate in real-time. Multiple users can edit the same scene simultaneously, with selections, transforms, and changes syncing instantly with presence indicators.'
                         ],
                         showSeparator: true
                     },
                     // Addon System
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image6.png',
+                        imageAlt: 'Addon Architecture',
+                        imagePosition: 'right',
+                        width: '1/2',
                         title: 'Addon Architecture',
                         paragraphs: [
                             'Extensible API inspired by Blender\'s addon system. Addons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio, and history systems with sandboxed permissions.'
@@ -228,10 +269,14 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     },
                     // Export and Deployment
                     {
-                        type: 'text',
+                        type: 'float-image',
+                        imageSrc: '/assets/models/personal/musecraft/content/image7.png',
+                        imageAlt: 'Export to GitHub',
+                        imagePosition: 'left',
+                        width: '1/2',
                         title: 'Export to GitHub',
                         paragraphs: [
-                            'Export projects directly to GitHub as ready-to-deploy web applications. Includes snapshot-based versioning for saving and reverting scene states—a complete pipeline from creation to publication.'
+                            'Export projects directly to GitHub as ready-to-deploy web applications. Includes snapshot-based versioning for saving and reverting scene states, creating a complete pipeline from creation to publication.'
                         ],
                         showSeparator: true
                     },
@@ -268,12 +313,18 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
         workStyle: "Remote",
         role: "3D Designer and Tools Developer",
         description: "As a 3D Technical Artist at Meetkai, I developed interactive 3D experiences and virtual environments for various clients.",
+        titleButtons: [
+            { icon: 'link.png', url: 'https://meetkai.com/', tooltip: 'Visit MeetKai' }
+        ],
         projects: [
             {
                 id: "thanksgiving",
                 title: "Survive Thanksgiving",
                 description: "Gamified movie experience",
                 showLogo: true,
+                titleButtons: [
+                    { icon: 'link.png', url: 'https://thanksgiving.mkms.io/?map_id=169350804&shard_id=96', tooltip: 'Play Game' }
+                ],
                 modelPath: "/assets/models/meetkai/thanksgiving/thanksgiving.gltf",
                 logoPath: "/assets/logos/sony.png",
                 contentBlocks: [
@@ -369,6 +420,9 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                 title: "BYD Virtual Dealership",
                 description: "3D web visualizer for BYD",
                 showLogo: true,
+                titleButtons: [
+                    { icon: 'link.png', url: 'https://byd-metaverse.mkms.io/?map_id=1676595765&shard_id=73', tooltip: 'Visit Experience' }
+                ],
                 modelPath: "/assets/models/meetkai/byd/byd.gltf",
                 logoPath: "/assets/logos/byd.png",
                 contentBlocks: [
@@ -659,6 +713,9 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
         workStyle: "Remote",
         role: "3D Designer for AR",
         description: "At More Than Real, I created immersive 3D marketing experiences for major consumer brands.",
+        titleButtons: [
+            { icon: 'link.png', url: 'https://www.morethanreal.io/', tooltip: 'Visit Website' }
+        ],
         projects: [
             {
                 id: "chevrolet",
@@ -1005,6 +1062,9 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                 title: "Millennium Falcon Mouse",
                 description: "Custom Star Wars mouse",
                 showLogo: true,
+                titleButtons: [
+                    { icon: 'link.png', url: 'https://www.thingiverse.com/thing:6683242', tooltip: 'View on Thingiverse' }
+                ],
                 modelPath: "/assets/models/balthamaker/starwars/starwars.gltf",
                 logoPath: "/assets/logos/starwars.png",
                 contentBlocks: [
@@ -1020,6 +1080,11 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                         paragraphs: [
                             'As a fan of the Star Wars movie series, I created this 3D printed mouse of the Millennium Falcon back in 2017. After publishing it on Instagram, it reached over 150k people and many were interested in building their own. I then made an upgraded version with higher detail and easier assembly.'
                         ]
+                    },
+                    {
+                        type: 'video',
+                        src: 'https://www.youtube.com/embed/zsmf0Fp8Sbo',
+                        isYoutube: true
                     },
                     // 3D Modeling
                     {
@@ -1162,8 +1227,11 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
             {
                 id: "petwheels",
                 title: "Petwheels",
-                description: "Parametric dog wheelchair",
+                description: "Parametric wheelchair for dogs",
                 showLogo: true,
+                titleButtons: [
+                    { icon: 'link.png', url: 'https://g1.globo.com/sc/santa-catarina/noticia/2022/07/12/cadeira-de-rodas-para-caes-inspirada-em-carros-esportivos-e-desenvolvida-na-ufsc.ghtml', tooltip: 'Read Article' }
+                ],
                 modelPath: "/assets/models/ufsc/petwheels/petwheels.gltf",
                 logoPath: "/assets/logos/petwheels.png",
                 contentBlocks: [

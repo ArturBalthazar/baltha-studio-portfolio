@@ -313,34 +313,86 @@ function FeatureCard({ block, translatedTitle, translatedParagraphs }: {
 }
 
 // Render a float image with text wrapping around it (like Word)
-function FloatImage({ block, translatedParagraphs }: {
+function FloatImage({ block, translatedTitle, translatedParagraphs }: {
     block: FloatImageBlock;
+    translatedTitle?: string;
     translatedParagraphs?: string[];
 }) {
-    const floatClass = block.imagePosition === 'right' ? 'float-right ml-4' : 'float-left mr-4';
     const paragraphs = translatedParagraphs || block.paragraphs;
+    const title = translatedTitle || block.title;
+    const width = block.width || '2/5';
+
+    // Full width: image below text
+    if (width === 'full') {
+        return (
+            <>
+                {block.showSeparator && (
+                    <div className="w-full h-px bg-white/20" />
+                )}
+                <div className="flex flex-col gap-3">
+                    {title && (
+                        <h4 className="font-sans text-base font-semibold text-white/90 leading-tight">
+                            {title}
+                        </h4>
+                    )}
+                    {paragraphs.map((paragraph, idx) => (
+                        <p
+                            key={idx}
+                            className="font-mono text-sm text-white/70 leading-relaxed"
+                        >
+                            {paragraph}
+                        </p>
+                    ))}
+                    <div className="w-full rounded-lg overflow-hidden border border-white/20 bg-white/5">
+                        <img
+                            src={block.imageSrc}
+                            alt={block.imageAlt || 'Project image'}
+                            className="w-full h-auto object-contain"
+                            loading="lazy"
+                        />
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // Float image with text wrapping
+    const floatClass = block.imagePosition === 'right' ? 'float-right ml-4' : 'float-left mr-4';
+    const widthClass = width === '1/2' ? 'w-1/2' : 'w-2/5';
 
     return (
-        <div className="overflow-hidden">
-            <div className={`${floatClass} mb-2 w-2/5`}>
-                <div className="rounded-lg overflow-hidden border border-white/20 bg-white/5">
-                    <img
-                        src={block.imageSrc}
-                        alt={block.imageAlt || 'Project image'}
-                        className="w-full h-auto object-contain"
-                        loading="lazy"
-                    />
+        <>
+            {block.showSeparator && (
+                <div className="w-full h-px bg-white/20" />
+            )}
+            <div className="flex flex-col gap-2">
+                {title && (
+                    <h4 className="font-sans text-base font-semibold text-white/90 leading-tight">
+                        {title}
+                    </h4>
+                )}
+                <div className="overflow-hidden">
+                    <div className={`${floatClass} mb-2 ${widthClass}`}>
+                        <div className="rounded-lg overflow-hidden border border-white/20 bg-white/5">
+                            <img
+                                src={block.imageSrc}
+                                alt={block.imageAlt || 'Project image'}
+                                className="w-full h-auto object-contain"
+                                loading="lazy"
+                            />
+                        </div>
+                    </div>
+                    {paragraphs.map((paragraph, idx) => (
+                        <p
+                            key={idx}
+                            className="font-mono text-sm text-white/70 leading-relaxed mb-2"
+                        >
+                            {paragraph}
+                        </p>
+                    ))}
                 </div>
             </div>
-            {paragraphs.map((paragraph, idx) => (
-                <p
-                    key={idx}
-                    className="font-mono text-sm text-white/70 leading-relaxed mb-2"
-                >
-                    {paragraph}
-                </p>
-            ))}
-        </div>
+        </>
     );
 }
 
@@ -608,14 +660,15 @@ export function ProjectContent({ contentBlocks, translatedContent }: ProjectCont
                 );
             }
             case 'float-image': {
-                const { paragraphs } = getTranslatedTexts(
+                const { title, paragraphs } = getTranslatedTexts(
                     block.paragraphs.length,
-                    false // float-image has no title
+                    !!block.title // float-image may have a title
                 );
                 return (
                     <FloatImage
                         key={index}
                         block={block}
+                        translatedTitle={title}
                         translatedParagraphs={paragraphs}
                     />
                 );

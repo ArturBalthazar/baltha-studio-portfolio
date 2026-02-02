@@ -257,6 +257,13 @@ export const WorldLabels: React.FC = () => {
         // Play click sound
         playShortClick();
 
+        // Set a pending navigation to suppress panel expansion during travel
+        // We set projectIndex to 0 since we're navigating to the section, not a specific project
+        useUI.getState().setPendingProjectNavigation({
+            targetState: targetState,
+            projectIndex: 0
+        });
+
         // Switch to guided mode
         useUI.getState().setNavigationMode('guided');
 

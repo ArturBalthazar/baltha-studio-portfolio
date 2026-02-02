@@ -715,8 +715,8 @@ function createLoadingRing(config: LoadingRingConfig): LoadingRing {
   headParticles.minEmitPower = 0.01;
   headParticles.maxEmitPower = 0.02;
   headParticles.emitRate = 15;
-  headParticles.minSize = 0.1;
-  headParticles.maxSize = 0.25;
+  headParticles.minSize = 0.25;
+  headParticles.maxSize = 4;
   headParticles.minLifeTime = 0.2;
   headParticles.maxLifeTime = 0.5;
   headParticles.color1 = new BABYLON.Color4(1, 1, 1, 0.6);
@@ -2347,9 +2347,9 @@ export function BabylonCanvas() {
 
                 // Add random offset for variation
                 const offsetRange = 3.0; // Adjust this to control spread around vertices
-                position.x = randomVertex.x + (Math.random() - 0.15) * offsetRange;
-                position.y = randomVertex.y + (Math.random() - 0.15) * offsetRange;
-                position.z = randomVertex.z + (Math.random() - 0.15) * offsetRange;
+                position.x = randomVertex.x + (Math.random() - 0.5) * offsetRange;
+                position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
+                position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
               };
               if (isMobileRef.current) {
                 // Particle size - visible but not huge
@@ -2358,8 +2358,8 @@ export function BabylonCanvas() {
                 curveParticles.emitRate = 200;
               } else {
                 // Particle size - visible but not huge
-                curveParticles.minSize = .6;
-                curveParticles.maxSize = 1.8;
+                curveParticles.minSize = 1;
+                curveParticles.maxSize = 3
                 curveParticles.emitRate = 600;
               }
               // Rotation randomness
@@ -2381,7 +2381,7 @@ export function BabylonCanvas() {
               curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
 
               curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-              curveParticles.gravity = new BABYLON.Vector3(0, .3, 0);
+              curveParticles.gravity = new BABYLON.Vector3(0, .4, 0);
 
               // Don't start automatically - will be controlled by state config
               curveParticleSystemRef.current = curveParticles;

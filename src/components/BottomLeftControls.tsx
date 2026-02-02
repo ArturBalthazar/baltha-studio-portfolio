@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import cx from "classnames";
 import { useUI } from "../state";
 import { InfoPanel } from "./InfoPanel";
@@ -26,6 +26,29 @@ export function BottomLeftControls({
   const [infoOpen, setInfoOpen] = useState(false);
   const [volumeSliderVisible, setVolumeSliderVisible] = useState(false);
   const previousVolumeRef = useRef(0.5); // Store volume before muting
+  const audioControlRef = useRef<HTMLDivElement>(null);
+
+  // Close mobile volume slider when clicking outside
+  useEffect(() => {
+    if (!volumeSliderVisible) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const isMobile = window.matchMedia('(max-width: 639px)').matches;
+      if (!isMobile) return;
+
+      if (audioControlRef.current && !audioControlRef.current.contains(e.target as Node)) {
+        setVolumeSliderVisible(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [volumeSliderVisible]);
 
   // Volume is effectively muted if it's 0
   const isMuted = audioVolume === 0;
@@ -51,8 +74,12 @@ export function BottomLeftControls({
       previousVolumeRef.current = audioVolume;
     }
     setAudioVolume(newVolume);
-    // Don't toggle audioEnabled during sliding - just update volume
-    // The audio will keep playing, just at different volume
+    // Enable audio if sliding above 0, disable if at 0
+    if (newVolume > 0 && !audioEnabled) {
+      setAudioEnabled(true);
+    } else if (newVolume === 0 && audioEnabled) {
+      setAudioEnabled(false);
+    }
   };
 
   const toggleNavigation = () => {
@@ -111,13 +138,14 @@ export function BottomLeftControls({
           />
         </button>
 
-        {/* Audio Control Container - Desktop has volume slider on hover */}
+        {/* Audio Control Container - Desktop has volume slider on hover, Mobile on tap */}
         <div
+          ref={audioControlRef}
           className="relative"
           onMouseEnter={() => setVolumeSliderVisible(true)}
           onMouseLeave={() => setVolumeSliderVisible(false)}
         >
-          {/* Invisible hover bridge - extends the hover zone upward */}
+          {/* Desktop: Invisible hover bridge - extends the hover zone upward */}
           <div
             className={cx(
               "absolute bottom-full left-1/2 -translate-x-1/2",
@@ -169,9 +197,62 @@ export function BottomLeftControls({
             </div>
           </div>
 
+          {/* Mobile: Volume Slider - fixed at bottom, full width with margins */}
+          <div
+            className={cx(
+              "fixed bottom-[105px] left-6 right-6",
+              "sm:hidden", // Only show on mobile
+              "flex items-center justify-center",
+              "h-[50px] rounded-full",
+              "backdrop-blur-[10px]",
+              "shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.452)]",
+              "transition-all duration-300",
+              volumeSliderVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            )}
+            style={{
+              backgroundColor: '#08142830'
+            }}
+          >
+            {/* Custom Range Slider */}
+            <div className="relative w-[calc(100%-55px)] h-[6px] flex items-center">
+              <div
+                className="absolute inset-0 rounded-full bg-white/20"
+              />
+              <div
+                className="absolute left-0 top-0 h-full rounded-full bg-white/60"
+                style={{ width: `${audioVolume * 100}%` }}
+              />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioVolume}
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                aria-label="Volume"
+              />
+              {/* Slider Knob */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-[16px] h-[16px] rounded-full bg-white shadow-md pointer-events-none"
+                style={{ left: `calc(${audioVolume * 100}% - 8px)` }}
+              />
+            </div>
+          </div>
+
           {/* Audio Toggle Button */}
           <button
-            onClick={toggleAudio}
+            onClick={() => {
+              playShortClick();
+              // On mobile (no hover), toggle slider visibility
+              // On desktop, mute/unmute directly since slider is available on hover
+              const isMobile = window.matchMedia('(max-width: 639px)').matches;
+              if (isMobile) {
+                setVolumeSliderVisible(!volumeSliderVisible);
+              } else {
+                toggleAudio();
+              }
+            }}
             className={cx(
               "control-btn relative w-[50px] h-[50px] rounded-full",
               "flex items-center justify-center",

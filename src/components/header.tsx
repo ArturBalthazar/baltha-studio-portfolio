@@ -36,6 +36,11 @@ export function Header({ showWelcome = true }: Props) {
       window.location.href = "/";
     } else {
       // We're on the main app - go to state0
+      // Set pending navigation to suppress panel during travel
+      useUI.getState().setPendingProjectNavigation({
+        targetState: S.state_0,
+        projectIndex: 0
+      });
       setNavigationMode('guided');
       setState(S.state_0);
     }

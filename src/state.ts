@@ -46,6 +46,9 @@ type UIState = {
   setVideoPlaying: (playing: boolean) => void;
   clickSoundActivated: boolean; // Whether click sounds have been activated (from state_3 onwards, persists)
   setClickSoundActivated: (activated: boolean) => void;
+  pendingProjectNavigation: { targetState: S; projectIndex: number } | null; // Deferred project switch
+  setPendingProjectNavigation: (pending: { targetState: S; projectIndex: number } | null) => void;
+  applyPendingProjectIfNeeded: () => void; // Called when state changes to check if pending should apply
 };
 
 export const useUI = create<UIState>((set, get) => ({
@@ -82,5 +85,16 @@ export const useUI = create<UIState>((set, get) => ({
   videoPlaying: false, // No video playing by default
   setVideoPlaying: (playing) => set({ videoPlaying: playing }),
   clickSoundActivated: false, // Click sounds not activated until reaching state_3
-  setClickSoundActivated: (activated) => set({ clickSoundActivated: activated })
+  setClickSoundActivated: (activated) => set({ clickSoundActivated: activated }),
+  pendingProjectNavigation: null, // No pending navigation by default
+  setPendingProjectNavigation: (pending) => set({ pendingProjectNavigation: pending }),
+  applyPendingProjectIfNeeded: () => {
+    const { state, pendingProjectNavigation } = get();
+    if (pendingProjectNavigation && state === pendingProjectNavigation.targetState) {
+      set({
+        selectedProjectIndex: pendingProjectNavigation.projectIndex,
+        pendingProjectNavigation: null
+      });
+    }
+  }
 }));

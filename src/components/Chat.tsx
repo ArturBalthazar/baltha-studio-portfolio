@@ -6,8 +6,8 @@ import { getProjectConfig } from "./workplaceConfig";
 
 interface ChatAction {
   label: string;
-  type: 'whatsapp' | 'email' | 'linkedin' | 'instagram' | 'home' | 'contact' | 'navigate';
-  target?: string; // For navigate type - section or project ID
+  type: 'whatsapp' | 'email' | 'linkedin' | 'instagram' | 'home' | 'contact' | 'navigate' | 'goto' | 'auto_goto';
+  target?: string; // For navigate/goto/auto_goto type - section or project ID
 }
 
 interface Message {
@@ -207,13 +207,28 @@ export function Chat({ className = "", onClose }: ChatProps) {
         useUI.getState().setState(S.state_final);
         break;
       case 'navigate':
+      case 'goto':
         if (action.target && navigationMap[action.target]) {
           const nav = navigationMap[action.target];
+          const currentState = useUI.getState().state;
+
+          // If we're already at the target state, switch project immediately
+          if (currentState === nav.state) {
+            if (nav.projectIndex !== undefined) {
+              useUI.getState().setSelectedProjectIndex(nav.projectIndex);
+            }
+          } else {
+            // Different section - set pending project to apply when we arrive
+            if (nav.projectIndex !== undefined) {
+              useUI.getState().setPendingProjectNavigation({
+                targetState: nav.state,
+                projectIndex: nav.projectIndex
+              });
+            }
+          }
+
           useUI.getState().setNavigationMode('guided');
           useUI.getState().setState(nav.state);
-          if (nav.projectIndex !== undefined) {
-            useUI.getState().setSelectedProjectIndex(nav.projectIndex);
-          }
         }
         break;
     }
@@ -241,7 +256,16 @@ export function Chat({ className = "", onClose }: ChatProps) {
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
       const { text, actions } = parseResponse(data.response);
-      addMessage(text, "bot", actions);
+
+      // Auto-execute immediate actions (auto_goto triggers navigation without button)
+      const autoActions = actions?.filter(a => a.type === 'auto_goto') || [];
+      const buttonActions = actions?.filter(a => a.type !== 'auto_goto');
+
+      // Execute auto actions immediately
+      autoActions.forEach(action => handleAction({ ...action, type: 'goto' }));
+
+      // Show message with remaining button actions
+      addMessage(text, "bot", buttonActions && buttonActions.length > 0 ? buttonActions : undefined);
     } catch (error) {
       console.error("Error:", error);
       addMessage(t.chat.errorMessage, "bot");
