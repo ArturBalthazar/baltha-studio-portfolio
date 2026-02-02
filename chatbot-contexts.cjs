@@ -77,7 +77,7 @@ const CARD_EDUCATION = `[CARD: EDUCATION]
 
 • Exchange Program - Purdue University Northwest, USA (2015-2016)
   Lived in Chicago area during mechanical engineering exchange.
-  Summer research project at NJIT, New Jersey.
+  Summer research project at NJIT, in New Jersey.
   Bought first 3D printer during this time → started Baltha Maker upon return.
 
 • Technical Course in Design - SATC, Brazil (2009-2010)
