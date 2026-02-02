@@ -113,7 +113,7 @@ export interface ProjectTranslation {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D developer and designer 🚀"
+            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and developer 🚀"
         },
         menu: {
             welcome: "Welcome",
