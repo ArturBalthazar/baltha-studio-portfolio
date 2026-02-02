@@ -113,12 +113,12 @@ export interface ProjectTranslation {
 export const translations: Record<LanguageCode, TranslationKeys> = {
     EN: {
         header: {
-            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D designer and developer 🚀"
+            welcomeText: "Welcome to Baltha Studio! I'm Artur Balthazar, your professional 3D developer and designer 🚀"
         },
         menu: {
             welcome: "Welcome",
             musecraft: "Musecraft",
-            meetkai: "MeetKai",
+            meetkai: "Meetkai Inc.",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
             ufsc: "UFSC",
