@@ -135,7 +135,7 @@ export async function warmupModelForGPU(
  * Handles interruptions: stops any running animation and starts from current scale.
  */
 // Track running scale animations per model root for interruption handling
-const modelScaleAnimations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Animatable> = new Map();
+export const modelScaleAnimations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Animatable> = new Map();
 
 export function scaleModelMeshes(
     rootMesh: BABYLON.TransformNode | BABYLON.AbstractMesh | null,

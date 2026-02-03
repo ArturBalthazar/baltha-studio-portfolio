@@ -40,6 +40,7 @@ import {
 import {
   modelOriginalScales,
   modelOriginalRotations,
+  modelScaleAnimations,
   applyLightmapsToModel,
   warmupModelForGPU,
   scaleModelMeshes
