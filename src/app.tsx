@@ -18,6 +18,7 @@ import { ConnectOverlay } from "./components/ConnectOverlay";
 import { NavigationMenu } from "./components/NavigationMenu";
 import { SideTriggerOverlay } from "./components/SideTriggerOverlay";
 import { WorldLabels } from "./components/WorldLabels";
+import { NextButtonTooltip } from "./components/NextButtonTooltip";
 import { useI18n } from "./i18n";
 
 export default function App() {
@@ -214,22 +215,27 @@ export default function App() {
               )}
 
               {s < S.state_final && config.canvas.nextState !== null && (
-                <button
-                  onClick={handleNext}
-                  className={cx(
-                    "absolute top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-[right,transform,opacity] duration-[500ms,200ms,200ms] hover:scale-[1.1] opacity-50 hover:opacity-100 pointer-events-auto select-none",
-                    // Move arrow left when chat is open in states 4-7 on desktop
-                    // Chat width is calc(25% - 24px) + right-4 (16px) + gap (16px) = calc(25% + 8px)
-                    chatOpen && s >= S.state_4 && s <= S.state_7 ? "right-[calc(25%+8px)]" : "right-4"
-                  )}
-                  aria-label="Next state"
-                >
-                  <img
-                    src="/assets/images/state_arrow.png"
-                    alt="Next state"
-                    className="w-14 h-14 pointer-events-none"
-                  />
-                </button>
+                <>
+                  {/* Tooltip for Next button - only in state_0 */}
+                  <NextButtonTooltip visible={s === S.state_0} />
+
+                  <button
+                    onClick={handleNext}
+                    className={cx(
+                      "absolute top-1/2 -translate-y-1/2 z-50 hidden md:flex w-12 h-16 items-center justify-center text-white text-2xl transition-[right,transform,opacity] duration-[500ms,200ms,200ms] hover:scale-[1.1] opacity-50 hover:opacity-100 pointer-events-auto select-none",
+                      // Move arrow left when chat is open in states 4-7 on desktop
+                      // Chat width is calc(25% - 24px) + right-4 (16px) + gap (16px) = calc(25% + 8px)
+                      chatOpen && s >= S.state_4 && s <= S.state_7 ? "right-[calc(25%+8px)]" : "right-4"
+                    )}
+                    aria-label="Next state"
+                  >
+                    <img
+                      src="/assets/images/state_arrow.png"
+                      alt="Next state"
+                      className="w-14 h-14 pointer-events-none"
+                    />
+                  </button>
+                </>
               )}
 
               {/* Mobile navigation buttons - bottom left and right corners */}

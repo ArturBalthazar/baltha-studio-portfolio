@@ -1778,6 +1778,14 @@ export function BabylonCanvas() {
     drag: 4 // How fast to decelerate when no input (higher = stops faster)
   });
 
+  // Proximity-based speed reduction: ship slows down when near anchors
+  // Multiplier smoothly transitions from 1.0 (full speed) to 0.5 (half speed) as ship approaches anchor center
+  const proximitySpeedRef = useRef({
+    currentMultiplier: 1.0, // Current interpolated multiplier
+    targetMultiplier: 1.0,  // Target multiplier based on distance
+    smoothSpeed: 3          // Interpolation speed (higher = faster transition)
+  });
+
   // Store initial ship state for restoration
   const shipInitialStateRef = useRef<{
     position: BABYLON.Vector3 | null;
@@ -4579,11 +4587,54 @@ export function BabylonCanvas() {
             // Invert X axis (like desktop controls)
             dir.x *= -1;
 
-            // Target velocity for mobile
+            // ===== PROXIMITY-BASED SPEED REDUCTION =====
+            // Calculate distance to nearest anchor - ship slows down when inside anchor zones
+            const ANCHOR_SLOW_RADIUS = 20; // Same as WORKPLACE_VISIBILITY_DISTANCE
+            const MIN_SPEED_MULT = 0.5; // Half speed at center
+
+            // Get ship position for proximity check
+            const shipPos = controlTarget.getAbsolutePosition();
+
+            // Check distance to all anchors and find minimum
+            const anchorRefs = [
+              carAnchorRef.current,      // anchor_1 - Musecraft
+              musecraftAnchorRef.current, // anchor_2 - MeetKai  
+              dioramasAnchorRef.current,  // anchor_3 - More Than Real
+              petwheelsAnchorRef.current, // anchor_4 - Baltha Maker
+              personalAnchorRef.current   // anchor_5 - UFSC
+            ];
+
+            let minDistance = Infinity;
+            for (const anchor of anchorRefs) {
+              if (anchor) {
+                const distance = BABYLON.Vector3.Distance(shipPos, anchor.getAbsolutePosition());
+                if (distance < minDistance) {
+                  minDistance = distance;
+                }
+              }
+            }
+
+            // Calculate target speed multiplier based on distance
+            // At radius edge (20): multiplier = 1.0
+            // At center (0): multiplier = 0.5
+            // Formula: 0.5 + 0.5 * (distance / radius) when inside radius
+            if (minDistance < ANCHOR_SLOW_RADIUS) {
+              const distanceRatio = minDistance / ANCHOR_SLOW_RADIUS;
+              proximitySpeedRef.current.targetMultiplier = MIN_SPEED_MULT + (1 - MIN_SPEED_MULT) * distanceRatio;
+            } else {
+              proximitySpeedRef.current.targetMultiplier = 1.0;
+            }
+
+            // Smoothly interpolate current multiplier towards target
+            const speedInterp = Math.min(1, dt * proximitySpeedRef.current.smoothSpeed);
+            proximitySpeedRef.current.currentMultiplier +=
+              (proximitySpeedRef.current.targetMultiplier - proximitySpeedRef.current.currentMultiplier) * speedInterp;
+
+            // Target velocity for mobile (with proximity speed reduction applied)
             const MOBILE_SPEED_MULT = 1.5;
             const shouldMove = MC.cameraRotation === 0;
             const targetVelocity = shouldMove
-              ? dir.scale(ShipControls.speed * MOBILE_SPEED_MULT)
+              ? dir.scale(ShipControls.speed * MOBILE_SPEED_MULT * proximitySpeedRef.current.currentMultiplier)
               : new BABYLON.Vector3(0, 0, 0);
 
             // Smooth velocity interpolation (acceleration or drag)
