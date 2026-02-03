@@ -20,6 +20,7 @@ const BRAND_WHITE = 'rgba(8, 20, 40, 1)';
 
 export function NextButtonTooltip({ visible }: NextButtonTooltipProps) {
     const [showTooltip, setShowTooltip] = useState(false);
+    const [shouldRender, setShouldRender] = useState(false);
     const [hasShown, setHasShown] = useState(false);
     const { t } = useI18n();
     const currentState = useUI((st) => st.state);
@@ -27,6 +28,7 @@ export function NextButtonTooltip({ visible }: NextButtonTooltipProps) {
     // Show tooltip 2 seconds after becoming visible in state_0
     useEffect(() => {
         if (visible && currentState === S.state_0 && !hasShown) {
+            setShouldRender(true);
             const timer = setTimeout(() => {
                 setShowTooltip(true);
                 setHasShown(true);
@@ -35,15 +37,20 @@ export function NextButtonTooltip({ visible }: NextButtonTooltipProps) {
         }
     }, [visible, currentState, hasShown]);
 
-    // Hide tooltip when leaving state_0
+    // Hide tooltip when leaving state_0, but delay unmount for fade-out
     useEffect(() => {
         if (currentState !== S.state_0) {
             setShowTooltip(false);
+            // Delay unmount to allow fade-out transition (500ms matches duration-500)
+            const timer = setTimeout(() => {
+                setShouldRender(false);
+            }, 500);
+            return () => clearTimeout(timer);
         }
     }, [currentState]);
 
-    // Don't render if not in state_0 or not visible
-    if (currentState !== S.state_0 || !visible) return null;
+    // Don't render if not supposed to (shouldRender handles the delayed unmount for fade-out)
+    if (!shouldRender) return null;
 
     // Colors: brand-dark at 90%, brand-white at 20% for border
     const fillColor = `rgba(245, 242, 237, .9)`; // brand-dark with 90%

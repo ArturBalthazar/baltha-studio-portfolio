@@ -4,7 +4,7 @@ import "@babylonjs/loaders";
 import { useUI, S } from "../state";
 import { getStateConfig } from "../states";
 
-import { colorSettings, trimConfigs } from "./carConfig";
+
 import {
   initMusecraftInteraction,
   resetMusecraftInteraction,
@@ -17,6 +17,44 @@ import {
 import { startModelAnimations, stopModelAnimations } from "./modelAnimationController";
 import { getWorkplaceConfig } from "./workplaceConfig";
 import { updateEngineVelocity, setGuidedAnimationActive } from "./EngineSoundManager";
+import {
+  AnimateShipAlongBezierOptions,
+  SetShipAndFlamesVisibilityOptions,
+  setShipAndFlamesVisibility,
+  cancelBezierAnimation,
+  animateShipAlongBezier
+} from "./babylon/ShipBezierAnimation";
+import {
+  AtomIndicatorConfig,
+  AtomIndicator,
+  createAtomIndicator
+} from "./babylon/AtomIndicator";
+import {
+  AnimateTransformOptions,
+  animateTransform,
+  AnimateCameraRadiusOptions,
+  animateCameraRadius,
+  AnimateFogOptions,
+  animateFog
+} from "./babylon/AnimationHelpers";
+import {
+  modelOriginalScales,
+  modelOriginalRotations,
+  applyLightmapsToModel,
+  warmupModelForGPU,
+  scaleModelMeshes
+} from "./babylon/ModelLoadingUtils";
+import {
+  createStarsParticleSystem,
+  createSmokeParticleSystem,
+  createEngineFlameParticleSystem,
+  createCurveParticleSystem
+} from "./babylon/ParticleFactories";
+import {
+  registerPortalShaders,
+  createPortalWarpEffect,
+  createPortal
+} from "./babylon/PortalSystem";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
@@ -33,303 +71,9 @@ let planetRotations = [
   new BABYLON.Vector3(BABYLON.Tools.ToRadians(-5), BABYLON.Tools.ToRadians(-195), BABYLON.Tools.ToRadians(-3)) // Asia
 ];
 
-// Universal transform animation function
-interface AnimateTransformOptions {
-  target: BABYLON.TransformNode | BABYLON.AbstractMesh;
-  scene: BABYLON.Scene;
-  duration: number; // in seconds
-  delay?: number; // delay before animation starts (in seconds)
-  position?: BABYLON.Vector3;
-  rotation?: BABYLON.Vector3;
-  scaling?: BABYLON.Vector3;
-  easing?: BABYLON.EasingFunction;
-  onComplete?: () => void;
-}
 
-function animateTransform(options: AnimateTransformOptions): void {
-  const { target, scene, duration, delay = 0, position, rotation, scaling, easing, onComplete } = options;
+// Animation helpers imported from ./babylon/AnimationHelpers
 
-  const executeAnimation = () => {
-    const fps = 60;
-    const totalFrames = fps * duration;
-    const animations: BABYLON.Animation[] = [];
-
-    // Position animation
-    if (position) {
-      const currentPos = target.position.clone();
-      const posAnim = new BABYLON.Animation(
-        "positionAnim",
-        "position",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      posAnim.setKeys([
-        { frame: 0, value: currentPos },
-        { frame: totalFrames, value: position }
-      ]);
-      if (easing) posAnim.setEasingFunction(easing);
-      animations.push(posAnim);
-    }
-
-    // Rotation animation
-    if (rotation) {
-      const currentRot = target.rotation.clone();
-      const rotAnim = new BABYLON.Animation(
-        "rotationAnim",
-        "rotation",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      rotAnim.setKeys([
-        { frame: 0, value: currentRot },
-        { frame: totalFrames, value: rotation }
-      ]);
-      if (easing) rotAnim.setEasingFunction(easing);
-      animations.push(rotAnim);
-    }
-
-    // Scaling animation
-    if (scaling) {
-      const currentScale = target.scaling.clone();
-      const scaleAnim = new BABYLON.Animation(
-        "scalingAnim",
-        "scaling",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      scaleAnim.setKeys([
-        { frame: 0, value: currentScale },
-        { frame: totalFrames, value: scaling }
-      ]);
-      if (easing) scaleAnim.setEasingFunction(easing);
-      animations.push(scaleAnim);
-    }
-
-    // Apply animations
-    if (animations.length > 0) {
-      target.animations = animations;
-      scene.beginAnimation(target, 0, totalFrames, false, 1, onComplete);
-    } else if (onComplete) {
-      onComplete();
-    }
-  };
-
-  // Apply delay if specified
-  if (delay > 0) {
-    setTimeout(executeAnimation, delay * 1000);
-  } else {
-    executeAnimation();
-  }
-}
-
-// Universal camera radius limits animation function
-interface AnimateCameraRadiusOptions {
-  camera: BABYLON.ArcRotateCamera;
-  scene: BABYLON.Scene;
-  duration: number; // in seconds
-  delay?: number; // delay before animation starts (in seconds)
-  lowerRadiusLimit?: number;
-  upperRadiusLimit?: number;
-  beta?: number;
-  alpha?: number;
-  easing?: BABYLON.EasingFunction;
-  onComplete?: () => void;
-}
-
-// Helper function to normalize angle difference for shortest rotation path
-function normalizeAngleDifference(current: number, target: number): number {
-  // Calculate the difference
-  let diff = target - current;
-
-  // Normalize to [-π, π] range for shortest path
-  while (diff > Math.PI) diff -= 2 * Math.PI;
-  while (diff < -Math.PI) diff += 2 * Math.PI;
-
-  // Return the normalized target (current + shortest difference)
-  return current + diff;
-}
-
-function animateCameraRadius(options: AnimateCameraRadiusOptions): void {
-  const { camera, scene, duration, delay = 0, lowerRadiusLimit, upperRadiusLimit, beta, alpha, easing, onComplete } = options;
-
-  const executeAnimation = () => {
-
-    const fps = 60;
-    const totalFrames = fps * duration;
-    const animations: BABYLON.Animation[] = [];
-
-    // Lower radius limit animation
-    if (lowerRadiusLimit !== undefined) {
-      const currentLower = camera.lowerRadiusLimit || 0;
-      const lowerAnim = new BABYLON.Animation(
-        "lowerRadiusAnim",
-        "lowerRadiusLimit",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      lowerAnim.setKeys([
-        { frame: 0, value: currentLower },
-        { frame: totalFrames, value: lowerRadiusLimit }
-      ]);
-      if (easing) lowerAnim.setEasingFunction(easing);
-      animations.push(lowerAnim);
-    }
-
-    // Upper radius limit animation
-    if (upperRadiusLimit !== undefined) {
-      const currentUpper = camera.upperRadiusLimit || 0;
-      const upperAnim = new BABYLON.Animation(
-        "upperRadiusAnim",
-        "upperRadiusLimit",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      upperAnim.setKeys([
-        { frame: 0, value: currentUpper },
-        { frame: totalFrames, value: upperRadiusLimit }
-      ]);
-      if (easing) upperAnim.setEasingFunction(easing);
-      animations.push(upperAnim);
-    }
-
-    // Beta animation (vertical rotation)
-    if (beta !== undefined) {
-      const currentBeta = camera.beta;
-      const normalizedBeta = normalizeAngleDifference(currentBeta, beta);
-      const betaAnim = new BABYLON.Animation(
-        "betaAnim",
-        "beta",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      betaAnim.setKeys([
-        { frame: 0, value: currentBeta },
-        { frame: totalFrames, value: normalizedBeta }
-      ]);
-      if (easing) betaAnim.setEasingFunction(easing);
-      animations.push(betaAnim);
-    }
-
-    // Alpha animation (horizontal rotation)
-    if (alpha !== undefined) {
-      const currentAlpha = camera.alpha;
-      const normalizedAlpha = normalizeAngleDifference(currentAlpha, alpha);
-      const alphaAnim = new BABYLON.Animation(
-        "alphaAnim",
-        "alpha",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      alphaAnim.setKeys([
-        { frame: 0, value: currentAlpha },
-        { frame: totalFrames, value: normalizedAlpha }
-      ]);
-      if (easing) alphaAnim.setEasingFunction(easing);
-      animations.push(alphaAnim);
-    }
-
-    // Apply animations
-    if (animations.length > 0) {
-      camera.animations = animations;
-      scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
-        if (onComplete) onComplete();
-      });
-    } else if (onComplete) {
-      onComplete();
-    }
-  };
-
-  // Apply delay if specified
-  if (delay > 0) {
-    setTimeout(executeAnimation, delay * 1000);
-  } else {
-    executeAnimation();
-  }
-}
-
-// Universal fog animation function
-interface AnimateFogOptions {
-  scene: BABYLON.Scene;
-  duration: number; // in seconds
-  delay?: number; // delay before animation starts (in seconds)
-  fogStart?: number;
-  fogEnd?: number;
-  easing?: BABYLON.EasingFunction;
-  onComplete?: () => void;
-}
-
-function animateFog(options: AnimateFogOptions): void {
-  const { scene, duration, delay = 0, fogStart, fogEnd, easing, onComplete } = options;
-
-  const executeAnimation = () => {
-    const fps = 60;
-    const totalFrames = fps * duration;
-    const animations: BABYLON.Animation[] = [];
-
-    // Fog start animation
-    if (fogStart !== undefined) {
-      const currentFogStart = scene.fogStart;
-      const fogStartAnim = new BABYLON.Animation(
-        "fogStartAnim",
-        "fogStart",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      fogStartAnim.setKeys([
-        { frame: 0, value: currentFogStart },
-        { frame: totalFrames, value: fogStart }
-      ]);
-      if (easing) fogStartAnim.setEasingFunction(easing);
-      animations.push(fogStartAnim);
-    }
-
-    // Fog end animation
-    if (fogEnd !== undefined) {
-      const currentFogEnd = scene.fogEnd;
-      const fogEndAnim = new BABYLON.Animation(
-        "fogEndAnim",
-        "fogEnd",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      fogEndAnim.setKeys([
-        { frame: 0, value: currentFogEnd },
-        { frame: totalFrames, value: fogEnd }
-      ]);
-      if (easing) fogEndAnim.setEasingFunction(easing);
-      animations.push(fogEndAnim);
-    }
-
-    // Apply animations
-    if (animations.length > 0) {
-      scene.animations = animations;
-      scene.getEngine().scenes.forEach(s => {
-        if (s === scene) {
-          scene.getEngine().runRenderLoop(() => { });
-        }
-      });
-      scene.beginAnimation(scene, 0, totalFrames, false, 1, onComplete);
-    } else if (onComplete) {
-      onComplete();
-    }
-  };
-
-  // Apply delay if specified
-  if (delay > 0) {
-    setTimeout(executeAnimation, delay * 1000);
-  } else {
-    executeAnimation();
-  }
-}
 
 // Anchor data structure for guided mode ship positions
 interface AnchorData {
@@ -338,1386 +82,15 @@ interface AnchorData {
   forward: BABYLON.Vector3;
 }
 
-// Atom indicator configuration and structure
-interface AtomIndicatorConfig {
-  scene: BABYLON.Scene;
-  position: BABYLON.Vector3;
-  idleRingRadius: number; // Small radius when model is hidden
-  expandedRingRadii: [number, number, number]; // Expanded radii for each ring when model visible
-  rotationSpeed: number; // Base rotation speed multiplier
-  flameScale?: number; // Scale of the flame particle effect (default 1.0)
-}
 
-interface AtomIndicator {
-  root: BABYLON.TransformNode;
-  rings: BABYLON.LinesMesh[];
-  flame: BABYLON.ParticleSystem;
-  ringAnimations: {
-    axis: BABYLON.Vector3;
-    speed: number;
-  }[];
-  config: AtomIndicatorConfig;
-  // Methods - expand/contract now support force option to handle interruptions
-  expand: (duration?: number, force?: boolean) => void;
-  contract: (duration?: number, force?: boolean) => void;
-  getIsExpanded: () => boolean;
-  stopAnimations: () => void;
-  dispose: () => void;
-}
+// AtomIndicator is now imported from ./babylon/AtomIndicator
 
-/**
- * Creates an atom indicator at the specified position.
- * The atom consists of a flame particle effect in the center and 3 rotating rings.
- */
-function createAtomIndicator(config: AtomIndicatorConfig): AtomIndicator {
-  const { scene, position, idleRingRadius, expandedRingRadii, rotationSpeed, flameScale = 1.0 } = config;
 
-  // Create root transform node
-  const root = new BABYLON.TransformNode("atomIndicator", scene);
-  root.position.copyFrom(position);
 
-  // Create a small invisible sphere to serve as emitter (particle systems need AbstractMesh, not TransformNode)
-  const emitterSphere = BABYLON.MeshBuilder.CreateSphere("atomEmitter", { diameter: 0.01 }, scene);
-  emitterSphere.parent = root;
-  emitterSphere.isVisible = false;
 
-  // Create flame particle system (smaller version of engine flame)
-  const flame = new BABYLON.ParticleSystem("atomFlame", 150, scene);
-  flame.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
-  flame.emitter = emitterSphere;
-  flame.updateSpeed = 0.04;
-  flame.minEmitPower = 0.01 * flameScale;
-  flame.maxEmitPower = 0.03 * flameScale;
-  flame.emitRate = 100;
+// Model loading utilities imported from ./babylon/ModelLoadingUtils
 
-  // Sphere emitter for centered particles
-  const sphereEmitter = new BABYLON.SphereParticleEmitter(0.1 * flameScale);
-  sphereEmitter.radiusRange = 1;
-  flame.particleEmitterType = sphereEmitter;
-
-  // Size
-  flame.minSize = 0.15 * flameScale;
-  flame.maxSize = 0.4 * flameScale;
-
-  // Rotation
-  flame.minInitialRotation = 0;
-  flame.maxInitialRotation = Math.PI * 2;
-
-  // Lifetime
-  flame.minLifeTime = 0.15;
-  flame.maxLifeTime = 0.35;
-
-  flame.gravity = new BABYLON.Vector3(0, 0, 0);
-  flame.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-  flame.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
-  flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
-  flame.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
-
-
-  flame.start();
-
-  // Create 3 rings with different orientations (line-based circles)
-  const rings: BABYLON.LinesMesh[] = [];
-
-  // Ring orientations (tilted at different angles like an atom)
-  const ringOrientations = [
-    { rotX: 0, rotY: 0, rotZ: 0 },
-    { rotX: Math.PI / 3, rotY: Math.PI / 4, rotZ: 0 },
-    { rotX: -Math.PI / 4, rotY: Math.PI / 3, rotZ: Math.PI / 6 }
-  ];
-
-  // Random rotation axes and speeds for each ring
-  const ringAnimations: { axis: BABYLON.Vector3; speed: number }[] = [];
-
-  for (let i = 0; i < 3; i++) {
-    // Create circle points (64 segments for smoothness)
-    const segments = 64;
-    const radius = idleRingRadius; // All rings same size when collapsed
-    const points: BABYLON.Vector3[] = [];
-    // Create vertex colors with alpha for transparency (performant - no extra material needed)
-    const colors: BABYLON.Color4[] = [];
-    const ringColor = new BABYLON.Color4(1, 1, 1, 0.4); // Semi-transparent gray
-
-    for (let j = 0; j <= segments; j++) {
-      const angle = (j / segments) * Math.PI * 2;
-      points.push(new BABYLON.Vector3(
-        Math.cos(angle) * radius,
-        0,
-        Math.sin(angle) * radius
-      ));
-      colors.push(ringColor);
-    }
-
-    // Create line mesh for the ring with vertex colors (supports alpha)
-    const ring = BABYLON.MeshBuilder.CreateLines(`atomRing${i}`, {
-      points: points,
-      colors: colors,
-      useVertexAlpha: true,
-      updatable: true
-    }, scene);
-
-    ring.parent = root;
-    ring.isPickable = false; // Allow clicks to pass through to models behind
-
-    // Disable fog on the ring material
-    if (ring.material) {
-      (ring.material as any).disableFog = true;
-    }
-
-    // Apply initial orientation
-    const orient = ringOrientations[i];
-    ring.rotation.set(orient.rotX, orient.rotY, orient.rotZ);
-
-    rings.push(ring);
-
-    // Random rotation axis and speed
-    ringAnimations.push({
-      axis: new BABYLON.Vector3(
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-        Math.random() - 0.5
-      ).normalize(),
-      speed: (0.5 + Math.random() * 0.5) * rotationSpeed * (i % 2 === 0 ? 1 : -1)
-    });
-  }
-
-  // Animation observer for continuous ring rotation
-  const rotationObserver = scene.onBeforeRenderObservable.add(() => {
-    const deltaTime = scene.getEngine().getDeltaTime() / 1000;
-    rings.forEach((ring, i) => {
-      const anim = ringAnimations[i];
-      ring.rotate(anim.axis, anim.speed * deltaTime, BABYLON.Space.LOCAL);
-    });
-  });
-
-  // State tracking
-  let isExpanded = false;
-  let runningAnimatables: BABYLON.Animatable[] = [];
-
-  // Stop all running ring animations
-  const stopAnimations = () => {
-    runningAnimatables.forEach(anim => {
-      if (anim) {
-        anim.stop();
-      }
-    });
-    runningAnimatables = [];
-  };
-
-  // Expand rings and stop flame
-  // force: if true, will expand even if already expanded (handles interruption mid-animation)
-  const expand = (duration = 2, force = false) => {
-    // Skip if already expanded and not forcing
-    if (isExpanded && !force) return;
-
-    // Stop any running animations to prevent conflicts
-    stopAnimations();
-    isExpanded = true;
-
-    const fps = 60;
-    const totalFrames = fps * duration;
-
-    // Stop flame particles
-    flame.stop();
-
-    // Animate each ring to its expanded size (starting from CURRENT scale, not assumed start)
-    rings.forEach((ring, i) => {
-      const targetDiameter = expandedRingRadii[i] / (idleRingRadius * (1 + i * 0.15));
-
-      const scaleAnim = new BABYLON.Animation(
-        `ringExpand${i}`,
-        "scaling",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-
-      // Start from current scale (handles mid-animation interruption)
-      scaleAnim.setKeys([
-        { frame: 0, value: ring.scaling.clone() },
-        { frame: totalFrames, value: new BABYLON.Vector3(targetDiameter, targetDiameter, targetDiameter) }
-      ]);
-
-      const easing = new BABYLON.CubicEase();
-      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-      scaleAnim.setEasingFunction(easing);
-
-      ring.animations = [scaleAnim];
-      const animatable = scene.beginAnimation(ring, 0, totalFrames, false);
-      runningAnimatables.push(animatable);
-    });
-  };
-
-  // Contract rings and start flame
-  // force: if true, will contract even if already contracted (handles interruption mid-animation)
-  const contract = (duration = 0.5, force = false) => {
-    // Skip if already contracted and not forcing
-    if (!isExpanded && !force) return;
-
-    // Stop any running animations to prevent conflicts
-    stopAnimations();
-    isExpanded = false;
-
-    const fps = 60;
-    const totalFrames = fps * duration;
-
-    // Start flame particles
-    flame.start();
-
-    // Animate each ring back to idle size (starting from CURRENT scale)
-    rings.forEach((ring, i) => {
-      const targetScale = 1; // Back to original scale
-
-      const scaleAnim = new BABYLON.Animation(
-        `ringContract${i}`,
-        "scaling",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-
-      // Start from current scale (handles mid-animation interruption)
-      scaleAnim.setKeys([
-        { frame: 0, value: ring.scaling.clone() },
-        { frame: totalFrames, value: new BABYLON.Vector3(targetScale, targetScale, targetScale) }
-      ]);
-
-      const easing = new BABYLON.CubicEase();
-      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-      scaleAnim.setEasingFunction(easing);
-
-      ring.animations = [scaleAnim];
-      const animatable = scene.beginAnimation(ring, 0, totalFrames, false);
-      runningAnimatables.push(animatable);
-    });
-  };
-
-  // Getter for current expanded state
-  const getIsExpanded = () => isExpanded;
-
-  // Dispose function
-  const dispose = () => {
-    stopAnimations();
-    scene.onBeforeRenderObservable.remove(rotationObserver);
-    flame.dispose();
-    emitterSphere.dispose();
-    rings.forEach(ring => ring.dispose());
-    root.dispose();
-  };
-
-  return {
-    root,
-    rings,
-    flame,
-    ringAnimations,
-    config,
-    expand,
-    contract,
-    getIsExpanded,
-    stopAnimations,
-    dispose
-  };
-}
-
-// ===== SPATIAL LOADING RING =====
-// Displays a spinning progress ring at anchor positions when models are still loading
-
-interface LoadingRingConfig {
-  scene: BABYLON.Scene;
-  position: BABYLON.Vector3;
-  radius?: number;
-  thickness?: number;
-}
-
-interface LoadingRing {
-  root: BABYLON.TransformNode;
-  dispose: () => void;
-  hide: (duration?: number) => void;
-}
-
-/**
- * Creates a spatial loading ring at the specified position.
- * The ring spins continuously with a gradient arc, indicating loading progress.
- */
-function createLoadingRing(config: LoadingRingConfig): LoadingRing {
-  const { scene, position, radius = 3, thickness = 0.08 } = config;
-
-  // Create root transform node
-  const root = new BABYLON.TransformNode("loadingRingRoot", scene);
-  root.position.copyFrom(position);
-
-  // Create the arc points (3/4 of a circle)
-  const segments = 48;
-  const arcAngle = Math.PI * 1.5; // 270 degrees arc
-  const points: BABYLON.Vector3[] = [];
-  const colors: BABYLON.Color4[] = [];
-
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const angle = t * arcAngle - Math.PI / 2; // Start from top
-    points.push(new BABYLON.Vector3(
-      Math.cos(angle) * radius,
-      0,
-      Math.sin(angle) * radius
-    ));
-
-    // Gradient from transparent to bright (tail to head effect)
-    const alpha = Math.pow(t, 0.5) * 0.9; // Ease-in for smoother tail
-    // Color gradient: purple -> cyan -> white at the head
-    const r = 0.6 + t * 0.4;
-    const g = 0.4 + t * 0.6;
-    const b = 0.9 + t * 0.1;
-    colors.push(new BABYLON.Color4(r, g, b, alpha));
-  }
-
-  // Create the main arc line
-  const arc = BABYLON.MeshBuilder.CreateLines("loadingArc", {
-    points,
-    colors,
-    useVertexAlpha: true
-  }, scene);
-  arc.parent = root;
-
-  // Create a second, slightly larger arc for glow effect
-  const glowPoints: BABYLON.Vector3[] = [];
-  const glowColors: BABYLON.Color4[] = [];
-  const glowRadius = radius * 1.02;
-
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const angle = t * arcAngle - Math.PI / 2;
-    glowPoints.push(new BABYLON.Vector3(
-      Math.cos(angle) * glowRadius,
-      0,
-      Math.sin(angle) * glowRadius
-    ));
-    // Softer glow with lower alpha
-    const alpha = Math.pow(t, 0.7) * 0.3;
-    glowColors.push(new BABYLON.Color4(0.7, 0.5, 1, alpha));
-  }
-
-  const glowArc = BABYLON.MeshBuilder.CreateLines("loadingGlowArc", {
-    points: glowPoints,
-    colors: glowColors,
-    useVertexAlpha: true
-  }, scene);
-  glowArc.parent = root;
-
-  // Create particle effect at the head of the arc (brightest point)
-  const headEmitter = BABYLON.MeshBuilder.CreateSphere("loadingHeadEmitter", { diameter: 0.01 }, scene);
-  headEmitter.parent = root;
-  headEmitter.isVisible = false;
-  headEmitter.position.set(0, 0, radius); // Start at top of arc
-
-  const headParticles = new BABYLON.ParticleSystem("loadingHeadParticles", 30, scene);
-  headParticles.particleTexture = new BABYLON.Texture("/assets/textures/floating_light.png", scene);
-  headParticles.emitter = headEmitter;
-  headParticles.minEmitPower = 0.01;
-  headParticles.maxEmitPower = 0.02;
-  headParticles.emitRate = 15;
-  headParticles.minSize = 0.25;
-  headParticles.maxSize = 4;
-  headParticles.minLifeTime = 0.2;
-  headParticles.maxLifeTime = 0.5;
-  headParticles.color1 = new BABYLON.Color4(1, 1, 1, 0.6);
-  headParticles.color2 = new BABYLON.Color4(0.7, 0.5, 1, 0.3);
-  headParticles.colorDead = new BABYLON.Color4(0.5, 0.3, 0.8, 0);
-  headParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-  headParticles.gravity = BABYLON.Vector3.Zero();
-
-  const sphereEmitter = new BABYLON.SphereParticleEmitter(0.1);
-  sphereEmitter.radiusRange = 1;
-  headParticles.particleEmitterType = sphereEmitter;
-
-  headParticles.start();
-
-  // Animation: continuous rotation
-  const rotationSpeed = 2.5; // Radians per second
-  let currentAngle = 0;
-
-  const rotationObserver = scene.onBeforeRenderObservable.add(() => {
-    const deltaTime = scene.getEngine().getDeltaTime() / 1000;
-    currentAngle += rotationSpeed * deltaTime;
-    root.rotation.y = currentAngle;
-
-    // Update head emitter position (at the end of the arc, which rotates with root)
-    // The arc ends at 270 degrees from top, so head is at bottom-left
-    const headAngle = arcAngle - Math.PI / 2;
-    headEmitter.position.set(
-      Math.cos(headAngle) * radius,
-      0,
-      Math.sin(headAngle) * radius
-    );
-  });
-
-  // Face the camera (billboard-like, but only on XZ plane)
-  const billboardObserver = scene.onBeforeRenderObservable.add(() => {
-    const camera = scene.activeCamera;
-    if (!camera) return;
-
-    // Make the ring face the camera on the Y axis
-    const cameraPos = camera.position;
-    const ringPos = root.getAbsolutePosition();
-    const direction = cameraPos.subtract(ringPos);
-    direction.y = 0; // Keep level
-    direction.normalize();
-
-    // Calculate angle to face camera
-    // We offset by the current rotation so the spinning continues while facing camera
-    // Actually, for a spinner, we don't want to face camera - we want to spin freely
-    // So let's just have it spin on a slight tilt for visibility
-  });
-
-  // Tilt the ring slightly towards camera for better visibility
-  root.rotation.x = Math.PI / 6; // 30 degree tilt
-
-  // Hide animation function
-  const hide = (duration = 0.5) => {
-    const fps = 60;
-    const totalFrames = fps * duration;
-
-    // Fade out by scaling down
-    const scaleAnim = new BABYLON.Animation(
-      "loadingRingHide",
-      "scaling",
-      fps,
-      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-
-    scaleAnim.setKeys([
-      { frame: 0, value: root.scaling.clone() },
-      { frame: totalFrames, value: new BABYLON.Vector3(0.01, 0.01, 0.01) }
-    ]);
-
-    const easing = new BABYLON.CubicEase();
-    easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-    scaleAnim.setEasingFunction(easing);
-
-    root.animations = [scaleAnim];
-    scene.beginAnimation(root, 0, totalFrames, false, 1, () => {
-      root.setEnabled(false);
-      headParticles.stop();
-    });
-  };
-
-  // Dispose function
-  const dispose = () => {
-    scene.onBeforeRenderObservable.remove(rotationObserver);
-    scene.onBeforeRenderObservable.remove(billboardObserver);
-    headParticles.dispose();
-    headEmitter.dispose();
-    arc.dispose();
-    glowArc.dispose();
-    root.dispose();
-  };
-
-  return {
-    root,
-    dispose,
-    hide
-  };
-}
-
-// Store original scales for models (set when models are loaded)
-const modelOriginalScales: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Vector3> = new Map();
-
-// Store original rotations for models (set when models are loaded, used for reset)
-const modelOriginalRotations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
-
-/**
- * Checks if a lightmaps folder exists for a model and applies lightmaps to mesh materials.
- * Lightmaps are named after the mesh object (e.g., "chair2_lightmap.png" for mesh "chair2")
- * and are assigned to the material's lightmapTexture using UV channel 2 (coordinatesIndex = 1).
- * 
- * @param basePath The base path to the model folder (e.g., "/assets/models/meetkai/thanksgiving/")
- * @param meshes Array of meshes from the loaded container
- * @param scene The Babylon scene
- */
-async function applyLightmapsToModel(
-  basePath: string,
-  meshes: BABYLON.AbstractMesh[],
-  scene: BABYLON.Scene
-): Promise<void> {
-  // Ensure basePath ends with /
-  const normalizedPath = basePath.endsWith('/') ? basePath : basePath + '/';
-  const lightmapsPath = `${normalizedPath}lightmaps/`;
-
-  // NOTE: We skip folder existence check - individual file checks with
-  // content-type verification are sufficient. HEAD requests to directories
-  // on Vite dev server return 200 even for non-existent paths.
-
-  // Try to load lightmaps for each mesh
-  for (const mesh of meshes) {
-    // Skip meshes without materials or the root __root__ mesh
-    if (!mesh.material || mesh.name === '__root__' || mesh.name.startsWith('__')) {
-      continue;
-    }
-
-    // Check if the mesh has a second UV set (UV2) - required for lightmaps
-    const uv2Data = mesh.getVerticesData(BABYLON.VertexBuffer.UV2Kind);
-    if (!uv2Data) {
-      continue; // No UV2, skip this mesh
-    }
-
-    // Construct the lightmap filename: {meshName}_lightmap.png
-    const meshName = mesh.name;
-    const lightmapUrl = `${lightmapsPath}${meshName}_lightmap.png`;
-
-    // Only apply to PBRMaterial
-    const pbrMat = mesh.material as BABYLON.PBRMaterial;
-    if (!pbrMat || !pbrMat.getClassName || pbrMat.getClassName() !== 'PBRMaterial') {
-      continue;
-    }
-
-    // Create the lightmap texture with proper callbacks
-    // invertY MUST be false for lightmaps to work correctly
-    new BABYLON.Texture(
-      lightmapUrl,
-      scene,
-      false, // noMipmap
-      false, // invertY - MUST be false for lightmaps!
-      BABYLON.Texture.TRILINEAR_SAMPLINGMODE,
-      () => {
-        // Success callback - apply the lightmap
-        const lightmapTexture = new BABYLON.Texture(lightmapUrl, scene, false, false);
-        pbrMat.lightmapTexture = lightmapTexture;
-        pbrMat.lightmapTexture.coordinatesIndex = 1; // Use UV2
-        pbrMat.useLightmapAsShadowmap = true;
-      },
-      () => {
-        // Error callback - lightmap not found, silently skip
-      }
-    );
-  }
-}
-
-/**
- * Warms up the GPU for a model by rendering it at tiny scale for several frames.
- * This pre-compiles shaders, uploads vertex/index buffers, and uploads textures to GPU VRAM.
- * Without warmup, the first time a heavy model appears it causes a lag spike.
- * @param rootMesh The root mesh of the model
- * @param meshes All meshes of the model
- * @param scene The Babylon scene
- * @param warmupFrames Number of frames to render for warmup (default 10)
- * @returns Promise that resolves when warmup is complete
- */
-async function warmupModelForGPU(
-  rootMesh: BABYLON.AbstractMesh | null,
-  meshes: BABYLON.AbstractMesh[],
-  scene: BABYLON.Scene,
-  warmupFrames = 10
-): Promise<void> {
-  if (!rootMesh || meshes.length === 0) return;
-
-  // Store original visibility state
-  const originalEnabled = meshes.map(m => m.isEnabled());
-  const originalVisibility = meshes.map(m => m.visibility);
-  const originalScale = rootMesh.scaling.clone();
-
-  // Set to tiny scale and low visibility - still renders through pipeline but nearly invisible
-  rootMesh.scaling.set(0.001, 0.001, 0.001);
-  meshes.forEach(mesh => {
-    mesh.setEnabled(true);
-    mesh.visibility = 0.01; // Very low but not zero - ensures it goes through render pipeline
-  });
-
-  // Wait for several render frames to ensure GPU processes everything
-  for (let i = 0; i < warmupFrames; i++) {
-    await new Promise<void>(resolve => {
-      scene.onAfterRenderObservable.addOnce(() => resolve());
-    });
-  }
-
-  // Restore original scale
-  rootMesh.scaling.copyFrom(originalScale);
-
-  // Restore original visibility states (usually hidden)
-  meshes.forEach((mesh, i) => {
-    mesh.visibility = originalVisibility[i];
-    mesh.setEnabled(originalEnabled[i]);
-  });
-
-}
-
-/**
- * Shows or hides model using scale animation (scale up from near-zero or scale down to near-zero)
- * Handles interruptions: stops any running animation and starts from current scale.
- */
-// Track running scale animations per model root for interruption handling
-const modelScaleAnimations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Animatable> = new Map();
-
-function scaleModelMeshes(
-  rootMesh: BABYLON.TransformNode | BABYLON.AbstractMesh | null,
-  meshes: BABYLON.AbstractMesh[],
-  scene: BABYLON.Scene,
-  scaleIn: boolean,
-  duration = 1,
-  onComplete?: () => void
-) {
-  if (!rootMesh || meshes.length === 0) {
-    if (onComplete) onComplete();
-    return;
-  }
-
-  // Stop any running scale animation for this model (handles interruption)
-  const existingAnim = modelScaleAnimations.get(rootMesh);
-  if (existingAnim) {
-    existingAnim.stop();
-    modelScaleAnimations.delete(rootMesh);
-  }
-
-  const fps = 60;
-  const totalFrames = fps * duration;
-  const nearZeroScale = 0.001;
-
-  // Get the original full scale (stored when model was loaded)
-  // Child models use (1,1,1), parent roots may use (1,1,-1) for Z flip
-  const fullScale = modelOriginalScales.get(rootMesh) || new BABYLON.Vector3(1, 1, 1);
-
-  // When scaling out, make sure we have the correct full scale stored
-  if (!scaleIn && !modelOriginalScales.has(rootMesh)) {
-    modelOriginalScales.set(rootMesh, rootMesh.scaling.clone());
-  }
-
-  // Calculate end scale
-  const endScale = scaleIn
-    ? fullScale.clone()
-    : new BABYLON.Vector3(
-      nearZeroScale * Math.sign(fullScale.x),
-      nearZeroScale * Math.sign(fullScale.y),
-      nearZeroScale * Math.sign(fullScale.z)
-    );
-
-  // If scaling in and meshes are disabled, enable them first and set to near-zero
-  if (scaleIn) {
-    const currentScaleMag = rootMesh.scaling.length();
-    // If model is currently at near-zero or disabled, start from near-zero
-    if (currentScaleMag < 0.01 || !meshes.some(m => m.isEnabled())) {
-      rootMesh.scaling.set(
-        nearZeroScale * Math.sign(fullScale.x),
-        nearZeroScale * Math.sign(fullScale.y),
-        nearZeroScale * Math.sign(fullScale.z)
-      );
-    }
-    meshes.forEach(mesh => mesh.setEnabled(true));
-  }
-
-  // Start from CURRENT scale (handles mid-animation interruption gracefully)
-  const startScale = rootMesh.scaling.clone();
-
-  const scaleAnim = new BABYLON.Animation(
-    scaleIn ? "scaleInModel" : "scaleOutModel",
-    "scaling",
-    fps,
-    BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-  );
-
-  scaleAnim.setKeys([
-    { frame: 0, value: startScale },
-    { frame: totalFrames, value: endScale }
-  ]);
-
-  const easing = new BABYLON.QuadraticEase();
-  easing.setEasingMode(scaleIn
-    ? BABYLON.EasingFunction.EASINGMODE_EASEOUT
-    : BABYLON.EasingFunction.EASINGMODE_EASEIN);
-  scaleAnim.setEasingFunction(easing);
-
-  rootMesh.animations = [scaleAnim];
-
-  const animatable = scene.beginAnimation(rootMesh, 0, totalFrames, false, 1, () => {
-    // Clean up tracking
-    modelScaleAnimations.delete(rootMesh);
-
-    // If scaling out, disable meshes after animation
-    if (!scaleIn) {
-      meshes.forEach(mesh => mesh.setEnabled(false));
-      // Reset scale to full for next time
-      rootMesh.scaling.copyFrom(fullScale);
-    }
-    if (onComplete) onComplete();
-  });
-
-  // Track this animation for potential interruption
-  modelScaleAnimations.set(rootMesh, animatable);
-}
-
-// Guided mode bezier animation options
-interface AnimateShipAlongBezierOptions {
-  target: BABYLON.TransformNode;
-  scene: BABYLON.Scene;
-  camera: BABYLON.ArcRotateCamera | null;
-  canvas: HTMLCanvasElement | null;
-  startPosition: BABYLON.Vector3;
-  startForward: BABYLON.Vector3;
-  endPosition: BABYLON.Vector3;
-  endForward: BABYLON.Vector3;
-  startRotation: BABYLON.Quaternion;
-  endRotation: BABYLON.Quaternion;
-  duration?: number; // seconds, default 4.0
-  delay?: number; // delay before starting animation (seconds)
-  stateRadius?: number; // camera radius for zoomed-out view during travel
-  skipArrivalZoom?: boolean; // if true, don't zoom to 0 at arrival (for state_3/final)
-  skipArrivalHide?: boolean; // if true, don't hide ship at arrival (for state_3/final)
-  flameParticles?: BABYLON.ParticleSystem | null; // flame particles to tie to ship visibility
-  onComplete?: () => void;
-}
-
-// Duration for guided mode ship animations
-const GUIDED_SHIP_DURATION = 4.0;
-
-// Track current bezier animation to prevent stale callbacks from affecting visibility
-let currentBezierAnimationId = 0;
-
-// Track ship velocity during bezier animations for smooth speed transitions
-// When a new animation starts mid-travel, we use this to continue from current speed instead of 0
-let shipLastPosition: BABYLON.Vector3 | null = null;
-let shipCurrentVelocity: BABYLON.Vector3 = new BABYLON.Vector3(0, 0, 0);
-let shipCurrentSpeed: number = 0; // Magnitude of velocity
-let bezierVelocityObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
-
-// Observer for drag deceleration after cancelling bezier animation
-let dragDecelerationObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
-
-// Observer for path completion zoom triggers (zoom out at start, zoom in at end)
-let bezierPathObserver: BABYLON.Observer<BABYLON.Scene> | null = null;
-
-/**
- * Cancels any running bezier animation by invalidating its ID and cleaning up observers.
- * Call this when switching to free mode to immediately stop the guided mode animation.
- * Applies a smooth drag deceleration so the ship coasts to a stop instead of stopping abruptly.
- * @param scene - The Babylon scene (needed to stop animations)
- * @param target - The ship transform node (optional, to stop its animations)
- * @param camera - The camera (optional, to stop camera animations)
- */
-function cancelBezierAnimation(
-  scene: BABYLON.Scene | null,
-  target?: BABYLON.TransformNode | null,
-  camera?: BABYLON.ArcRotateCamera | null
-): void {
-
-  // Increment animation ID to invalidate any running animation's callbacks
-  currentBezierAnimationId++;
-
-  // Clean up velocity observer
-  if (bezierVelocityObserver && scene) {
-    scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
-    bezierVelocityObserver = null;
-  }
-
-  // Clean up any existing drag deceleration observer
-  if (dragDecelerationObserver && scene) {
-    scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
-    dragDecelerationObserver = null;
-  }
-
-  // Clean up path observer (prevents zoom in/out triggers from continuing)
-  if (bezierPathObserver && scene) {
-    scene.onBeforeRenderObservable.remove(bezierPathObserver);
-    bezierPathObserver = null;
-  }
-
-  // Capture current velocity before stopping for drag effect
-  const capturedVelocity = shipCurrentVelocity.clone();
-  const capturedSpeed = shipCurrentSpeed;
-
-  // Reset velocity tracking
-  shipCurrentSpeed = 0;
-  shipLastPosition = null;
-
-  // Notify engine sound manager that guided animation is no longer active
-  setGuidedAnimationActive(false);
-  // Keep current velocity for engine sound (free mode will take over tracking)
-  updateEngineVelocity(capturedSpeed);
-
-  // Stop keyframe animations on the ship (frees it from the bezier path)
-  if (target && scene) {
-    scene.stopAnimation(target);
-
-    // Apply drag deceleration if the ship was moving
-    if (capturedSpeed > 0.5) {
-      // Create a velocity vector for the drag physics
-      let dragVelocity = capturedVelocity.clone();
-      const dragFriction = 4.0; // How quickly to slow down (higher = faster stop)
-      const minSpeed = 0.1; // Speed threshold to stop the drag effect
-
-      dragDecelerationObserver = scene.onBeforeRenderObservable.add(() => {
-        if (!target || !scene) {
-          if (dragDecelerationObserver) {
-            scene?.onBeforeRenderObservable.remove(dragDecelerationObserver);
-            dragDecelerationObserver = null;
-          }
-          return;
-        }
-
-        const deltaTime = scene.getEngine().getDeltaTime() / 1000;
-
-        // Apply drag friction (exponential decay)
-        const dragMultiplier = Math.exp(-dragFriction * deltaTime);
-        dragVelocity.scaleInPlace(dragMultiplier);
-
-        // Move the ship by the velocity
-        const displacement = dragVelocity.scale(deltaTime);
-        target.position.addInPlace(displacement);
-
-        // Check if we've slowed down enough to stop
-        const currentDragSpeed = dragVelocity.length();
-        if (currentDragSpeed < minSpeed) {
-          if (dragDecelerationObserver) {
-            scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
-            dragDecelerationObserver = null;
-          }
-        }
-      });
-    }
-  }
-
-  // Stop animations on the camera (this stops the bezier's camera zoom animations)
-  if (camera && scene) {
-    scene.stopAnimation(camera);
-  }
-}
-
-/**
- * Sets the visibility of the ship and flame particles together.
- * This ensures they are always in sync - either both visible or both hidden.
- * NEVER toggle ship visibility without using this function!
- */
-interface SetShipAndFlamesVisibilityOptions {
-  shipMeshes?: BABYLON.AbstractMesh[];
-  container?: BABYLON.TransformNode | BABYLON.AbstractMesh;
-  flameParticles: BABYLON.ParticleSystem | null | undefined;
-  visible: boolean;
-  method?: 'visibility' | 'enabled';
-  logContext?: string;
-}
-
-function setShipAndFlamesVisibility(options: SetShipAndFlamesVisibilityOptions): void {
-  const { shipMeshes, container, flameParticles, visible, method = 'visibility', logContext = '' } = options;
-  const ctx = logContext ? `[${logContext}] ` : '';
-
-  // Handle ship visibility
-  if (method === 'visibility' && shipMeshes) {
-    shipMeshes.forEach(mesh => mesh.visibility = visible ? 1 : 0);
-  } else if (method === 'enabled' && container) {
-    container.setEnabled(visible);
-    // Force world matrix update so flame emitter position is correct immediately
-    if (visible && 'computeWorldMatrix' in container) {
-      (container as BABYLON.TransformNode).computeWorldMatrix(true);
-    }
-  }
-
-  // Handle flame particles - ALWAYS in sync with ship
-  if (visible) {
-    if (flameParticles) {
-      const wasAlreadyStarted = flameParticles.isStarted();
-      // Always call start() when making visible - it's safe to call even if already started
-      flameParticles.start();
-    } else {
-    }
-  } else {
-    if (flameParticles && flameParticles.isStarted()) {
-      flameParticles.stop();
-    }
-  }
-}
-
-/**
- * Animates the ship along a cubic bezier curve from current position/rotation to target.
- * The bezier curve is calculated at runtime based on start/end positions and forward directions.
- * Control points are placed along the forward directions to create a smooth flight path.
- */
-function animateShipAlongBezier(options: AnimateShipAlongBezierOptions): void {
-  // Increment animation ID - any previous animation's callbacks will now be stale
-  currentBezierAnimationId++;
-  const thisAnimationId = currentBezierAnimationId;
-
-  // Clean up any existing drag deceleration observer from a previous cancellation
-  // This prevents conflicts when switching back to guided mode
-  if (dragDecelerationObserver && options.scene) {
-    options.scene.onBeforeRenderObservable.remove(dragDecelerationObserver);
-    dragDecelerationObserver = null;
-  }
-
-  // Clean up any existing path observer from a previous animation
-  if (bezierPathObserver && options.scene) {
-    options.scene.onBeforeRenderObservable.remove(bezierPathObserver);
-    bezierPathObserver = null;
-  }
-
-  const {
-    target,
-    scene,
-    camera,
-    startPosition,
-    startForward,
-    endPosition,
-    endForward,
-    startRotation,
-    endRotation,
-    duration = GUIDED_SHIP_DURATION,
-    delay = 0,
-    flameParticles,
-    onComplete
-  } = options;
-
-  // Function to execute the animation (may be delayed)
-  const executeAnimation = () => {
-    // Check if animation was superseded during delay
-    if (thisAnimationId !== currentBezierAnimationId) {
-      return;
-    }
-
-    // Make ship and flames visible before departing
-    setShipAndFlamesVisibility({
-      shipMeshes: target.getChildMeshes(),
-      flameParticles,
-      visible: true,
-      method: 'visibility',
-      logContext: 'Bezier Animation'
-    });
-
-    // Calculate the distance between start and end for control point scaling
-    let effectiveStartPosition = startPosition.clone();
-    let distance = BABYLON.Vector3.Distance(startPosition, endPosition);
-
-    // If start and end positions are the same (or very close), the bezier curve would degenerate
-    // and cause erratic ship movement. Offset the start position slightly backward along the
-    // ship's forward direction to create a valid curve.
-    const MIN_DISTANCE_THRESHOLD = 0.1;
-    if (distance < MIN_DISTANCE_THRESHOLD) {
-      const offsetDistance = 0.05; // Very small offset behind the ship
-      effectiveStartPosition = startPosition.add(startForward.scale(offsetDistance));
-      distance = BABYLON.Vector3.Distance(effectiveStartPosition, endPosition);
-    }
-
-    // Control point distance is proportional to the total distance
-    // Using 1/3 of the distance creates a nice smooth curve
-    const controlPointDistance = distance * .25;
-
-    // Create cubic bezier control points:
-    // P0 = start position (possibly offset if too close to end)
-    // P1 = start position - startForward * controlPointDistance (ship continues in its facing direction)
-    // P2 = end position + endForward * controlPointDistance (approaches target aligned with its facing direction)
-    // P3 = end position
-
-    const p0 = effectiveStartPosition.clone();
-    const p1 = effectiveStartPosition.subtract(startForward.scale(controlPointDistance));
-    const p2 = endPosition.add(endForward.scale(controlPointDistance));
-    const p3 = endPosition.clone();
-
-    // Create a Babylon Curve3 from the bezier points
-    const bezierCurve = BABYLON.Curve3.CreateCubicBezier(p0, p1, p2, p3, 200);
-    const curvePoints = bezierCurve.getPoints();
-
-    // Animation parameters
-    const fps = 60;
-    const totalFrames = fps * duration;
-    const numKeyframes = 120; // Number of keyframes for smooth animation
-
-    // Calculate the expected "peak speed" along this path
-    // For a cubic bezier with ease-in-out, the peak speed happens around the middle
-    // We estimate this by calculating the path length divided by duration, scaled by ~2 for ease-in-out peak
-    const pathLength = bezierCurve.length();
-    const averageSpeed = pathLength / duration;
-    const peakSpeed = averageSpeed * 2.0; // At the middle of ease-in-out, speed is roughly 2x average
-
-    // Calculate initial speed ratio (0-1) based on current ship velocity
-    // This tells us how "fast" we're already going compared to the new path's peak speed
-    let initialSpeedRatio = 0;
-    if (shipCurrentSpeed > 0.1 && peakSpeed > 0) {
-      // Clamp to 0-1 range (we can't start faster than peak speed)
-      initialSpeedRatio = Math.min(shipCurrentSpeed / peakSpeed, 1.0);
-    }
-
-    // Stop any previous velocity observer
-    if (bezierVelocityObserver) {
-      scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
-      bezierVelocityObserver = null;
-    }
-
-    // Set up velocity tracking for this animation
-    shipLastPosition = target.position.clone();
-    setGuidedAnimationActive(true); // Notify engine sound that animation is starting
-    bezierVelocityObserver = scene.onBeforeRenderObservable.add(() => {
-      if (thisAnimationId !== currentBezierAnimationId) {
-        // This animation was superseded, clean up observer
-        if (bezierVelocityObserver) {
-          scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
-          bezierVelocityObserver = null;
-        }
-        setGuidedAnimationActive(false); // Animation ended
-        updateEngineVelocity(0); // Reset velocity
-        return;
-      }
-
-      const currentPos = target.position.clone();
-      if (shipLastPosition) {
-        const deltaTime = scene.getEngine().getDeltaTime() / 1000;
-        if (deltaTime > 0) {
-          shipCurrentVelocity = currentPos.subtract(shipLastPosition).scale(1 / deltaTime);
-          shipCurrentSpeed = shipCurrentVelocity.length();
-          // Report velocity to engine sound manager
-          updateEngineVelocity(shipCurrentSpeed);
-        }
-      }
-      shipLastPosition = currentPos;
-    });
-
-    // Asymmetric ease: moderate start (or continue from current speed), very smooth arrival
-    // When initialSpeedRatio > 0, we blend the ease-in with a linear continuation
-    const smoothEase = (t: number): number => {
-      if (t < 0.5) {
-        // Blend between linear (maintaining speed) and quadratic ease-in (acceleration)
-        // At initialSpeedRatio = 0: pure quadratic (slow start)
-        // At initialSpeedRatio = 1: pure linear (maintain speed)
-        const quadratic = 2 * t * t;
-        const linear = t;
-        // Use a smooth blend: start more linear, then transition to quadratic behavior
-        // The blend factor decreases as t increases, so we smoothly transition to the normal ease
-        const blendFactor = initialSpeedRatio * Math.max(0, 1 - t * 2);
-        return quadratic + blendFactor * (linear - quadratic);
-      } else {
-        // Quintic ease-out: very smooth arrival (unchanged)
-        return 1 - Math.pow(-2 * t + 2, 2) / 2;
-      }
-    };
-
-    // Helper to interpolate position on the bezier curve at any parameter value
-    const sampleCurveAt = (param: number): BABYLON.Vector3 => {
-      const index = param * (curvePoints.length - 1);
-      const lowIndex = Math.floor(index);
-      const highIndex = Math.min(lowIndex + 1, curvePoints.length - 1);
-      const blend = index - lowIndex;
-      return BABYLON.Vector3.Lerp(curvePoints[lowIndex], curvePoints[highIndex], blend);
-    };
-
-    // Helper to get tangent at any parameter value
-    const getTangentAt = (param: number): BABYLON.Vector3 => {
-      const epsilon = 0.001;
-      const p1 = sampleCurveAt(Math.max(0, param - epsilon));
-      const p2 = sampleCurveAt(Math.min(1, param + epsilon));
-      return p2.subtract(p1).normalize();
-    };
-
-    // Create position animation that follows the bezier curve
-    const positionAnimation = new BABYLON.Animation(
-      "shipBezierPosition",
-      "position",
-      fps,
-      BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-
-    // Create keyframes with LINEAR frame timing but EASED curve sampling
-    // This means: at 10% of animation time, we're at 3% of the curve (slow start)
-    //             at 90% of animation time, we're at 97% of the curve (slow end)
-    const positionKeys: { frame: number; value: BABYLON.Vector3 }[] = [];
-    for (let i = 0; i <= numKeyframes; i++) {
-      const t = i / numKeyframes; // Linear time progress (0 to 1)
-      const frame = t * totalFrames; // Linear frame timing
-      const curveParam = smoothEase(t); // Eased position along curve
-      const position = sampleCurveAt(curveParam);
-      positionKeys.push({ frame, value: position });
-    }
-    positionAnimation.setKeys(positionKeys);
-
-    // Create rotation animation using spherical linear interpolation (SLERP)
-    const rotationAnimation = new BABYLON.Animation(
-      "shipBezierRotation",
-      "rotationQuaternion",
-      fps,
-      BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-    );
-
-    // Create keyframes for rotation with same eased curve sampling
-    const rotationKeys: { frame: number; value: BABYLON.Quaternion }[] = [];
-
-    for (let i = 0; i <= numKeyframes; i++) {
-      const t = i / numKeyframes; // Linear time progress
-      const frame = t * totalFrames; // Linear frame timing
-      const curveParam = smoothEase(t); // Eased position along curve
-
-      // Get tangent at this curve position for flight direction
-      const tangent = curveParam >= 0.999 ? endForward.clone() : getTangentAt(curveParam);
-
-      // Create a rotation that faces along the tangent
-      const up = new BABYLON.Vector3(0, 1, 0);
-      const right = BABYLON.Vector3.Cross(up, tangent).normalize();
-      const correctedUp = BABYLON.Vector3.Cross(tangent, right).normalize();
-
-      // Build rotation from tangent direction
-      const tangentRotation = BABYLON.Quaternion.FromLookDirectionLH(tangent, correctedUp);
-
-      // Blend between tangent-following and target rotation
-      const blendFactor = Math.pow(curveParam, 1.5);
-      const interpolatedRotation = BABYLON.Quaternion.Slerp(tangentRotation, endRotation, blendFactor);
-
-      rotationKeys.push({ frame, value: interpolatedRotation });
-    }
-    rotationAnimation.setKeys(rotationKeys);
-
-    // Easing for camera (defined here for use in camera animation below)
-    const easing = new BABYLON.CubicEase();
-    easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-
-    // Ensure target has a rotation quaternion
-    if (!target.rotationQuaternion) {
-      target.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(
-        target.rotation.x,
-        target.rotation.y,
-        target.rotation.z
-      );
-    }
-
-    // Apply ship animations
-    target.animations = [positionAnimation, rotationAnimation];
-
-    // Start ship animation
-    scene.beginAnimation(target, 0, totalFrames, false, 1, () => {
-
-      // Clean up velocity observer and reset speed tracking when animation completes normally
-      if (bezierVelocityObserver && thisAnimationId === currentBezierAnimationId) {
-        scene.onBeforeRenderObservable.remove(bezierVelocityObserver);
-        bezierVelocityObserver = null;
-        shipCurrentSpeed = 0;
-        shipLastPosition = null;
-        // Notify engine sound manager that animation ended
-        setGuidedAnimationActive(false);
-        updateEngineVelocity(0);
-      }
-
-      // Only hide ship if:
-      // 1. This animation is still current (not superseded)
-      // 2. skipArrivalHide is not set
-      // 3. Navigation mode is still 'guided' (user didn't switch to free during animation)
-      const currentNavMode = typeof useUI !== 'undefined' ? useUI.getState().navigationMode : 'guided';
-      const shouldHide = thisAnimationId === currentBezierAnimationId &&
-        !options.skipArrivalHide &&
-        currentNavMode === 'guided';
-
-      if (shouldHide) {
-        // Hide ship and stop flames together
-        setShipAndFlamesVisibility({
-          shipMeshes: target.getChildMeshes(),
-          flameParticles,
-          visible: false,
-          method: 'visibility',
-          logContext: 'Bezier Animation'
-        });
-      }
-      if (onComplete) onComplete();
-    });
-
-    // Animate camera alpha/beta to smoothly transition viewing angle
-    if (camera) {
-      const startAlpha = camera.alpha;
-      const startBeta = camera.beta;
-
-      // Extract camera angles from endRotation quaternion for proper alignment with all anchor rotations
-      // This avoids issues with high X rotations by working directly with the quaternion
-      const shipForward = new BABYLON.Vector3(0, 0, 1);
-      const shipUp = new BABYLON.Vector3(0, 1, 0);
-      shipForward.rotateByQuaternionToRef(endRotation, shipForward);
-      shipUp.rotateByQuaternionToRef(endRotation, shipUp);
-
-      // Calculate target alpha based on ship's forward direction (horizontal component)
-      // Camera should be positioned "behind" the ship relative to its forward direction
-      const endAlpha = Math.atan2(-shipForward.x, -shipForward.z) - Math.PI / 2;
-
-      // Calculate target beta from ship's pitch (how much it's looking up/down)
-      // pitchAngle: positive = ship nose up, negative = ship nose down
-      const pitchAngle = Math.asin(Math.max(-1, Math.min(1, shipForward.y)));
-      // Base beta is PI/2 (horizontal), adjust based on ship's pitch
-      // When ship pitches down (negative pitch), camera should be more from above (lower beta)
-      // When ship pitches up (positive pitch), camera should be more from below (higher beta)
-      const baseBeta = Math.PI / 2; // Slightly above horizontal as default
-      const endBeta = Math.max(0.3, Math.min(Math.PI - 0.3, baseBeta - pitchAngle));
-
-      // Normalize alpha difference for shortest rotation path
-      let alphaDiff = endAlpha - startAlpha;
-      while (alphaDiff > Math.PI) alphaDiff -= 2 * Math.PI;
-      while (alphaDiff < -Math.PI) alphaDiff += 2 * Math.PI;
-      const normalizedEndAlpha = startAlpha + alphaDiff;
-
-      // Create camera alpha animation
-      const alphaAnimation = new BABYLON.Animation(
-        "cameraAlpha",
-        "alpha",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      alphaAnimation.setKeys([
-        { frame: 0, value: startAlpha },
-        { frame: totalFrames, value: normalizedEndAlpha }
-      ]);
-      alphaAnimation.setEasingFunction(easing);
-
-      // Create camera beta animation
-      const betaAnimation = new BABYLON.Animation(
-        "cameraBeta",
-        "beta",
-        fps,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-      );
-      betaAnimation.setKeys([
-        { frame: 0, value: startBeta },
-        { frame: totalFrames, value: endBeta }
-      ]);
-      betaAnimation.setEasingFunction(easing);
-
-      // Apply and start camera animations
-      camera.animations = [alphaAnimation, betaAnimation];
-      scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
-      });
-
-      // Camera radius animation - TIME-BASED triggers for reliable behavior
-      // Zoom out immediately at start, zoom in near the end
-      const stateRadius = options.stateRadius; // Zoom-out radius from state config
-      const arrivalRadius = 0; // Close-up radius for arrival
-      const radiusAnimDuration = duration * 0.25; // Duration of each zoom animation
-      const radiusFps = 60;
-
-      // ===== ZOOM OUT: Trigger immediately when animation starts =====
-      {
-        const currentRadius = camera.radius;
-        const targetRadius = stateRadius ?? 24;
-
-        // Allow the transition
-        camera.lowerRadiusLimit = 0;
-        camera.upperRadiusLimit = targetRadius;
-
-        // Animate radius
-        const zoomOutAnim = new BABYLON.Animation(
-          "bezierZoomOut",
-          "radius",
-          radiusFps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        const zoomOutEasing = new BABYLON.CubicEase();
-        zoomOutEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-        zoomOutAnim.setEasingFunction(zoomOutEasing);
-        zoomOutAnim.setKeys([
-          { frame: 0, value: currentRadius },
-          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
-        ]);
-
-        // Animate lowerRadiusLimit to lock zoom during travel
-        const lowerLimitAnim = new BABYLON.Animation(
-          "bezierLowerLimit",
-          "lowerRadiusLimit",
-          radiusFps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        lowerLimitAnim.setEasingFunction(zoomOutEasing);
-        lowerLimitAnim.setKeys([
-          { frame: 0, value: currentRadius },
-          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
-        ]);
-
-        // Animate upperRadiusLimit to lock zoom during travel
-        const upperLimitAnim = new BABYLON.Animation(
-          "bezierUpperLimit",
-          "upperRadiusLimit",
-          radiusFps,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-        );
-        upperLimitAnim.setEasingFunction(zoomOutEasing);
-        upperLimitAnim.setKeys([
-          { frame: 0, value: currentRadius },
-          { frame: radiusFps * radiusAnimDuration, value: targetRadius }
-        ]);
-
-        scene.beginDirectAnimation(camera, [zoomOutAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
-        });
-      }
-
-      // ===== ZOOM IN: Trigger near the end of the animation (time-based) =====
-      if (!options.skipArrivalZoom) {
-        // Calculate delay: total duration minus zoom animation duration
-        // This ensures zoom-in starts so it completes roughly when ship arrives
-        const zoomInDelay = Math.max(0, (duration - radiusAnimDuration) * 1000);
-
-        setTimeout(() => {
-          // Check if this animation is still valid (not superseded)
-          if (thisAnimationId !== currentBezierAnimationId) {
-            return;
-          }
-
-          const currentRadius = camera.radius;
-          const currentLowerLimit = camera.lowerRadiusLimit ?? currentRadius;
-          const currentUpperLimit = camera.upperRadiusLimit ?? currentRadius;
-
-          // Allow zooming all the way in
-          camera.lowerRadiusLimit = 0;
-          camera.upperRadiusLimit = currentRadius; // Will be animated down
-
-          // Animate radius
-          const zoomInAnim = new BABYLON.Animation(
-            "bezierZoomIn",
-            "radius",
-            radiusFps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-          const zoomInEasing = new BABYLON.CubicEase();
-          zoomInEasing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-          zoomInAnim.setEasingFunction(zoomInEasing);
-          zoomInAnim.setKeys([
-            { frame: 0, value: currentRadius },
-            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-          ]);
-
-          // Animate lowerRadiusLimit to lock zoom during arrival
-          const lowerLimitAnim = new BABYLON.Animation(
-            "bezierLowerLimitIn",
-            "lowerRadiusLimit",
-            radiusFps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-          lowerLimitAnim.setEasingFunction(zoomInEasing);
-          lowerLimitAnim.setKeys([
-            { frame: 0, value: currentLowerLimit },
-            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-          ]);
-
-          // Animate upperRadiusLimit to lock zoom during arrival
-          const upperLimitAnim = new BABYLON.Animation(
-            "bezierUpperLimitIn",
-            "upperRadiusLimit",
-            radiusFps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-          upperLimitAnim.setEasingFunction(zoomInEasing);
-          upperLimitAnim.setKeys([
-            { frame: 0, value: currentUpperLimit },
-            { frame: radiusFps * radiusAnimDuration, value: arrivalRadius }
-          ]);
-
-          scene.beginDirectAnimation(camera, [zoomInAnim, lowerLimitAnim, upperLimitAnim], 0, radiusFps * radiusAnimDuration, false, 1, () => {
-          });
-        }, zoomInDelay);
-      }
-    }
-  }; // End of executeAnimation function
-
-  // Apply delay if specified, otherwise execute immediately
-  if (delay > 0) {
-    setTimeout(executeAnimation, delay * 1000);
-  } else {
-    executeAnimation();
-  }
-}
+// ShipBezierAnimation is now imported from ./babylon/ShipBezierAnimation
 
 export function BabylonCanvas() {
   const s = useUI((st) => st.state);
@@ -1761,11 +134,14 @@ export function BabylonCanvas() {
   const dragRotationRef = useRef(BABYLON.Quaternion.Identity());
   const isDraggingRef = useRef(false);
   const lastDragPosRef = useRef({ x: 0, y: 0 });
+  // Drag velocity for momentum effect (stores angular velocity)
+  const dragVelocityRef = useRef({ x: 0, y: 0 });
+  const dragMomentumAnimRef = useRef<number | null>(null);
 
   // Spaceship control state refs
   const shipControlsRef = useRef({
     keys: {} as Record<string, boolean>,
-    speed: 6,
+    speed: 9,
     speedK: 2,
     v: 10,
     pitch: 0,
@@ -1814,8 +190,7 @@ export function BabylonCanvas() {
   const carRootRef = useRef<BABYLON.AbstractMesh | null>(null);
   const carMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
   const carAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const currentColorRef = useRef<string>("green");
-  const currentTrimRef = useRef<string>("lightBlue");
+
   const selectedProjectIndex = useUI((st) => st.selectedProjectIndex);
 
   // Meetkai refs (anchor_1, state 4) - Multiple models with shared parent
@@ -1924,20 +299,7 @@ export function BabylonCanvas() {
     model5: false
   });
 
-  // Loading rings for each anchor (shown when ship arrives but model isn't loaded yet)
-  const loadingRingsRef = useRef<{
-    ring1: LoadingRing | null; // For Meetkai (anchor_1)
-    ring2: LoadingRing | null; // For More Than Real (anchor_2)
-    ring3: LoadingRing | null; // For Baltha Maker (anchor_3)
-    ring4: LoadingRing | null; // For UFSC (anchor_4)
-    ring5: LoadingRing | null; // For Personal Projects (anchor_5)
-  }>({
-    ring1: null,
-    ring2: null,
-    ring3: null,
-    ring4: null,
-    ring5: null
-  });
+
 
   // Track whether each model has finished loading (different from visibility)
   const modelLoadedRef = useRef<{
@@ -2338,60 +700,12 @@ export function BabylonCanvas() {
                 vertices.push(worldPos);
               }
 
-              // Create particle system for curve effect
-              const curveParticles = new BABYLON.ParticleSystem("curveParticles", 1000, scene);
-              curveParticles.particleTexture = new BABYLON.Texture("/assets/textures/floating_light.png", scene);
-
-              // Use a dummy emitter (won't be used since we have custom start position)
-              const dummyEmitter = BABYLON.Mesh.CreateBox("curveEmitter", 0.01, scene);
-              dummyEmitter.visibility = 0;
-              dummyEmitter.position.set(0, 0, 0);
-              curveParticles.emitter = dummyEmitter;
-
-              // Custom spawn function to place particles at random vertices with offset
-              curveParticles.startPositionFunction = (worldMatrix, position, particle) => {
-                // Pick a random vertex
-                const randomVertex = vertices[Math.floor(Math.random() * vertices.length)];
-
-                // Add random offset for variation
-                const offsetRange = 3.0; // Adjust this to control spread around vertices
-                position.x = randomVertex.x + (Math.random() - 0.5) * offsetRange;
-                position.y = randomVertex.y + (Math.random() - 0.5) * offsetRange;
-                position.z = randomVertex.z + (Math.random() - 0.5) * offsetRange;
-              };
-              if (isMobileRef.current) {
-                // Particle size - visible but not huge
-                curveParticles.minSize = .15;
-                curveParticles.maxSize = .75;
-                curveParticles.emitRate = 200;
-              } else {
-                // Particle size - visible but not huge
-                curveParticles.minSize = 1;
-                curveParticles.maxSize = 3
-                curveParticles.emitRate = 600;
-              }
-              // Rotation randomness
-              curveParticles.minInitialRotation = 0;
-              curveParticles.maxInitialRotation = Math.PI * 2;
-
-              curveParticles.minLifeTime = 2.5;
-              curveParticles.maxLifeTime = 4.5;
-              curveParticles.updateSpeed = 0.02;
-
-              // Very slow gentle movement
-              curveParticles.minEmitPower = 0.003;
-              curveParticles.maxEmitPower = 0.015;
-
-              curveParticles.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
-              curveParticles.addColorGradient(0.1, new BABYLON.Color4(.6, 0.6, 0.9, 0.3));
-              curveParticles.addColorGradient(0.5, new BABYLON.Color4(.8, 0.6, 0.8, 0.3));
-              curveParticles.addColorGradient(0.8, new BABYLON.Color4(.9, 0.5, 0.4, 0.15));
-              curveParticles.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
-
-              curveParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-              curveParticles.gravity = new BABYLON.Vector3(0, .4, 0);
-
-              // Don't start automatically - will be controlled by state config
+              // Create particle system for curve effect using factory
+              const { emitter: curveEmitter, particles: curveParticles } = createCurveParticleSystem({
+                scene,
+                vertices,
+                isMobile: isMobileRef.current
+              });
               curveParticleSystemRef.current = curveParticles;
               // Store base emit rate for distance-based fading
               distanceFadeRef.current.baseEmitRates.curveParticles = curveParticles.emitRate;
@@ -2576,37 +890,8 @@ export function BabylonCanvas() {
             // Adjustable Z offset for second flame (positive = farther back in local space)
             const FLAME_2_Z_OFFSET = 0.12;
 
-            // ===== FIRST FLAME (original position) =====
-            const flame = new BABYLON.ParticleSystem("engineFlamePS", 600, scene);
-            flame.particleTexture = new BABYLON.Texture("/assets/textures/muzzle_06.png", scene);
-            flame.emitter = emitter as any; // TransformNode is valid emitter
-            flame.updateSpeed = .04;
-            flame.minEmitPower = 0.02;
-            flame.maxEmitPower = 0.05;
-            flame.emitRate = 1000; // Start disabled, enable in free mode
-
-            // Point spawn at nozzle (no direction - uses emitter transform + emitPower)
-            flame.particleEmitterType = new BABYLON.PointParticleEmitter();
-
-            // Size randomness
-            flame.minSize = 0.2;
-            flame.maxSize = 0.5;
-
-            // Rotation randomness
-            flame.minInitialRotation = Math.PI * 1;
-            flame.maxInitialRotation = Math.PI * 3;
-
-            // Lifetime
-            flame.minLifeTime = 0.1;
-            flame.maxLifeTime = 0.2;
-
-            // Color & blend
-            flame.gravity = new BABYLON.Vector3(0, 0, 0);
-            flame.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-            flame.color1 = new BABYLON.Color4(1, 0.6, 0.3, 0.5);
-            flame.color2 = new BABYLON.Color4(1, 0.2, 0.6, 0.2);
-            flame.colorDead = new BABYLON.Color4(0, 0, 0.5, 0.2);
-
+            // ===== FIRST FLAME (original position) - using factory =====
+            const flame = createEngineFlameParticleSystem({ scene, emitter });
             // DON'T start flames here - ship is hidden by default!
             // Flames will be started by setShipAndFlamesVisibility when ship becomes visible
             flameParticleSystemRef.current = flame;
@@ -2620,353 +905,71 @@ export function BabylonCanvas() {
       }
     );
 
-    // Create particle systems (stars and smoke)
-    // Stars Particle System
-    const starsEmitter = BABYLON.Mesh.CreateBox("starsEmitter", 0.01, scene);
-    starsEmitter.visibility = 0;
-    starsEmitter.position.set(0, 0, 0);
+    // Create particle systems (stars and smoke) using factory functions
+    const { emitter: starsEmitter, particles: stars } = createStarsParticleSystem({
+      scene,
+      spaceshipRootRef
+    });
     starsEmitterRef.current = starsEmitter;
-
-    const stars = new BABYLON.ParticleSystem("starsParticles", 3000, scene);
-    stars.particleTexture = new BABYLON.Texture("/assets/textures/star_07.png", scene);
-    stars.emitter = starsEmitter;
-
-    // Custom spawn function for stars with forbidden radius that follows shipRoot
-    const forbiddenRadius = 800;
-    const totalRadius = 1000;
-    const forbiddenRadiusSq = forbiddenRadius * forbiddenRadius;
-
-    // Debug counter for logging
-    let starSpawnCounter = 0;
-
-    // This function will be called every time a particle spawns
-    // It needs to access the ship's CURRENT position at spawn time
-    stars.startPositionFunction = (worldMatrix, position, particle) => {
-      // Access shipRoot directly through the ref - gets current position at spawn time
-      const shipRoot = spaceshipRootRef.current;
-      if (!shipRoot) {
-        // If ship not loaded yet, spawn at origin
-        position.x = 0;
-        position.y = 0;
-        position.z = 0;
-        return;
-      }
-
-      // Get live reference to ship position (same Vector3 object, updates as ship moves)
-      const shipPos = shipRoot.position;
-
-      starSpawnCounter++;
-
-      let x, y, z;
-      let relX, relY, relZ;
-
-      // Rejection sampling - keep generating until outside forbidden radius around ship
-      do {
-        // Generate relative coordinates (before ship offset)
-        relX = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
-        relY = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
-        relZ = BABYLON.Scalar.RandomRange(-totalRadius, totalRadius);
-      } while (
-        // Check distance in relative space (before ship offset applied)
-        relX * relX + relY * relY + relZ * relZ < forbiddenRadiusSq
-      );
-
-      // Apply ship offset with X inverted, Y and Z normal
-      x = relX - shipRoot.position.x;
-      y = relY + shipRoot.position.y;
-      z = relZ + shipRoot.position.z;
-
-      // Set absolute world position
-      position.x = starsEmitter.position.x + x;
-      position.y = starsEmitter.position.y + y;
-      position.z = starsEmitter.position.z + z;
-
-    };
-
-
-    // Color gradients for stars
-    stars.addColorGradient(0.0, new BABYLON.Color4(0.8, 0.8, 1, 0));
-    stars.addColorGradient(0.05, new BABYLON.Color4(0.8, 0.8, 1, 1));
-    stars.addColorGradient(0.4, new BABYLON.Color4(0.9, 0.9, 0.7, 0.8));
-    stars.addColorGradient(0.7, new BABYLON.Color4(1, 0.9, 0.7, 0.8));
-    stars.addColorGradient(1.0, new BABYLON.Color4(1, 0.7, 0.7, 0));
-
-    stars.minSize = 6;
-    stars.maxSize = 15;
-    stars.minLifeTime = 3;
-    stars.maxLifeTime = 10;
-    stars.emitRate = 0; // Start disabled
-
-    stars.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
-    stars.gravity = new BABYLON.Vector3(0, 0, 0);
-    stars.direction1 = new BABYLON.Vector3(0, 0, 0);
-    stars.direction2 = new BABYLON.Vector3(0, 0, 0);
-    stars.minAngularSpeed = -0.5;
-    stars.maxAngularSpeed = 0.5;
-    stars.minEmitPower = 0.5;
-    stars.maxEmitPower = 1.5;
-    stars.updateSpeed = 0.01;
-
     stars.start();
     starsParticleSystemRef.current = stars;
 
-    // Smoke Particle System
-    const smokeEmitter = BABYLON.Mesh.CreateBox("smokeEmitter", 0.01, scene);
-    smokeEmitter.visibility = 0;
-    smokeEmitter.position.set(0, 0, 25);
+    const { emitter: smokeEmitter, particles: smoke } = createSmokeParticleSystem({
+      scene,
+      isMobile: isMobileRef.current
+    });
     smokeEmitterRef.current = smokeEmitter;
-
-    const smoke = new BABYLON.ParticleSystem("smokeParticles", 60, scene);
-    smoke.particleTexture = new BABYLON.Texture("/assets/textures/smoke_15.png", scene);
-    smoke.emitter = smokeEmitter;
-
-    smoke.minEmitBox = new BABYLON.Vector3(-30, -5, 30);
-    smoke.maxEmitBox = new BABYLON.Vector3(30, 2, -30);
-
-    // Color gradients for smoke
-    smoke.addColorGradient(0.0, new BABYLON.Color4(0.40, 0.40, 0.88, 0));
-    smoke.addColorGradient(0.2, new BABYLON.Color4(0.35, 0.40, 0.88, 0.1));
-    smoke.addColorGradient(0.8, new BABYLON.Color4(0.4, 0.25, 0.5, 0.08));
-    smoke.addColorGradient(1.0, new BABYLON.Color4(0.3, 0.15, 0.4, 0));
-
-    smoke.minSize = 9;
-    smoke.maxSize = 18;
-    smoke.minLifeTime = 4;
-    smoke.maxLifeTime = 10;
-    smoke.emitRate = 0; // Start disabled
-
-    smoke.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
-    smoke.gravity = new BABYLON.Vector3(0, 0, 0);
-    smoke.direction1 = new BABYLON.Vector3(0, 0, 0);
-    smoke.direction2 = new BABYLON.Vector3(0, 0, 0);
-    smoke.minAngularSpeed = -0.5;
-    smoke.maxAngularSpeed = 0.5;
-    smoke.minEmitPower = 0.5;
-    smoke.maxEmitPower = 1.5;
-    smoke.updateSpeed = 0.01;
-
-    if (isMobileRef.current) {
-      smoke.stop();
-    } else {
-      smoke.start();
-    }
     smokeParticleSystemRef.current = smoke;
 
     // ========================
-    // Portal System
+    // Portal System (imported from ./babylon/PortalSystem)
     // ========================
-
-    // Portal Warp Post-Process Effect
-    BABYLON.Effect.ShadersStore["portalWarpFragmentShader"] = `
-        precision highp float;
-        varying vec2 vUV;
-        uniform sampler2D textureSampler;
-        uniform float intensity;
-        
-        void main(void) {
-            vec2 center = vec2(0.5, 0.5);
-            vec2 toCenter = vUV - center;
-            float dist = length(toCenter);
-            
-            float warpStrength = intensity * 0.1 * (1.0 - dist);
-            vec2 offset = normalize(toCenter) * sin(dist * 20.0) * warpStrength;
-            
-            vec2 uv = vUV + offset;
-            vec4 color = texture2D(textureSampler, uv);
-            
-            vec2 texel = vec2(1.0) / vec2(1920.0, 1080.0);
-            vec4 blur = (
-                texture2D(textureSampler, uv + vec2(texel.x, 0.0)) +
-                texture2D(textureSampler, uv - vec2(texel.x, 0.0)) +
-                texture2D(textureSampler, uv + vec2(0.0, texel.y)) +
-                texture2D(textureSampler, uv - vec2(0.0, texel.y))
-            ) * 0.25;
-
-            gl_FragColor = mix(color, blur, 0.3);
-        }
-    `;
-
-    const warpEffect = new BABYLON.PostProcess(
-      "portalWarp",
-      "portalWarp",
-      ["intensity"],
-      null,
-      1.0,
-      camera
-    );
-    warpEffect.onApply = function (effect) {
-      effect.setFloat("intensity", (warpEffect as any)._intensity || 0);
-    };
-    (warpEffect as any)._intensity = 0;
-    camera.detachPostProcess(warpEffect);
-    warpEffectRef.current = warpEffect;
-
-    // Portal Shader
-    BABYLON.Effect.ShadersStore["portalVertexShader"] = `
-        precision highp float;
-        attribute vec3 position;
-        attribute vec2 uv;
-        uniform mat4 worldViewProjection;
-        varying vec2 vUV;
-        void main(void) {
-            vUV = uv;
-            gl_Position = worldViewProjection * vec4(position, 1.0);
-        }
-    `;
-
-    BABYLON.Effect.ShadersStore["portalFragmentShader"] = `
-        precision highp float;
-        varying vec2 vUV;
-        uniform sampler2D textureSampler;
-        uniform float time;
-        uniform vec2 uvOffset;
-        uniform float globalAlpha;
-
-        void main(void) {
-            vec2 center = vec2(0.5);
-            vec2 toCenter = vUV - center;
-            float dist = length(toCenter);
-
-            vec2 uv = vUV;
-            uv.x = vUV.x * 0.5 - uvOffset.x;
-
-            float rippleFade = 1.0 - pow((dist - 0.5) * 2.0, 2.0);
-            float ripple = sin(dist * 30.0 - time * 2.0) * 0.015 * rippleFade;
-            uv -= normalize(toCenter) * ripple;
-
-            vec4 color = texture2D(textureSampler, uv);
-            float alpha = smoothstep(0.5, 0.1, dist);
-
-            gl_FragColor = vec4(color.rgb, alpha * globalAlpha);
-        }
-    `;
-
-    // Portal creation function
-    function createPortal(
-      portalPosition: BABYLON.Vector3,
-      portalRadius: number,
-      name: string,
-      title: string
-    ): BABYLON.Mesh {
-      // Create portal mesh
-      const portalMesh = BABYLON.MeshBuilder.CreateDisc(name, {
-        radius: portalRadius,
-        tessellation: 16
-      }, scene);
-      portalMesh.position = portalPosition.clone();
-      portalMesh.rotation.x = Math.PI;
-      portalMesh.rotation.y = Math.PI / 2;
-      portalMesh.name = name;
-      portalMesh.alwaysSelectAsActiveMesh = true;
-
-      // Create shader material
-      const shaderMat = new BABYLON.ShaderMaterial("portalShader_" + name, scene, {
-        vertex: "portal",
-        fragment: "portal"
-      }, {
-        attributes: ["position", "uv"],
-        uniforms: ["worldViewProjection", "time", "globalAlpha", "uvOffset"]
-      });
-
-      shaderMat.backFaceCulling = false;
-      shaderMat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
-      shaderMat.needAlphaBlending = () => true;
-
-      const portalTex = new BABYLON.Texture("/assets/textures/static_portal.jpg", scene);
-      portalTex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
-      portalTex.uScale = 1;
-      shaderMat.setTexture("textureSampler", portalTex);
-      shaderMat.setFloat("globalAlpha", 1.0);
-      shaderMat.setVector2("uvOffset", new BABYLON.Vector2(0, 0));
-
-      portalMesh.material = shaderMat;
-
-      // Particle swirl
-      const swirl = new BABYLON.ParticleSystem("swirl_" + name, 30, scene);
-      swirl.particleTexture = new BABYLON.Texture("/assets/textures/twirl_02.png", scene);
-      swirl.emitter = portalMesh;
-      swirl.minEmitBox = swirl.maxEmitBox = new BABYLON.Vector3(0, 0, 0);
-      swirl.direction1 = swirl.direction2 = new BABYLON.Vector3(0, 0, 0);
-      swirl.minEmitPower = swirl.maxEmitPower = 0;
-      swirl.minSize = portalRadius * 2 * 0.3;
-      swirl.maxSize = portalRadius * 2 * 1.2;
-      swirl.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
-      swirl.minAngularSpeed = 1;
-      swirl.maxAngularSpeed = 3;
-      swirl.addColorGradient(0.0, new BABYLON.Color4(0.2, 0.2, 0.7, 0));
-      swirl.addColorGradient(0.2, new BABYLON.Color4(0.6 / 1.5, 0.62 / 1.5, 0.9 / 1.2, 0.4));
-      swirl.addColorGradient(0.8, new BABYLON.Color4(0.78 / 1.5, 0.63 / 1.5, 0.82 / 1.2, 0.4));
-      swirl.addColorGradient(1.0, new BABYLON.Color4(0.5, 0.2, 0.9, 0));
-      swirl.minLifeTime = 4;
-      swirl.maxLifeTime = 8;
-      swirl.emitRate = 10;
-      swirl.gravity = BABYLON.Vector3.Zero();
-      swirl.updateSpeed = 0.01;
-      swirl.billboardMode = BABYLON.AbstractMesh.BILLBOARDMODE_ALL;
-      swirl.disposeOnStop = false;
-      swirl.start();
-
-      portalSwirlsRef.current.push(swirl);
-
-      // Runtime logic: face camera and animate shader
-      scene.registerBeforeRender(() => {
-        // Update shader time
-        shaderMat.setFloat("time", performance.now() * 0.001);
-
-        // Face the camera
-        const toCam = camera.position.subtract(portalMesh.position).normalize();
-        const lookQuat = BABYLON.Quaternion.FromLookDirectionLH(toCam, BABYLON.Axis.Y);
-        const flipZ = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Z, Math.PI);
-        const flipY = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, Math.PI);
-        const targetRot = lookQuat.multiply(flipZ).multiply(flipY);
-        if (!portalMesh.rotationQuaternion)
-          portalMesh.rotationQuaternion = BABYLON.Quaternion.Identity();
-        BABYLON.Quaternion.SlerpToRef(portalMesh.rotationQuaternion, targetRot, 0.01, portalMesh.rotationQuaternion);
-
-        // Scroll UV based on portal orientation
-        const forward = portalMesh.forward || portalMesh.getDirection(BABYLON.Axis.Z);
-        const angle = Math.atan2(forward.x, forward.z);
-        const scrollOffset = angle / (2 * Math.PI);
-        shaderMat.setVector2("uvOffset", new BABYLON.Vector2(-scrollOffset, 0));
-      });
-
-      // Initially disabled
-      portalMesh.setEnabled(false);
-
-      return portalMesh;
-    }
+    registerPortalShaders();
+    warpEffectRef.current = createPortalWarpEffect(camera);
 
     // Create 4 portals at positions from prototype
-    const portal1 = createPortal(
-      new BABYLON.Vector3(40, 4, -50),
-      6,
-      "portal_geelySeagull",
-      "GEELY Car Visualizer"
-    );
+    const portal1 = createPortal({
+      scene,
+      camera,
+      position: new BABYLON.Vector3(40, 4, -50),
+      radius: 6,
+      name: "portal_geelySeagull",
+      title: "GEELY Car Visualizer",
+      portalSwirlsRef
+    });
     portalsRef.current.push(portal1);
 
-    const portal2 = createPortal(
-      new BABYLON.Vector3(50, -3, 20),
-      6,
-      "portal_atlasflow",
-      "Atlasflow"
-    );
+    const portal2 = createPortal({
+      scene,
+      camera,
+      position: new BABYLON.Vector3(50, -3, 20),
+      radius: 6,
+      name: "portal_atlasflow",
+      title: "Atlasflow",
+      portalSwirlsRef
+    });
     portalsRef.current.push(portal2);
 
-    const portal3 = createPortal(
-      new BABYLON.Vector3(-50, -3, 20),
-      6,
-      "portal_babylonEditor",
-      "Babylon.js Editor"
-    );
+    const portal3 = createPortal({
+      scene,
+      camera,
+      position: new BABYLON.Vector3(-50, -3, 20),
+      radius: 6,
+      name: "portal_babylonEditor",
+      title: "Babylon.js Editor",
+      portalSwirlsRef
+    });
     portalsRef.current.push(portal3);
 
-    const portal4 = createPortal(
-      new BABYLON.Vector3(-40, -2, -50),
-      6,
-      "portal_fda",
-      "FDA Training Platform"
-    );
+    const portal4 = createPortal({
+      scene,
+      camera,
+      position: new BABYLON.Vector3(-40, -2, -50),
+      radius: 6,
+      name: "portal_fda",
+      title: "FDA Training Platform",
+      portalSwirlsRef
+    });
     portalsRef.current.push(portal4);
 
     // ========================
@@ -3174,92 +1177,11 @@ export function BabylonCanvas() {
         // Mark model as fully loaded
         modelLoadedRef.current.model1 = true;
 
-        // If a loading ring is showing at this anchor, hide it
-        if (loadingRingsRef.current.ring1) {
-          loadingRingsRef.current.ring1.hide();
-        }
+
 
       } catch {
         // Silent catch - error loading models
       }
-    };
-
-    // Customize car function
-    const customizeCar = ({ color, trim }: { color?: string; trim?: string } = {}) => {
-      if (!sceneRef.current) return null;
-
-      const carMaterial = sceneRef.current.getMaterialByName("body_paint") as BABYLON.PBRMaterial;
-      if (!carMaterial) {
-        console.warn("⚠️ Body_Paint material not found");
-        return null;
-      }
-
-      // Defaults (fall back to current)
-      let newColor = color ?? currentColorRef.current;
-      let newTrim = trim ?? currentTrimRef.current;
-
-      const colorProvided = color !== undefined;
-      const trimProvided = trim !== undefined;
-
-      // Sanity-check the names
-      const colorSetting = colorSettings[newColor as keyof typeof colorSettings];
-      if (!colorSetting) {
-        console.warn(`⚠️ Invalid color: ${newColor}`);
-        return null;
-      }
-
-      if (!trimConfigs[newTrim]) {
-        console.warn(`⚠️ Invalid trim: ${newTrim}`);
-        return null;
-      }
-
-      // If user picked a new trim, check if current color is allowed
-      if (trimProvided && !colorProvided) {
-        const chosenTrim = trimConfigs[newTrim];
-        if (!chosenTrim.allowed.includes(newColor)) {
-          // Auto-switch to first allowed color
-          newColor = chosenTrim.allowed[0];
-        }
-      }
-
-      // If user picked a new color, check if current trim allows it
-      if (colorProvided && !trimProvided) {
-        const currentTrimConfig = trimConfigs[newTrim];
-        if (!currentTrimConfig.allowed.includes(newColor)) {
-          // Find a trim that allows this color
-          const compatibleTrim = Object.entries(trimConfigs).find(([_, cfg]) =>
-            cfg.allowed.includes(newColor)
-          );
-          if (compatibleTrim) {
-            newTrim = compatibleTrim[0];
-          }
-        }
-      }
-
-      // Apply body paint color
-      const paint = colorSettings[newColor as keyof typeof colorSettings];
-      carMaterial.albedoColor = BABYLON.Color3.FromHexString(paint.hex);
-      carMaterial.metallic = paint.metallic;
-      carMaterial.roughness = paint.roughness;
-      if (carMaterial.sheen) {
-        carMaterial.sheen.intensity = paint.sheen;
-      }
-
-      // Apply trim-specific materials
-      const chosenTrim = trimConfigs[newTrim];
-      for (const [meshName, matName] of Object.entries(chosenTrim.materials)) {
-        const mesh = sceneRef.current.getMeshByName(meshName);
-        const mat = sceneRef.current.getMaterialByName(matName);
-        if (mesh && mat) {
-          mesh.material = mat;
-        }
-      }
-
-      // Update current state
-      currentColorRef.current = newColor;
-      currentTrimRef.current = newTrim;
-
-      return { finalColor: newColor, finalTrim: newTrim };
     };
 
     // Load models for anchor_2 (state_5) asynchronously
@@ -3441,10 +1363,7 @@ export function BabylonCanvas() {
         // Mark model as fully loaded
         modelLoadedRef.current.model2 = true;
 
-        // If a loading ring is showing at this anchor, hide it
-        if (loadingRingsRef.current.ring2) {
-          loadingRingsRef.current.ring2.hide();
-        }
+
 
       } catch {
         // Silent catch - error loading models
@@ -3622,10 +1541,7 @@ export function BabylonCanvas() {
         // Mark model as fully loaded
         modelLoadedRef.current.model3 = true;
 
-        // If a loading ring is showing at this anchor, hide it
-        if (loadingRingsRef.current.ring3) {
-          loadingRingsRef.current.ring3.hide();
-        }
+
       } catch {
         // Silent catch - error loading models
       }
@@ -3798,10 +1714,7 @@ export function BabylonCanvas() {
         // Mark model as fully loaded
         modelLoadedRef.current.model4 = true;
 
-        // If a loading ring is showing at this anchor, hide it
-        if (loadingRingsRef.current.ring4) {
-          loadingRingsRef.current.ring4.hide();
-        }
+
 
       } catch {
         // Silent catch - error loading models
@@ -3973,10 +1886,7 @@ export function BabylonCanvas() {
         // Mark model as fully loaded
         modelLoadedRef.current.model5 = true;
 
-        // If a loading ring is showing at this anchor, hide it
-        if (loadingRingsRef.current.ring5) {
-          loadingRingsRef.current.ring5.hide();
-        }
+
 
       } catch {
         // Silent catch - error loading models
@@ -4589,8 +2499,8 @@ export function BabylonCanvas() {
 
             // ===== PROXIMITY-BASED SPEED REDUCTION =====
             // Calculate distance to nearest anchor - ship slows down when inside anchor zones
-            const ANCHOR_SLOW_RADIUS = 20; // Same as WORKPLACE_VISIBILITY_DISTANCE
-            const MIN_SPEED_MULT = 0.5; // Half speed at center
+            const ANCHOR_SLOW_RADIUS = 18; // Same as WORKPLACE_VISIBILITY_DISTANCE
+            const MIN_SPEED_MULT = 0.28; // Half speed at center
 
             // Get ship position for proximity check
             const shipPos = controlTarget.getAbsolutePosition();
@@ -4669,85 +2579,6 @@ export function BabylonCanvas() {
           }
         }
       });
-
-      // ========== DESKTOP WASD CONTROLS (commented out - using drag controls for both) ==========
-      // } else {
-      //   // Yaw from A/D (D=right, A=left)
-      //   const turnIn = ((K["d"] || K["arrowright"]) ? 1 : 0) -
-      //     ((K["a"] || K["arrowleft"]) ? 1 : 0);
-
-      //   // Pitch from Q/E with easing (E=up, Q=down)
-      //   const pitchIn = (K["q"] ? 1 : 0) - (K["e"] ? 1 : 0);
-      //   const targetPitchVel = pitchIn * PITCH_RATE;
-      //   ShipControls.pitchVel += (targetPitchVel - ShipControls.pitchVel) * Math.min(1, dt * SMOOTH);
-      //   ShipControls.pitch -= ShipControls.pitchVel * dt;
-
-      //   // Yaw accumulation from A/D
-      //   ShipControls.yawTarget -= turnIn * PITCH_RATE * dt;
-
-      //   // Ship orientation - ABSOLUTE rotation from accumulated angles (like prototype)
-      //   const qYaw = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.Y, ShipControls.yawTarget);
-      //   const qPitch = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, ShipControls.pitch);
-      //   const qFinal = qYaw.multiply(qPitch);
-
-      //   // Apply rotation directly without Slerp for immediate response
-      //   controlTarget.rotationQuaternion = qFinal;
-
-      //   // Choose & blend animation
-      //   const BLEND_PER_SEC = 4;
-      //   const wStep = BLEND_PER_SEC * dt;
-
-      //   const forwardKey = K["w"] || K["arrowup"];
-      //   const brakeKey = K["s"] || K["arrowdown"];
-
-      //   if (A.fwd && A.brk && A.L && A.R && A.I) {
-      //     if (turnIn < 0) play(A.L, wStep);
-      //     else if (turnIn > 0) play(A.R, wStep);
-      //     else if (brakeKey) play(A.brk, wStep);
-      //     else if (forwardKey) play(A.fwd, wStep);
-      //     else play(A.I, wStep);
-      //   }
-
-      //   // Smooth Shift throttle
-      //   const wantSpeed = K["shift"] ? ShipControls.speed * ShipControls.speedK : ShipControls.speed;
-      //   ShipControls.v += (wantSpeed - ShipControls.v) * Math.min(1, dt * 5);
-
-      //   // Movement with velocity smoothing (inertia/momentum)
-      //   const throttle = forwardKey && !brakeKey ? 1 :
-      //     forwardKey && brakeKey ? 0.5 : 0;
-
-      //   // Calculate target velocity direction
-      //   let targetVelocity = new BABYLON.Vector3(0, 0, 0);
-
-      //   if (throttle > 0) {
-      //     // Get forward direction (already includes pitch rotation for circular motion)
-      //     const forwardVector = new BABYLON.Vector3(0, 0, 1);
-
-      //     const dir = BABYLON.Vector3.TransformNormal(
-      //       forwardVector,
-      //       controlTarget.getWorldMatrix()
-      //     ).normalize();
-
-      //     // Invert X axis to fix left-right direction (like prototype)
-      //     dir.x *= -1;
-
-      //     // Target velocity in the forward direction
-      //     targetVelocity = dir.scale(ShipControls.v * 1 * throttle);
-      //   }
-
-      //   // Smoothly interpolate current velocity toward target velocity
-      //   // When throttle > 0: accelerate toward target
-      //   // When throttle = 0: drag slows down to zero
-      //   const interpSpeed = throttle > 0 ? ShipControls.acceleration : ShipControls.drag;
-      //   ShipControls.velocity.x += (targetVelocity.x - ShipControls.velocity.x) * Math.min(1, dt * interpSpeed);
-      //   ShipControls.velocity.y += (targetVelocity.y - ShipControls.velocity.y) * Math.min(1, dt * interpSpeed);
-      //   ShipControls.velocity.z += (targetVelocity.z - ShipControls.velocity.z) * Math.min(1, dt * interpSpeed);
-
-      //   // Apply velocity to position
-      //   const movement = ShipControls.velocity.scale(dt);
-      //   controlTarget.position.addInPlace(movement);
-      // }
-
     }, totalShipAnimTime); // Close setTimeout
 
     return () => {
@@ -4797,6 +2628,13 @@ export function BabylonCanvas() {
       if (e.button !== 0) return;
       isDraggingRef.current = true;
       lastDragPosRef.current = { x: e.clientX, y: e.clientY };
+      // Cancel any running momentum animation when user starts dragging again
+      if (dragMomentumAnimRef.current !== null) {
+        cancelAnimationFrame(dragMomentumAnimRef.current);
+        dragMomentumAnimRef.current = null;
+      }
+      // Reset velocity when starting new drag
+      dragVelocityRef.current = { x: 0, y: 0 };
       canvas.setPointerCapture(e.pointerId);
     };
 
@@ -4827,12 +2665,66 @@ export function BabylonCanvas() {
       // Combine rotations: first apply the new rotation, then the existing one
       dragRotationRef.current = yAxisRotation.multiply(xAxisRotation).multiply(dragRotationRef.current);
 
+      // Track velocity for momentum effect (exponential smoothing)
+      const velocitySmoothing = 0.4; // Higher = more responsive, lower = smoother
+      dragVelocityRef.current.x = dragVelocityRef.current.x * (1 - velocitySmoothing) + (-deltaX * sensitivity) * velocitySmoothing;
+      dragVelocityRef.current.y = dragVelocityRef.current.y * (1 - velocitySmoothing) + (-deltaY * sensitivity) * velocitySmoothing;
+
       lastDragPosRef.current = { x: e.clientX, y: e.clientY };
     };
 
     const handlePointerUp = (e: PointerEvent) => {
       isDraggingRef.current = false;
       canvas.releasePointerCapture(e.pointerId);
+
+      // Start momentum animation if there's significant velocity
+      const velocity = dragVelocityRef.current;
+      const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+      const minSpeedThreshold = 0.001;
+
+      if (speed > minSpeedThreshold && camera) {
+        const friction = 0.965; // Decay rate per frame (lower = faster stop)
+        const stopThreshold = 0.0001;
+
+        const animateMomentum = () => {
+          const vel = dragVelocityRef.current;
+          const currentSpeed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
+
+          if (currentSpeed < stopThreshold || isDraggingRef.current) {
+            // Stop animation when speed is negligible or user starts dragging again
+            dragVelocityRef.current = { x: 0, y: 0 };
+            dragMomentumAnimRef.current = null;
+            return;
+          }
+
+          // Apply friction decay
+          vel.x *= friction;
+          vel.y *= friction;
+
+          // Apply velocity to rotation
+          const yAxisRotation = BABYLON.Quaternion.RotationAxis(
+            BABYLON.Vector3.Up(),
+            vel.x
+          );
+
+          // Get camera's right vector for vertical rotation
+          const cam = cameraRef.current;
+          if (cam) {
+            const cameraRight = cam.getDirection(BABYLON.Axis.X);
+            const xAxisRotation = BABYLON.Quaternion.RotationAxis(
+              cameraRight,
+              vel.y
+            );
+            dragRotationRef.current = yAxisRotation.multiply(xAxisRotation).multiply(dragRotationRef.current);
+          } else {
+            dragRotationRef.current = yAxisRotation.multiply(dragRotationRef.current);
+          }
+
+          dragMomentumAnimRef.current = requestAnimationFrame(animateMomentum);
+        };
+
+        dragMomentumAnimRef.current = requestAnimationFrame(animateMomentum);
+      }
     };
 
     canvas.addEventListener('pointerdown', handlePointerDown);
@@ -4845,6 +2737,11 @@ export function BabylonCanvas() {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerup', handlePointerUp);
       canvas.removeEventListener('pointercancel', handlePointerUp);
+      // Clean up momentum animation on unmount
+      if (dragMomentumAnimRef.current !== null) {
+        cancelAnimationFrame(dragMomentumAnimRef.current);
+        dragMomentumAnimRef.current = null;
+      }
     };
   }, []);
 
@@ -5216,26 +3113,7 @@ export function BabylonCanvas() {
             onComplete: () => {
               guidedModeArrivedRef.current = true;
 
-              // Check if model is loaded - if not, show loading ring
-              const modelKey = `model${anchorIndex}` as 'model1' | 'model2' | 'model3' | 'model4';
-              const ringKey = `ring${anchorIndex}` as 'ring1' | 'ring2' | 'ring3' | 'ring4';
-              const isModelLoaded = modelLoadedRef.current[modelKey];
 
-              if (!isModelLoaded && scene) {
-
-                // Dispose any existing ring first
-                if (loadingRingsRef.current[ringKey]) {
-                  loadingRingsRef.current[ringKey]!.dispose();
-                }
-
-                // Create loading ring at anchor position
-                const loadingRing = createLoadingRing({
-                  scene,
-                  position: anchorData.position,
-                  radius: 2.5
-                });
-                loadingRingsRef.current[ringKey] = loadingRing;
-              }
             }
           });
         } else {
@@ -6476,13 +4354,7 @@ export function BabylonCanvas() {
         stopRocketFlames();
       }
 
-      // Dispose all loading rings when leaving explore states
-      const rings = loadingRingsRef.current;
-      if (rings.ring1) { rings.ring1.dispose(); rings.ring1 = null; }
-      if (rings.ring2) { rings.ring2.dispose(); rings.ring2 = null; }
-      if (rings.ring3) { rings.ring3.dispose(); rings.ring3 = null; }
-      if (rings.ring4) { rings.ring4.dispose(); rings.ring4 = null; }
-      if (rings.ring5) { rings.ring5.dispose(); rings.ring5 = null; }
+
 
       return;
     }
@@ -6534,12 +4406,7 @@ export function BabylonCanvas() {
           atom.expand(0.6, true);
         }
 
-        // Hide any loading ring that might be showing at this anchor
-        const ringKey = modelKey.replace('model', 'ring') as 'ring1' | 'ring2' | 'ring3' | 'ring4';
-        const loadingRing = loadingRingsRef.current[ringKey];
-        if (loadingRing) {
-          loadingRing.hide(0.3);
-        }
+
 
         // Reset parent root rotation to original anchor rotation when model becomes visible
         // This ensures consistent initial orientation
