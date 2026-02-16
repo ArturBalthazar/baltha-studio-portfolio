@@ -318,10 +318,10 @@ export function Chat({ className = "", onClose }: ChatProps) {
         "[--chat-top:84px] md:[--chat-top:32px]",
         className
       )}
-      // Use HEIGHT based on --app-vh so it shrinks with the keyboard (like the canvas)
+      // Use fixed 100dvh so the chat does NOT shrink when the mobile keyboard opens
       style={{
         height:
-          "calc(var(--app-vh, 100dvh) - var(--chat-top) - max(env(safe-area-inset-bottom,0px), 16px))",
+          "calc(100dvh - var(--chat-top) - max(env(safe-area-inset-bottom,0px), 16px))",
       }}
     >
       {/* === EXACT-SIZE BOX BEHIND THE CHAT WINDOW === */}

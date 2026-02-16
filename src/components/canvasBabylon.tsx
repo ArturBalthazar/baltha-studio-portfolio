@@ -400,9 +400,9 @@ export function BabylonCanvas() {
       model4: null as BABYLON.Vector3 | null
     } as Record<string, BABYLON.Vector3 | null>,
     // Percentage of anchor-to-ship distance to move model when zoomed in (0.3 = 30% closer)
-    zoomedInPercent: 0.3,
+    zoomedInPercent: 0.4,
     // Animation duration in seconds
-    animationDuration: 0.5,
+    animationDuration: 0.4,
     // Track if animation is in progress to prevent rapid toggling
     isAnimating: false
   });
@@ -861,14 +861,7 @@ export function BabylonCanvas() {
           shipRoot.scaling.set(Math.abs(s.x) * 1.1, Math.abs(s.y) * 1.1, Math.abs(s.z) * -1.1);
           shipRoot.rotationQuaternion = shipRoot.rotationQuaternion || BABYLON.Quaternion.Identity();
 
-          // Setup materials for transparency
-          meshes.forEach(mesh => {
-            if (mesh.material) {
-              mesh.material.transparencyMode = BABYLON.Material.MATERIAL_OPAQUE;
-              mesh.material.needDepthPrePass = true;
-              mesh.material.backFaceCulling = false;
-            }
-          });
+
 
           shipRoot.setEnabled(false); // Hidden by default, shown in state 3
           spaceshipRef.current = spaceship; // Keep mesh reference for materials
@@ -3268,7 +3261,7 @@ export function BabylonCanvas() {
       ShipControls.pitchVel = 0;
     }
 
-    // Handle spaceship visibility with fade animations
+    // Handle spaceship visibility (no material treatment — keep original GLB materials)
     const spaceship = spaceshipRef.current;
     const shipRoot = spaceshipRootRef.current;
     const spaceshipContainer = shipRoot || spaceship; // Use shipRoot if available, otherwise spaceship
@@ -3276,121 +3269,31 @@ export function BabylonCanvas() {
     if (spaceshipContainer) {
       const shouldBeVisible = sceneConfig.spaceshipEnabled;
       const isCurrentlyVisible = spaceshipContainer.isEnabled();
-      const flames = flameParticleSystemRef.current;
-      const flamesRunning = flames ? flames.isStarted() : false;
 
-      // Fade in when transitioning to state with spaceship enabled
-      if (shouldBeVisible && !isCurrentlyVisible && spaceship) {
-        // Collect materials
-        const spaceshipMaterials: BABYLON.Material[] = [];
-        spaceship.getChildMeshes().forEach(mesh => {
-          if (mesh.material) {
-            spaceshipMaterials.push(mesh.material);
-          }
-        });
-        if (spaceship.material) {
-          spaceshipMaterials.push(spaceship.material);
-        }
-
-        // Enable with invisible materials and start flames together
-        spaceshipMaterials.forEach(mat => mat.alpha = 0.01);
+      // Show ship when transitioning to state with spaceship enabled
+      if (shouldBeVisible && !isCurrentlyVisible) {
         setShipAndFlamesVisibility({
           container: spaceshipContainer,
           flameParticles: flameParticleSystemRef.current,
           visible: true,
           method: 'enabled',
-          logContext: 'Spaceship Fade In'
-        });
-
-        // Fade in
-        const fps = 60;
-        const duration = 1.0;
-        const totalFrames = fps * duration;
-
-        spaceshipMaterials.forEach(mat => {
-          const alphaAnimation = new BABYLON.Animation(
-            "fadeInSpaceship",
-            "alpha",
-            fps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-
-          alphaAnimation.setKeys([
-            { frame: 0, value: 0.01 },
-            { frame: totalFrames, value: 1 }
-          ]);
-
-          const easing = new BABYLON.CubicEase();
-          easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEOUT);
-          alphaAnimation.setEasingFunction(easing);
-
-          mat.animations = [alphaAnimation];
-          scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
-            mat.alpha = 1;
-          });
+          logContext: 'Spaceship Show'
         });
       }
-      // Fade out when transitioning away from state with spaceship
-      else if (!shouldBeVisible && isCurrentlyVisible && spaceship) {
-        // Collect materials
-        const spaceshipMaterials: BABYLON.Material[] = [];
-        spaceship.getChildMeshes().forEach(mesh => {
-          if (mesh.material) {
-            spaceshipMaterials.push(mesh.material);
-          }
+      // Hide ship when transitioning away from state with spaceship
+      else if (!shouldBeVisible && isCurrentlyVisible) {
+        setShipAndFlamesVisibility({
+          container: spaceshipContainer,
+          flameParticles: flameParticleSystemRef.current,
+          visible: false,
+          method: 'enabled',
+          logContext: 'Spaceship Hide'
         });
-        if (spaceship.material) {
-          spaceshipMaterials.push(spaceship.material);
-        }
-
-        // Fade out
-        const fps = 60;
-        const duration = 0.8;
-        const totalFrames = fps * duration;
-
-        spaceshipMaterials.forEach(mat => {
-          mat.alpha = 1;
-
-          const alphaAnimation = new BABYLON.Animation(
-            "fadeOutSpaceship",
-            "alpha",
-            fps,
-            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
-          );
-
-          alphaAnimation.setKeys([
-            { frame: 0, value: 1 },
-            { frame: totalFrames, value: 0.01 }
-          ]);
-
-          const easing = new BABYLON.CubicEase();
-          easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEIN);
-          alphaAnimation.setEasingFunction(easing);
-
-          mat.animations = [alphaAnimation];
-          scene.beginAnimation(mat, 0, totalFrames, false, 1, () => {
-            mat.alpha = 0.01;
-          });
-        });
-
-        // Disable ship and stop flames after fade completes
-        setTimeout(() => {
-          setShipAndFlamesVisibility({
-            container: spaceshipContainer,
-            flameParticles: flameParticleSystemRef.current,
-            visible: false,
-            method: 'enabled',
-            logContext: 'Spaceship Fade Out'
-          });
-        }, duration * 1000);
       }
 
       // SAFETY CHECK: Ensure flames are ALWAYS in sync with ship visibility
       // This catches edge cases where state transitions might leave flames out of sync
       else if (shouldBeVisible && isCurrentlyVisible) {
-        // Ship is visible and should be visible - ensure flames are running
         const flames = flameParticleSystemRef.current;
         if (flames) {
           flames.start(); // Safe to call even if already started
