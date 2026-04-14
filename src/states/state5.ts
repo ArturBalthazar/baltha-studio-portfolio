@@ -57,7 +57,6 @@ export const state5Config: StateConfig = {
       spaceshipEnabled: true,
       particlesEnabled: true,
       curveParticlesEnabled: true,
-      portalsEnabled: true,
       cameraControlsEnabled: false,
       rootTransform: {
         mobile: { scale: 1.0, position: { x: 0, y: 0, z: 0 } },

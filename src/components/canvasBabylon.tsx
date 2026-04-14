@@ -51,27 +51,11 @@ import {
   createEngineFlameParticleSystem,
   createCurveParticleSystem
 } from "./babylon/ParticleFactories";
-import {
-  registerPortalShaders,
-  createPortalWarpEffect,
-  createPortal
-} from "./babylon/PortalSystem";
 
 // Force register the GLB loader
 import { GLTFFileLoader } from "@babylonjs/loaders";
 // @ts-ignore - Type mismatch between babylon imports is non-breaking
 BABYLON.SceneLoader.RegisterPlugin(new GLTFFileLoader());
-
-// Continent rotations - these will be added to the base rotation
-let planetRotations = [
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-25), BABYLON.Tools.ToRadians(80), BABYLON.Tools.ToRadians(-5)), // Africa
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-35), BABYLON.Tools.ToRadians(-65), BABYLON.Tools.ToRadians(30)), // North America
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-30), BABYLON.Tools.ToRadians(105), BABYLON.Tools.ToRadians(-45)), // Europe
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-5), BABYLON.Tools.ToRadians(1), BABYLON.Tools.ToRadians(0)), // South America
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-60), BABYLON.Tools.ToRadians(-130), BABYLON.Tools.ToRadians(-50)), // Oceania
-  new BABYLON.Vector3(BABYLON.Tools.ToRadians(-5), BABYLON.Tools.ToRadians(-195), BABYLON.Tools.ToRadians(-3)) // Asia
-];
-
 
 // Animation helpers imported from ./babylon/AnimationHelpers
 
@@ -95,18 +79,13 @@ interface AnchorData {
 
 export function BabylonCanvas() {
   const s = useUI((st) => st.state);
-  const selectedLogoModel = useUI((st) => st.selectedLogoModel);
-  const selectedContinent = useUI((st) => st.selectedContinent);
   const config = getStateConfig(s);
   const ref = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
   const sceneRef = useRef<BABYLON.Scene | null>(null);
   const cameraRef = useRef<BABYLON.ArcRotateCamera | null>(null);
   const shipPivotRef = useRef<BABYLON.TransformNode | null>(null);
-  const logoModelsRef = useRef<BABYLON.AbstractMesh[]>([]);
   const logosRootRef = useRef<BABYLON.TransformNode | null>(null);
-  const planetMeshRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const planetMaterialRef = useRef<BABYLON.Material | null>(null);
   const rockRingRef = useRef<BABYLON.AbstractMesh | null>(null);
   const rockRingAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
   const rockRingAnimationStartedRef = useRef(false); // Track if rockring animation has started (only in state 4+)
@@ -122,12 +101,6 @@ export function BabylonCanvas() {
   const starsEmitterRef = useRef<BABYLON.Mesh | null>(null);
   const smokeEmitterRef = useRef<BABYLON.Mesh | null>(null);
   const prevStateRef = useRef<number>(s);
-
-  // Portal refs
-  const portalsRef = useRef<BABYLON.Mesh[]>([]);
-  const portalSwirlsRef = useRef<BABYLON.ParticleSystem[]>([]);
-  const warpEffectRef = useRef<BABYLON.PostProcess | null>(null);
-  const warpEffectAttachedRef = useRef(false);
 
   // Rotation tracking refs
   const baseRotationRef = useRef({ x: 0, y: 0 });
@@ -555,13 +528,9 @@ export function BabylonCanvas() {
     logosRoot.scaling.set(1, 1, 1);
     logosRootRef.current = logosRoot;
 
-    // Load all logo models as children of logosRoot
-    const modelFiles = ["logo.glb", "logo_chain.glb", "logo_cookie.glb", "logo_badge.glb"];
-    const logoModels: BABYLON.AbstractMesh[] = [];
-
     // Loading tracking
     let loadedCount = 0;
-    const totalAssets = 8; // 4 logos + planet + rockring + spaceship + anchors
+    const totalAssets = 4; // logo + rockring + spaceship + anchors
     let rockringGPUReady = false; // Track rockring GPU warmup separately
 
     const updateProgress = () => {
@@ -587,74 +556,24 @@ export function BabylonCanvas() {
       }
     };
 
-    let loadedLogosCount = 0;
-
-    modelFiles.forEach((filename, index) => {
-      BABYLON.SceneLoader.ImportMesh(
-        "",
-        "/assets/models/",
-        filename,
-        scene,
-        (meshes) => {
-          if (meshes.length) {
-            const root = meshes[0];
-            root.position.set(0, 0, 0);
-            root.parent = logosRoot;
-
-            // Hide all models except the first one (default logo)
-            root.setEnabled(index === 0);
-            logoModels[index] = root;
-            logoModelsRef.current = logoModels;
-            loadedLogosCount++;
-            updateProgress();
-          }
-        },
-        undefined,
-        (sceneOrMesh, message, exception) => {
-          console.error(`${filename} load error:`, message, exception);
-        }
-      );
-    });
-
-    // Load planet.glb as child of root1
+    // Load logo.glb as child of logosRoot
     BABYLON.SceneLoader.ImportMesh(
       "",
       "/assets/models/",
-      "planet.glb",
+      "logo.glb",
       scene,
       (meshes) => {
         if (meshes.length) {
-          const planet = meshes[0];
-          planet.position.set(0, 0, 0);
-          planet.parent = root1;
-
-          planet.setEnabled(false); // Hidden by default, shown in state 2
-          planetMeshRef.current = planet;
-
-          // Find the planet mesh with material and set up transparency
-          const planetMesh = meshes.find(m => m.name === "PlanetMesh" && m.material);
-          if (planetMesh && planetMesh.material) {
-            planetMaterialRef.current = planetMesh.material;
-            // Setup material for transparency
-            planetMesh.material.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
-            planetMesh.material.needDepthPrePass = true;
-            planetMesh.material.backFaceCulling = true;
-            planetMesh.material.alpha = 1;
-          }
-
-          // Set initial rotation to the currently selected continent from state
-          const currentContinent = useUI.getState().selectedContinent;
-          if (planetRotations[currentContinent]) {
-            const initialRotation = planetRotations[currentContinent].clone();
-            initialRotation.y += Math.PI; // Add the base PI offset
-            planet.rotation = initialRotation;
-          }
+          const root = meshes[0];
+          root.position.set(0, 0, 0);
+          root.parent = logosRoot;
+          root.setEnabled(true);
           updateProgress();
         }
       },
       undefined,
       (sceneOrMesh, message, exception) => {
-        console.error("planet.glb load error:", message, exception);
+        console.error("logo.glb load error:", message, exception);
       }
     );
 
@@ -914,61 +833,6 @@ export function BabylonCanvas() {
     });
     smokeEmitterRef.current = smokeEmitter;
     smokeParticleSystemRef.current = smoke;
-
-    // ========================
-    // Portal System (imported from ./babylon/PortalSystem)
-    // ========================
-    registerPortalShaders();
-    warpEffectRef.current = createPortalWarpEffect(camera);
-
-    // Create 4 portals at positions from prototype
-    const portal1 = createPortal({
-      scene,
-      camera,
-      position: new BABYLON.Vector3(40, 4, -50),
-      radius: 6,
-      name: "portal_geelySeagull",
-      title: "GEELY Car Visualizer",
-      portalSwirlsRef
-    });
-    portalsRef.current.push(portal1);
-
-    const portal2 = createPortal({
-      scene,
-      camera,
-      position: new BABYLON.Vector3(50, -3, 20),
-      radius: 6,
-      name: "portal_atlasflow",
-      title: "Atlasflow",
-      portalSwirlsRef
-    });
-    portalsRef.current.push(portal2);
-
-    const portal3 = createPortal({
-      scene,
-      camera,
-      position: new BABYLON.Vector3(-50, -3, 20),
-      radius: 6,
-      name: "portal_babylonEditor",
-      title: "Babylon.js Editor",
-      portalSwirlsRef
-    });
-    portalsRef.current.push(portal3);
-
-    const portal4 = createPortal({
-      scene,
-      camera,
-      position: new BABYLON.Vector3(-40, -2, -50),
-      radius: 6,
-      name: "portal_fda",
-      title: "FDA Training Platform",
-      portalSwirlsRef
-    });
-    portalsRef.current.push(portal4);
-
-    // ========================
-    // End Portal System
-    // ========================
 
     // === Size-agno stic: keep engine buffer matching CSS size exactly ===
     let lastW = 0, lastH = 0;
@@ -2820,29 +2684,9 @@ export function BabylonCanvas() {
     }
   }, [s]); // Update only camera settings on state change
 
-  // Switch between logo models when selection changes
-  useEffect(() => {
-    const logoModels = logoModelsRef.current;
-    if (logoModels.length === 0) return;
-
-    // Hide all models
-    logoModels.forEach((model) => {
-      if (model) {
-        model.setEnabled(false);
-      }
-    });
-
-    // Show only the selected model
-    if (logoModels[selectedLogoModel]) {
-      logoModels[selectedLogoModel].setEnabled(true);
-    }
-  }, [selectedLogoModel]);
-
   // Handle state transitions for positioning and visibility with fade animations
   useEffect(() => {
     const logosRoot = logosRootRef.current;
-    const planet = planetMeshRef.current;
-    const material = planetMaterialRef.current;
     const rockRing = rockRingRef.current;
     const rockRingAnimationGroups = rockRingAnimationGroupsRef.current;
     const root1 = root1Ref.current;
@@ -2850,7 +2694,7 @@ export function BabylonCanvas() {
     const smoke = smokeParticleSystemRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
-    if (!logosRoot || !planet || !scene || !root1 || !camera) return;
+    if (!logosRoot || !scene || !root1 || !camera) return;
 
     const sceneConfig = config.canvas.babylonScene;
     if (!sceneConfig) return;
@@ -2947,15 +2791,6 @@ export function BabylonCanvas() {
         curveParticles.stop();
         curveParticles.reset(); // Immediately kill all active particles
       }
-    }
-
-    // Handle portal visibility
-    const portals = portalsRef.current;
-    if (portals && portals.length > 0) {
-      const portalsEnabled = sceneConfig.portalsEnabled || false;
-      /*       portals.forEach(portal => {
-              portal.setEnabled(portalsEnabled);
-            }); */
     }
 
     // Handle spaceship position animation
@@ -3326,80 +3161,13 @@ export function BabylonCanvas() {
     }
 
 
-    // Logos are always at normal size and position (state 2 with planet is removed)
+    // Logos are always at normal size and position
     logosRoot.scaling.set(1, 1, 1);
     logosRoot.position.set(0, 0, 0);
-
-    // Planet is always disabled (was only used in now-removed state 2)
-    planet.setEnabled(false);
 
     // Update previous state reference for next transition
     prevStateRef.current = s;
   }, [s, config]);
-
-  // Handle planet rotation when continent changes (animated)
-  useEffect(() => {
-    const planet = planetMeshRef.current;
-    const scene = sceneRef.current;
-    if (!planet || !scene) return;
-
-    // Reset drag rotation when changing continents to avoid conflicts
-    const currentDragQuat = dragRotationRef.current.clone();
-    const identityQuat = BABYLON.Quaternion.Identity();
-
-    // Check if there's any drag rotation to reset
-    if (!currentDragQuat.equals(identityQuat)) {
-      // On mobile, reset instantly to avoid visual glitch
-      // On desktop, animate smoothly
-      const isMobile = window.innerWidth < 768;
-
-      if (isMobile) {
-        // Instant reset on mobile
-        dragRotationRef.current = BABYLON.Quaternion.Identity();
-      } else {
-        // Smooth reset on desktop
-        const startTime = performance.now();
-        const duration = 1500; // ms (faster than state change reset)
-
-        const animateDragReset = () => {
-          const elapsed = performance.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-
-          // Ease out cubic
-          const eased = 1 - Math.pow(1 - progress, 3);
-
-          // Spherical linear interpolation from current to identity
-          dragRotationRef.current = BABYLON.Quaternion.Slerp(currentDragQuat, identityQuat, eased);
-
-          if (progress < 1) {
-            requestAnimationFrame(animateDragReset);
-          } else {
-            dragRotationRef.current = BABYLON.Quaternion.Identity();
-          }
-        };
-
-        animateDragReset();
-      }
-    }
-
-    if (planetRotations[selectedContinent]) {
-      const targetRotation = planetRotations[selectedContinent].clone();
-      // Add the PI offset to Y rotation to match the base orientation
-      targetRotation.y += Math.PI;
-
-      // Use universal animation function
-      const easing = new BABYLON.CubicEase();
-      easing.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-
-      animateTransform({
-        target: planet,
-        scene,
-        duration: 1.2,
-        rotation: targetRotation,
-        easing
-      });
-    }
-  }, [selectedContinent]);
 
   // Navigation mode effect - toggle camera controls based on mode in state 4
   useEffect(() => {

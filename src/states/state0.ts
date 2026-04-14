@@ -51,7 +51,6 @@ export const state0Config: StateConfig = {
       spaceshipEnabled: false,
       particlesEnabled: false,
       curveParticlesEnabled: false,
-      portalsEnabled: false,
       rootTransform: {
         mobile: { scale: .15, position: { x: 0, y: 0, z: 18 } },
         desktop: { scale: .15, position: { x: 0, y: 0, z: 18 } }
