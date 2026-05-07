@@ -26,8 +26,6 @@ const TypingLabel = ({ text, delay }: { text: string; delay: number }) => {
         return () => clearTimeout(startTimeout);
     }, [text, delay]);
 
-    // Reserve space to prevent layout shift, or just let it grow (user asked for typing effect)
-    // Using a non-breaking space if empty to keep height correct if needed, but here flexbox handles it.
     return <span>{displayedText}</span>;
 };
 
@@ -74,7 +72,7 @@ export default function Connect() {
         };
     }, [emailExpanded]);
 
-    // Sync chatVisible with chatOpen, but with delay on close (copied from App.tsx)
+    // Sync chatVisible with chatOpen, but with delay on close
     useEffect(() => {
         if (chatOpen) {
             setChatVisible(true);
@@ -99,7 +97,7 @@ export default function Connect() {
             // Fallback check
             setTimeout(() => {
                 const end = Date.now();
-                // If the browser wasn't backgrounded (meaning app didn't open), open web url
+                // If the browser wasn't backgrounded (app didn't open), open web url
                 if (end - start < 1500) {
                     window.open(webUrl, '_blank');
                 }
@@ -124,7 +122,7 @@ export default function Connect() {
             // Fallback check
             setTimeout(() => {
                 const end = Date.now();
-                // If the browser wasn't backgrounded (meaning app didn't open), open web url
+                // If the browser wasn't backgrounded (app didn't open), open web url
                 if (end - start < 1500) {
                     window.open(webUrl, '_blank');
                 }

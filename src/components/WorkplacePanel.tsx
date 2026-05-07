@@ -8,10 +8,10 @@ import { useI18n } from "../i18n";
 import { WorkplaceTranslation } from "../i18n/translations";
 
 // Map workplace config IDs to translation keys
-type WorkplaceTranslationKey = 'musecraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc';
+type WorkplaceTranslationKey = 'meetcraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc';
 
 const WORKPLACE_ID_TO_TRANSLATION_KEY: Record<string, WorkplaceTranslationKey> = {
-    'personal': 'musecraft',
+    'personal': 'meetcraft',
     'meetkai': 'meetkai',
     'morethanreal': 'morethanreal',
     'balthamaker': 'balthamaker',

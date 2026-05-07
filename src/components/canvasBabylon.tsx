@@ -6,14 +6,14 @@ import { getStateConfig } from "../states";
 
 
 import {
-  initMusecraftInteraction,
-  resetMusecraftInteraction,
+  initMeetcraftInteraction,
+  resetMeetcraftInteraction,
   stopRocketFlames,
   startRocketFlames,
-  isMusecraftInteractionInitialized,
-  isMusecraftGizmoDragging,
+  isMeetcraftInteractionInitialized,
+  isMeetcraftGizmoDragging,
   selectRocketByDefault
-} from "./MusecraftInteraction";
+} from "./MeetcraftInteraction";
 import { startModelAnimations, stopModelAnimations } from "./modelAnimationController";
 import { getWorkplaceConfig } from "./workplaceConfig";
 import { updateEngineVelocity, setGuidedAnimationActive } from "./EngineSoundManager";
@@ -189,10 +189,10 @@ export function BabylonCanvas() {
     meshes: [[], [], []]
   });
   // Legacy single-model refs still used by More Than Real loader
-  const musecraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const musecraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
-  const musecraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
-  const musecraftAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
+  const meetcraftRootRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const meetcraftMeshesRef = useRef<BABYLON.AbstractMesh[]>([]);
+  const meetcraftAnchorRef = useRef<BABYLON.AbstractMesh | null>(null);
+  const meetcraftAnimationGroupsRef = useRef<BABYLON.AnimationGroup[]>([]);
 
 
 
@@ -300,7 +300,7 @@ export function BabylonCanvas() {
       proximityDistance: 22, // Distance to trigger model visibility
       flameScale: 3
     },
-    // Musecraft
+    // Meetcraft
     model2: {
       idleRingRadius: 2,
       expandedRingRadii: [7, 8, 10] as [number, number, number],
@@ -867,7 +867,7 @@ export function BabylonCanvas() {
     });
 
     // Load models for anchor_1 (state_4) asynchronously
-    // Uses workplaceConfig to determine which models to load (now Musecraft/Personal Projects)
+    // Uses workplaceConfig to determine which models to load (now Meetcraft/Personal Projects)
     const loadAnchor1ModelsAsync = async () => {
 
       // Wait a bit to ensure rockring and other assets are loaded
@@ -879,7 +879,7 @@ export function BabylonCanvas() {
 
       const modelFiles = config.projects.map(project => {
         // Extract directory path and filename from modelPath
-        // e.g., "/assets/models/personal/musecraft/musecraft.gltf" -> { basePath: "/assets/models/personal/musecraft/", file: "musecraft.gltf", id: "musecraft" }
+        // e.g., "/assets/models/personal/meetcraft/meetcraft.gltf" -> { basePath: "/assets/models/personal/meetcraft/", file: "meetcraft.gltf", id: "meetcraft" }
         const fullPath = project.modelPath;
         const lastSlash = fullPath.lastIndexOf('/');
         const basePath = fullPath.substring(0, lastSlash + 1);
@@ -1069,11 +1069,11 @@ export function BabylonCanvas() {
           return;
         }
 
-        musecraftAnchorRef.current = anchorMesh;
+        meetcraftAnchorRef.current = anchorMesh;
 
         // Create a shared parent TransformNode for all models at this anchor
         const anchor2Root = new BABYLON.TransformNode("anchor2Root", scene);
-        musecraftRootRef.current = anchor2Root as any;
+        meetcraftRootRef.current = anchor2Root as any;
         moreThanRealRootRef.current = anchor2Root as any;
 
         // Position at anchor
@@ -1204,7 +1204,7 @@ export function BabylonCanvas() {
         }
 
         // Store all meshes combined
-        musecraftMeshesRef.current = allMeshes;
+        meetcraftMeshesRef.current = allMeshes;
 
         // Warmup GPU for all models
         for (let i = 0; i < moreThanRealModelsRef.current.roots.length; i++) {
@@ -1772,10 +1772,10 @@ export function BabylonCanvas() {
       const shipPosition = spaceshipRootRef.current.getAbsolutePosition();
 
       // Get all potential anchors with their corresponding states
-      // Config order: Musecraft (state_4) → MeetKai (state_5) → More Than Real (state_6) → Baltha Maker (state_7) → UFSC (state_8)
+      // Config order: Meetcraft (state_4) → MeetKai (state_5) → More Than Real (state_6) → Baltha Maker (state_7) → UFSC (state_8)
       const anchorStateMap: { anchor: BABYLON.AbstractMesh | null; state: S }[] = [
-        { anchor: carAnchorRef.current, state: S.state_4 },       // anchor_1 - Musecraft (Personal Project)
-        { anchor: musecraftAnchorRef.current, state: S.state_5 }, // anchor_2 - MeetKai
+        { anchor: carAnchorRef.current, state: S.state_4 },       // anchor_1 - Meetcraft (Personal Project)
+        { anchor: meetcraftAnchorRef.current, state: S.state_5 }, // anchor_2 - MeetKai
         { anchor: dioramasAnchorRef.current, state: S.state_6 },  // anchor_3 - More Than Real
         { anchor: petwheelsAnchorRef.current, state: S.state_7 }, // anchor_4 - Baltha Maker
         { anchor: personalAnchorRef.current, state: S.state_8 },  // anchor_5 - UFSC
@@ -2365,8 +2365,8 @@ export function BabylonCanvas() {
 
             // Check distance to all anchors and find minimum
             const anchorRefs = [
-              carAnchorRef.current,      // anchor_1 - Musecraft
-              musecraftAnchorRef.current, // anchor_2 - MeetKai  
+              carAnchorRef.current,      // anchor_1 - Meetcraft
+              meetcraftAnchorRef.current, // anchor_2 - MeetKai  
               dioramasAnchorRef.current,  // anchor_3 - More Than Real
               petwheelsAnchorRef.current, // anchor_4 - Baltha Maker
               personalAnchorRef.current   // anchor_5 - UFSC
@@ -3230,7 +3230,7 @@ export function BabylonCanvas() {
     const getCurrentModel = () => {
       switch (s) {
         case S.state_4: return carRootRef.current;
-        case S.state_5: return musecraftRootRef.current;
+        case S.state_5: return meetcraftRootRef.current;
         case S.state_6: return dioramasRootRef.current;
         case S.state_7: return petwheelsRootRef.current;
         case S.state_8: return personalRootRef.current;
@@ -3242,7 +3242,7 @@ export function BabylonCanvas() {
     const getCurrentModelMeshes = (): BABYLON.AbstractMesh[] => {
       switch (s) {
         case S.state_4: return carMeshesRef.current;
-        case S.state_5: return musecraftMeshesRef.current;
+        case S.state_5: return meetcraftMeshesRef.current;
         case S.state_6: return dioramasMeshesRef.current;
         case S.state_7: return petwheelsMeshesRef.current;
         case S.state_8: return personalMeshesRef.current;
@@ -3313,7 +3313,7 @@ export function BabylonCanvas() {
       const deltaY = e.clientY - modelRotationRef.current.lastY;
 
       // Reduce rotation speed to 0.1 of normal when gizmo is being dragged
-      const gizmoReductionFactor = isMusecraftGizmoDragging() ? 0.1 : 1.0;
+      const gizmoReductionFactor = isMeetcraftGizmoDragging() ? 0.1 : 1.0;
       const rotationSpeed = 0.005 * gizmoReductionFactor; // Radians per pixel
 
       // Y axis rotation - free rotation around world Y axis, accumulates
@@ -3482,7 +3482,7 @@ export function BabylonCanvas() {
     const getCurrentModelInfo = (): { model: BABYLON.TransformNode | BABYLON.AbstractMesh | null; key: string } => {
       switch (s) {
         case S.state_4: return { model: carRootRef.current, key: 'model1' };
-        case S.state_5: return { model: musecraftRootRef.current, key: 'model2' };
+        case S.state_5: return { model: meetcraftRootRef.current, key: 'model2' };
         case S.state_6: return { model: dioramasRootRef.current, key: 'model3' };
         case S.state_7: return { model: petwheelsRootRef.current, key: 'model4' };
         default: return { model: null, key: '' };
@@ -3493,7 +3493,7 @@ export function BabylonCanvas() {
     const getCurrentAnchor = (): BABYLON.AbstractMesh | null => {
       switch (s) {
         case S.state_4: return carAnchorRef.current;
-        case S.state_5: return musecraftAnchorRef.current;
+        case S.state_5: return meetcraftAnchorRef.current;
         case S.state_6: return dioramasAnchorRef.current;
         case S.state_7: return petwheelsAnchorRef.current;
         default: return null;
@@ -3729,7 +3729,7 @@ export function BabylonCanvas() {
           let model: BABYLON.TransformNode | BABYLON.AbstractMesh | null = null;
           switch (key) {
             case 'model1': model = carRootRef.current; break;
-            case 'model2': model = musecraftRootRef.current; break;
+            case 'model2': model = meetcraftRootRef.current; break;
             case 'model3': model = dioramasRootRef.current; break;
             case 'model4': model = petwheelsRootRef.current; break;
           }
@@ -3759,7 +3759,7 @@ export function BabylonCanvas() {
         let model: BABYLON.TransformNode | BABYLON.AbstractMesh | null = null;
         switch (key) {
           case 'model1': model = carRootRef.current; break;
-          case 'model2': model = musecraftRootRef.current; break;
+          case 'model2': model = meetcraftRootRef.current; break;
           case 'model3': model = dioramasRootRef.current; break;
           case 'model4': model = petwheelsRootRef.current; break;
         }
@@ -3808,8 +3808,8 @@ export function BabylonCanvas() {
         }
       }
 
-      // 2. Musecraft (State 5)
-      const museGroups = musecraftAnimationGroupsRef.current;
+      // 2. Meetcraft (State 5)
+      const museGroups = meetcraftAnimationGroupsRef.current;
       if (s === S.state_5 && modelVisibilityRef.current.model2 && museGroups.length > 0) {
         museGroups.forEach(group => {
           if (!group.isPlaying) {
@@ -3994,11 +3994,11 @@ export function BabylonCanvas() {
         carMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model1 = false;
       }
-      if (visibility.model2 && musecraftMeshesRef.current.length > 0) {
-        const anim = modelScaleAnimations.get(musecraftRootRef.current!);
+      if (visibility.model2 && meetcraftMeshesRef.current.length > 0) {
+        const anim = modelScaleAnimations.get(meetcraftRootRef.current!);
         if (anim) anim.stop();
-        if (musecraftRootRef.current) modelScaleAnimations.delete(musecraftRootRef.current);
-        musecraftMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
+        if (meetcraftRootRef.current) modelScaleAnimations.delete(meetcraftRootRef.current);
+        meetcraftMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model2 = false;
       }
       if (visibility.model3 && dioramasMeshesRef.current.length > 0) {
@@ -4021,8 +4021,8 @@ export function BabylonCanvas() {
         if (personalRootRef.current) modelScaleAnimations.delete(personalRootRef.current);
         personalMeshesRef.current.forEach(mesh => mesh.setEnabled(false));
         visibility.model5 = false;
-        // Reset Musecraft interaction (gizmo, selection, flames) when leaving explore states
-        resetMusecraftInteraction();
+        // Reset Meetcraft interaction (gizmo, selection, flames) when leaving explore states
+        resetMeetcraftInteraction();
         stopRocketFlames();
       }
 
@@ -4134,7 +4134,7 @@ export function BabylonCanvas() {
         // Start model animations using animation controller
         // Map modelKey to state to get project IDs - includes ALL 5 anchor states
         const stateToConfig: Record<string, number> = {
-          'model1': S.state_4, // anchor_1 - Musecraft (Personal Projects)
+          'model1': S.state_4, // anchor_1 - Meetcraft (Personal Projects)
           'model2': S.state_5, // anchor_2 - MeetKai
           'model3': S.state_6, // anchor_3 - More Than Real
           'model4': S.state_7, // anchor_4 - Baltha Maker
@@ -4155,18 +4155,18 @@ export function BabylonCanvas() {
           }
         }
 
-        // Initialize Musecraft interaction system (selection + gizmo) for model1 (Musecraft at state_4)
+        // Initialize Meetcraft interaction system (selection + gizmo) for model1 (Meetcraft at state_4)
         if (modelKey === 'model1') {
 
-          const root = meetkaiModelsRef.current.roots[0]; // Musecraft is first (and only) model at anchor_1
-          if (root && sceneRef.current && !isMusecraftInteractionInitialized()) {
+          const root = meetkaiModelsRef.current.roots[0]; // Meetcraft is first (and only) model at anchor_1
+          if (root && sceneRef.current && !isMeetcraftInteractionInitialized()) {
             // Small delay to ensure meshes are fully enabled after scale animation starts
             setTimeout(() => {
               if (meetkaiModelsRef.current.roots[0] && sceneRef.current) {
-                initMusecraftInteraction(meetkaiModelsRef.current.roots[0] as BABYLON.AbstractMesh, sceneRef.current);
+                initMeetcraftInteraction(meetkaiModelsRef.current.roots[0] as BABYLON.AbstractMesh, sceneRef.current);
               }
             }, 100);
-          } else if (isMusecraftInteractionInitialized()) {
+          } else if (isMeetcraftInteractionInitialized()) {
             // Already initialized from previous visit - re-select rocket and start flames
             setTimeout(() => {
               selectRocketByDefault();
@@ -4182,7 +4182,7 @@ export function BabylonCanvas() {
         // Stop model animations using animation controller
         // Map modelKey to state - includes ALL 5 anchor states
         const stateToConfig: Record<string, number> = {
-          'model1': S.state_4, // anchor_1 - Musecraft (Personal Projects)
+          'model1': S.state_4, // anchor_1 - Meetcraft (Personal Projects)
           'model2': S.state_5, // anchor_2 - MeetKai
           'model3': S.state_6, // anchor_3 - More Than Real
           'model4': S.state_7, // anchor_4 - Baltha Maker
@@ -4200,9 +4200,9 @@ export function BabylonCanvas() {
           }
         }
 
-        // Reset Musecraft interaction when model1 becomes hidden (Musecraft at state_4)
+        // Reset Meetcraft interaction when model1 becomes hidden (Meetcraft at state_4)
         if (modelKey === 'model1') {
-          resetMusecraftInteraction();
+          resetMeetcraftInteraction();
           stopRocketFlames();
         }
 
@@ -4221,7 +4221,7 @@ export function BabylonCanvas() {
     const proximityObserver = scene.onBeforeRenderObservable.add(() => {
       // Check each model's proximity
       checkModelProximity('model1', carRootRef, carMeshesRef, carAnchorRef, 'atom1');
-      checkModelProximity('model2', musecraftRootRef, musecraftMeshesRef, musecraftAnchorRef, 'atom2');
+      checkModelProximity('model2', meetcraftRootRef, meetcraftMeshesRef, meetcraftAnchorRef, 'atom2');
       checkModelProximity('model3', dioramasRootRef, dioramasMeshesRef, dioramasAnchorRef, 'atom3');
       checkModelProximity('model4', petwheelsRootRef, petwheelsMeshesRef, petwheelsAnchorRef, 'atom4');
       checkModelProximity('model5', personalRootRef, personalMeshesRef, personalAnchorRef, 'atom5');
@@ -4249,8 +4249,8 @@ export function BabylonCanvas() {
 
     const stateToModelData: Partial<Record<S, ModelData>> = {
       // Note: Refs are named historically but now load from workplaceConfig dynamically
-      // Config order: Musecraft → MeetKai → More Than Real → Baltha Maker → UFSC
-      [S.state_4]: { modelsRef: meetkaiModelsRef, visibilityKey: 'model1' },      // anchor_1: Musecraft
+      // Config order: Meetcraft → MeetKai → More Than Real → Baltha Maker → UFSC
+      [S.state_4]: { modelsRef: meetkaiModelsRef, visibilityKey: 'model1' },      // anchor_1: Meetcraft
       [S.state_5]: { modelsRef: moreThanRealModelsRef, visibilityKey: 'model2' }, // anchor_2: MeetKai
       [S.state_6]: { modelsRef: dioramaModelsRef, visibilityKey: 'model3' },      // anchor_3: More Than Real
       [S.state_7]: { modelsRef: ufscModelsRef, visibilityKey: 'model4' },         // anchor_4: Baltha Maker
@@ -4269,7 +4269,7 @@ export function BabylonCanvas() {
     // Map state to anchor ref for rotation recomputation
     const stateToAnchorRef: Partial<Record<S, React.MutableRefObject<BABYLON.AbstractMesh | null>>> = {
       [S.state_4]: carAnchorRef,
-      [S.state_5]: musecraftAnchorRef,
+      [S.state_5]: meetcraftAnchorRef,
       [S.state_6]: dioramasAnchorRef,
       [S.state_7]: petwheelsAnchorRef,
       [S.state_8]: personalAnchorRef,

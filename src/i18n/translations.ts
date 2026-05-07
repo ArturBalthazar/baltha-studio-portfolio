@@ -2,7 +2,7 @@
  * Internationalization (i18n) System for Baltha Studio
  * 
  * This file contains all translations for the website.
- * Brand names like "Baltha Studio", "Musecraft", and "Petwheels" should NOT be translated.
+ * Brand names like "Baltha Studio", "Meetcraft", and "Petwheels" should NOT be translated.
  * 
  * To add a new language:
  * 1. Add the language code to the LanguageCode type
@@ -25,7 +25,7 @@ export interface TranslationKeys {
     // Navigation Menu
     menu: {
         welcome: string;
-        musecraft: string;
+        meetcraft: string;
         meetkai: string;
         morethanreal: string;
         balthamaker: string;
@@ -53,7 +53,7 @@ export interface TranslationKeys {
 
     // Workplaces - Portfolio panel content
     workplaces: {
-        musecraft: WorkplaceTranslation;
+        meetcraft: WorkplaceTranslation;
         meetkai: WorkplaceTranslation;
         morethanreal: WorkplaceTranslation;
         balthamaker: WorkplaceTranslation;
@@ -117,7 +117,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Welcome",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "Meetkai Inc.",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -139,15 +139,15 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "Information"
         },
         workplaces: {
-            musecraft: {
-                companyName: "Musecraft Editor",
+            meetcraft: {
+                companyName: "Meetcraft Editor",
                 role: "Creator & Lead Developer",
                 projects: {
-                    musecraft: {
-                        title: "Musecraft Editor",
+                    meetcraft: {
+                        title: "Meetcraft Editor",
                         description: "Web-based Babylon.js Editor",
                         content: [
-                            "Musecraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative creation of interactive scenes for the web.",
+                            "Meetcraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative creation of interactive scenes for the web.",
                             "It started as my personal project to explore AI-powered creative tools, and has since evolved into a comprehensive platform. The stack is React and TypeScript on the frontend, Babylon.js for rendering, and Supabase handling authentication, real-time sync, and secure cloud storage.",
                             "Cloud and Local Storage",
                             "Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access API. Work on local folders like a desktop app, or sync assets to cloud storage for team access.",
@@ -158,7 +158,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
                             "Integrated UI Editor",
                             "Design HTML/CSS interfaces directly in the 3D environment and anchor them to scene objects. Includes a style editor, animation support, and responsive breakpoints for building interactive 3D web experiences.",
                             "AI-Powered Scripting",
-                            "Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language—the AI generates executable scripts with full context of your scene and the Musecraft API.",
+                            "Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language—the AI generates executable scripts with full context of your scene and the Meetcraft API.",
                             "Addon Architecture",
                             "Extensible API inspired by Blender's addon system. Addons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio, and history systems with sandboxed permissions.",
                             "Export to GitHub",
@@ -283,7 +283,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Início",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "MeetKai",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -305,15 +305,15 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "Informações"
         },
         workplaces: {
-            musecraft: {
-                companyName: "Musecraft Editor",
+            meetcraft: {
+                companyName: "Meetcraft Editor",
                 role: "Criador & Desenvolvedor Principal",
                 projects: {
-                    musecraft: {
-                        title: "Musecraft Editor",
+                    meetcraft: {
+                        title: "Meetcraft Editor",
                         description: "Editor 3D baseado em Babylon.js",
                         content: [
-                            "Musecraft é um editor 3D baseado na web, alimentado por Babylon.js, que permite a criação colaborativa em tempo real de cenas interativas para a web.",
+                            "Meetcraft é um editor 3D baseado na web, alimentado por Babylon.js, que permite a criação colaborativa em tempo real de cenas interativas para a web.",
                             "Começou como meu projeto pessoal para explorar ferramentas criativas com IA, e desde então evoluiu para uma plataforma completa. A stack é React e TypeScript no frontend, Babylon.js para renderização, e Supabase cuidando de autenticação, sincronização em tempo real e armazenamento seguro na nuvem.",
                             "Armazenamento Local e na Nuvem",
                             "Projetos podem viver na nuvem via Supabase ou totalmente offline usando a API File System Access do navegador. Trabalhe em pastas locais como um app desktop, ou sincronize assets na nuvem para acesso da equipe.",
@@ -324,7 +324,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
                             "Editor de UI Integrado",
                             "Projete interfaces HTML/CSS diretamente no ambiente 3D e ancore-as a objetos da cena. Inclui editor de estilos, suporte a animações e breakpoints responsivos para construir experiências web 3D interativas.",
                             "Scripting com IA",
-                            "Editor de código Monaco com assistência de IA integrada. Descreva o que você quer em linguagem natural—a IA gera scripts executáveis com contexto completo da sua cena e da API do Musecraft.",
+                            "Editor de código Monaco com assistência de IA integrada. Descreva o que você quer em linguagem natural—a IA gera scripts executáveis com contexto completo da sua cena e da API do Meetcraft.",
                             "Arquitetura de Addons",
                             "API extensível inspirada no sistema de addons do Blender. Addons podem registrar menus, injetar painéis, se inscrever em eventos e acessar sistemas de cena, física, animação, áudio e histórico com permissões isoladas.",
                             "Exportar para GitHub",
@@ -449,7 +449,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Inicio",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "MeetKai",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -471,7 +471,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "Información"
         },
         workplaces: {
-            musecraft: { companyName: "Musecraft Editor", role: "Creador y Desarrollador Principal", projects: {} },
+            meetcraft: { companyName: "Meetcraft Editor", role: "Creador y Desarrollador Principal", projects: {} },
             meetkai: { companyName: "Meetkai Inc.", role: "Diseñador 3D y Desarrollador de Herramientas", projects: {} },
             morethanreal: { companyName: "More Than Real", role: "Diseñador 3D para AR", projects: {} },
             balthamaker: { companyName: "Baltha Maker", role: "Diseñador de Impresión 3D y Fundador", projects: {} },
@@ -512,7 +512,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Willkommen",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "MeetKai",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -534,7 +534,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "Information"
         },
         workplaces: {
-            musecraft: { companyName: "Musecraft Editor", role: "Schöpfer und Hauptentwickler", projects: {} },
+            meetcraft: { companyName: "Meetcraft Editor", role: "Schöpfer und Hauptentwickler", projects: {} },
             meetkai: { companyName: "Meetkai Inc.", role: "3D-Designer und Tools-Entwickler", projects: {} },
             morethanreal: { companyName: "More Than Real", role: "3D-Designer für AR", projects: {} },
             balthamaker: { companyName: "Baltha Maker", role: "3D-Druck-Designer und Gründer", projects: {} },
@@ -575,7 +575,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "Accueil",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "MeetKai",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -597,7 +597,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "Informations"
         },
         workplaces: {
-            musecraft: { companyName: "Musecraft Editor", role: "Créateur et Développeur Principal", projects: {} },
+            meetcraft: { companyName: "Meetcraft Editor", role: "Créateur et Développeur Principal", projects: {} },
             meetkai: { companyName: "Meetkai Inc.", role: "Designer 3D et Développeur d'Outils", projects: {} },
             morethanreal: { companyName: "More Than Real", role: "Designer 3D pour AR", projects: {} },
             balthamaker: { companyName: "Baltha Maker", role: "Designer Impression 3D et Fondateur", projects: {} },
@@ -638,7 +638,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
         },
         menu: {
             welcome: "欢迎",
-            musecraft: "Musecraft",
+            meetcraft: "Meetcraft",
             meetkai: "MeetKai",
             morethanreal: "More Than\nReal",
             balthamaker: "Baltha\nMaker",
@@ -660,7 +660,7 @@ export const translations: Record<LanguageCode, TranslationKeys> = {
             information: "信息"
         },
         workplaces: {
-            musecraft: { companyName: "Musecraft Editor", role: "创作者和主要开发者", projects: {} },
+            meetcraft: { companyName: "Meetcraft Editor", role: "创作者和主要开发者", projects: {} },
             meetkai: { companyName: "Meetkai Inc.", role: "3D设计师和工具开发者", projects: {} },
             morethanreal: { companyName: "More Than Real", role: "AR 3D设计师", projects: {} },
             balthamaker: { companyName: "Baltha Maker", role: "3D打印设计师和创始人", projects: {} },

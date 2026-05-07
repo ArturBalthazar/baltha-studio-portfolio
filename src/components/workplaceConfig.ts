@@ -9,7 +9,7 @@
  * Logo path convention: /assets/logos/[company].png
  * Project logo: /assets/logos/[project].png
  * 
- * ORDER: Musecraft → MeetKai → More Than Real → Baltha Maker → UFSC
+ * ORDER: Meetcraft → MeetKai → More Than Real → Baltha Maker → UFSC
  */
 
 // Content block types for flexible project content layout
@@ -138,15 +138,15 @@ export function isSingleProjectSection(config: WorkplaceConfig): boolean {
 import { S } from '../state';
 
 // Configuration for each portfolio state
-// ORDER: Musecraft (4) → MeetKai (5) → More Than Real (6) → Baltha Maker (7) → UFSC (8)
+// ORDER: Meetcraft (4) → MeetKai (5) → More Than Real (6) → Baltha Maker (7) → UFSC (8)
 export const workplaceConfigs: Record<number, WorkplaceConfig> = {
-    // S.state_4 - Musecraft Editor (Personal Project) - FIRST
+    // S.state_4 - Meetcraft Editor (Personal Project) - FIRST
     // Single-project section: header uses project name/logo directly
     [S.state_4]: {
         id: "personal",
-        companyName: "Musecraft Editor",
+        companyName: "Meetcraft Editor",
         showCompanyLogo: true,
-        companyLogoPath: "/assets/logos/musecraft.png",
+        companyLogoPath: "/assets/logos/meetcraft.png",
         period: "Independent Project",
         location: "At home",
         workStyle: "Personal Project",
@@ -154,30 +154,30 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
         description: "A web-based 3D scene editor for creating interactive experiences.",
         projects: [
             {
-                id: "musecraft",
-                title: "Musecraft Editor",
+                id: "meetcraft",
+                title: "Meetcraft Editor",
                 description: "Web-based Babylon.js Editor",
                 showLogo: true,
                 titleButtons: [
-                    { icon: 'link.png', url: 'https://musecraft.xyz', tooltip: 'Visit Website' },
-                    { icon: 'youtube.png', url: 'https://www.youtube.com/@Musecraft-Editor', tooltip: 'YouTube Channel' },
+                    { icon: 'link.png', url: 'https://meetcraft.xyz', tooltip: 'Visit Website' },
+                    { icon: 'youtube.png', url: 'https://www.youtube.com/@Meetcraft-Editor', tooltip: 'YouTube Channel' },
                     { icon: 'discord.png', url: 'https://discord.gg/eFxZfEWB', tooltip: 'Join Discord' }
                 ],
-                modelPath: "/assets/models/personal/musecraft/musecraft.gltf",
-                logoPath: "/assets/logos/musecraft.png",
+                modelPath: "/assets/models/personal/meetcraft/meetcraft.gltf",
+                logoPath: "/assets/logos/meetcraft.png",
                 contentBlocks: [
                     // Project overview (includes Blender inspiration + tech stack)
                     {
                         type: 'text',
                         paragraphs: [
-                            'Musecraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative work and creation of interactive 3D scenes for the web.',
+                            'Meetcraft is a web-based 3D editor powered by Babylon.js that allows real-time collaborative work and creation of interactive 3D scenes for the web.',
                         ]
                     },
                     // Hero image
                     {
                         type: 'hero-image',
-                        src: '/assets/models/personal/musecraft/content/cover.png',
-                        alt: 'Musecraft Editor Interface'
+                        src: '/assets/models/personal/meetcraft/content/cover.png',
+                        alt: 'Meetcraft Editor Interface'
                     },
                     // Project overview (includes Blender inspiration + tech stack)
                     {
@@ -195,7 +195,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Project & Asset Management
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image1.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image1.png',
                         imageAlt: 'Cloud and Local Storage',
                         imagePosition: 'left',
                         width: '1/2',
@@ -208,7 +208,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // 3D Editor Capabilities
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image3.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image3.png',
                         imageAlt: '3D Editing Environment',
                         width: 'full',
                         title: '3D Editing Environment',
@@ -220,7 +220,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // UI Editor
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image4.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image4.png',
                         imageAlt: 'Integrated UI Editor',
                         width: 'full',
                         title: 'Integrated UI Editor',
@@ -232,20 +232,20 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // AI-Powered Scripting
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image5.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image5.png',
                         imageAlt: 'AI-Powered Scripting',
                         imagePosition: 'left',
                         width: '1/2',
                         title: 'AI-Powered Scripting',
                         paragraphs: [
-                            'Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language and the AI generates executable scripts with full context of your scene and the Musecraft API.'
+                            'Monaco-powered code editor with integrated AI assistance. Describe what you want in natural language and the AI generates executable scripts with full context of your scene and the Meetcraft API.'
                         ],
                         showSeparator: true
                     },
                     // Team collaboration
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image2.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image2.png',
                         imageAlt: 'Real-Time Collaboration',
                         width: 'full',
                         title: 'Real-Time Collaboration',
@@ -257,7 +257,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Addon System
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image6.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image6.png',
                         imageAlt: 'Addon Architecture',
                         imagePosition: 'right',
                         width: '1/2',
@@ -270,7 +270,7 @@ export const workplaceConfigs: Record<number, WorkplaceConfig> = {
                     // Export and Deployment
                     {
                         type: 'float-image',
-                        imageSrc: '/assets/models/personal/musecraft/content/image7.png',
+                        imageSrc: '/assets/models/personal/meetcraft/content/image7.png',
                         imageAlt: 'Export to GitHub',
                         imagePosition: 'left',
                         width: '1/2',

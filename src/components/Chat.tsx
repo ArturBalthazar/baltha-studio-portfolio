@@ -158,7 +158,7 @@ export function Chat({ className = "", onClose }: ChatProps) {
     // Navigation target mapping (projects → their parent state + project index)
     const navigationMap: Record<string, { state: S; projectIndex?: number }> = {
       // Sections
-      musecraft: { state: S.state_4 },
+      meetcraft: { state: S.state_4 },
       meetkai: { state: S.state_5 },
       morethanreal: { state: S.state_6 },
       balthamaker: { state: S.state_7 },

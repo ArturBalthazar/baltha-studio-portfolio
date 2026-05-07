@@ -18,7 +18,7 @@ import { playShortClick } from './ClickSoundManager';
 
 // Anchor configuration - maps section states to anchor mesh names
 const ANCHOR_CONFIG: { state: S; anchorName: string }[] = [
-    { state: S.state_4, anchorName: 'anchor_1' },  // Musecraft
+    { state: S.state_4, anchorName: 'anchor_1' },  // Meetcraft
     { state: S.state_5, anchorName: 'anchor_2' },  // MeetKai
     { state: S.state_6, anchorName: 'anchor_3' },  // More Than Real
     { state: S.state_7, anchorName: 'anchor_4' },  // Baltha Maker

@@ -1,6 +1,6 @@
 import { StateConfig } from './types';
 
-// State 5 - Musecraft Editor (guided mode only, otherwise behaves like state 4)
+// State 5 - Meetcraft Editor (guided mode only, otherwise behaves like state 4)
 export const state5Config: StateConfig = {
   header: {
     showWelcomeText: false,

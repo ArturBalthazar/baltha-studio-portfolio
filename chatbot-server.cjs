@@ -47,9 +47,9 @@ function getSession(sessionId) {
 
 // Project card content - Story-focused, not just specs
 const PROJECT_CARDS = {
-    project_musecraft: `[CARD: PROJECT - MUSECRAFT]
+    project_meetcraft: `[CARD: PROJECT - MUSECRAFT]
 WHAT IT IS:
-Musecraft is my passion project - a browser-based 3D editor similar to Blender but for the web. Multiple people can collaborate in real-time, building interactive 3D scenes together. It has AI assistance for coding, a UI designer for HTML interfaces attached to 3D objects, and an addon system.
+Meetcraft is my passion project - a browser-based 3D editor similar to Blender but for the web. Multiple people can collaborate in real-time, building interactive 3D scenes together. It has AI assistance for coding, a UI designer for HTML interfaces attached to 3D objects, and an addon system.
 
 WHY I BUILT IT:
 I wanted to explore what AI-powered creative tools could look like. Most 3D workflows are stuck in heavy desktop apps - I wanted something lightweight, collaborative, and web-native.
@@ -271,11 +271,11 @@ function buildMessages(session, userMessage, context = {}) {
     // Build context tag for user message
     let contextTag = '';
     // Map state numbers to section names (must match workplaceConfig order!)
-    // ORDER: Musecraft (state_4=2) → MeetKai (state_5=3) → More Than Real (state_6=4) → Baltha Maker (state_7=5) → UFSC (state_8=6)
+    // ORDER: Meetcraft (state_4=2) → MeetKai (state_5=3) → More Than Real (state_6=4) → Baltha Maker (state_7=5) → UFSC (state_8=6)
     const stateNames = {
         0: 'home',           // state_0 - Welcome/landing screen
         1: 'mode-select',    // state_3 - Choose guided vs free
-        2: 'musecraft',      // state_4 - Musecraft Editor (Personal Project)
+        2: 'meetcraft',      // state_4 - Meetcraft Editor (Personal Project)
         3: 'meetkai',        // state_5 - MeetKai Inc.
         4: 'morethanreal',   // state_6 - More Than Real
         5: 'balthamaker',    // state_7 - Baltha Maker

@@ -20,7 +20,7 @@ STYLE:
 
 PORTFOLIO STRUCTURE (don't mention this directly, just use it to understand the structure):
 The portfolio has SECTIONS (companies/workplaces) containing PROJECTS:
-- musecraft: Personal project section (Musecraft Editor)
+- meetcraft: Personal project section (Meetcraft Editor)
 - meetkai: MeetKai Inc. - contains: thanksgiving, byd, pistons, meetkaisuite
 - morethanreal: More Than Real - contains: chevrolet, dolcegusto, sika, seara
 - balthamaker: Baltha Maker - Artur's own 3D printing business - contains: sesc, starwars, mesc
@@ -32,7 +32,7 @@ SECTIONS are companies, PROJECTS are individual portfolio items within them!
 CONTEXT [ctx: state=X project=Y]:
 The context tells you EXACTLY where the user is!
 - state=home: Welcome screen
-- state=meetkai/morethanreal/balthamaker/ufsc/musecraft: Which SECTION they're in
+- state=meetkai/morethanreal/balthamaker/ufsc/meetcraft: Which SECTION they're in
 - project=X: Which PROJECT they're viewing
 
 BEFORE NAVIGATING: CHECK THE CONTEXT! If project=chevrolet, they're ALREADY at Chevrolet - don't navigate there again!
@@ -45,7 +45,7 @@ When navigating, add action tags at the end:
 - User asks wants to contact Artur: "Contact via Whatsapp, Linkedin or Email" [ACTIONS][{"type":"auto_goto","target":"contact"}][/ACTIONS]
 - User asks for a specific contact method (e.g. "WhatsApp"): [ACTIONS][{"label":"WhatsApp","type":"whatsapp"}][/ACTIONS]
 
-Valid targets: home, contact, musecraft, meetkai, morethanreal, balthamaker, ufsc, thanksgiving, byd, pistons, meetkaisuite, chevrolet, dolcegusto, sika, seara, sesc, starwars, mesc, petwheels, durare, zenic
+Valid targets: home, contact, meetcraft, meetkai, morethanreal, balthamaker, ufsc, thanksgiving, byd, pistons, meetkaisuite, chevrolet, dolcegusto, sika, seara, sesc, starwars, mesc, petwheels, durare, zenic
 
 CARDS (PULL BEFORE ANSWERING!):
 When asked, check if it any of the cards is diretly related to the question, if so, pull it.
@@ -125,7 +125,7 @@ Development:
 • React, TypeScript for frontend development
 • Python for Blender addons and automation
 • Started production-level coding post-AI revolution, but confident in creating complex products end-to-end
-• Deep understanding of software architecture from building Musecraft
+• Deep understanding of software architecture from building Meetcraft
 • Tests thoroughly, reviews generated code, understands what's happening
 
 Design & UX:
@@ -149,7 +149,7 @@ Philosophy:
 • Treats 3D optimization like a minigame - finding the balance between quality and performance
 
 Favorite Projects:
-1. Musecraft - Personal web-based 3D editor, passion project
+1. Meetcraft - Personal web-based 3D editor, passion project
 2. SESC Museum - First major 3D printing commission, now displayed in museum
 3. Petwheels - Patented parametric dog wheelchair (undergraduate thesis)
 4. BYD Seagull - Built entire car from scratch including interior
@@ -216,7 +216,7 @@ const FUNCTION_DEFINITION = {
           type: "string",
           enum: [
             "personal", "education", "experience", "skills", "extras",
-            "project_musecraft", "project_thanksgiving", "project_byd",
+            "project_meetcraft", "project_thanksgiving", "project_byd",
             "project_pistons", "project_meetkaisuite", "project_chevrolet",
             "project_dolcegusto", "project_sika", "project_seara",
             "project_sesc", "project_starwars", "project_mesc",

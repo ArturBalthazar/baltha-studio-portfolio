@@ -20,7 +20,7 @@ interface NavigationMenuProps {
 // Menu items configuration - using labelKey for translation lookup
 interface MenuItem {
   id: string;
-  labelKey: 'welcome' | 'musecraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc' | 'letsConnect';
+  labelKey: 'welcome' | 'meetcraft' | 'meetkai' | 'morethanreal' | 'balthamaker' | 'ufsc' | 'letsConnect';
   label: string; // Hardcoded label for now (no translation)
   icon: string;
   pathPercent: number; // Position along the path (0-1)
@@ -28,7 +28,7 @@ interface MenuItem {
 
 const MENU_ITEMS: MenuItem[] = [
   { id: 'welcome', labelKey: 'welcome', label: 'Welcome', icon: '/assets/images/baltha-outline.png', pathPercent: 0.0 },
-  { id: 'musecraft', labelKey: 'musecraft', label: 'Musecraft', icon: '/assets/logos/musecraft-menu.png', pathPercent: 0.17 },
+  { id: 'meetcraft', labelKey: 'meetcraft', label: 'Meetcraft', icon: '/assets/logos/meetcraft-menu.png', pathPercent: 0.17 },
   { id: 'meetkai', labelKey: 'meetkai', label: 'MeetKai Inc', icon: '/assets/logos/meetkai-menu.png', pathPercent: 0.34 },
   { id: 'morethanreal', labelKey: 'morethanreal', label: 'More Than\nReal', icon: '/assets/logos/morethanreal-menu.png', pathPercent: 0.50 },
   { id: 'balthamaker', labelKey: 'balthamaker', label: 'Baltha Maker', icon: '/assets/logos/balthamaker-menu.png', pathPercent: 0.67 },
@@ -789,7 +789,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
         const stateToMenuIndex: Record<number, number> = {
           [S.state_0]: 0,      // Welcome
           [S.state_3]: 0,      // Mode selection - still maps to Welcome
-          [S.state_4]: 1,      // Musecraft (Personal Project)
+          [S.state_4]: 1,      // Meetcraft (Personal Project)
           [S.state_5]: 2,      // MeetKai
           [S.state_6]: 3,      // More Than Real
           [S.state_7]: 4,      // Baltha Maker
@@ -859,7 +859,7 @@ export function NavigationMenu({ isOpen, onClose }: NavigationMenuProps) {
               // Map menu items to states
               const stateMap: Record<string, S> = {
                 'welcome': S.state_0,            // Welcome
-                'musecraft': S.state_4,          // Musecraft (Personal Project)
+                'meetcraft': S.state_4,          // Meetcraft (Personal Project)
                 'meetkai': S.state_5,            // MeetKai
                 'morethanreal': S.state_6,       // More Than Real
                 'balthamaker': S.state_7,        // Baltha Maker

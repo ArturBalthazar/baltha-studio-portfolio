@@ -1,11 +1,11 @@
 /**
- * MusecraftInteraction.ts
+ * MeetcraftInteraction.ts
  * 
- * Handles interactive 3D editor demo for the Musecraft model.
+ * Handles interactive 3D editor demo for the Meetcraft model.
  * Allows users to select and move mesh objects with a position gizmo,
- * giving hints of how the actual Musecraft 3D editor works.
+ * giving hints of how the actual Meetcraft 3D editor works.
  * 
- * Musecraft GLB Hierarchy:
+ * Meetcraft GLB Hierarchy:
  * - root (glb generated)
  *   - sandbox (mesh)
  *   - platform (mesh)
@@ -18,7 +18,7 @@ import * as BABYLON from "babylonjs";
 
 // ===== TYPES =====
 
-interface MusecraftMeshes {
+interface MeetcraftMeshes {
     sandbox: BABYLON.AbstractMesh | null;
     platform: BABYLON.AbstractMesh | null;
     telescope: BABYLON.AbstractMesh | null;
@@ -26,15 +26,15 @@ interface MusecraftMeshes {
     rocketFlames: BABYLON.TransformNode | null;
 }
 
-interface MusecraftOriginalState {
+interface MeetcraftOriginalState {
     positions: Map<BABYLON.TransformNode, BABYLON.Vector3>;
     rotations: Map<BABYLON.TransformNode, BABYLON.Quaternion | null>;
 }
 
-interface MusecraftInteractionState {
+interface MeetcraftInteractionState {
     isInitialized: boolean;
-    meshes: MusecraftMeshes;
-    originalState: MusecraftOriginalState;
+    meshes: MeetcraftMeshes;
+    originalState: MeetcraftOriginalState;
     selectedMesh: BABYLON.AbstractMesh | null;
     selectionOverlay: BABYLON.AbstractMesh | null;
     gizmoManager: BABYLON.GizmoManager | null;
@@ -44,7 +44,7 @@ interface MusecraftInteractionState {
 
 // ===== MODULE STATE =====
 
-const state: MusecraftInteractionState = {
+const state: MeetcraftInteractionState = {
     isInitialized: false,
     meshes: {
         sandbox: null,
@@ -85,7 +85,7 @@ function getOrCreateOverlayMaterial(scene: BABYLON.Scene): BABYLON.StandardMater
         return overlayMaterial;
     }
 
-    overlayMaterial = new BABYLON.StandardMaterial("musecraftSelectionOverlay", scene);
+    overlayMaterial = new BABYLON.StandardMaterial("meetcraftSelectionOverlay", scene);
     overlayMaterial.diffuseColor = new BABYLON.Color3(0.2, 1, 0.4); // Green
     overlayMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.5, 0.2); // Slight glow
     overlayMaterial.alpha = 0.3;
@@ -206,8 +206,8 @@ function getFirstMeshChild(node: BABYLON.Node): BABYLON.AbstractMesh | null {
     return null;
 }
 
-function findMusecraftMeshes(rootMesh: BABYLON.AbstractMesh): MusecraftMeshes {
-    const meshes: MusecraftMeshes = {
+function findMeetcraftMeshes(rootMesh: BABYLON.AbstractMesh): MeetcraftMeshes {
+    const meshes: MeetcraftMeshes = {
         sandbox: null,
         platform: null,
         telescope: null,
@@ -259,7 +259,7 @@ function findMusecraftMeshes(rootMesh: BABYLON.AbstractMesh): MusecraftMeshes {
 
 // ===== STORE ORIGINAL STATE =====
 
-function storeOriginalState(meshes: MusecraftMeshes): MusecraftOriginalState {
+function storeOriginalState(meshes: MeetcraftMeshes): MeetcraftOriginalState {
     const positions = new Map<BABYLON.TransformNode, BABYLON.Vector3>();
     const rotations = new Map<BABYLON.TransformNode, BABYLON.Quaternion | null>();
 
@@ -474,14 +474,14 @@ function setupPointerObserver(scene: BABYLON.Scene): BABYLON.Observer<BABYLON.Po
 // ===== PUBLIC API =====
 
 /**
- * Initialize the Musecraft interaction system.
- * Call this after the Musecraft model is loaded and visible.
+ * Initialize the Meetcraft interaction system.
+ * Call this after the Meetcraft model is loaded and visible.
  * 
- * @param rootMesh - The root mesh of the Musecraft GLB model
+ * @param rootMesh - The root mesh of the Meetcraft GLB model
  * @param scene - The Babylon.js scene
  * @returns boolean indicating if initialization was successful
  */
-export function initMusecraftInteraction(
+export function initMeetcraftInteraction(
     rootMesh: BABYLON.AbstractMesh,
     scene: BABYLON.Scene
 ): boolean {
@@ -493,7 +493,7 @@ export function initMusecraftInteraction(
     sceneRef = scene;
 
     // Find all relevant meshes
-    state.meshes = findMusecraftMeshes(rootMesh);
+    state.meshes = findMeetcraftMeshes(rootMesh);
 
     // Validate we found the meshes
     const foundMeshes = Object.entries(state.meshes)
@@ -544,10 +544,10 @@ export function initMusecraftInteraction(
 }
 
 /**
- * Reset all Musecraft meshes to their original positions.
+ * Reset all Meetcraft meshes to their original positions.
  * Call this when the model scales down/becomes hidden.
  */
-export function resetMusecraftInteraction(): void {
+export function resetMeetcraftInteraction(): void {
     if (!state.isInitialized) return;
 
 
@@ -579,10 +579,10 @@ export function resetMusecraftInteraction(): void {
 }
 
 /**
- * Dispose the Musecraft interaction system.
+ * Dispose the Meetcraft interaction system.
  * Call this for complete cleanup (e.g., when leaving the page).
  */
-export function disposeMusecraftInteraction(): void {
+export function disposeMeetcraftInteraction(): void {
     if (!state.isInitialized) return;
 
 
@@ -668,14 +668,14 @@ export function stopRocketFlames(): void {
 /**
  * Check if the interaction system is currently initialized.
  */
-export function isMusecraftInteractionInitialized(): boolean {
+export function isMeetcraftInteractionInitialized(): boolean {
     return state.isInitialized;
 }
 
 /**
  * Get the currently selected mesh (if any).
  */
-export function getSelectedMusecraftMesh(): BABYLON.AbstractMesh | null {
+export function getSelectedMeetcraftMesh(): BABYLON.AbstractMesh | null {
     return state.selectedMesh;
 }
 
@@ -683,12 +683,12 @@ export function getSelectedMusecraftMesh(): BABYLON.AbstractMesh | null {
  * Check if a gizmo is currently being dragged.
  * Use this to disable model rotation while dragging transforms.
  */
-export function isMusecraftGizmoDragging(): boolean {
+export function isMeetcraftGizmoDragging(): boolean {
     return isGizmoDragging;
 }
 
 /**
- * Select the rocket by default (call when returning to Musecraft).
+ * Select the rocket by default (call when returning to Meetcraft).
  * This ensures the rocket is selected with overlay and gizmo visible.
  */
 export function selectRocketByDefault(): void {
