@@ -47,7 +47,7 @@ function getSession(sessionId) {
 
 // Project card content - Story-focused, not just specs
 const PROJECT_CARDS = {
-    project_meetcraft: `[CARD: PROJECT - MUSECRAFT]
+    project_meetcraft: `[CARD: PROJECT - MEETCRAFT]
 WHAT IT IS:
 Meetcraft is my passion project - a browser-based 3D editor similar to Blender but for the web. Multiple people can collaborate in real-time, building interactive 3D scenes together. It has AI assistance for coding, a UI designer for HTML interfaces attached to 3D objects, and an addon system.
 

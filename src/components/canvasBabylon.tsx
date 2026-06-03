@@ -3809,9 +3809,9 @@ export function BabylonCanvas() {
       }
 
       // 2. Meetcraft (State 5)
-      const museGroups = meetcraftAnimationGroupsRef.current;
-      if (s === S.state_5 && modelVisibilityRef.current.model2 && museGroups.length > 0) {
-        museGroups.forEach(group => {
+      const meetGroups = meetcraftAnimationGroupsRef.current;
+      if (s === S.state_5 && modelVisibilityRef.current.model2 && meetGroups.length > 0) {
+        meetGroups.forEach(group => {
           if (!group.isPlaying) {
             group.play(true);
           }
