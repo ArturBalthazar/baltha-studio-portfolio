@@ -1,6 +1,7 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/portfolio", "permanent": false },
+    { "source": "/", "destination": "/portfolio/", "permanent": false },
+    { "source": "/portfolio", "destination": "/portfolio/", "permanent": false },
     { "source": "/connect", "destination": "/interactive/connect", "permanent": false },
     { "source": "/welcome", "destination": "/interactive/connect", "permanent": false }
   ],
