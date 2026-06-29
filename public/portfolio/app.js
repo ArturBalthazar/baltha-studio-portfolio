@@ -145,7 +145,7 @@ const PROJECT_SECTIONS = {
 };
 
 // Which project's section list is expanded in the sidebar.
-let expandedProjectId = activeProjectId;
+let expandedProjectId = null; // sidebar projects start collapsed
 
 const CHEVRON_SVG =
   '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
@@ -4585,7 +4585,7 @@ function selectCategory(id) {
   // Auto-select the first project in the new category.
   const cat = getCategory(id);
   activeProjectId = cat.projects.length ? cat.projects[0].id : null;
-  expandedProjectId = activeProjectId; // auto-expand the active project
+  expandedProjectId = null; // keep the sidebar project list collapsed
   renderHeader();
   renderSidebar();
   renderContent();
