@@ -31,9 +31,9 @@ export function Header({ showWelcome = true }: Props) {
     }
     // Check if we're on the connect page
     const path = window.location.pathname;
-    if (path.startsWith("/connect") || path.startsWith("/welcome")) {
-      // Navigate to root path which loads the main app at state0
-      window.location.href = "/";
+    if (path.includes("/connect") || path.includes("/welcome")) {
+      // Return to the interactive app's home (it now lives under /interactive)
+      window.location.href = "/interactive";
     } else {
       // We're on the main app - go to state0
       // Set pending navigation to suppress panel during travel

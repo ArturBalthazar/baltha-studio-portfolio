@@ -9,7 +9,7 @@ const path = window.location.pathname;
 
 createRoot(document.getElementById("root")!).render(
   <I18nProvider>
-    {(path.startsWith("/connect") || path.startsWith("/welcome")) ? <Connect /> : <App />}
+    {(path.includes("/connect") || path.includes("/welcome")) ? <Connect /> : <App />}
   </I18nProvider>
 );
 

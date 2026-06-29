@@ -1,15 +1,11 @@
 {
-    "redirects": [
-        {
-            "source": "/welcome",
-            "destination": "/connect",
-            "permanent": true
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/index.html"
-        }
-    ]
+  "redirects": [
+    { "source": "/", "destination": "/portfolio", "permanent": false },
+    { "source": "/connect", "destination": "/interactive/connect", "permanent": false },
+    { "source": "/welcome", "destination": "/interactive/connect", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/interactive", "destination": "/index.html" },
+    { "source": "/interactive/(.*)", "destination": "/index.html" }
+  ]
 }

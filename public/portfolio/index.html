@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baltha Studio • Artur Balthazar's Design Portfolio</title>
+  <meta name="description" content="Artur Balthazar's design portfolio — product design, mechanical engineering, 3D printing and WebGL projects." />
+  <meta name="author" content="Artur Balthazar" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://baltha.studio/portfolio" />
+  <link rel="icon" href="assets/Baltha_Studio_Icon_favicon_01.png" />
+  <link rel="apple-touch-icon" href="assets/Baltha_Studio_Icon_favicon_01.png" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://baltha.studio/portfolio" />
+  <meta property="og:title" content="Baltha Studio • Artur Balthazar's Design Portfolio" />
+  <meta property="og:description" content="Product design, mechanical engineering, 3D printing and WebGL projects by Artur Balthazar." />
+  <meta property="og:image" content="https://baltha.studio/assets/brand/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="Baltha Studio" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://baltha.studio/portfolio" />
+  <meta name="twitter:title" content="Baltha Studio • Artur Balthazar's Design Portfolio" />
+  <meta name="twitter:description" content="Product design, mechanical engineering, 3D printing and WebGL projects by Artur Balthazar." />
+  <meta name="twitter:image" content="https://baltha.studio/assets/brand/og-image.png" />
+  <link rel="stylesheet" href="styles.css?v=159" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header spans the full width and stays put when the CV panel opens. -->
+    <header class="header">
+      <a class="brand" href="#" data-home>
+        <img src="assets/Baltha_Studio_Main_Blue.png" alt="Baltha Studio" class="brand-logo" />
+        <img src="assets/Baltha_Studio_Icon_favicon_01.png" alt="Baltha Studio" class="brand-icon" />
+      </a>
+      <nav class="header-nav" id="header-nav" aria-label="Categories"></nav>
+      <button class="about-toggle" id="about-toggle" aria-pressed="false">Curriculum Vitae</button>
+      <!-- Mobile-only: category picker (replaces the desktop header tabs). -->
+      <div class="header-dd m-dd" id="category-dd"></div>
+    </header>
+
+    <!-- Mobile-only sub-header: project-info button + project picker. -->
+    <div class="subheader" id="subheader">
+      <button class="info-toggle" id="info-toggle" aria-label="Project info">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <div class="subhead-dd m-dd" id="project-dd"></div>
+    </div>
+
+    <!-- Below the header: the product area and the CV panel share the row. -->
+    <div class="app-body">
+      <div class="main-area">
+        <!-- Body: sidebar + content -->
+        <div class="layout">
+          <aside class="sidebar">
+            <div class="sidebar-title" id="sidebar-title"></div>
+            <div class="sidebar-label" id="sidebar-label"></div>
+            <nav class="sidebar-nav" id="sidebar-nav" aria-label="Projects"></nav>
+          </aside>
+
+          <main class="content" id="content"></main>
+
+          <aside class="skills-panel" id="skills-panel" aria-label="Skills and tools"></aside>
+        </div>
+      </div>
+
+      <!-- Curriculum Vitae panel: slides in from the right, sharing the viewport
+           with the product content (~50/50) without replacing it. -->
+      <aside class="cv-panel" id="cv-panel" aria-hidden="true" aria-label="Curriculum Vitae">
+        <button class="cv-close" id="cv-close" aria-label="Close curriculum vitae">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+        <div class="cv-inner" id="cv-inner"></div>
+      </aside>
+    </div>
+
+    <!-- Mobile-only: project info overlay (summary, knowledge, skills, software). -->
+    <div class="info-modal" id="info-modal" aria-hidden="true">
+      <div class="info-modal-backdrop" data-close-info></div>
+      <div class="info-modal-card" role="dialog" aria-modal="true" aria-label="Project info">
+        <button class="info-modal-close" data-close-info aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+        <div class="info-modal-body" id="info-modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=159"></script>
+</body>
+</html>

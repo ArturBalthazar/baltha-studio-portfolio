@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Petwheels — Customizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<style>
+  /* ---- portfolio-embed overrides ---- */
+  html, body { margin: 0; height: 100%; background: transparent; }
+  /* Fill the embed edge-to-edge: no outer padding, no gap between the two
+     cards. The single rounded corner comes from the portfolio's .pw-frame
+     container (which clips this iframe). */
+  .hero { min-height: 0; height: 100%; padding: 0; overflow: hidden; box-sizing: border-box; }
+  .hero-grid {
+    position: relative; /* positioning context for the narrow-mode drawer */
+    min-height: 0;
+    height: 100%;
+    max-width: none;
+    gap: 0;
+    /* Keep the side-by-side layout even though the embed is narrower than the
+       original 1100px breakpoint that would otherwise stack it. The panel can
+       shrink (300–360px) so the customizer never overflows when the portfolio's
+       About Me panel squeezes the content area. */
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  /* Inner cards are flush — drop their own borders/radius/shadow; a single
+     divider line separates the viewport from the panel. */
+  .viewport, .panel {
+    min-height: 0 !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .panel { max-height: none; border-left: 1px solid var(--line-soft) !important; }
+  .stage { min-height: 0; }
+  /* Restore the panel's internal per-step scroll (the stacked breakpoint drops it). */
+  .step-body, .step-scroll { overflow: hidden; }
+  .step-scroll { overflow-y: auto; }
+  .step-nav--end { justify-content: flex-end; }
+
+  /* One field per row — the embedded panel is too narrow for the original
+     two-column measurement grid. */
+  .measure-grid, .wheel-grid { grid-template-columns: 1fr !important; }
+
+  /* Panel padding: a small right padding so the scrollbar sits near the panel's
+     right edge, tighter top/bottom so the footer gap is smaller. */
+  .panel { padding: 26px 12px 16px 28px !important; }
+
+  /* The real fix for the clipped value boxes: let the range slider shrink
+     (its default min-width:auto was pushing the value box past the edge), and
+     keep the value box at its natural size. Nothing overflows, so nothing clips. */
+  input[type=range] { min-width: 0 !important; }
+  .field-output { flex-shrink: 0; }
+
+  /* Clean, visible scrollbar at the scroll area's right edge with a small gap
+     from the rows — no negative-margin tricks. */
+  .step-scroll {
+    padding-right: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(20,20,40,.42) transparent;
+  }
+  .step-scroll::-webkit-scrollbar { width: 9px; }
+  .step-scroll::-webkit-scrollbar-track { background: transparent; }
+  .step-scroll::-webkit-scrollbar-thumb {
+    background: rgba(20,20,40,.34);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    min-height: 36px;
+  }
+  .step-scroll::-webkit-scrollbar-thumb:hover { background: rgba(20,20,40,.48); background-clip: padding-box; }
+
+  /* Color selector popover: thin scrollbar with no track background. */
+  .material-swatches {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(20,20,40,.3) transparent;
+  }
+  .material-swatches::-webkit-scrollbar { width: 6px; }
+  .material-swatches::-webkit-scrollbar-track { background: transparent; }
+  .material-swatches::-webkit-scrollbar-thumb { background: rgba(20,20,40,.3); border-radius: 999px; }
+  .material-swatches::-webkit-scrollbar-thumb:hover { background: rgba(20,20,40,.45); }
+
+  /* Tighter footer so the gap under the Style button is smaller. */
+  .step-nav { padding-top: 12px; }
+
+  /* Compact, left-grouped stepper with short fixed connectors (no stretched
+     gaps), the first badge flush with the content's left edge. */
+  .stepper { margin-bottom: 18px; justify-content: flex-start; }
+  .step { padding: 4px 7px; gap: 6px; font-size: 12px; }
+  .step:first-child { padding-left: 0; }
+  .step-num { width: 20px; height: 20px; font-size: 11px; }
+  /* Passed (done) stages are neutral gray, not blue; the active stage keeps its
+     warm badge. */
+  .step.is-done .step-num { background: #e7e7ec !important; color: var(--text-soft) !important; }
+  /* A single static thin gray connector, short and never changing color. */
+  .step-line,
+  .step.is-done + .step-line,
+  .step.is-active + .step-line { flex: 0 0 20px; height: 1px; margin: 0 4px; background: var(--line) !important; }
+
+  /* Smaller step title; full panel width now that the unit toggle moved out. */
+  .step-title { font-size: 18px !important; }
+
+  /* Tighter measurement rows. */
+  .measure-grid, .wheel-grid { gap: 13px !important; }
+
+  /* Float bar across the top of the viewport: view tabs on the left, the cm/in
+     unit toggle on the right. Both pills share the same size. */
+  .vp-floatbar {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .vp-floatbar .viewport-tabs,
+  .vp-floatbar .unit-toggle {
+    position: static;
+    padding: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+  .vp-floatbar .vp-tab,
+  .vp-floatbar .unit-btn { padding: 7px 14px; font-size: 13px; }
+  /* Second-row wrapper (cm/in + Controls). Inline beside the tabs when wide;
+     drops to its own row when narrow. */
+  .vp-floatbar-r2 { display: flex; align-items: center; gap: 8px; }
+
+  /* Help tooltip: open below the icon, left-aligned and wrapping, so it stays
+     inside the panel instead of being clipped on the left. */
+  .field-help { position: relative; }
+  .field-help-tip {
+    bottom: auto;
+    top: calc(100% + 8px);
+    left: -6px;
+    transform: none;
+    white-space: normal;
+    width: max-content;
+    max-width: 190px;
+  }
+  .field-help-tip::after {
+    top: auto;
+    bottom: 100%;
+    left: 12px;
+    transform: none;
+    border-top-color: transparent;
+    border-bottom-color: var(--text);
+  }
+
+  /* ---- Narrow embed: collapse the controls into a slide-over drawer ----
+     When the embed is squeezed below the threshold (e.g. the portfolio's CV
+     panel is open, or on a small window), the side-by-side layout would cramp
+     both the 3D viewport and the controls. Below the threshold the viewport
+     takes the full width and the panel becomes a drawer that slides in over it,
+     toggled by a floating "Controls" button. */
+  .panel-toggle, .panel-close { display: none; }
+
+  @media (max-width: 680px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* Panel becomes an off-canvas drawer over the right of the viewport. */
+    .hero-grid .panel {
+      position: absolute !important;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: min(330px, 84%);
+      z-index: 6;
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      box-shadow: -10px 0 30px rgba(15, 23, 42, 0.14);
+      background: #fff;
+    }
+    .hero-grid.panel-open .panel { transform: translateX(0); }
+
+    /* Float bar stays a single row: view tabs on the left, the Controls icon
+       button on the right. The cm/in unit toggle is hidden on mobile. The bar
+       is click-through so the 3D canvas stays draggable; only the pills/buttons
+       capture pointer events. */
+    .vp-floatbar { pointer-events: none; }
+    .vp-floatbar > * { pointer-events: auto; }
+    .vp-floatbar .unit-toggle { display: none; }
+
+    /* Controls button: in flow on the float bar's second row, pushed to the
+       right so it lines up opposite the cm/in toggle. */
+    .panel-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: static;
+      padding: 9px;
+      border: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      /* Stronger shadow + hairline ring so the small icon button stands out
+         against the light 3D viewport. */
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22),
+        0 0 0 1px rgba(15, 23, 42, 0.07);
+      transition: background 0.12s ease;
+    }
+    .panel-toggle span { display: none; } /* icon only on mobile */
+    .panel-toggle:hover { background: #f4f4f5; }
+
+    /* While the drawer is open, hide the Controls button — the drawer's own X
+       closes it instead. */
+    .hero-grid.panel-open .panel-toggle { display: none; }
+
+    /* Close (X) button, top-right inside the drawer. */
+    .panel-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 9;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 8px;
+      background: #f4f4f5;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+    }
+    .panel-close:hover { background: #e9e9ec; }
+  }
+</style>
+</head>
+<body>
+
+<section id="customizer" class="hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+
+  <div class="hero-grid">
+
+    <!-- LEFT: 3D VIEWPORT -->
+    <div class="viewport" id="viewport">
+
+      <div class="stage">
+        <div class="stage-grid" aria-hidden="true"></div>
+        <div class="stage-glow" aria-hidden="true"></div>
+
+        <!-- Float bar: view tabs + the cm/in unit toggle, top-right of the stage -->
+        <div class="vp-floatbar">
+          <div class="viewport-tabs" role="tablist">
+            <button class="vp-tab is-active" data-view="both">Full view</button>
+            <button class="vp-tab" data-view="chair">Wheelchair only</button>
+          </div>
+          <div class="unit-toggle" role="tablist" aria-label="Unit">
+            <button class="unit-btn is-active" data-unit="cm">cm</button>
+            <button class="unit-btn" data-unit="in">in</button>
+          </div>
+        </div>
+
+        <div class="dog-frame" id="dogFrame">
+          <canvas id="renderCanvas" touch-action="none"></canvas>
+          <div class="dim-overlay" id="dimOverlay" aria-hidden="true"></div>
+          <div class="dog-shadow" aria-hidden="true"></div>
+          <div class="vp-loader" id="vpLoader">
+            <span class="vp-loader-ring"></span>
+            <span>Loading 3D model…</span>
+          </div>
+        </div>
+
+        <!-- viewport controls -->
+        <div class="vp-controls">
+          <button class="vp-ctl" id="rotateL" title="Rotate left">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+          <button class="vp-ctl" id="rotateR" title="Rotate right">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+          <div class="vp-divider"></div>
+          <button class="vp-ctl" id="zoomOut" title="Zoom out">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button class="vp-ctl" id="zoomIn" title="Zoom in">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+          </button>
+          <div class="vp-divider"></div>
+          <button class="vp-ctl is-active" id="toggleMeasures" title="Toggle measurements">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="1"/><line x1="7" y1="9" x2="7" y2="11.5"/><line x1="11" y1="9" x2="11" y2="12.5"/><line x1="15" y1="9" x2="15" y2="11.5"/></svg>
+          </button>
+          <button class="vp-ctl" id="fullscreen" title="Fullscreen">
+            <svg id="fsIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6"/><path d="M21 9V3h-6"/><path d="M3 15v6h6"/><path d="M21 15v6h-6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: GUIDED PANEL (starts directly on the steps) -->
+    <aside class="panel" id="panel">
+
+      <!-- Step container -->
+      <div class="panel-screen is-active" data-screen="steps">
+
+        <div class="stepper">
+          <button class="step is-active" data-step="measure">
+            <span class="step-num">1</span>
+            <span class="step-label">Measure</span>
+          </button>
+          <span class="step-line"></span>
+          <button class="step" data-step="style">
+            <span class="step-num">2</span>
+            <span class="step-label">Style</span>
+          </button>
+          <span class="step-line"></span>
+          <button class="step" data-step="review">
+            <span class="step-num">3</span>
+            <span class="step-label">Review</span>
+          </button>
+        </div>
+
+        <!-- STEP 1: MEASURE -->
+        <div class="step-body is-active" data-body="measure">
+          <div class="step-scroll">
+          <h2 class="step-title">Enter dog's measurements</h2>
+
+          <div class="measure-grid">
+            <label class="field">
+              <span class="field-label">
+Length
+                <span class="field-help" tabindex="0" role="button" aria-label="How to measure length">?
+                  <span class="field-help-tip">The distance from the dog's shoulder to the hip (the hip–femur joint).</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="20" max="70" step="0.1" value="32" data-measure="length" id="rangeLength" />
+                <div class="field-output">
+                  <input class="field-value" type="text" inputmode="decimal" id="valLength" value="32.0" />
+                  <span class="unit">cm</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+Height
+                <span class="field-help" tabindex="0" role="button" aria-label="How to measure height">?
+                  <span class="field-help-tip">The distance from the ground to the dog's shoulder.</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="12" max="60" step="0.1" value="25" data-measure="height" id="rangeHeight" />
+                <div class="field-output">
+                  <input class="field-value" type="text" inputmode="decimal" id="valHeight" value="25.0" />
+                  <span class="unit">cm</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+Hip width
+                <span class="field-help" tabindex="0" role="button" aria-label="How to measure hip width">?
+                  <span class="field-help-tip">The distance between the centres of both thighs, measured from behind.</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="5" max="30" step="0.1" value="8" data-measure="width" id="rangeWidth" />
+                <div class="field-output">
+                  <input class="field-value" type="text" inputmode="decimal" id="valWidth" value="8.0" />
+                  <span class="unit">cm</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+Thigh girth
+                <span class="field-help" tabindex="0" role="button" aria-label="How to measure thigh girth">?
+                  <span class="field-help-tip">The full circumference around the thickest part of the thigh.</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="12" max="60" step="0.1" value="20" data-measure="thigh" id="rangeThigh" />
+                <div class="field-output">
+                  <input class="field-value" type="text" inputmode="decimal" id="valThigh" value="20.0" />
+                  <span class="unit">cm</span>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <h3 class="subsection-title">Fine-tune wheel</h3>
+
+          <div class="wheel-grid">
+            <label class="field">
+              <span class="field-label">
+                Wheel thickness
+                <span class="field-help" tabindex="0" role="button" aria-label="About wheel thickness">?
+                  <span class="field-help-tip">Multiplier for the wheel — thicker is stronger but heavier.</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="1" max="2" step="0.05" value="1.2" id="rangeThickness" />
+                <div class="field-output">
+                  <input class="field-value" type="text" inputmode="decimal" id="valThickness" value="1.20" />
+                  <span class="unit">×</span>
+                </div>
+              </div>
+            </label>
+
+            <label class="field field-radius">
+              <span class="field-label">
+                Wheel radius
+                <span class="field-help" tabindex="0" role="button" aria-label="About wheel radius">?
+                  <span class="field-help-tip">Auto-tracks height. Click the lock to override manually.</span>
+                </span>
+              </span>
+              <div class="field-input">
+                <input type="range" min="-50" max="50" step="1" value="0" id="rangeRadiusOffset" disabled />
+                <div class="field-output field-output--radius">
+                  <input class="field-value" type="text" inputmode="decimal" id="valRadius" value="6.2" disabled />
+                  <span class="unit">cm</span>
+                  <button class="radius-lock" id="radiusLock" type="button" aria-label="Unlock manual radius" aria-pressed="false" title="Unlock to fine-tune">
+                    <svg class="lock-closed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                    <svg class="lock-open" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-1.6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          </div>
+
+          <div class="step-nav step-nav--end">
+            <button class="btn btn-primary" data-go="style">
+              <span>Style</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: STYLE -->
+        <div class="step-body" data-body="style">
+          <div class="step-scroll">
+          <h2 class="step-title">Style your wheelchair</h2>
+          <p class="step-desc">Pick colors per material group and choose accessories. Color is for preview only — the real color is whatever filament you print with.</p>
+
+          <div class="style-group material-list">
+            <div class="material-row" data-mat="m1" data-filament="rigid">
+              <button class="material-chip" type="button" aria-expanded="false" aria-label="Pick color for main parts">
+                <span class="material-chip-color"></span>
+              </button>
+              <div class="material-text">
+                <span class="material-title">Main parts</span>
+                <span class="material-desc">Thigh, upper arm, rim, sidebar slider</span>
+              </div>
+              <div class="material-swatches" hidden></div>
+            </div>
+
+            <div class="material-row" data-mat="m2" data-filament="rigid">
+              <button class="material-chip" type="button" aria-expanded="false" aria-label="Pick color for support parts">
+                <span class="material-chip-color"></span>
+              </button>
+              <div class="material-text">
+                <span class="material-title">Support parts</span>
+                <span class="material-desc">Leg support and lower arm</span>
+              </div>
+              <div class="material-swatches" hidden></div>
+            </div>
+
+            <div class="material-row" data-mat="m3" data-filament="rigid">
+              <button class="material-chip" type="button" aria-expanded="false" aria-label="Pick color for frame parts">
+                <span class="material-chip-color"></span>
+              </button>
+              <div class="material-text">
+                <span class="material-title">Frame parts</span>
+                <span class="material-desc">Sidebar and buttons</span>
+              </div>
+              <div class="material-swatches" hidden></div>
+            </div>
+
+            <div class="material-row" data-mat="m4" data-filament="flexible">
+              <button class="material-chip" type="button" aria-expanded="false" aria-label="Pick color for flexible parts">
+                <span class="material-chip-color"></span>
+              </button>
+              <div class="material-text">
+                <span class="material-title">Flexible parts</span>
+                <span class="material-desc">Tire, thigh support and leg slings</span>
+              </div>
+              <div class="material-swatches" hidden></div>
+            </div>
+          </div>
+
+          <div class="style-group">
+            <div class="toggle-row">
+              <label class="switch">
+                <input type="checkbox" id="legSupport" checked />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+              <div>
+                <span class="switch-label">Include rear leg slings</span>
+                <span class="switch-desc">For dogs that can't bear any weight on their hind legs.</span>
+              </div>
+            </div>
+          </div>
+
+          </div>
+
+          <div class="step-nav">
+            <button class="btn btn-ghost" data-go="measure">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Back</span>
+            </button>
+            <button class="btn btn-primary" data-go="review">
+              <span>Review</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: REVIEW -->
+        <div class="step-body" data-body="review">
+          <div class="step-scroll">
+          <h2 class="step-title">Review & download</h2>
+          <p class="step-desc">A summary of your configuration. The STL files are available on the Petwheels store.</p>
+
+          <div class="review-card">
+            <div class="review-row"><span>Length</span><b><span id="revLength">42.0</span> <span class="rev-unit">cm</span></b></div>
+            <div class="review-row"><span>Height</span><b><span id="revHeight">28.0</span> <span class="rev-unit">cm</span></b></div>
+            <div class="review-row"><span>Hip width</span><b><span id="revWidth">14.0</span> <span class="rev-unit">cm</span></b></div>
+            <div class="review-row"><span>Thigh girth</span><b><span id="revThigh">22.0</span> <span class="rev-unit">cm</span></b></div>
+            <div class="review-row"><span>Wheel thickness</span><b><span id="revThickness">1.20</span> ×</b></div>
+            <div class="review-row"><span>Wheel radius</span><b><span id="revRadius">6.2</span> <span class="rev-unit">cm</span></b></div>
+            <div class="review-row"><span>Rear leg slings</span><b id="revLeg2">Yes</b></div>
+            <div class="review-row"><span>Collar</span><b id="revCollar">Yes</b></div>
+          </div>
+          </div>
+
+          <div class="review-actions">
+            <a class="btn btn-cta btn-lg btn-block" href="https://petwheels.io" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Get the STL files</span>
+            </a>
+
+            <div class="trust-row">
+              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Instant download</span>
+              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Personal-use license</span>
+            </div>
+
+            <div class="step-nav">
+              <button class="btn btn-ghost" data-go="style">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <span>Back to style</span>
+              </button>
+              <button class="btn btn-ghost" data-go="measure">Start over</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+</section>
+
+<script src="script.js"></script>
+<script>
+  // Floating "Controls" toggle for the narrow-embed drawer. Added here so the
+  // whole responsive behaviour stays self-contained to this embed. The button
+  // is out of grid flow in both states (display:none when wide, absolute when
+  // narrow), so it never disturbs the side-by-side layout.
+  (function () {
+    var grid = document.querySelector('.hero-grid');
+    var floatbar = document.querySelector('.vp-floatbar');
+    var panel = document.querySelector('.panel');
+    if (!grid || !floatbar || !panel) return;
+
+    // Build the float bar's second row: cm/in (kept) + the Controls button.
+    var unit = floatbar.querySelector('.unit-toggle');
+    var r2 = document.createElement('div');
+    r2.className = 'vp-floatbar-r2';
+    floatbar.appendChild(r2);
+    if (unit) r2.appendChild(unit); // move the existing cm/in toggle into the row
+
+    // Controls button — sits on the float bar's second row, opens the drawer.
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'panel-toggle';
+    btn.setAttribute('aria-label', 'Open controls');
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>' +
+      '<line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>' +
+      '<line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>' +
+      '<line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>' +
+      '<line x1="17" y1="16" x2="23" y2="16"/></svg><span>Controls</span>';
+    r2.appendChild(btn);
+    btn.addEventListener('click', function () {
+      grid.classList.add('panel-open');
+    });
+
+    // X close button inside the drawer.
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'panel-close';
+    close.setAttribute('aria-label', 'Close controls');
+    close.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+      '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+    panel.appendChild(close);
+    close.addEventListener('click', function () {
+      grid.classList.remove('panel-open');
+    });
+  })();
+</script>
+</body>
+</html>
