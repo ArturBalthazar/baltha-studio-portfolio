@@ -1567,6 +1567,60 @@ body {
   height: 46px;
 }
 
+/* Baltha Studio work-project logos (clients / tools). */
+.work-page .pw-logo {
+  height: 44px;
+}
+
+/* Feature row: an image beside a short title + paragraph (image left by
+   default, .img-right flips it). Stacks on mobile. */
+.pw-feature {
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  max-width: 860px;
+  margin: 18px 0 26px;
+}
+.pw-feature.img-right {
+  flex-direction: row-reverse;
+}
+.pw-feature-media {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.pw-feature-media img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-subtle);
+}
+.pw-feature-body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.pw-feature-body h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.pw-feature-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .pw-feature,
+  .pw-feature.img-right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+}
+
 /* Cover row: two media side by side, full width. JS sets each figure's
    flex-grow to its media aspect ratio (flex-basis 0), so heights match. */
 .pw-cover {

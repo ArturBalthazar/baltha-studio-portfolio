@@ -36,15 +36,26 @@ const CATEGORIES = [
     ],
   },
   {
-    id: "webgl",
-    label: "WebGL",
+    id: "interactive-design",
+    label: "Interactive Design",
     description:
-      "Interactive 3D experiences built for the web, focused on blabla and real-time rendering. Placeholder text to be replaced.",
+      "Interactive 3D experiences for the web and AR \u2014 games, virtual showrooms and product visualizers built with Babylon.js and Blender at MeetKai and More Than Real.",
     projects: [
-      { id: "robotic-synthetic-training-data", title: "Robotic Synthetic Training Data" },
-      { id: "byd-virtual-dealership", title: "BYD Virtual Dealership" },
-      { id: "pistons-virtual-store", title: "Pistons Virtual Store" },
-      { id: "chevrolet-montana-ar", title: "Chevrolet Montana for AR" },
+      { id: "survive-thanksgiving", title: "Survive Thanksgiving" },
+      { id: "byd-dealership", title: "BYD Virtual Dealership" },
+      { id: "pistons-store", title: "Pistons Virtual Store" },
+      { id: "chevrolet-montana", title: "Chevrolet Montana" },
+      { id: "dolce-gusto", title: "Nescaf\u00e9 Dolce Gusto" },
+    ],
+  },
+  {
+    id: "software",
+    label: "Software",
+    description:
+      "Tools and platforms I build \u2014 a web-based 3D editor and a Blender add-on that automates 3D asset production for the web.",
+    projects: [
+      { id: "musecraft", title: "Musecraft" },
+      { id: "meetkai-suite", title: "MeetKai Suite" },
     ],
   },
 ];
@@ -154,6 +165,11 @@ const PROJECT_SECTIONS = {
   "falcon-mouse": ["3D Modeling", "Build and assembly"],
   "florianopolis-museum": ["3D Modeling", "3D printing and finishing"],
   "mesc-museum": ["3D Modeling", "Production and finishing"],
+  // Interactive Design
+  "survive-thanksgiving": ["The Basement", "External Crowds", "Cutscenes"],
+  "byd-dealership": ["My role and the BYD Seagull", "Philippines Dealership"],
+  "pistons-store": ["The Virtual Store", "The Court", "The Locker Room"],
+  "chevrolet-montana": ["3D Development", "AR Visualization"],
 };
 
 // Which project's section list is expanded in the sidebar.
@@ -271,6 +287,62 @@ function goToSection(projId, label) {
 // Per-project skills / software / knowledge shown in the right rail. Placeholder
 // sets — edit freely. A project without an entry shows the empty state.
 const PROJECT_SKILLS = {
+  musecraft: {
+    Summary:
+      "A web-based 3D editor powered by Babylon.js for building interactive 3D scenes in the browser, with real-time collaboration. It started as a personal project to explore AI-powered creative tools and grew into a full platform \u2014 React/TypeScript frontend, Babylon.js rendering, and Supabase for auth, sync and storage.",
+    Year: "2024",
+    Knowledge: ["Real-time 3D on the web", "Collaborative editing", "AI tooling"],
+    Skills: ["Full-stack development", "Babylon.js", "UI/UX design", "3D"],
+    Software: ["React", "TypeScript", "Babylon.js", "Supabase", "Blender", "Figma"],
+  },
+  "meetkai-suite": {
+    Summary:
+      "A Blender add-on I built on my own initiative to automate MeetKai's 3D-for-web pipeline \u2014 material aggregation and remeshing, lightmap/AO baking, UV mapping, a color-atlas editor, armature aggregation, and an AI assistant. It is now a standard tool used across the team's 3D production.",
+    Year: "2023",
+    Knowledge: ["3D pipeline optimization", "Lightmapping", "Tooling & automation"],
+    Skills: ["Blender add-on development", "Python", "Automation", "AI integration"],
+    Software: ["Blender", "Blender API", "Python", "OpenAI API"],
+  },
+  "survive-thanksgiving": {
+    Summary:
+      "An interactive web experience for Sony's horror film Thanksgiving, built with MeetKai. I designed the Basement (the film's climactic finale), produced all in-game cutscene videos, and built an optimized 3D crowd system for the outdoor areas that runs smoothly on mobile.",
+    Year: "2023",
+    Knowledge: ["Real-time 3D", "Performance optimization", "Environment art"],
+    Skills: ["Environment design", "3D modeling", "Crowd optimization", "Cutscenes"],
+    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+  },
+  "byd-dealership": {
+    Summary:
+      "A 3D web showroom for BYD where users tour dealerships, customize colors and take virtual test drives in the browser. I led much of the 3D work \u2014 most notably recreating the BYD Seagull from scratch (exterior, interior, materials and interactive animations) and building the Philippines dealership digital twin.",
+    Year: "2024",
+    Knowledge: ["Automotive 3D", "Web optimization", "Digital twins"],
+    Skills: ["Vehicle modeling", "Interior modeling", "Texturing", "Animation"],
+    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+  },
+  "pistons-store": {
+    Summary:
+      "An interactive 3D merchandise store for the Detroit Pistons across three environments \u2014 a showroom, the arena court, and a locker-room event space. I was 3D lead and handled most of the UX, building optimized real-time environments with baked lighting and lightweight animated crowds.",
+    Year: "2024",
+    Knowledge: ["Real-time 3D", "Lightmapping", "Retail / e-commerce 3D"],
+    Skills: ["Environment design", "UX design", "Lightmap baking", "3D"],
+    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+  },
+  "chevrolet-montana": {
+    Summary:
+      "The Chevrolet Montana 2023 recreated as an optimized 3D model for WebAR, part of a major launch campaign (featured on Big Brother Brasil). Built for real-time with reduced polycount, baked AO, texture atlases and rigged tailgate animations, then deployed so customers could place the truck at real scale from their phone.",
+    Year: "2022",
+    Knowledge: ["WebAR", "Automotive 3D", "Marketing experiences"],
+    Skills: ["Vehicle modeling", "Optimization", "AR", "Animation"],
+    Software: ["Babylon.js", "Spark AR", "Blender", "Photoshop"],
+  },
+  "dolce-gusto": {
+    Summary:
+      "3D models of Nescaf\u00e9 Dolce Gusto coffee machines for WebXR sales and marketing. With no original CAD available, I recreated them from photos and specs \u2014 surface modeling in Fusion 360, then Blender for UVs, materials and per-color variants for real-time AR switching.",
+    Year: "2022",
+    Knowledge: ["WebXR / AR", "Product visualization", "Surface modeling"],
+    Skills: ["Product modeling", "Surface / NURBS modeling", "Materials", "AR"],
+    Software: ["Babylon.js", "Spark AR", "Fusion 360", "Blender"],
+  },
   "falcon-mouse": {
     Summary:
       "A 3D-printed wireless mouse shaped like the Millennium Falcon, made in 2017 as a Star Wars fan project. After going viral on Instagram (150k+ reach), it was redesigned with higher detail and a solder-free assembly so anyone could print and build their own.",
@@ -1139,6 +1211,419 @@ function docolDesignReqBody() {
 
 // ---------- Custom project pages ----------
 const PROJECT_PAGES = {
+  // ===== Software =====
+  musecraft: () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/musecraft/logo.png" alt="Musecraft" />
+
+      <p class="pw-intro">
+        Musecraft is a web-based 3D editor powered by Babylon.js that lets you
+        create interactive 3D scenes for the web — with real-time, collaborative
+        editing right in the browser.
+      </p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 24px">
+        <a class="pw-btn" href="https://meetcraft.xyz" target="_blank" rel="noopener"><span>Visit site</span></a>
+        <a class="pw-btn" href="https://www.youtube.com/@Meetcraft-Editor" target="_blank" rel="noopener"><span>YouTube</span></a>
+        <a class="pw-btn" href="https://discord.gg/eFxZfEWB" target="_blank" rel="noopener"><span>Discord</span></a>
+      </div>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/musecraft/cover.png" alt="Musecraft editor interface" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        It started as a personal project to explore AI-powered creative tools and
+        has grown into a fully functional platform — built with React and
+        TypeScript on the frontend, Babylon.js for real-time rendering, and
+        Supabase for authentication, real-time sync and secure cloud storage.
+      </p>
+
+      <div class="pw-video">
+        <iframe src="https://www.youtube.com/embed/6g6zZgZ-FrE" title="Musecraft demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/musecraft/image1.png" alt="Cloud and local storage" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Cloud and local storage</h3>
+          <p>Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access — work on local folders like a desktop app, or sync assets to the cloud for team access.</p>
+        </div>
+      </div>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">3D editing environment</h2></div>
+        <p class="pw-text">
+          Full scene authoring with meshes, PBR materials, lights, cameras,
+          physics, animations and spatial audio, plus a play mode to test scenes
+          without leaving the editor. The interface is intentionally designed to
+          feel familiar to Blender users, easing the transition for 3D artists.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image3.png" alt="3D editing environment" loading="lazy" /></figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">Integrated UI editor</h2></div>
+        <p class="pw-text">
+          Design HTML/CSS interfaces directly in the 3D environment and anchor them
+          to scene objects, with a style editor, animation support and responsive
+          breakpoints for building interactive 3D web experiences.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image4.png" alt="Integrated UI editor" loading="lazy" /></figure>
+      </section>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/musecraft/image5.png" alt="AI-powered scripting" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>AI-powered scripting</h3>
+          <p>A Monaco-powered code editor with integrated AI assistance — describe what you want in natural language and it generates executable scripts with full context of your scene and the Musecraft API.</p>
+        </div>
+      </div>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">Real-time collaboration</h2></div>
+        <p class="pw-text">
+          Create teams with role-based permissions and collaborate live — multiple
+          users can edit the same scene at once, with selections, transforms and
+          changes syncing instantly alongside presence indicators.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image2.png" alt="Real-time collaboration" loading="lazy" /></figure>
+      </section>
+
+      <div class="pw-feature img-right">
+        <div class="pw-feature-media"><img src="assets/work/musecraft/image6.png" alt="Addon architecture" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Add-on architecture</h3>
+          <p>An extensible API inspired by Blender's add-on system — add-ons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio and history with sandboxed permissions.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/musecraft/image7.png" alt="Export to GitHub" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Export to GitHub</h3>
+          <p>Export projects straight to GitHub as ready-to-deploy web apps, with snapshot-based versioning to save and revert scene states — a complete pipeline from creation to publication.</p>
+        </div>
+      </div>
+    </div>`,
+
+  "meetkai-suite": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/meetkai-suite/logo.png" alt="Blender" />
+
+      <p class="pw-intro">
+        MeetKai Suite is a Blender add-on I built on my own initiative after seeing
+        the team could benefit from automation tools that didn't exist yet. It has
+        since transformed our 3D-for-web asset pipeline and is now a standard tool
+        used across our production.
+      </p>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/meetkai-suite/cover.png" alt="MeetKai Suite add-on" loading="lazy" />
+      </figure>
+
+      <div class="pw-feature img-right">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/material-aggregator.png" alt="Material aggregator and object remesher" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Material Aggregator &amp; Object Remesher</h3>
+          <p>Merges multiple materials into a single optimized texture set with integrated geometry remeshing. One-click "Apply and Aggregate" finalizes mesh and textures together, drastically reducing draw calls.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/lightmap-baker.png" alt="Lightmap and AO baker" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Lightmap &amp; AO Baker</h3>
+          <p>Generates high-quality lightmaps or ambient-occlusion maps with HDR output, per-object baking and an HQ mode for automatic downscaling. Built-in noise reduction delivers production-ready results.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature img-right">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/uv-mapper.png" alt="UV mapper" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>UV Mapper</h3>
+          <p>Automatic UV unwrapping inspired by Unity — handling scaling, packing and index generation, so artists no longer need to prepare UV layouts for lightmaps by hand.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/color-atlas-editor.png" alt="Color atlas editor" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Color Atlas Editor</h3>
+          <p>Per-face PBR editing using just two 128×128 textures, enabling a huge range of value combinations with almost zero footprint — ideal for stylized models and high-optimization projects.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature img-right">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/armature-aggregator.png" alt="Armature aggregator" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>Armature Aggregator</h3>
+          <p>Merges multiple rigs into one while preserving bone structure and animations, with action merging to combine animation tracks into a single unified action.</p>
+        </div>
+      </div>
+
+      <div class="pw-feature">
+        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/meetkai-assistant.png" alt="MeetKai assistant" loading="lazy" /></div>
+        <div class="pw-feature-body">
+          <h3>MeetKai Assistant</h3>
+          <p>AI-powered agentic editing inside Blender — type a prompt, press Execute, and an AI agent performs the operation using Blender's scripting capabilities.</p>
+        </div>
+      </div>
+    </div>`,
+
+  // ===== Interactive Design =====
+  "survive-thanksgiving": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/survive-thanksgiving/logo.png" alt="Sony" />
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/survive-thanksgiving/cover.png" alt="Survive Thanksgiving game" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        Thanksgiving is a Sony horror film about a masked killer on the loose during
+        the holiday. Sony and MeetKai partnered on an interactive web experience to
+        market the movie worldwide. I worked on key 3D elements: the Basement scene
+        (the film's climactic finale), all in-game cutscene videos, and an optimized
+        3D crowd system for the external areas.
+      </p>
+
+      <div class="pw-video">
+        <iframe src="https://www.youtube.com/embed/V8zJ_4dDaD8" title="Survive Thanksgiving trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">The Basement</h2></div>
+        <p class="pw-text">
+          The basement is where the movie's final scene takes place — a long dinner
+          table set for a twisted Thanksgiving feast. I designed and built the whole
+          environment, from the eerie table settings to the dim lighting that sets
+          the horror mood.
+        </p>
+        <div class="pw-images pw-images-2">
+          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/basement2.png" alt="Basement scene view 1" loading="lazy" /></figure>
+          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/basement3.png" alt="Basement scene view 2" loading="lazy" /></figure>
+        </div>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">External Crowds</h2></div>
+        <p class="pw-text">
+          The outdoor areas needed a living, breathing crowd to sell the Black
+          Friday chaos. I created an optimized 3D crowd system that runs smoothly
+          even on mobile — using armature aggregation and animation-track merging to
+          keep draw calls minimal while keeping the movement natural.
+        </p>
+        <div class="pw-images pw-images-2">
+          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/crowd1.png" alt="External crowd view 1" loading="lazy" /></figure>
+          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/crowd2.png" alt="External crowd view 2" loading="lazy" /></figure>
+        </div>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">Cutscenes</h2></div>
+        <p class="pw-text">
+          Throughout the game, cutscene videos play when the player encounters the
+          killer. I created all of these — short, intense moments that tie the
+          gameplay to the film's horror atmosphere. A few examples:
+        </p>
+        <div class="pw-video">
+          <iframe src="https://www.youtube.com/embed/C7IkYRqhUZU" title="Cutscene 1" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="pw-video">
+          <iframe src="https://www.youtube.com/embed/_q2h88RLk5Q" title="Cutscene 2" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+      </section>
+    </div>`,
+
+  "byd-dealership": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/byd-dealership/logo.png" alt="BYD" />
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/byd-dealership/facade.png" alt="BYD Los Angeles virtual dealership" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        The BYD Virtual Dealership brings real showrooms into an interactive 3D web
+        experience. Users explore dealerships in Los Angeles, Singapore, the
+        Philippines and virtual test tracks — touring vehicles, customizing colors
+        and even taking virtual test drives, all from the browser.
+      </p>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">My role and the BYD Seagull</h2></div>
+        <p class="pw-text">
+          I played a major role in the 3D side of this project, particularly vehicle
+          modeling and optimization. We usually received existing car models that
+          needed optimization with proper textures, materials and animations for web
+          delivery.
+        </p>
+        <p class="pw-text">
+          For the BYD Seagull there was no existing model, so I recreated the entire
+          car from scratch — one of my favorite pieces of work. I modeled everything:
+          the exterior body, the interior cabin, the materials, and all the
+          interactive animations.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/work/byd-dealership/image1.png" alt="BYD Seagull 3D modeling process" loading="lazy" />
+          <figcaption>Exterior modeling: from reference blueprints to final topology.</figcaption>
+        </figure>
+        <p class="pw-text">
+          The entire interior was modeled with attention to detail — seats,
+          dashboard, steering wheel, door panels and trim — for an immersive feel
+          when users explore the car from inside.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/work/byd-dealership/image2.png" alt="BYD Seagull final renders" loading="lazy" />
+          <figcaption>Final renders — exterior and fully detailed interior.</figcaption>
+        </figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">Philippines Dealership</h2></div>
+        <p class="pw-text">
+          I was also the 3D lead for the Philippines dealership digital twin at
+          Quezon Avenue — recreating the entire dealership architecture and showroom
+          where the car models are showcased.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/byd-dealership/image3.png" alt="Philippines dealership 3D render" loading="lazy" /></figure>
+        <figure class="pw-img pw-img-single"><img src="assets/work/byd-dealership/image4.png" alt="Philippines dealership web view" loading="lazy" /></figure>
+      </section>
+    </div>`,
+
+  "pistons-store": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/pistons-store/logo.png" alt="Detroit Pistons" />
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/pistons-store/cover.png" alt="Pistons virtual store" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        The Pistons Virtual Store is an interactive 3D web experience for Detroit
+        Pistons official merchandise — jerseys, hoodies, headwear and gifts across
+        three immersive environments. I was 3D lead and handled most of the UX
+        decisions, building all three environments (and many interactive assets)
+        optimized for real-time web rendering.
+      </p>
+
+      <div class="pw-video">
+        <iframe src="https://www.youtube.com/embed/XhoeLlXyoLE" title="Pistons virtual store" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">The Virtual Store</h2></div>
+        <p class="pw-text">
+          The main showroom organizes products by category — jerseys on mannequins,
+          headwear on shelving, gifts arranged throughout. Lighting was key to the
+          atmosphere: carefully baked lightmaps bring out the displays and make the
+          space feel inviting.
+        </p>
+        <div class="pw-images pw-images-2">
+          <figure class="pw-img"><img src="assets/work/pistons-store/render1.png" alt="Showroom without baked lighting" loading="lazy" /><figcaption>Without baked lighting.</figcaption></figure>
+          <figure class="pw-img"><img src="assets/work/pistons-store/render2.png" alt="Showroom with baked lighting" loading="lazy" /><figcaption>With baked lightmaps.</figcaption></figure>
+        </div>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">The Court</h2></div>
+        <p class="pw-text">
+          The basketball court is a full arena with an animated crowd. I used a
+          lightweight technique where the crowd is rendered as flat planes with
+          atlas textures that swap between animation frames — the illusion of a
+          cheering 3D audience while keeping web performance optimized.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/pistons-store/court3.png" alt="Pistons basketball court" loading="lazy" /></figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">The Locker Room</h2></div>
+        <p class="pw-text">
+          The locker room was designed as a virtual event space where Pistons
+          players could appear on screen during scheduled meet-and-greets — so it's
+          more spacious than a typical locker room. It showcases the team's
+          championship legacy with banners, player lockers and an immersive
+          atmosphere.
+        </p>
+        <figure class="pw-img pw-img-single"><img src="assets/work/pistons-store/locker2.png" alt="Pistons locker room" loading="lazy" /></figure>
+      </section>
+    </div>`,
+
+  "chevrolet-montana": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/chevrolet-montana/logo.png" alt="Chevrolet" />
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/chevrolet-montana/cover.png" alt="Chevrolet Montana lineup" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        The Chevrolet Montana 2023 launched with a major marketing campaign,
+        including a feature on the Big Brother Brasil reality show. I developed the
+        3D model for AR visualization as part of the campaign — one of several
+        automotive projects I worked on at More Than Real.
+      </p>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">3D Development</h2></div>
+        <p class="pw-text">
+          The model was optimized for real-time rendering — polycount reduction,
+          baked AO maps, texture atlases, and rigged animations for the truck-bed
+          mechanisms that show off the versatile tailgate configurations.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/work/chevrolet-montana/image1.png" alt="Chevrolet Montana 3D model in Blender" loading="lazy" />
+          <figcaption>Animated truck bed with tailgate and accessory configurations.</figcaption>
+        </figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head"><h2 class="pw-section-title">AR Visualization</h2></div>
+        <p class="pw-text">
+          The final model was deployed to WebAR, letting customers place the vehicle
+          in their own environment at real scale using just their smartphone.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/work/chevrolet-montana/image2.png" alt="Chevrolet Montana in AR" loading="lazy" />
+          <figcaption>AR visualization on a smartphone.</figcaption>
+        </figure>
+      </section>
+    </div>`,
+
+  "dolce-gusto": () => `
+    <div class="content-wide pw-page work-page">
+      <img class="pw-logo" src="assets/work/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/dolce-gusto/cover.png" alt="Dolce Gusto coffee machines" loading="lazy" />
+      </figure>
+
+      <p class="pw-text">
+        This project involved creating 3D models of Nescafé Dolce Gusto coffee
+        machines for use in WebXR sales and marketing experiences — interactive AR
+        models that let customers explore the products in their own space before
+        buying.
+      </p>
+
+      <p class="pw-text">
+        Since Nescafé had no original 3D files for these machines, I recreated them
+        from scratch using only photos and technical specs. Surface modeling was
+        done in Autodesk Fusion 360, then brought into Blender for UV unwrapping,
+        materials and rendering.
+      </p>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/work/dolce-gusto/dolcegusto1.png" alt="Dolce Gusto 3D modeling process" loading="lazy" />
+        <figcaption>Surface modeling stages, from reference to final mesh.</figcaption>
+      </figure>
+
+      <p class="pw-text">
+        Blender also let me create material variants for the different product
+        colors — essential for AR, where users switch between options in real time.
+      </p>
+    </div>`,
+
   // ===== 3D Printing (Baltha Maker) =====
   "falcon-mouse": () => `
     <div class="content-wide pw-page maker-page">
