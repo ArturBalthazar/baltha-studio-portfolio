@@ -1572,6 +1572,15 @@ body {
   height: 58px;
 }
 
+/* Inline heading for continuous (non-collapsible) project content. */
+.pw-heading {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 30px 0 12px;
+}
+
 /* Feature row: an image beside a short title + paragraph (image left by
    default, .img-right flips it). Stacks on mobile. */
 .pw-feature {

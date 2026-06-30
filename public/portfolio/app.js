@@ -1247,7 +1247,7 @@ const PROJECT_PAGES = {
       </div>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">3D editing environment</h2></div>
+        <h2 class="pw-heading">3D editing environment</h2>
         <p class="pw-text">
           Full scene authoring with meshes, PBR materials, lights, cameras,
           physics, animations and spatial audio, plus a play mode to test scenes
@@ -1258,7 +1258,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">Integrated UI editor</h2></div>
+        <h2 class="pw-heading">Integrated UI editor</h2>
         <p class="pw-text">
           Design HTML/CSS interfaces directly in the 3D environment and anchor them
           to scene objects, with a style editor, animation support and responsive
@@ -1276,7 +1276,7 @@ const PROJECT_PAGES = {
       </div>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">Real-time collaboration</h2></div>
+        <h2 class="pw-heading">Real-time collaboration</h2>
         <p class="pw-text">
           Create teams with role-based permissions and collaborate live — multiple
           users can edit the same scene at once, with selections, transforms and
@@ -1388,7 +1388,7 @@ const PROJECT_PAGES = {
       </div>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">The Basement</h2></div>
+        <h2 class="pw-heading">The Basement</h2>
         <p class="pw-text">
           The basement is where the movie's final scene takes place — a long dinner
           table set for a twisted Thanksgiving feast. I designed and built the whole
@@ -1402,7 +1402,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">External Crowds</h2></div>
+        <h2 class="pw-heading">External Crowds</h2>
         <p class="pw-text">
           The outdoor areas needed a living, breathing crowd to sell the Black
           Friday chaos. I created an optimized 3D crowd system that runs smoothly
@@ -1416,7 +1416,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">Cutscenes</h2></div>
+        <h2 class="pw-heading">Cutscenes</h2>
         <p class="pw-text">
           Throughout the game, cutscene videos play when the player encounters the
           killer. I created all of these — short, intense moments that tie the
@@ -1447,7 +1447,7 @@ const PROJECT_PAGES = {
       </p>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">My role and the BYD Seagull</h2></div>
+        <h2 class="pw-heading">My role and the BYD Seagull</h2>
         <p class="pw-text">
           I played a major role in the 3D side of this project, particularly vehicle
           modeling and optimization. We usually received existing car models that
@@ -1476,7 +1476,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">Philippines Dealership</h2></div>
+        <h2 class="pw-heading">Philippines Dealership</h2>
         <p class="pw-text">
           I was also the 3D lead for the Philippines dealership digital twin at
           Quezon Avenue — recreating the entire dealership architecture and showroom
@@ -1508,7 +1508,7 @@ const PROJECT_PAGES = {
       </div>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">The Virtual Store</h2></div>
+        <h2 class="pw-heading">The Virtual Store</h2>
         <p class="pw-text">
           The main showroom organizes products by category — jerseys on mannequins,
           headwear on shelving, gifts arranged throughout. Lighting was key to the
@@ -1522,7 +1522,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">The Court</h2></div>
+        <h2 class="pw-heading">The Court</h2>
         <p class="pw-text">
           The basketball court is a full arena with an animated crowd. I used a
           lightweight technique where the crowd is rendered as flat planes with
@@ -1533,7 +1533,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">The Locker Room</h2></div>
+        <h2 class="pw-heading">The Locker Room</h2>
         <p class="pw-text">
           The locker room was designed as a virtual event space where Pistons
           players could appear on screen during scheduled meet-and-greets — so it's
@@ -1561,7 +1561,7 @@ const PROJECT_PAGES = {
       </p>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">3D Development</h2></div>
+        <h2 class="pw-heading">3D Development</h2>
         <p class="pw-text">
           The model was optimized for real-time rendering — polycount reduction,
           baked AO maps, texture atlases, and rigged animations for the truck-bed
@@ -1574,7 +1574,7 @@ const PROJECT_PAGES = {
       </section>
 
       <section class="pw-section">
-        <div class="pw-section-head"><h2 class="pw-section-title">AR Visualization</h2></div>
+        <h2 class="pw-heading">AR Visualization</h2>
         <p class="pw-text">
           The final model was deployed to WebAR, letting customers place the vehicle
           in their own environment at real scale using just their smartphone.
