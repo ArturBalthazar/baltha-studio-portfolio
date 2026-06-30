@@ -4683,6 +4683,10 @@ body {
     padding-right: 16px;
     border-right: 1px solid var(--border);
   }
+  .header {
+    /* Separate the white header from the device status bar (time/wifi/battery). */
+    border-top: 1px solid #d4d4d8;
+  }
   .header-nav,
   .about-toggle {
     display: none;
