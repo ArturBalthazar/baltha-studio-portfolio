@@ -28,12 +28,11 @@ const CATEGORIES = [
     id: "3d-printing",
     label: "3D Printing",
     description:
-      "A collection of 3D printed work spanning blabla, from functional parts to detailed models. Placeholder text to be replaced.",
+      "3D-printing work from Baltha Maker, my 3D-printing studio (2018–2021) — from a viral Millennium Falcon mouse to large architectural scale models for local museums.",
     projects: [
-      { id: "scale-models", title: "Scale Models" },
-      { id: "dentistry", title: "Dentistry" },
-      { id: "replacement-parts", title: "Replacement Parts" },
-      { id: "prototypes", title: "Prototypes" },
+      { id: "falcon-mouse", title: "Millennium Falcon Mouse" },
+      { id: "florianopolis-museum", title: "Florianópolis Museum" },
+      { id: "mesc-museum", title: "MESC Museum" },
     ],
   },
   {
@@ -151,6 +150,10 @@ const PROJECT_SECTIONS = {
     "Preliminary design",
     "Detailed design",
   ],
+  // 3D Printing (Baltha Maker)
+  "falcon-mouse": ["3D Modeling", "Build and assembly"],
+  "florianopolis-museum": ["3D Modeling", "3D printing and finishing"],
+  "mesc-museum": ["3D Modeling", "Production and finishing"],
 };
 
 // Which project's section list is expanded in the sidebar.
@@ -268,6 +271,30 @@ function goToSection(projId, label) {
 // Per-project skills / software / knowledge shown in the right rail. Placeholder
 // sets — edit freely. A project without an entry shows the empty state.
 const PROJECT_SKILLS = {
+  "falcon-mouse": {
+    Summary:
+      "A 3D-printed wireless mouse shaped like the Millennium Falcon, made in 2017 as a Star Wars fan project. After going viral on Instagram (150k+ reach), it was redesigned with higher detail and a solder-free assembly so anyone could print and build their own.",
+    Year: "2017",
+    Knowledge: ["Reverse engineering", "Digital fabrication", "Hobby electronics"],
+    Skills: ["3D modeling", "Mechanism design", "3D printing", "DFAM"],
+    Software: ["Autodesk Fusion 360", "Blender", "Ultimaker Cura"],
+  },
+  "florianopolis-museum": {
+    Summary:
+      "A 1:41 scale model of the SESC Florianópolis Museum, 3D-printed in multi-color parts and finished with epoxy resin. The hollow model weighs ~20 kg and is on permanent display in the museum's entrance hall.",
+    Year: "2018",
+    Knowledge: ["Architecture", "NURBS modeling", "Digital fabrication"],
+    Skills: ["Technical CAD modeling", "NURBS modeling", "3D printing", "Finishing"],
+    Software: ["Autodesk Fusion 360", "Blender", "Ultimaker Cura"],
+  },
+  "mesc-museum": {
+    Summary:
+      "A scale model of the neoclassical Museu da Escola Catarinense (MESC), commissioned after the SESC piece. Modeled in Fusion 360 with NURBS detailing and 3D-printed in multi-color parts with an epoxy finish.",
+    Year: "2019",
+    Knowledge: ["Architecture", "NURBS modeling", "Digital fabrication"],
+    Skills: ["Technical CAD modeling", "NURBS modeling", "3D printing", "Finishing"],
+    Software: ["Autodesk Fusion 360", "Blender", "Ultimaker Cura"],
+  },
   durare: {
     Summary:
       "Durare was a high-complexity product-design project at UFSC, developed in the fourth semester by a team of three: an innovative carry-on suitcase, built to last. The work followed a full development cycle, from desk, user and market research through to a physical prototype. Travellers were surveyed and observed, the case was studied functionally and ergonomically (OWAS postures and anthropometric data), and the findings were turned into ranked requirements through a House of Quality. From there the concept was detailed in CAD and resolved into real mechanisms: a telescopic handle locked by neodymium magnets, and retractable natural-rubber wheels that let the case climb steps. The result was built as a 3D-printed, hand-finished prototype with sewn soft goods.",
@@ -1112,6 +1139,174 @@ function docolDesignReqBody() {
 
 // ---------- Custom project pages ----------
 const PROJECT_PAGES = {
+  // ===== 3D Printing (Baltha Maker) =====
+  "falcon-mouse": () => `
+    <div class="content-wide pw-page maker-page">
+      <img class="pw-logo" src="assets/maker/falcon-mouse/logo.png" alt="Star Wars" />
+
+      <p class="pw-intro">
+        As a fan of the Star Wars series, I made this 3D-printed wireless mouse of
+        the Millennium Falcon back in 2017. After I posted it on Instagram it
+        reached over 150k people, and many wanted to build their own — so I
+        designed an upgraded version with higher detail and an easier, solder-free
+        assembly.
+      </p>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/maker/falcon-mouse/cover.png" alt="Millennium Falcon 3D-printed mouse" loading="lazy" />
+      </figure>
+
+      <div class="pw-video">
+        <iframe src="https://www.youtube.com/embed/zsmf0Fp8Sbo" title="Millennium Falcon Mouse" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">3D Modeling</h2>
+        </div>
+        <p class="pw-text">
+          The first step was to pick a cheap wireless mouse from AliExpress and
+          reverse-engineer its electronics in Autodesk Fusion 360. Then I modeled
+          the Falcon from reference images, making sure the internal electronics
+          would fit neatly inside the hull.
+        </p>
+        <div class="pw-row" style="max-width:760px">
+          <figure class="pw-img" style="flex: 1.864 1 0"><img src="assets/maker/falcon-mouse/mouse1.png" alt="3D model of the Millennium Falcon mouse" loading="lazy" /><figcaption>The Falcon modeled around the mouse internals.</figcaption></figure>
+          <figure class="pw-img" style="flex: 0.832 1 0"><img src="assets/maker/falcon-mouse/mouse2.png" alt="Internal electronics layout" loading="lazy" /><figcaption>Electronics packed inside.</figcaption></figure>
+        </div>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">Build and assembly</h2>
+          <a class="pw-btn" href="https://www.thingiverse.com/thing:6683242" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Get the files</span>
+          </a>
+        </div>
+        <p class="pw-text">
+          The design has a screw lid on top for the USB plug, a blue LED in the
+          rear to simulate light speed, and a side button to toggle the LED. After
+          printing, assembly is straightforward with no soldering required —
+          which makes it a great project for hobbyists, kids learning robotics, or
+          professional makers.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/falcon-mouse/mouse3.png" alt="Assembly process and the final mouse with its LED" loading="lazy" />
+          <figcaption>Printed parts, assembly, and the final result with its blue LED glow.</figcaption>
+        </figure>
+      </section>
+    </div>`,
+
+  "florianopolis-museum": () => `
+    <div class="content-wide pw-page maker-page">
+      <img class="pw-logo" src="assets/maker/florianopolis-museum/logo.png" alt="SESC" />
+
+      <p class="pw-intro">
+        A 1:41 scale model of the SESC Florianópolis Museum — the historic
+        Victor Meirelles building — now on display in the museum's entrance
+        hall. It let me bring together architecture, design engineering, technical
+        CAD and, for the first time, NURBS modeling, which I've used ever since.
+      </p>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/maker/florianopolis-museum/cover.png" alt="Florianópolis Museum — Victor Meirelles building" loading="lazy" />
+      </figure>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">3D Modeling</h2>
+        </div>
+        <p class="pw-text">
+          From archives, floor plans and facade drawings, I built the 3D model of
+          the building in Autodesk Fusion 360 — technical CAD modeling for the
+          structure and NURBS for the fine ornamental details to be reproduced in
+          the print.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/florianopolis-museum/image1.png" alt="3D model details of the Florianópolis Museum" loading="lazy" />
+          <figcaption>Ornamental elements modeled with NURBS in Fusion 360.</figcaption>
+        </figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">3D printing and finishing</h2>
+        </div>
+        <p class="pw-text">
+          For printing, the model was split into many parts and printed in different
+          colors to minimize painting. The parts were joined by vacuum fitting and
+          gluing, and the whole surface was sealed with a final layer of epoxy resin
+          for protection and preservation.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/florianopolis-museum/image2.png" alt="3D printing process and individual parts" loading="lazy" />
+          <figcaption>Multi-color printed parts — railings, shutters and ornaments.</figcaption>
+        </figure>
+        <p class="pw-text">
+          The finished model is hollow and weighs around 20&nbsp;kg. It sits in the
+          entrance hall of the museum, catching the eye of everyone who visits.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/florianopolis-museum/image3.jpg" alt="Final 3D-printed model on display in the museum" loading="lazy" />
+          <figcaption>The finished 1:41 scale model in the museum's entrance hall.</figcaption>
+        </figure>
+      </section>
+    </div>`,
+
+  "mesc-museum": () => `
+    <div class="content-wide pw-page maker-page">
+      <img class="pw-logo" src="assets/maker/mesc-museum/logo.png" alt="MESC" />
+
+      <p class="pw-intro">
+        After the Florianópolis Museum model, the Museu da Escola Catarinense
+        (MESC) — a nearby institution downtown — asked me for a similar
+        piece. It's a beautiful early-20th-century neoclassical building with
+        imposing columns and a distinctive curved skylight roof.
+      </p>
+
+      <figure class="pw-img pw-img-single">
+        <img src="assets/maker/mesc-museum/cover.png" alt="Museu da Escola Catarinense — MESC" loading="lazy" />
+      </figure>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">3D Modeling</h2>
+        </div>
+        <p class="pw-text">
+          The experience from the SESC project made this one much smoother. I
+          followed the same workflow: architectural floor plans and facade
+          references to build an accurate model in Autodesk Fusion 360, with NURBS
+          surfaces for the columns, cornices and other ornamental detail.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/mesc-museum/mesc1.png" alt="3D CAD model of the MESC Museum" loading="lazy" />
+          <figcaption>The complete model rendered in Autodesk Fusion 360.</figcaption>
+        </figure>
+      </section>
+
+      <section class="pw-section">
+        <div class="pw-section-head">
+          <h2 class="pw-section-title">Production and finishing</h2>
+        </div>
+        <p class="pw-text">
+          The model was printed in multiple parts with the same multi-color
+          approach. The curved skylight was especially interesting to produce,
+          taking careful print orientation and supports. After vacuum fitting and
+          gluing, the surface was coated in epoxy resin for durability and a premium
+          finish.
+        </p>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/mesc-museum/mesc2.png" alt="3D-printed MESC model during assembly" loading="lazy" />
+          <figcaption>The assembled scale model before final finishing.</figcaption>
+        </figure>
+        <figure class="pw-img pw-img-single">
+          <img src="assets/maker/mesc-museum/mesc3.png" alt="Finished MESC Museum scale model" loading="lazy" />
+          <figcaption>The completed model ready for display (I know it looks AI-generated with this sun beam — it's not).</figcaption>
+        </figure>
+      </section>
+    </div>`,
+
   petwheels: () => `
     <div class="content-wide pw-page">
       <img class="pw-logo" src="assets/petwheels-logo.png" alt="Petwheels" />

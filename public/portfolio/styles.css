@@ -1545,6 +1545,28 @@ body {
   border: 0;
 }
 
+/* Responsive 16:9 video embed (e.g. YouTube). */
+.pw-video {
+  max-width: 820px;
+  margin: 4px 0 22px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+.pw-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* Baltha Maker project logos (Star Wars / SESC / MESC). */
+.maker-page .pw-logo {
+  height: 46px;
+}
+
 /* Cover row: two media side by side, full width. JS sets each figure's
    flex-grow to its media aspect ratio (flex-basis 0), so heights match. */
 .pw-cover {
