@@ -2482,8 +2482,33 @@
   // ============ POINTER DRAG (model rotation) ============
   canvas.style.cursor = 'grab';
 
+  // On touch devices, only rotate when the drag starts over the model mesh;
+  // otherwise forward the vertical drag to the parent page so it scrolls past
+  // the embedded viewer instead of rotating it.
+  let scrollFwd = false;
+  let scrollLastY = 0;
+  const overModel = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const pick = scene.pick(
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      (m) => m && m.isVisible !== false && m.isPickable !== false &&
+             m.getTotalVertices && m.getTotalVertices() > 0
+    );
+    return !!(pick && pick.hit);
+  };
+
   const onPointerDown = (e) => {
     if (!modelRoot) return;
+    if (activePointerId !== null) return; // ignore extra fingers mid-gesture
+    if (e.pointerType === 'touch' && !overModel(e)) {
+      // Empty space on a touch device: scroll the page, don't rotate.
+      scrollFwd = true;
+      scrollLastY = e.clientY;
+      activePointerId = e.pointerId;
+      canvas.setPointerCapture?.(e.pointerId);
+      return;
+    }
     isDragging = true;
     lastX = e.clientX;
     lastY = e.clientY;
@@ -2492,6 +2517,14 @@
     canvas.style.cursor = 'grabbing';
   };
   const onPointerMove = (e) => {
+    if (scrollFwd && e.pointerId === activePointerId) {
+      const dy = scrollLastY - e.clientY;
+      scrollLastY = e.clientY;
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'pw-scroll', dy: dy }, '*');
+      }
+      return;
+    }
     if (!isDragging || !modelRoot) return;
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
@@ -2511,6 +2544,12 @@
     applyModelRotation();
   };
   const onPointerUp = (e) => {
+    if (scrollFwd) {
+      scrollFwd = false;
+      if (activePointerId !== null) canvas.releasePointerCapture?.(activePointerId);
+      activePointerId = null;
+      return;
+    }
     if (!isDragging) return;
     isDragging = false;
     if (activePointerId !== null) canvas.releasePointerCapture?.(activePointerId);

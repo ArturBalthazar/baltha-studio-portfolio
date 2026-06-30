@@ -63,6 +63,15 @@ const sidebarLabel = document.getElementById("sidebar-label");
 const content = document.getElementById("content");
 const skillsPanel = document.getElementById("skills-panel");
 
+// The Petwheels customizer (in an iframe) forwards off-model touch drags here so
+// the page scrolls past the 3D viewer instead of rotating it (mobile). See
+// petwheels/script.js.
+window.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "pw-scroll" && typeof e.data.dy === "number") {
+    content.scrollBy(0, e.data.dy);
+  }
+});
+
 // ---------- Render helpers ----------
 function getCategory(id) {
   return CATEGORIES.find((c) => c.id === id);
@@ -1136,7 +1145,7 @@ const PROJECT_PAGES = {
         </p>
         <!-- Interactive 3D customizer (isolated in its own document) -->
         <div class="pw-frame">
-          <iframe src="petwheels/index.html?v=5" title="Petwheels 3D customizer" loading="lazy"></iframe>
+          <iframe src="petwheels/index.html?v=6" title="Petwheels 3D customizer" loading="lazy"></iframe>
         </div>
       </section>
 
