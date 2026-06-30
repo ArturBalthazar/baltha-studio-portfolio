@@ -1145,7 +1145,7 @@ const PROJECT_PAGES = {
         </p>
         <!-- Interactive 3D customizer (isolated in its own document) -->
         <div class="pw-frame">
-          <iframe src="petwheels/index.html?v=6" title="Petwheels 3D customizer" loading="lazy"></iframe>
+          <iframe src="petwheels/index.html?v=7" title="Petwheels 3D customizer" loading="lazy"></iframe>
         </div>
       </section>
 
