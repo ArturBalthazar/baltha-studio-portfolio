@@ -54,7 +54,7 @@ const CATEGORIES = [
     description:
       "Tools and platforms I build \u2014 a web-based 3D editor and a Blender add-on that automates 3D asset production for the web.",
     projects: [
-      { id: "musecraft", title: "Musecraft" },
+      { id: "meetcraft", title: "Meetcraft" },
       { id: "meetkai-suite", title: "MeetKai Suite" },
     ],
   },
@@ -165,11 +165,6 @@ const PROJECT_SECTIONS = {
   "falcon-mouse": ["3D Modeling", "Build and assembly"],
   "florianopolis-museum": ["3D Modeling", "3D printing and finishing"],
   "mesc-museum": ["3D Modeling", "Production and finishing"],
-  // Interactive Design
-  "survive-thanksgiving": ["The Basement", "External Crowds", "Cutscenes"],
-  "byd-dealership": ["My role and the BYD Seagull", "Philippines Dealership"],
-  "pistons-store": ["The Virtual Store", "The Court", "The Locker Room"],
-  "chevrolet-montana": ["3D Development", "AR Visualization"],
 };
 
 // Which project's section list is expanded in the sidebar.
@@ -287,7 +282,7 @@ function goToSection(projId, label) {
 // Per-project skills / software / knowledge shown in the right rail. Placeholder
 // sets — edit freely. A project without an entry shows the empty state.
 const PROJECT_SKILLS = {
-  musecraft: {
+  meetcraft: {
     Summary:
       "A web-based 3D editor powered by Babylon.js for building interactive 3D scenes in the browser, with real-time collaboration. It started as a personal project to explore AI-powered creative tools and grew into a full platform \u2014 React/TypeScript frontend, Babylon.js rendering, and Supabase for auth, sync and storage.",
     Year: "2024",
@@ -1212,12 +1207,12 @@ function docolDesignReqBody() {
 // ---------- Custom project pages ----------
 const PROJECT_PAGES = {
   // ===== Software =====
-  musecraft: () => `
+  meetcraft: () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/musecraft/logo.png" alt="Musecraft" />
+      <img class="pw-logo" src="assets/work/meetcraft/logo.png" alt="Meetcraft" />
 
       <p class="pw-intro">
-        Musecraft is a web-based 3D editor powered by Babylon.js that lets you
+        Meetcraft is a web-based 3D editor powered by Babylon.js that lets you
         create interactive 3D scenes for the web — with real-time, collaborative
         editing right in the browser.
       </p>
@@ -1229,7 +1224,7 @@ const PROJECT_PAGES = {
       </div>
 
       <figure class="pw-img pw-img-single">
-        <img src="assets/work/musecraft/cover.png" alt="Musecraft editor interface" loading="lazy" />
+        <img src="assets/work/meetcraft/cover.png" alt="Meetcraft editor interface" loading="lazy" />
       </figure>
 
       <p class="pw-text">
@@ -1240,11 +1235,11 @@ const PROJECT_PAGES = {
       </p>
 
       <div class="pw-video">
-        <iframe src="https://www.youtube.com/embed/6g6zZgZ-FrE" title="Musecraft demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/6g6zZgZ-FrE" title="Meetcraft demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
       </div>
 
       <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/musecraft/image1.png" alt="Cloud and local storage" loading="lazy" /></div>
+        <div class="pw-feature-media"><img src="assets/work/meetcraft/image1.png" alt="Cloud and local storage" loading="lazy" /></div>
         <div class="pw-feature-body">
           <h3>Cloud and local storage</h3>
           <p>Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access — work on local folders like a desktop app, or sync assets to the cloud for team access.</p>
@@ -1259,7 +1254,7 @@ const PROJECT_PAGES = {
           without leaving the editor. The interface is intentionally designed to
           feel familiar to Blender users, easing the transition for 3D artists.
         </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image3.png" alt="3D editing environment" loading="lazy" /></figure>
+        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image3.png" alt="3D editing environment" loading="lazy" /></figure>
       </section>
 
       <section class="pw-section">
@@ -1269,14 +1264,14 @@ const PROJECT_PAGES = {
           to scene objects, with a style editor, animation support and responsive
           breakpoints for building interactive 3D web experiences.
         </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image4.png" alt="Integrated UI editor" loading="lazy" /></figure>
+        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image4.png" alt="Integrated UI editor" loading="lazy" /></figure>
       </section>
 
       <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/musecraft/image5.png" alt="AI-powered scripting" loading="lazy" /></div>
+        <div class="pw-feature-media"><img src="assets/work/meetcraft/image5.png" alt="AI-powered scripting" loading="lazy" /></div>
         <div class="pw-feature-body">
           <h3>AI-powered scripting</h3>
-          <p>A Monaco-powered code editor with integrated AI assistance — describe what you want in natural language and it generates executable scripts with full context of your scene and the Musecraft API.</p>
+          <p>A Monaco-powered code editor with integrated AI assistance — describe what you want in natural language and it generates executable scripts with full context of your scene and the Meetcraft API.</p>
         </div>
       </div>
 
@@ -1287,11 +1282,11 @@ const PROJECT_PAGES = {
           users can edit the same scene at once, with selections, transforms and
           changes syncing instantly alongside presence indicators.
         </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/musecraft/image2.png" alt="Real-time collaboration" loading="lazy" /></figure>
+        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image2.png" alt="Real-time collaboration" loading="lazy" /></figure>
       </section>
 
       <div class="pw-feature img-right">
-        <div class="pw-feature-media"><img src="assets/work/musecraft/image6.png" alt="Addon architecture" loading="lazy" /></div>
+        <div class="pw-feature-media"><img src="assets/work/meetcraft/image6.png" alt="Addon architecture" loading="lazy" /></div>
         <div class="pw-feature-body">
           <h3>Add-on architecture</h3>
           <p>An extensible API inspired by Blender's add-on system — add-ons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio and history with sandboxed permissions.</p>
@@ -1299,7 +1294,7 @@ const PROJECT_PAGES = {
       </div>
 
       <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/musecraft/image7.png" alt="Export to GitHub" loading="lazy" /></div>
+        <div class="pw-feature-media"><img src="assets/work/meetcraft/image7.png" alt="Export to GitHub" loading="lazy" /></div>
         <div class="pw-feature-body">
           <h3>Export to GitHub</h3>
           <p>Export projects straight to GitHub as ready-to-deploy web apps, with snapshot-based versioning to save and revert scene states — a complete pipeline from creation to publication.</p>
