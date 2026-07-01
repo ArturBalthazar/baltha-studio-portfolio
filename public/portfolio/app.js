@@ -28,34 +28,21 @@ const CATEGORIES = [
     id: "3d-printing",
     label: "3D Printing",
     description:
-      "3D-printing work from Baltha Maker, my 3D-printing studio (2018–2021) — from a viral Millennium Falcon mouse to large architectural scale models for local museums.",
+      "3D printing work, from a viral Dremel belt sander and a Millennium Falcon mouse to my Baltha Maker studio, museum scale models and a digital dentistry venture.",
     projects: [
+      { id: "baltha-maker", title: "Baltha Maker" },
+      { id: "edge-planning", title: "Edge Planning Center" },
       { id: "falcon-mouse", title: "Millennium Falcon Mouse" },
-      { id: "florianopolis-museum", title: "Florianópolis Museum" },
-      { id: "mesc-museum", title: "MESC Museum" },
     ],
   },
   {
     id: "interactive-design",
     label: "Interactive Design",
     description:
-      "Interactive 3D experiences for the web and AR \u2014 games, virtual showrooms and product visualizers built with Babylon.js and Blender at MeetKai and More Than Real.",
+      "Interactive 3D experiences for the web and AR: games, virtual showrooms and product visualizers built with Babylon.js and Blender at MeetKai and More Than Real.",
     projects: [
-      { id: "survive-thanksgiving", title: "Survive Thanksgiving" },
-      { id: "byd-dealership", title: "BYD Virtual Dealership" },
-      { id: "pistons-store", title: "Pistons Virtual Store" },
-      { id: "chevrolet-montana", title: "Chevrolet Montana" },
-      { id: "dolce-gusto", title: "Nescaf\u00e9 Dolce Gusto" },
-    ],
-  },
-  {
-    id: "software",
-    label: "Software",
-    description:
-      "Tools and platforms I build \u2014 a web-based 3D editor and a Blender add-on that automates 3D asset production for the web.",
-    projects: [
-      { id: "meetcraft", title: "Meetcraft" },
-      { id: "meetkai-suite", title: "MeetKai Suite" },
+      { id: "meetkai", title: "MeetKai" },
+      { id: "more-than-real", title: "More Than Real" },
     ],
   },
 ];
@@ -102,6 +89,16 @@ function renderHeader() {
 // the heading text exactly (used to scroll to the section). The "Research &
 // Development" group label is intentionally omitted — it's just a divider.
 const PROJECT_SECTIONS = {
+  meetkai: [
+    "BYD Virtual Dealership",
+    "Survive Thanksgiving",
+    "Pistons Virtual Store",
+    "MeetKai Suite",
+  ],
+  "more-than-real": [
+    "Chevrolet Montana",
+    "Nescafé Dolce Gusto",
+  ],
   petwheels: [
     "Business Model",
     "Patent",
@@ -161,10 +158,6 @@ const PROJECT_SECTIONS = {
     "Preliminary design",
     "Detailed design",
   ],
-  // 3D Printing (Baltha Maker)
-  "falcon-mouse": ["3D Modeling", "Build and assembly"],
-  "florianopolis-museum": ["3D Modeling", "3D printing and finishing"],
-  "mesc-museum": ["3D Modeling", "Production and finishing"],
 };
 
 // Which project's section list is expanded in the sidebar.
@@ -282,6 +275,22 @@ function goToSection(projId, label) {
 // Per-project skills / software / knowledge shown in the right rail. Placeholder
 // sets — edit freely. A project without an entry shows the empty state.
 const PROJECT_SKILLS = {
+  meetkai: {
+    Summary:
+      "3D Designer & Tools Developer at MeetKai (California, remote since 2023), an AI and metaverse company. I design and optimize 3D assets and full scenes for WebGL, build and maintain the MeetKai Suite of Blender tools used across the 3D team, and develop Babylon.js demo scenes. Work here spans the BYD Virtual Dealership, Sony’s Survive Thanksgiving, the Detroit Pistons store and the MeetKai Suite add-on.",
+    Year: "Since 2023",
+    Knowledge: ["Real-time 3D on the web", "Pipeline optimization", "Tooling & automation"],
+    Skills: ["3D modeling", "Environment design", "Optimization", "Blender add-on development"],
+    Software: ["Babylon.js", "Blender", "Blender API", "Python", "Substance 3D"],
+  },
+  "more-than-real": {
+    Summary:
+      "3D Designer for AR at More Than Real (São Paulo, remote since 2022), a studio building augmented-reality experiences for sales and marketing. As a freelance 3D artist I model, texture and optimize assets for WebAR (from Nescafé Dolce Gusto coffee machines to Stellantis car models), creating UV maps, realistic textures, baked lighting and materials tuned for real-time visualization.",
+    Year: "Since 2022",
+    Knowledge: ["WebAR", "Product & automotive 3D", "Marketing experiences"],
+    Skills: ["3D modeling", "Texturing", "Optimization", "Surface / NURBS modeling"],
+    Software: ["Babylon.js", "Spark AR", "Blender", "Fusion 360", "Substance 3D"],
+  },
   meetcraft: {
     Summary:
       "A web-based 3D editor powered by Babylon.js for building interactive 3D scenes in the browser, with real-time collaboration. It started as a personal project to explore AI-powered creative tools and grew into a full platform \u2014 React/TypeScript frontend, Babylon.js rendering, and Supabase for auth, sync and storage.",
@@ -292,7 +301,7 @@ const PROJECT_SKILLS = {
   },
   "meetkai-suite": {
     Summary:
-      "A Blender add-on I built on my own initiative to automate MeetKai's 3D-for-web pipeline \u2014 material aggregation and remeshing, lightmap/AO baking, UV mapping, a color-atlas editor, armature aggregation, and an AI assistant. It is now a standard tool used across the team's 3D production.",
+      "A Blender add-on I built on my own initiative to automate MeetKai's 3D for web pipeline \u2014 material aggregation and remeshing, lightmap/AO baking, UV mapping, a color-atlas editor, armature aggregation, and an AI assistant. It is now a standard tool used across the team's 3D production.",
     Year: "2023",
     Knowledge: ["3D pipeline optimization", "Lightmapping", "Tooling & automation"],
     Skills: ["Blender add-on development", "Python", "Automation", "AI integration"],
@@ -338,6 +347,30 @@ const PROJECT_SKILLS = {
     Skills: ["Product modeling", "Surface / NURBS modeling", "Materials", "AR"],
     Software: ["Babylon.js", "Spark AR", "Fusion 360", "Blender"],
   },
+  "sand-belt": {
+    Summary:
+      "A 3D-printable belt-sander attachment for the Dremel rotary tool, designed in 2018. The printable parts are free on Thingiverse, where it became the most popular project in the Dremel category with 24k+ likes.",
+    Year: "2018",
+    Knowledge: ["Digital fabrication", "Design for 3D printing (DFAM)", "Tool design"],
+    Skills: ["3D modeling", "3D printing", "Mechanism design"],
+    Software: ["Autodesk Fusion 360", "Ultimaker Cura"],
+  },
+  "baltha-maker": {
+    Summary:
+      "My 3D printing studio, started in 2018 alongside my Product Design studies at UFSC. It grew from helping classmates with prototypes into a full service business (FDM and resin printing plus laser cutting), serving people and companies across Santa Catarina and Brazil.",
+    Year: "2018-2021",
+    Knowledge: ["3D printing services", "FDM & resin printing", "Laser cutting"],
+    Skills: ["3D printing", "3D modeling", "Finishing", "Client services"],
+    Software: ["Ultimaker Cura", "Autodesk Fusion 360", "Blender"],
+  },
+  "edge-planning": {
+    Summary:
+      "A pioneer digital dentistry planning center in Florian\u00f3polis that I co-founded with two dentists. I was the technical lead, owning the fabrication process end to end, from supply chain to packaging, after training in resin printing and digital dentistry at Done 3D in Ribeir\u00e3o Preto.",
+    Year: "2021",
+    Knowledge: ["Digital dentistry", "Resin 3D printing", "Production & supply chain"],
+    Skills: ["Resin 3D printing", "Meshmixer", "3Shape", "Blue Sky Bio"],
+    Software: ["Meshmixer", "3Shape", "Blue Sky Bio"],
+  },
   "falcon-mouse": {
     Summary:
       "A 3D-printed wireless mouse shaped like the Millennium Falcon, made in 2017 as a Star Wars fan project. After going viral on Instagram (150k+ reach), it was redesigned with higher detail and a solder-free assembly so anyone could print and build their own.",
@@ -348,7 +381,7 @@ const PROJECT_SKILLS = {
   },
   "florianopolis-museum": {
     Summary:
-      "A 1:41 scale model of the SESC Florianópolis Museum, 3D-printed in multi-color parts and finished with epoxy resin. The hollow model weighs ~20 kg and is on permanent display in the museum's entrance hall.",
+      "A 1:40 scale model of the SESC Florianópolis Museum, 3D-printed in multi-color parts and finished with epoxy resin. The hollow model weighs ~20 kg and is on permanent display in the museum's entrance hall.",
     Year: "2018",
     Knowledge: ["Architecture", "NURBS modeling", "Digital fabrication"],
     Skills: ["Technical CAD modeling", "NURBS modeling", "3D printing", "Finishing"],
@@ -364,7 +397,7 @@ const PROJECT_SKILLS = {
   },
   durare: {
     Summary:
-      "Durare was a high-complexity product-design project at UFSC, developed in the fourth semester by a team of three: an innovative carry-on suitcase, built to last. The work followed a full development cycle, from desk, user and market research through to a physical prototype. Travellers were surveyed and observed, the case was studied functionally and ergonomically (OWAS postures and anthropometric data), and the findings were turned into ranked requirements through a House of Quality. From there the concept was detailed in CAD and resolved into real mechanisms: a telescopic handle locked by neodymium magnets, and retractable natural-rubber wheels that let the case climb steps. The result was built as a 3D-printed, hand-finished prototype with sewn soft goods.",
+      "Durare was an innovative carry-on suitcase built to last, developed as a high-complexity product design project at UFSC, in the fourth semester, by a team of three. The work followed a full development cycle, from desk, user and market research through to a physical prototype. Travellers were surveyed and observed, the case was studied functionally and ergonomically (OWAS postures and anthropometric data), and the findings were turned into ranked requirements through a House of Quality. From there the concept was detailed in CAD and resolved into real mechanisms, like a telescopic handle locked by neodymium magnets and retractable natural-rubber wheels that let the case climb steps. The result was built as a 3D-printed, hand-finished prototype with sewn soft goods.",
     Year: "2019",
     Knowledge: [
       "Design Methodology",
@@ -388,7 +421,7 @@ const PROJECT_SKILLS = {
   },
   "docol-cozy": {
     Summary:
-      "DocolCozy Compact was a medium-complexity product-design project at UFSC, developed in the third semester in partnership with the sanitary-ware company Docol. The brief was a compact heated towel rail for small studio bathrooms, made usable by as many people as possible through universal design. The work ran from briefing and field research to a working prototype. The target audience was the users most often forgotten in product development, older adults and people with disabilities, studied through field research at NETI (UFSC). The findings became mandatory and desirable requirements, and a weighted decision matrix selected a triangular corner rail: folding the same bar length into a right triangle frees floor space and, with rounded corners, adds 40% of usable length. The design adds an elongated tube section, a discreet wireless timer and smart-home control, and was built as a 3D-printed prototype.",
+      "DocolCozy Compact was a medium-complexity product design project at UFSC, developed in the third semester in partnership with the sanitary-ware company Docol. The brief was a compact heated towel rail for small studio bathrooms, made usable by as many people as possible through universal design. The work ran from briefing and field research to a working prototype. The target audience was the users most often forgotten in product development, older adults and people with disabilities, studied through field research at NETI (UFSC). The findings became mandatory and desirable requirements, and a weighted decision matrix selected a triangular corner rail, where folding the same bar length into a right triangle frees floor space and, with rounded corners, adds 40% of usable length. The design adds an elongated tube section, a discreet wireless timer and smart-home control, and was built as a 3D-printed prototype.",
     Year: "2019",
     Knowledge: [
       "Design Methodology",
@@ -411,7 +444,7 @@ const PROJECT_SKILLS = {
   },
   zenik: {
     Summary:
-      "Zenik was a low-complexity product-design project at UFSC, developed in the second semester by a team of three, in partnership with Centro Sapiens. The brief was urban furniture for the Square Lab, an open coworking plaza in downtown Florianópolis, that had to be easy to move, durable in a public space and welcoming to many different audiences. The work ran from briefing and market analysis to a resolved design with technical drawings. The plaza and its users were studied through field observation, questionnaires and personas, and the findings were turned into mandatory and desirable requirements. The result is Zenik, a wood-and-steel piece that converts between an upright desk for focused work and a reclined lounger for rest, its form anchored on the posture of maximum relaxation and proportioned by the golden ratio.",
+      "Zenik was a low-complexity product design project at UFSC, developed in the second semester by a team of three, in partnership with Centro Sapiens. The brief was urban furniture for the Square Lab, an open coworking plaza in downtown Florianópolis, that had to be easy to move, durable in a public space and welcoming to many different audiences. The work ran from briefing and market analysis to a resolved design with technical drawings. The plaza and its users were studied through field observation, questionnaires and personas, and the findings were turned into mandatory and desirable requirements. The result is Zenik, a wood-and-steel piece that converts between an upright desk for focused work and a reclined lounger for rest, its form anchored on the posture of maximum relaxation and proportioned by the golden ratio.",
     Year: "2018",
     Knowledge: [
       "Design Methodology",
@@ -432,14 +465,31 @@ const PROJECT_SKILLS = {
   },
   petwheels: {
     Summary:
-      "Project summary placeholder — a concise overview of the Petwheels project will go here.",
-    Knowledge: ["Knowledge placeholder 1", "Knowledge placeholder 2", "Knowledge placeholder 3"],
-    Skills: ["Skill placeholder 1", "Skill placeholder 2", "Skill placeholder 3"],
-    Software: ["Software placeholder 1", "Software placeholder 2", "Software placeholder 3"],
+      "Petwheels was my final-year graduation project (PCC) in Product Design at UFSC, in 2021. It's a 3D-printed wheelchair for dogs with motor disabilities. Following a Design Thinking process, the work ran from veterinary and theoretical research, market and user research, to a fully resolved parametric product. The core idea was to replace the hand-built, one-off chairs on the market with a single parametric model that re-fits to each dog from a few measurements and is then 3D-printed, so a well-fitted chair becomes affordable and printable anywhere. Its patented contribution is a set of flexible printed lateral bars that let the dog rotate its thorax naturally, so ordinary wheels can take the place of the swivel casters older designs depend on. The project was later patented by UFSC, covered by the national media, and turned into a real online service.",
+    Year: "2021",
+    Knowledge: [
+      "Design Methodology",
+      "Product Ergonomics",
+      "Materials & Manufacturing Processes",
+      "Digital Fabrication",
+      "Parametric & 3D Modelling",
+      "Marketing & Consumer Behaviour",
+      "Design & Innovation",
+    ],
+    Skills: [
+      "Design thinking",
+      "User & market research",
+      "Parametric design",
+      "3D modeling",
+      "3D printing",
+      "Mechanism design",
+      "Prototyping",
+    ],
+    Software: ["Autodesk Fusion 360", "Ultimaker Cura", "Babylon.js"],
   },
   tuff: {
     Summary:
-      "TUFF was a mechanical-engineering project developed in 2016 in the Integrated Project course at UFSC, for the energy-drink brand CAN. The goal was a portable machine that chills a warm bottle to fridge-cold in under a minute. Following the PRODIP development methodology, the work moved through four phases, from user needs and specifications to a detailed, costed design. The winning concept spins the bottle at variable speed in a chilled salt-water bath, cooled by a vapour-compression circuit and held cold by polyurethane-foam insulation. A working prototype was built and bench-tested at the POLO lab, with the refrigeration cycle sized in CoolPack and the rotating flow analysed in SolidWorks Flow Simulation; an Arduino runs the motor and protects the compressor. The detailed design phase produced a fully defined, costed and manufacturable rapid chiller.\n\nAcross a large engineering team, I took part in every stage of the project, though my focus leaned towards turning TUFF into a viable product for the market and the client rather than a pure experiment. That pulled me into the market analysis, the 3D modelling and the prototyping: I was responsible for all of the 3D work and 3D prints, and ran several of the hands-on tests, from filling the reservoir with polyurethane foam to the bottle coupling and its motor-driven rotation.",
+      "TUFF was a mechanical engineering project developed in 2016 in the Integrated Project course at UFSC, for the energy-drink brand CAN. The goal was a portable machine that chills a warm bottle to fridge-cold in under a minute. Following the PRODIP development methodology, the work moved through four phases, from user needs and specifications to a detailed, costed design. The winning concept spins the bottle at variable speed in a chilled salt-water bath, cooled by a vapour-compression circuit and held cold by polyurethane-foam insulation. A working prototype was built and bench-tested at the POLO lab, with the refrigeration cycle sized in CoolPack and the rotating flow analysed in SolidWorks Flow Simulation; an Arduino runs the motor and protects the compressor. The detailed design phase produced a fully defined, costed and manufacturable rapid chiller.\n\nAcross a large engineering team, I took part in every stage of the project, though my focus leaned towards turning TUFF into a viable product for the market and the client rather than a pure experiment. That pulled me into the market analysis, the 3D modelling and the prototyping. I was responsible for all of the 3D work and 3D prints, and ran several of the hands-on tests, from filling the reservoir with polyurethane foam to the bottle coupling and its motor-driven rotation.",
     Year: "2016",
     Knowledge: [
       "Engineering Design Methodology",
@@ -470,7 +520,7 @@ const PROJECT_SKILLS = {
   },
   "epicyclic-magnetic-gear": {
     Summary:
-      "The Magnetic Epicyclic Gear was a research project carried out in 2016 during a summer research assistantship at NJIT (New Jersey Institute of Technology), while on a mechanical-engineering exchange. It explores a contactless gearbox that transmits torque through rare-earth magnets instead of meshing teeth, removing the friction, wear, lubrication and most of the noise of a conventional gear. The design uses a planetary (epicyclic) layout, an 18-magnet ring, three planet gears, a three-magnet sun-gear output and a carrier rotor, giving a 7:1 ratio. Every part was modelled and 3D-printed in-house, and the working rig spun a small turbine to light a bulb, reaching about 1.63 V and running without slipping up to roughly 100 RPM input. It was my first real 3D print and my first international presentation, at an NJIT science fair.",
+      "The Magnetic Epicyclic Gear was a research project carried out in 2016 during a summer research assistantship at NJIT (New Jersey Institute of Technology), while on a mechanical engineering exchange. It explores a contactless gearbox that transmits torque through rare-earth magnets instead of meshing teeth, removing the friction, wear, lubrication and most of the noise of a conventional gear. The design uses a planetary (epicyclic) layout, an 18-magnet ring, three planet gears, a three-magnet sun-gear output and a carrier rotor, giving a 7:1 ratio. Every part was modelled and 3D-printed in-house, and the working rig spun a small turbine to light a bulb, reaching about 1.63 V and running without slipping up to roughly 100 RPM input. It was my first real 3D print and my first international presentation, at an NJIT science fair.",
     Year: "2016",
     Knowledge: [
       "Mechanisms",
@@ -668,6 +718,54 @@ function setupZenikPositions(scope) {
 // follows it (up to the next title/group) and toggle it. Sections that come
 // before the "Research & Development" group label start expanded; the rest start
 // collapsed. Each toggles independently.
+// Before/after drag comparison sliders (Pistons lighting renders).
+// Mirrors the interactive site: a fixed 16:9 box with object-fit cover on both
+// images, and the clipped "before" image widened by 10000/p% so it always fills
+// the box regardless of the two images' dimensions.
+function setupCompareSliders(scope) {
+  scope.querySelectorAll(".pw-compare").forEach((fig) => {
+    const box = fig.querySelector(".pw-compare-box");
+    const before = fig.querySelector(".pw-compare-before");
+    const beforeImg = before && before.querySelector("img");
+    const divider = fig.querySelector(".pw-compare-divider");
+    if (!box || !before || !beforeImg || !divider) return;
+    let dragging = false;
+    const setPos = (clientX) => {
+      const r = box.getBoundingClientRect();
+      const p = Math.min(Math.max(((clientX - r.left) / r.width) * 100, 0), 100);
+      before.style.width = p + "%";
+      beforeImg.style.width = 10000 / p + "%";
+      divider.style.left = p + "%";
+    };
+    box.addEventListener("mousedown", (e) => { dragging = true; setPos(e.clientX); });
+    box.addEventListener("touchstart", (e) => { dragging = true; setPos(e.touches[0].clientX); }, { passive: true });
+    document.addEventListener("mousemove", (e) => { if (dragging) setPos(e.clientX); });
+    document.addEventListener("touchmove", (e) => { if (dragging) setPos(e.touches[0].clientX); }, { passive: true });
+    document.addEventListener("mouseup", () => { dragging = false; });
+    document.addEventListener("touchend", () => { dragging = false; });
+  });
+}
+
+// Instagram embeds: load Instagram's embed.js once, then ask it to render any
+// .instagram-media blockquotes on the page (used by the Edge Planning project).
+let igEmbedLoading = false;
+function setupInstagramEmbeds(scope) {
+  const run = () => {
+    if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+  };
+  if (window.instgrm && window.instgrm.Embeds) { run(); return; }
+  if (!igEmbedLoading) {
+    igEmbedLoading = true;
+    const sc = document.createElement("script");
+    sc.async = true;
+    sc.src = "https://www.instagram.com/embed.js";
+    sc.addEventListener("load", run);
+    document.body.appendChild(sc);
+  } else {
+    setTimeout(run, 800);
+  }
+}
+
 function setupCollapsibles(scope) {
   const titles = scope.querySelectorAll(".pw-subtitle, .pw-section-head");
   const group = scope.querySelector(".pw-group");
@@ -917,6 +1015,8 @@ function renderContent() {
       if (proj.id === "zenik") setupZenikPositions(node);
       if (proj.id === "docol-cozy") setupDocolOpportunity(node);
       if (proj.id === "epicyclic-magnetic-gear") setupEpicyclicSlider(node);
+      if (proj.id === "pistons-store" || proj.id === "meetkai") setupCompareSliders(node);
+      if (proj.id === "edge-planning") setupInstagramEmbeds(node);
       setupCollapsibles(node);
     }
     node.style.display = "";
@@ -948,6 +1048,7 @@ function renderContent() {
 // Rendered once into the slide-in CV panel (see #cv-inner).
 const CV_INFO = [
   { label: "Name", value: "Artur Donadel Balthazar" },
+  { label: "Location", value: "Florianópolis, Brazil - open to relocation" },
   { label: "Nationality", value: "Brazilian / Italian" },
   {
     label: "Email",
@@ -955,10 +1056,16 @@ const CV_INFO = [
     href: "mailto:arturbalthazar@gmail.com",
   },
   { label: "Phone", value: "+55 (48) 99128-7795", href: "tel:+5548991287795" },
+  {
+    label: "LinkedIn",
+    value: "in/artur-balthazar",
+    href: "https://www.linkedin.com/in/artur-balthazar",
+    blank: true,
+  },
 ];
 
-const CV_PROFILE = `Creative technologist with an academic background in mechanical
-engineering and a degree in product design. Passionate about bringing original
+const CV_PROFILE = `Designer and creative technologist with an academic background
+in mechanical engineering and a degree in product design. Passionate about bringing original
 ideas to life, bridging the gap between design and engineering. Skilled in CAD,
 surface and organic 3D modeling; computational design workflows; additive
 manufacturing; and software to automate and extend design and fabrication tasks.
@@ -972,8 +1079,20 @@ high-quality results.`;
 const CV_SKILLS = [
   {
     label: "Knowledge-based skills",
-    tags: ["Surface, organic and CAD modeling"],
-    note: "More to be added.",
+    tags: [
+      "Surface, organic and CAD modeling",
+      "3D art pipeline",
+      "Asset optimization",
+      "Environment and scene design",
+      "Photogrammetry and 3D scanning",
+      "2D graphics and texture creation",
+      "3D tools development",
+      "Web development",
+      "Front-end development",
+      "Back-end integration",
+      "AI-assisted scripting and debugging",
+      "UI/UX design",
+    ],
   },
   {
     label: "Soft skills",
@@ -1021,6 +1140,14 @@ const CV_SKILLS = [
       "Cursor",
     ],
   },
+  {
+    label: "Languages",
+    tags: [
+      "Portuguese: Native",
+      "English: Advanced",
+      "Spanish: Intermediate",
+    ],
+  },
 ];
 
 function cvSkillGroup(group) {
@@ -1037,6 +1164,160 @@ function cvSkillGroup(group) {
     </div>`;
 }
 
+// Roles in the same order as the résumé (most recent first; the two ongoing
+// roles overlap the self-employed Baltha Maker period on purpose).
+const CV_EXPERIENCE = [
+  {
+    role: "3D Designer & Tools Developer",
+    company: "MeetKai",
+    companyNote: "AI & Metaverse solutions",
+    location: "California, US (remote)",
+    period: "Jan 2023 - Present",
+    bullets: [
+      "3D design and optimization of assets and 3D scenes for WebGL applications.",
+      "Design and maintenance of MeetKai Suite, a complete set of Blender tools used by the 3D team, aimed at reducing friction in the 3D scene creation process, making it faster, more reliable and intuitive.",
+      "Development of Babylon.js demo scenes to gather attention of potential clients.",
+    ],
+  },
+  {
+    role: "3D Designer for AR",
+    company: "More Than Real",
+    companyNote: "Augmented reality for sales and marketing",
+    location: "São Paulo, Brazil (remote)",
+    period: "Jan 2022 - Present",
+    bullets: [
+      "Working as a freelancer in a wide range of 3D projects.",
+      "3D modeling, texturing and optimization of Nescafé Dolce Gusto coffee machines for WebAR.",
+      "Asset and topology optimization of 3D car models for car manufacturer Stellantis, creating UV maps, realistic textures, texture baking and materials for WebAR visualization.",
+    ],
+  },
+  {
+    role: "3D Printing Manager & Founder",
+    company: "Edge Planning Center",
+    companyNote: "Digital dentistry and surgical planning",
+    location: "Florianópolis, Brazil",
+    period: "Jan 2021 - Dec 2021",
+    bullets: [
+      "3D modeling and printing of bite splints, surgical guides, jaw study models, converted ultrasound images and other biomodels for dentistry in plastic and resin materials.",
+      "Responsible for the business management, including accounting, inventory management and customer service.",
+    ],
+  },
+  {
+    role: "Product Design Intern",
+    company: "Done 3D",
+    companyNote: "3D printing and digital dentistry",
+    location: "Ribeirão Preto, Brazil",
+    period: "Oct 2020 - Dec 2020",
+    bullets: [
+      "3D modeling and 3D mesh manipulation, adaptation and optimization for 3D printing.",
+      "3D printing of both plastic and resin objects.",
+    ],
+  },
+  {
+    role: "3D Printing Designer (Self-employed)",
+    company: "Baltha Maker",
+    companyNote: "3D printing solutions",
+    location: "Florianópolis, Brazil",
+    period: "Feb 2018 - Dec 2021",
+    bullets: [
+      "3D modeling and optimization in various software, depending on client needs.",
+      "3D printing and finishing of various products in both plastic and resin, such as replacement parts, final parts, prototypes, presentation models, trophies and gifts.",
+      "Business management, responsible for the office's accounting, marketing, customer service and inventory management.",
+    ],
+  },
+  {
+    role: "Product Design Intern",
+    company: "Pronto 3D",
+    companyNote: "Rapid prototyping laboratory inside UFSC",
+    location: "Florianópolis, Brazil",
+    period: "Mar 2019 - Jul 2019",
+    bullets: [
+      "Development of a 3D printed Arduino-based remote control car, including 3D modeling and printing, C++ programming for Arduino and integration with an Android app.",
+      "Experience with the main digital fabrication technologies such as 3D printing, 3D scanning, laser cutting, machining and thermoforming.",
+    ],
+  },
+  {
+    role: "Research & Development Intern",
+    company: "Cata Company",
+    companyNote: "Smart safe manufacturer",
+    location: "Florianópolis, Brazil",
+    period: "Mar 2017 - Feb 2018",
+    bullets: [
+      "3D renderings of the company's products for marketing purposes.",
+      "Development of technical manuals, reports and assembly instructions, including 3D graphics of the safes and document design.",
+      "Web support pages management.",
+    ],
+  },
+  {
+    role: "Architecture & Interior Design Intern",
+    company: "Eder Frank Architecture",
+    companyNote: "Architecture office",
+    location: "Criciúma, Brazil",
+    period: "Mar 2012 - Jun 2012",
+    bullets: [
+      "Conversion of hand drawings and projects to 3D models and renderings within Google SketchUp.",
+    ],
+  },
+];
+
+const CV_EDUCATION = [
+  {
+    degree: "Bachelor's Degree in Product Design",
+    school: "Federal University of Santa Catarina, Brazil",
+    period: "2018 - 2021",
+  },
+  {
+    degree: "Bachelor's Degree in Mechanical Engineering",
+    note: "split graduation",
+    noteKind: "split",
+    school: "Purdue University Northwest, USA",
+    period: "2015 - 2016",
+  },
+  {
+    degree: "Bachelor's Degree in Mechanical Engineering",
+    note: "incomplete",
+    noteKind: "incomplete",
+    school: "Federal University of Santa Catarina, Brazil",
+    period: "2012 - 2017",
+  },
+  {
+    degree: "Design Technical Course",
+    school: "SATC, Brazil",
+    period: "2009 - 2010",
+  },
+];
+
+function cvJob(job) {
+  const bullets = job.bullets.map((b) => `<li>${b}</li>`).join("");
+  return `
+    <article class="cv-job">
+      <div class="cv-job-head">
+        <h3 class="cv-job-role">${job.role}</h3>
+        <span class="cv-job-period">${job.period}</span>
+      </div>
+      <p class="cv-job-meta">
+        <span class="cv-job-company">${job.company}</span>
+        <span class="cv-job-sep">·</span>${job.companyNote}
+        <span class="cv-job-sep">·</span>${job.location}
+      </p>
+      <ul class="cv-job-bullets">${bullets}</ul>
+    </article>`;
+}
+
+function cvEdu(item) {
+  const note = item.note
+    ? `<span class="cv-edu-note cv-edu-note--${item.noteKind}">(${item.note})</span>`
+    : "";
+  return `
+    <li class="cv-edu-item">
+      <div class="cv-edu-main">
+        <span class="cv-edu-degree">${item.degree}</span>${note}
+        <span class="cv-edu-school">${item.school}</span>
+      </div>
+      <span class="cv-edu-period">${item.period}</span>
+    </li>`;
+}
+
 function renderCV() {
   const info = CV_INFO.map(
     (i) => `
@@ -1044,7 +1325,9 @@ function renderCV() {
         <span class="cv-info-label">${i.label}</span>
         <span class="cv-info-value">${
           i.href
-            ? `<a href="${i.href}">${i.value}</a>`
+            ? `<a href="${i.href}"${
+                i.blank ? ' target="_blank" rel="noopener"' : ""
+              }>${i.value}</a>`
             : i.value
         }</span>
       </div>`
@@ -1073,18 +1356,16 @@ function renderCV() {
       <!-- Experience -->
       <section id="cv-experience" class="cv-section">
         <h2 class="cv-section-title">Experience</h2>
-        <p class="cv-text">Placeholder — roles, companies, dates and a short
-        description of responsibilities and achievements will go here.</p>
-        <div class="placeholder-box">Experience details coming soon</div>
+        <div class="cv-jobs">${CV_EXPERIENCE.map(cvJob).join("")}</div>
       </section>
 
       <!-- Education -->
       <section id="cv-education" class="cv-section">
         <h2 class="cv-section-title">Education</h2>
-        <p class="cv-text">Placeholder — degrees, institutions and dates will go
-        here.</p>
-        <div class="placeholder-box">Education details coming soon</div>
+        <ul class="cv-edu-list">${CV_EDUCATION.map(cvEdu).join("")}</ul>
       </section>
+
+      <p class="cv-references">References available upon request.</p>
     </div>`;
 }
 
@@ -1206,585 +1487,410 @@ function docolDesignReqBody() {
 
 // ---------- Custom project pages ----------
 const PROJECT_PAGES = {
+  // ===== Interactive Design (company pages) =====
+  meetkai: () => `
+    <div class="content-wide pw-page work-page">
+      <div class="pw-titlebar">
+        <img class="pw-logo meetkai-logo" src="assets/interactive/meetkai/logo.png" alt="MeetKai" />
+      </div>
+      <p class="pw-intro">At MeetKai, a California-based AI &amp; metaverse company, I work remotely as a 3D Designer &amp; Tools Developer. I design and optimize 3D assets and full scenes for WebGL applications, build and maintain the MeetKai Suite of Blender tools used across the 3D team, and develop Babylon.js demo scenes to show our work to potential clients. Some of the projects I contributed to:</p>
+
+      <h2 class="pw-subtitle">BYD Virtual Dealership</h2>
+            <img class="pw-logo" src="assets/interactive/byd-dealership/logo.png" alt="BYD" />
+      <p class="pw-text">The BYD Virtual Dealership recreates real showrooms as an interactive 3D web experience. Users explore dealerships in Los Angeles, Singapore and the Philippines, plus virtual test tracks, touring vehicles, customizing colors and taking virtual test drives, all from the browser.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/facade.jpg" alt="BYD Los Angeles virtual dealership" loading="lazy" /></figure>
+      <h2 class="pw-heading">BYD Seagull</h2>
+      <p class="pw-text">I played a major role in the 3D side of this project, particularly vehicle modeling and optimization. We usually received existing car models that needed optimization with proper textures, materials and animations for web delivery.</p>
+      <p class="pw-text">For the BYD Seagull there was no existing model, so I recreated the entire car from scratch, one of my favorite pieces of work. I modeled everything: the exterior body, the interior cabin, the materials, and all the interactive animations.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image1.jpg" alt="BYD Seagull 3D modeling process" loading="lazy" /><figcaption>Exterior modeling: from reference blueprints to final topology.</figcaption></figure>
+      <p class="pw-text">The entire interior was modeled with attention to detail (seats, dashboard, steering wheel, door panels and trim) for an immersive feel when users explore the car from inside.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image2.jpg" alt="BYD Seagull final renders" loading="lazy" /><figcaption>Final renders: exterior and fully detailed interior.</figcaption></figure>
+      <h2 class="pw-heading">Philippines Dealership</h2>
+      <p class="pw-text">I was also the 3D lead for the Philippines dealership digital twin at Quezon Avenue, recreating the entire dealership architecture and showroom where the car models are showcased.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image3.jpg" alt="Philippines dealership 3D render" loading="lazy" /></figure>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image4.jpg" alt="Philippines dealership web view" loading="lazy" /></figure>
+    
+
+      <h2 class="pw-subtitle">Survive Thanksgiving</h2>
+            <img class="pw-logo" src="assets/interactive/survive-thanksgiving/logo.png" alt="Sony" />
+      <p class="pw-text">Thanksgiving is a Sony horror film about a masked killer on the loose during the holiday. Sony and MeetKai partnered on an interactive web experience to market the movie worldwide. I worked on key 3D elements: the Basement scene (the film's climactic finale), all in-game cutscene videos, and an optimized 3D crowd system for the external areas.</p>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/interactive/survive-thanksgiving/cover.jpg" alt="Survive Thanksgiving game" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/V8zJ_4dDaD8" title="Survive Thanksgiving trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      </div>
+      <h2 class="pw-heading">The Basement</h2>
+      <p class="pw-text">The basement is where the movie's final scene takes place, a long dinner table set for a twisted Thanksgiving feast. I designed and built the whole environment, from the eerie table settings to the dim lighting that sets the horror mood.</p>
+      <div class="pw-images pw-images-2">
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/basement2.jpg" alt="Basement scene view 1" loading="lazy" /></figure>
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/basement3.jpg" alt="Basement scene view 2" loading="lazy" /></figure>
+      </div>
+      <h2 class="pw-heading">External Crowds</h2>
+      <p class="pw-text">The outdoor areas needed a convincing crowd to sell the Black Friday chaos. I created an optimized 3D crowd system that runs smoothly even on mobile, using armature aggregation and animation-track merging to keep draw calls minimal while keeping the movement natural.</p>
+      <div class="pw-images pw-images-2">
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/crowd1.jpg" alt="External crowd view 1" loading="lazy" /></figure>
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/crowd2.jpg" alt="External crowd view 2" loading="lazy" /></figure>
+      </div>
+      <h2 class="pw-heading">Cutscenes</h2>
+      <p class="pw-text">Throughout the game, cutscene videos play when the player encounters the killer. I created all of these, short intense moments that tie the gameplay to the film's horror atmosphere. A couple of examples:</p>
+      <div class="pw-video-row">
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/C7IkYRqhUZU" title="Cutscene 1" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/_q2h88RLk5Q" title="Cutscene 2" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      </div>
+    
+
+      <h2 class="pw-subtitle">Pistons Virtual Store</h2>
+            <img class="pw-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
+      <p class="pw-text">The Pistons Virtual Store is an interactive 3D web experience for Detroit Pistons official merchandise: jerseys, hoodies, headwear and gifts, spread across three environments. I was 3D lead and handled most of the UX decisions, building all three environments (and many interactive assets) optimized for real-time web rendering.</p>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/interactive/pistons-store/cover.jpg" alt="Pistons virtual store" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/XhoeLlXyoLE" title="Pistons virtual store" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      </div>
+      <h2 class="pw-heading">The Virtual Store</h2>
+      <p class="pw-text">The main showroom organizes products by category: jerseys on mannequins, headwear on shelving, gifts arranged throughout. Lighting was key to the atmosphere, with carefully baked lightmaps that bring out the displays and make the space feel inviting.</p>
+      <figure class="pw-compare" data-compare>
+        <div class="pw-compare-box">
+          <img class="pw-compare-after" src="assets/interactive/pistons-store/render2.jpg" alt="With baked lighting" loading="lazy" />
+          <div class="pw-compare-before"><img src="assets/interactive/pistons-store/render1.jpg" alt="Without baked lighting" loading="lazy" /></div>
+          <div class="pw-compare-divider"></div>
+        </div>
+        <figcaption>Drag to compare without vs with baked lighting.</figcaption>
+      </figure>
+      <h2 class="pw-heading">The Court</h2>
+      <p class="pw-text">The basketball court is a full arena with an animated crowd. I used a lightweight technique where the crowd is rendered as flat planes with atlas textures that swap between animation frames, giving the illusion of a cheering 3D audience while keeping web performance optimized.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/pistons-store/court3.jpg" alt="Pistons basketball court" loading="lazy" /></figure>
+      <h2 class="pw-heading">The Locker Room</h2>
+      <p class="pw-text">The locker room was designed as a virtual event space where Pistons players could appear on screen during scheduled meet-and-greets, so it's more spacious than a typical locker room. It showcases the team's championship legacy with banners, player lockers and an immersive atmosphere.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/pistons-store/locker2.jpg" alt="Pistons locker room" loading="lazy" /></figure>
+    
+
+      <h2 class="pw-subtitle">MeetKai Suite</h2>
+            <img class="pw-logo" src="assets/software/meetkai-suite/logo.png" alt="Blender" />
+      <p class="pw-intro">MeetKai Suite is a Blender add-on I built on my own initiative after seeing the team could benefit from automation tools that didn't exist yet. It has since transformed our 3D for web asset pipeline and is now a standard tool used across our production.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/software/meetkai-suite/cover.jpg" alt="MeetKai Suite add-on" loading="lazy" /></figure>
+      <div class="pw-cards">
+        <div class="pw-card"><h3>Material Aggregator &amp; Object Remesher</h3><img src="assets/software/meetkai-suite/material-aggregator.jpg" alt="Material aggregator" loading="lazy" /><p>Merges multiple materials into a single optimized texture set with integrated geometry remeshing. One-click "Apply and Aggregate" finalizes mesh and textures together, drastically reducing draw calls.</p></div>
+        <div class="pw-card"><h3>Lightmap &amp; AO Baker</h3><img src="assets/software/meetkai-suite/lightmap-baker.jpg" alt="Lightmap and AO baker" loading="lazy" /><p>Generates high-quality lightmaps or ambient-occlusion maps with HDR output, per-object baking and an HQ mode for automatic downscaling. Built-in noise reduction delivers production-ready results.</p></div>
+        <div class="pw-card"><h3>UV Mapper</h3><img src="assets/software/meetkai-suite/uv-mapper.jpg" alt="UV mapper" loading="lazy" /><p>Automatic UV unwrapping inspired by Unity, handling scaling, packing and index generation, so artists no longer prepare UV layouts for lightmaps by hand.</p></div>
+        <div class="pw-card"><h3>Color Atlas Editor</h3><img src="assets/software/meetkai-suite/color-atlas-editor.jpg" alt="Color atlas editor" loading="lazy" /><p>Per-face PBR editing using just two 128×128 textures, enabling a huge range of value combinations with almost zero footprint, ideal for stylized and high-optimization projects.</p></div>
+        <div class="pw-card"><h3>Armature Aggregator</h3><img src="assets/software/meetkai-suite/armature-aggregator.jpg" alt="Armature aggregator" loading="lazy" /><p>Merges multiple rigs into one while preserving bone structure and animations, with action merging to combine animation tracks into a single unified action.</p></div>
+        <div class="pw-card"><h3>MeetKai Assistant</h3><img src="assets/software/meetkai-suite/meetkai-assistant.jpg" alt="MeetKai assistant" loading="lazy" /><p>AI-powered agentic editing inside Blender: type a prompt, press Execute, and an AI agent performs the operation using Blender's scripting capabilities.</p></div>
+      </div>
+    
+    </div>`,
+
+  "more-than-real": () => `
+    <div class="content-wide pw-page work-page">
+      <div class="pw-titlebar">
+        <img class="pw-logo mtr-logo" src="assets/interactive/more-than-real/logo.png" alt="More Than Real" />
+      </div>
+      <p class="pw-intro">More Than Real is a São Paulo-based studio building augmented-reality experiences for sales and marketing, where I work remotely as a freelance 3D Designer for AR. I handle 3D modeling, texturing and optimization for WebAR, creating UV maps, realistic textures, baked lighting and materials tuned for real-time visualization. Two of the projects I worked on:</p>
+
+      <h2 class="pw-subtitle">Chevrolet Montana</h2>
+            <img class="pw-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
+      <p class="pw-text">The Chevrolet Montana 2023 launched with a major marketing campaign, including a feature on the Big Brother Brasil reality show. I developed the 3D model for AR visualization as part of the campaign, one of several automotive projects I worked on at More Than Real.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/cover.jpg" alt="Chevrolet Montana lineup" loading="lazy" /></figure>
+      <h2 class="pw-heading">3D Development</h2>
+      <p class="pw-text">The model was optimized for real-time rendering: polycount reduction, baked AO maps, texture atlases, and rigged animations for the truck-bed mechanisms that show off the versatile tailgate configurations.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/image1.jpg" alt="Chevrolet Montana 3D model in Blender" loading="lazy" /><figcaption>Animated truck bed with tailgate and accessory configurations.</figcaption></figure>
+      <h2 class="pw-heading">AR Visualization</h2>
+      <p class="pw-text">The final model was deployed to WebAR, letting customers place the vehicle in their own environment at real scale using just their smartphone.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/image2.jpg" alt="Chevrolet Montana in AR" loading="lazy" /><figcaption>AR visualization on a smartphone.</figcaption></figure>
+    
+
+      <h2 class="pw-subtitle">Nescafé Dolce Gusto</h2>
+            <img class="pw-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
+      <p class="pw-text">I created 3D models of Nescafé Dolce Gusto coffee machines for WebXR sales and marketing experiences, interactive AR models that let customers explore the products in their own space before buying.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/cover.jpg" alt="Dolce Gusto coffee machines" loading="lazy" /></figure>
+      <p class="pw-text">Since Nescafé had no original 3D files for these machines, I recreated them from scratch using only photos and technical specs. Surface modeling was done in Autodesk Fusion 360, then brought into Blender for UV unwrapping, materials and rendering.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/dolcegusto1.jpg" alt="Dolce Gusto 3D modeling process" loading="lazy" /><figcaption>Surface modeling stages, from reference to final mesh.</figcaption></figure>
+      <p class="pw-text">Blender also let me create material variants for the different product colors, essential for AR, where users switch between options in real time.</p>
+    
+    </div>`,
+
   // ===== Software =====
   meetcraft: () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/meetcraft/logo.png" alt="Meetcraft" />
+      <div class="pw-lockup">
+        <img class="pw-lockup-icon" src="assets/software/meetcraft/logo.png" alt="Meetcraft" />
+        <img class="pw-lockup-word" src="assets/software/meetcraft/logo2.png" alt="Meetcraft" />
+      </div>
 
       <p class="pw-intro">
         Meetcraft is a web-based 3D editor powered by Babylon.js that lets you
-        create interactive 3D scenes for the web — with real-time, collaborative
-        editing right in the browser.
+        create interactive 3D scenes for the web, with real-time, collaborative
+        editing right in the browser. It started as a personal project to explore
+        AI-powered creative tools and has grown into a fully functional platform:
+        React and TypeScript on the frontend, Babylon.js for real-time rendering,
+        and Supabase for authentication, real-time sync and secure cloud storage.
       </p>
 
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 24px">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px">
         <a class="pw-btn" href="https://meetcraft.xyz" target="_blank" rel="noopener"><span>Visit site</span></a>
         <a class="pw-btn" href="https://www.youtube.com/@Meetcraft-Editor" target="_blank" rel="noopener"><span>YouTube</span></a>
         <a class="pw-btn" href="https://discord.gg/eFxZfEWB" target="_blank" rel="noopener"><span>Discord</span></a>
       </div>
 
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/meetcraft/cover.png" alt="Meetcraft editor interface" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        It started as a personal project to explore AI-powered creative tools and
-        has grown into a fully functional platform — built with React and
-        TypeScript on the frontend, Babylon.js for real-time rendering, and
-        Supabase for authentication, real-time sync and secure cloud storage.
-      </p>
-
-      <div class="pw-video">
-        <iframe src="https://www.youtube.com/embed/6g6zZgZ-FrE" title="Meetcraft demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/software/meetcraft/cover.jpg" alt="Meetcraft editor interface" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/6g6zZgZ-FrE" title="Meetcraft demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
       </div>
 
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetcraft/image1.png" alt="Cloud and local storage" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Cloud and local storage</h3>
-          <p>Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access — work on local folders like a desktop app, or sync assets to the cloud for team access.</p>
-        </div>
-      </div>
+      <h2 class="pw-heading">3D editing environment</h2>
+      <p class="pw-text">Full scene authoring with meshes, PBR materials, lights, cameras, physics, animations and spatial audio, plus a play mode to test scenes without leaving the editor. The interface is intentionally designed to feel familiar to Blender users, easing the transition for 3D artists.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/software/meetcraft/image3.jpg" alt="3D editing environment" loading="lazy" /></figure>
 
-      <section class="pw-section">
-        <h2 class="pw-heading">3D editing environment</h2>
-        <p class="pw-text">
-          Full scene authoring with meshes, PBR materials, lights, cameras,
-          physics, animations and spatial audio, plus a play mode to test scenes
-          without leaving the editor. The interface is intentionally designed to
-          feel familiar to Blender users, easing the transition for 3D artists.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image3.png" alt="3D editing environment" loading="lazy" /></figure>
-      </section>
+      <h2 class="pw-heading">Integrated UI editor</h2>
+      <p class="pw-text">Design HTML/CSS interfaces directly in the 3D environment and anchor them to scene objects, with a style editor, animation support and responsive breakpoints for building interactive 3D web experiences.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/software/meetcraft/image4.jpg" alt="Integrated UI editor" loading="lazy" /></figure>
 
-      <section class="pw-section">
-        <h2 class="pw-heading">Integrated UI editor</h2>
-        <p class="pw-text">
-          Design HTML/CSS interfaces directly in the 3D environment and anchor them
-          to scene objects, with a style editor, animation support and responsive
-          breakpoints for building interactive 3D web experiences.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image4.png" alt="Integrated UI editor" loading="lazy" /></figure>
-      </section>
+      <h2 class="pw-heading">Real-time collaboration</h2>
+      <p class="pw-text">Create teams with role-based permissions and collaborate live, so multiple users can edit the same scene at once, with selections, transforms and changes syncing instantly alongside presence indicators.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/software/meetcraft/image2.jpg" alt="Real-time collaboration" loading="lazy" /></figure>
 
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetcraft/image5.png" alt="AI-powered scripting" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>AI-powered scripting</h3>
-          <p>A Monaco-powered code editor with integrated AI assistance — describe what you want in natural language and it generates executable scripts with full context of your scene and the Meetcraft API.</p>
-        </div>
-      </div>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">Real-time collaboration</h2>
-        <p class="pw-text">
-          Create teams with role-based permissions and collaborate live — multiple
-          users can edit the same scene at once, with selections, transforms and
-          changes syncing instantly alongside presence indicators.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/meetcraft/image2.png" alt="Real-time collaboration" loading="lazy" /></figure>
-      </section>
-
-      <div class="pw-feature img-right">
-        <div class="pw-feature-media"><img src="assets/work/meetcraft/image6.png" alt="Addon architecture" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Add-on architecture</h3>
-          <p>An extensible API inspired by Blender's add-on system — add-ons can register menus, inject panels, subscribe to events, and access scene, physics, animation, audio and history with sandboxed permissions.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetcraft/image7.png" alt="Export to GitHub" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Export to GitHub</h3>
-          <p>Export projects straight to GitHub as ready-to-deploy web apps, with snapshot-based versioning to save and revert scene states — a complete pipeline from creation to publication.</p>
-        </div>
+      <div class="pw-cards">
+        <div class="pw-card"><h3>Cloud and local storage</h3><img src="assets/software/meetcraft/image1.jpg" alt="Cloud and local storage" loading="lazy" /><p>Projects can live in the cloud via Supabase or entirely offline using the browser's File System Access. Work on local folders like a desktop app, or sync to the cloud for team access.</p></div>
+        <div class="pw-card"><h3>AI-powered scripting</h3><img src="assets/software/meetcraft/image5.jpg" alt="AI-powered scripting" loading="lazy" /><p>A Monaco-powered code editor with integrated AI assistance: describe what you want in natural language and it generates executable scripts with full context of your scene and the Meetcraft API.</p></div>
+        <div class="pw-card"><h3>Add-on architecture</h3><img src="assets/software/meetcraft/image6.jpg" alt="Add-on architecture" loading="lazy" /><p>An extensible API inspired by Blender's add-on system: add-ons register menus, inject panels, subscribe to events and access scene, physics, animation, audio and history with sandboxed permissions.</p></div>
+        <div class="pw-card"><h3>Export to GitHub</h3><img src="assets/software/meetcraft/image7.jpg" alt="Export to GitHub" loading="lazy" /><p>Export projects straight to GitHub as ready-to-deploy web apps, with snapshot-based versioning to save and revert scene states, a complete pipeline from creation to publication.</p></div>
       </div>
     </div>`,
 
   "meetkai-suite": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/meetkai-suite/logo.png" alt="Blender" />
-
-      <p class="pw-intro">
-        MeetKai Suite is a Blender add-on I built on my own initiative after seeing
-        the team could benefit from automation tools that didn't exist yet. It has
-        since transformed our 3D-for-web asset pipeline and is now a standard tool
-        used across our production.
-      </p>
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/meetkai-suite/cover.png" alt="MeetKai Suite add-on" loading="lazy" />
-      </figure>
-
-      <div class="pw-feature img-right">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/material-aggregator.png" alt="Material aggregator and object remesher" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Material Aggregator &amp; Object Remesher</h3>
-          <p>Merges multiple materials into a single optimized texture set with integrated geometry remeshing. One-click "Apply and Aggregate" finalizes mesh and textures together, drastically reducing draw calls.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/lightmap-baker.png" alt="Lightmap and AO baker" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Lightmap &amp; AO Baker</h3>
-          <p>Generates high-quality lightmaps or ambient-occlusion maps with HDR output, per-object baking and an HQ mode for automatic downscaling. Built-in noise reduction delivers production-ready results.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature img-right">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/uv-mapper.png" alt="UV mapper" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>UV Mapper</h3>
-          <p>Automatic UV unwrapping inspired by Unity — handling scaling, packing and index generation, so artists no longer need to prepare UV layouts for lightmaps by hand.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/color-atlas-editor.png" alt="Color atlas editor" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Color Atlas Editor</h3>
-          <p>Per-face PBR editing using just two 128×128 textures, enabling a huge range of value combinations with almost zero footprint — ideal for stylized models and high-optimization projects.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature img-right">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/armature-aggregator.png" alt="Armature aggregator" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>Armature Aggregator</h3>
-          <p>Merges multiple rigs into one while preserving bone structure and animations, with action merging to combine animation tracks into a single unified action.</p>
-        </div>
-      </div>
-
-      <div class="pw-feature">
-        <div class="pw-feature-media"><img src="assets/work/meetkai-suite/meetkai-assistant.png" alt="MeetKai assistant" loading="lazy" /></div>
-        <div class="pw-feature-body">
-          <h3>MeetKai Assistant</h3>
-          <p>AI-powered agentic editing inside Blender — type a prompt, press Execute, and an AI agent performs the operation using Blender's scripting capabilities.</p>
-        </div>
+      <img class="pw-logo" src="assets/software/meetkai-suite/logo.png" alt="Blender" />
+      <p class="pw-intro">MeetKai Suite is a Blender add-on I built on my own initiative after seeing the team could benefit from automation tools that didn't exist yet. It has since transformed our 3D for web asset pipeline and is now a standard tool used across our production.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/software/meetkai-suite/cover.jpg" alt="MeetKai Suite add-on" loading="lazy" /></figure>
+      <div class="pw-cards">
+        <div class="pw-card"><h3>Material Aggregator &amp; Object Remesher</h3><img src="assets/software/meetkai-suite/material-aggregator.jpg" alt="Material aggregator" loading="lazy" /><p>Merges multiple materials into a single optimized texture set with integrated geometry remeshing. One-click "Apply and Aggregate" finalizes mesh and textures together, drastically reducing draw calls.</p></div>
+        <div class="pw-card"><h3>Lightmap &amp; AO Baker</h3><img src="assets/software/meetkai-suite/lightmap-baker.jpg" alt="Lightmap and AO baker" loading="lazy" /><p>Generates high-quality lightmaps or ambient-occlusion maps with HDR output, per-object baking and an HQ mode for automatic downscaling. Built-in noise reduction delivers production-ready results.</p></div>
+        <div class="pw-card"><h3>UV Mapper</h3><img src="assets/software/meetkai-suite/uv-mapper.jpg" alt="UV mapper" loading="lazy" /><p>Automatic UV unwrapping inspired by Unity, handling scaling, packing and index generation, so artists no longer prepare UV layouts for lightmaps by hand.</p></div>
+        <div class="pw-card"><h3>Color Atlas Editor</h3><img src="assets/software/meetkai-suite/color-atlas-editor.jpg" alt="Color atlas editor" loading="lazy" /><p>Per-face PBR editing using just two 128×128 textures, enabling a huge range of value combinations with almost zero footprint, ideal for stylized and high-optimization projects.</p></div>
+        <div class="pw-card"><h3>Armature Aggregator</h3><img src="assets/software/meetkai-suite/armature-aggregator.jpg" alt="Armature aggregator" loading="lazy" /><p>Merges multiple rigs into one while preserving bone structure and animations, with action merging to combine animation tracks into a single unified action.</p></div>
+        <div class="pw-card"><h3>MeetKai Assistant</h3><img src="assets/software/meetkai-suite/meetkai-assistant.jpg" alt="MeetKai assistant" loading="lazy" /><p>AI-powered agentic editing inside Blender: type a prompt, press Execute, and an AI agent performs the operation using Blender's scripting capabilities.</p></div>
       </div>
     </div>`,
 
-  // ===== Interactive Design =====
   "survive-thanksgiving": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/survive-thanksgiving/logo.png" alt="Sony" />
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/survive-thanksgiving/cover.png" alt="Survive Thanksgiving game" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        Thanksgiving is a Sony horror film about a masked killer on the loose during
-        the holiday. Sony and MeetKai partnered on an interactive web experience to
-        market the movie worldwide. I worked on key 3D elements: the Basement scene
-        (the film's climactic finale), all in-game cutscene videos, and an optimized
-        3D crowd system for the external areas.
-      </p>
-
-      <div class="pw-video">
-        <iframe src="https://www.youtube.com/embed/V8zJ_4dDaD8" title="Survive Thanksgiving trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      <img class="pw-logo" src="assets/interactive/survive-thanksgiving/logo.png" alt="Sony" />
+      <p class="pw-text">Thanksgiving is a Sony horror film about a masked killer on the loose during the holiday. Sony and MeetKai partnered on an interactive web experience to market the movie worldwide. I worked on key 3D elements: the Basement scene (the film's climactic finale), all in-game cutscene videos, and an optimized 3D crowd system for the external areas.</p>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/interactive/survive-thanksgiving/cover.jpg" alt="Survive Thanksgiving game" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/V8zJ_4dDaD8" title="Survive Thanksgiving trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
       </div>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">The Basement</h2>
-        <p class="pw-text">
-          The basement is where the movie's final scene takes place — a long dinner
-          table set for a twisted Thanksgiving feast. I designed and built the whole
-          environment, from the eerie table settings to the dim lighting that sets
-          the horror mood.
-        </p>
-        <div class="pw-images pw-images-2">
-          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/basement2.png" alt="Basement scene view 1" loading="lazy" /></figure>
-          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/basement3.png" alt="Basement scene view 2" loading="lazy" /></figure>
-        </div>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">External Crowds</h2>
-        <p class="pw-text">
-          The outdoor areas needed a living, breathing crowd to sell the Black
-          Friday chaos. I created an optimized 3D crowd system that runs smoothly
-          even on mobile — using armature aggregation and animation-track merging to
-          keep draw calls minimal while keeping the movement natural.
-        </p>
-        <div class="pw-images pw-images-2">
-          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/crowd1.png" alt="External crowd view 1" loading="lazy" /></figure>
-          <figure class="pw-img"><img src="assets/work/survive-thanksgiving/crowd2.png" alt="External crowd view 2" loading="lazy" /></figure>
-        </div>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">Cutscenes</h2>
-        <p class="pw-text">
-          Throughout the game, cutscene videos play when the player encounters the
-          killer. I created all of these — short, intense moments that tie the
-          gameplay to the film's horror atmosphere. A few examples:
-        </p>
-        <div class="pw-video">
-          <iframe src="https://www.youtube.com/embed/C7IkYRqhUZU" title="Cutscene 1" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-        </div>
-        <div class="pw-video">
-          <iframe src="https://www.youtube.com/embed/_q2h88RLk5Q" title="Cutscene 2" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-        </div>
-      </section>
+      <h2 class="pw-heading">The Basement</h2>
+      <p class="pw-text">The basement is where the movie's final scene takes place, a long dinner table set for a twisted Thanksgiving feast. I designed and built the whole environment, from the eerie table settings to the dim lighting that sets the horror mood.</p>
+      <div class="pw-images pw-images-2">
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/basement2.jpg" alt="Basement scene view 1" loading="lazy" /></figure>
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/basement3.jpg" alt="Basement scene view 2" loading="lazy" /></figure>
+      </div>
+      <h2 class="pw-heading">External Crowds</h2>
+      <p class="pw-text">The outdoor areas needed a convincing crowd to sell the Black Friday chaos. I created an optimized 3D crowd system that runs smoothly even on mobile, using armature aggregation and animation-track merging to keep draw calls minimal while keeping the movement natural.</p>
+      <div class="pw-images pw-images-2">
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/crowd1.jpg" alt="External crowd view 1" loading="lazy" /></figure>
+        <figure class="pw-img"><img src="assets/interactive/survive-thanksgiving/crowd2.jpg" alt="External crowd view 2" loading="lazy" /></figure>
+      </div>
+      <h2 class="pw-heading">Cutscenes</h2>
+      <p class="pw-text">Throughout the game, cutscene videos play when the player encounters the killer. I created all of these, short intense moments that tie the gameplay to the film's horror atmosphere. A couple of examples:</p>
+      <div class="pw-video-row">
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/C7IkYRqhUZU" title="Cutscene 1" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/_q2h88RLk5Q" title="Cutscene 2" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      </div>
     </div>`,
 
   "byd-dealership": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/byd-dealership/logo.png" alt="BYD" />
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/byd-dealership/facade.png" alt="BYD Los Angeles virtual dealership" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        The BYD Virtual Dealership brings real showrooms into an interactive 3D web
-        experience. Users explore dealerships in Los Angeles, Singapore, the
-        Philippines and virtual test tracks — touring vehicles, customizing colors
-        and even taking virtual test drives, all from the browser.
-      </p>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">My role and the BYD Seagull</h2>
-        <p class="pw-text">
-          I played a major role in the 3D side of this project, particularly vehicle
-          modeling and optimization. We usually received existing car models that
-          needed optimization with proper textures, materials and animations for web
-          delivery.
-        </p>
-        <p class="pw-text">
-          For the BYD Seagull there was no existing model, so I recreated the entire
-          car from scratch — one of my favorite pieces of work. I modeled everything:
-          the exterior body, the interior cabin, the materials, and all the
-          interactive animations.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/work/byd-dealership/image1.png" alt="BYD Seagull 3D modeling process" loading="lazy" />
-          <figcaption>Exterior modeling: from reference blueprints to final topology.</figcaption>
-        </figure>
-        <p class="pw-text">
-          The entire interior was modeled with attention to detail — seats,
-          dashboard, steering wheel, door panels and trim — for an immersive feel
-          when users explore the car from inside.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/work/byd-dealership/image2.png" alt="BYD Seagull final renders" loading="lazy" />
-          <figcaption>Final renders — exterior and fully detailed interior.</figcaption>
-        </figure>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">Philippines Dealership</h2>
-        <p class="pw-text">
-          I was also the 3D lead for the Philippines dealership digital twin at
-          Quezon Avenue — recreating the entire dealership architecture and showroom
-          where the car models are showcased.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/byd-dealership/image3.png" alt="Philippines dealership 3D render" loading="lazy" /></figure>
-        <figure class="pw-img pw-img-single"><img src="assets/work/byd-dealership/image4.png" alt="Philippines dealership web view" loading="lazy" /></figure>
-      </section>
+      <img class="pw-logo" src="assets/interactive/byd-dealership/logo.png" alt="BYD" />
+      <p class="pw-text">The BYD Virtual Dealership recreates real showrooms as an interactive 3D web experience. Users explore dealerships in Los Angeles, Singapore and the Philippines, plus virtual test tracks, touring vehicles, customizing colors and taking virtual test drives, all from the browser.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/facade.jpg" alt="BYD Los Angeles virtual dealership" loading="lazy" /></figure>
+      <h2 class="pw-heading">BYD Seagull</h2>
+      <p class="pw-text">I played a major role in the 3D side of this project, particularly vehicle modeling and optimization. We usually received existing car models that needed optimization with proper textures, materials and animations for web delivery.</p>
+      <p class="pw-text">For the BYD Seagull there was no existing model, so I recreated the entire car from scratch, one of my favorite pieces of work. I modeled everything: the exterior body, the interior cabin, the materials, and all the interactive animations.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image1.jpg" alt="BYD Seagull 3D modeling process" loading="lazy" /><figcaption>Exterior modeling: from reference blueprints to final topology.</figcaption></figure>
+      <p class="pw-text">The entire interior was modeled with attention to detail (seats, dashboard, steering wheel, door panels and trim) for an immersive feel when users explore the car from inside.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image2.jpg" alt="BYD Seagull final renders" loading="lazy" /><figcaption>Final renders: exterior and fully detailed interior.</figcaption></figure>
+      <h2 class="pw-heading">Philippines Dealership</h2>
+      <p class="pw-text">I was also the 3D lead for the Philippines dealership digital twin at Quezon Avenue, recreating the entire dealership architecture and showroom where the car models are showcased.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image3.jpg" alt="Philippines dealership 3D render" loading="lazy" /></figure>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/byd-dealership/image4.jpg" alt="Philippines dealership web view" loading="lazy" /></figure>
     </div>`,
 
   "pistons-store": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/pistons-store/logo.png" alt="Detroit Pistons" />
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/pistons-store/cover.png" alt="Pistons virtual store" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        The Pistons Virtual Store is an interactive 3D web experience for Detroit
-        Pistons official merchandise — jerseys, hoodies, headwear and gifts across
-        three immersive environments. I was 3D lead and handled most of the UX
-        decisions, building all three environments (and many interactive assets)
-        optimized for real-time web rendering.
-      </p>
-
-      <div class="pw-video">
-        <iframe src="https://www.youtube.com/embed/XhoeLlXyoLE" title="Pistons virtual store" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      <img class="pw-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
+      <p class="pw-text">The Pistons Virtual Store is an interactive 3D web experience for Detroit Pistons official merchandise: jerseys, hoodies, headwear and gifts, spread across three environments. I was 3D lead and handled most of the UX decisions, building all three environments (and many interactive assets) optimized for real-time web rendering.</p>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/interactive/pistons-store/cover.jpg" alt="Pistons virtual store" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/XhoeLlXyoLE" title="Pistons virtual store" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
       </div>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">The Virtual Store</h2>
-        <p class="pw-text">
-          The main showroom organizes products by category — jerseys on mannequins,
-          headwear on shelving, gifts arranged throughout. Lighting was key to the
-          atmosphere: carefully baked lightmaps bring out the displays and make the
-          space feel inviting.
-        </p>
-        <div class="pw-images pw-images-2">
-          <figure class="pw-img"><img src="assets/work/pistons-store/render1.png" alt="Showroom without baked lighting" loading="lazy" /><figcaption>Without baked lighting.</figcaption></figure>
-          <figure class="pw-img"><img src="assets/work/pistons-store/render2.png" alt="Showroom with baked lighting" loading="lazy" /><figcaption>With baked lightmaps.</figcaption></figure>
+      <h2 class="pw-heading">The Virtual Store</h2>
+      <p class="pw-text">The main showroom organizes products by category: jerseys on mannequins, headwear on shelving, gifts arranged throughout. Lighting was key to the atmosphere, with carefully baked lightmaps that bring out the displays and make the space feel inviting.</p>
+      <figure class="pw-compare" data-compare>
+        <div class="pw-compare-box">
+          <img class="pw-compare-after" src="assets/interactive/pistons-store/render2.jpg" alt="With baked lighting" loading="lazy" />
+          <div class="pw-compare-before"><img src="assets/interactive/pistons-store/render1.jpg" alt="Without baked lighting" loading="lazy" /></div>
+          <div class="pw-compare-divider"></div>
         </div>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">The Court</h2>
-        <p class="pw-text">
-          The basketball court is a full arena with an animated crowd. I used a
-          lightweight technique where the crowd is rendered as flat planes with
-          atlas textures that swap between animation frames — the illusion of a
-          cheering 3D audience while keeping web performance optimized.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/pistons-store/court3.png" alt="Pistons basketball court" loading="lazy" /></figure>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">The Locker Room</h2>
-        <p class="pw-text">
-          The locker room was designed as a virtual event space where Pistons
-          players could appear on screen during scheduled meet-and-greets — so it's
-          more spacious than a typical locker room. It showcases the team's
-          championship legacy with banners, player lockers and an immersive
-          atmosphere.
-        </p>
-        <figure class="pw-img pw-img-single"><img src="assets/work/pistons-store/locker2.png" alt="Pistons locker room" loading="lazy" /></figure>
-      </section>
+        <figcaption>Drag to compare without vs with baked lighting.</figcaption>
+      </figure>
+      <h2 class="pw-heading">The Court</h2>
+      <p class="pw-text">The basketball court is a full arena with an animated crowd. I used a lightweight technique where the crowd is rendered as flat planes with atlas textures that swap between animation frames, giving the illusion of a cheering 3D audience while keeping web performance optimized.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/pistons-store/court3.jpg" alt="Pistons basketball court" loading="lazy" /></figure>
+      <h2 class="pw-heading">The Locker Room</h2>
+      <p class="pw-text">The locker room was designed as a virtual event space where Pistons players could appear on screen during scheduled meet-and-greets, so it's more spacious than a typical locker room. It showcases the team's championship legacy with banners, player lockers and an immersive atmosphere.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/pistons-store/locker2.jpg" alt="Pistons locker room" loading="lazy" /></figure>
     </div>`,
 
   "chevrolet-montana": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/chevrolet-montana/logo.png" alt="Chevrolet" />
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/chevrolet-montana/cover.png" alt="Chevrolet Montana lineup" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        The Chevrolet Montana 2023 launched with a major marketing campaign,
-        including a feature on the Big Brother Brasil reality show. I developed the
-        3D model for AR visualization as part of the campaign — one of several
-        automotive projects I worked on at More Than Real.
-      </p>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">3D Development</h2>
-        <p class="pw-text">
-          The model was optimized for real-time rendering — polycount reduction,
-          baked AO maps, texture atlases, and rigged animations for the truck-bed
-          mechanisms that show off the versatile tailgate configurations.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/work/chevrolet-montana/image1.png" alt="Chevrolet Montana 3D model in Blender" loading="lazy" />
-          <figcaption>Animated truck bed with tailgate and accessory configurations.</figcaption>
-        </figure>
-      </section>
-
-      <section class="pw-section">
-        <h2 class="pw-heading">AR Visualization</h2>
-        <p class="pw-text">
-          The final model was deployed to WebAR, letting customers place the vehicle
-          in their own environment at real scale using just their smartphone.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/work/chevrolet-montana/image2.png" alt="Chevrolet Montana in AR" loading="lazy" />
-          <figcaption>AR visualization on a smartphone.</figcaption>
-        </figure>
-      </section>
+      <img class="pw-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
+      <p class="pw-text">The Chevrolet Montana 2023 launched with a major marketing campaign, including a feature on the Big Brother Brasil reality show. I developed the 3D model for AR visualization as part of the campaign, one of several automotive projects I worked on at More Than Real.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/cover.jpg" alt="Chevrolet Montana lineup" loading="lazy" /></figure>
+      <h2 class="pw-heading">3D Development</h2>
+      <p class="pw-text">The model was optimized for real-time rendering: polycount reduction, baked AO maps, texture atlases, and rigged animations for the truck-bed mechanisms that show off the versatile tailgate configurations.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/image1.jpg" alt="Chevrolet Montana 3D model in Blender" loading="lazy" /><figcaption>Animated truck bed with tailgate and accessory configurations.</figcaption></figure>
+      <h2 class="pw-heading">AR Visualization</h2>
+      <p class="pw-text">The final model was deployed to WebAR, letting customers place the vehicle in their own environment at real scale using just their smartphone.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/image2.jpg" alt="Chevrolet Montana in AR" loading="lazy" /><figcaption>AR visualization on a smartphone.</figcaption></figure>
     </div>`,
 
   "dolce-gusto": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/work/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/dolce-gusto/cover.png" alt="Dolce Gusto coffee machines" loading="lazy" />
-      </figure>
-
-      <p class="pw-text">
-        This project involved creating 3D models of Nescafé Dolce Gusto coffee
-        machines for use in WebXR sales and marketing experiences — interactive AR
-        models that let customers explore the products in their own space before
-        buying.
-      </p>
-
-      <p class="pw-text">
-        Since Nescafé had no original 3D files for these machines, I recreated them
-        from scratch using only photos and technical specs. Surface modeling was
-        done in Autodesk Fusion 360, then brought into Blender for UV unwrapping,
-        materials and rendering.
-      </p>
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/work/dolce-gusto/dolcegusto1.png" alt="Dolce Gusto 3D modeling process" loading="lazy" />
-        <figcaption>Surface modeling stages, from reference to final mesh.</figcaption>
-      </figure>
-
-      <p class="pw-text">
-        Blender also let me create material variants for the different product
-        colors — essential for AR, where users switch between options in real time.
-      </p>
+      <img class="pw-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
+      <p class="pw-text">I created 3D models of Nescafé Dolce Gusto coffee machines for WebXR sales and marketing experiences, interactive AR models that let customers explore the products in their own space before buying.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/cover.jpg" alt="Dolce Gusto coffee machines" loading="lazy" /></figure>
+      <p class="pw-text">Since Nescafé had no original 3D files for these machines, I recreated them from scratch using only photos and technical specs. Surface modeling was done in Autodesk Fusion 360, then brought into Blender for UV unwrapping, materials and rendering.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/dolcegusto1.jpg" alt="Dolce Gusto 3D modeling process" loading="lazy" /><figcaption>Surface modeling stages, from reference to final mesh.</figcaption></figure>
+      <p class="pw-text">Blender also let me create material variants for the different product colors, essential for AR, where users switch between options in real time.</p>
     </div>`,
 
-  // ===== 3D Printing (Baltha Maker) =====
+  // ===== 3D Printing =====
+  "sand-belt": () => `
+    <div class="content-wide pw-page maker-page">
+      <div class="pw-titlebar">
+        <h1>Sand Belt for Dremel</h1>
+        <a class="pw-btn" href="https://www.thingiverse.com/thing:3302314" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg><span>View on Thingiverse</span></a>
+      </div>
+      <p class="pw-text">The Sand Belt Stand turns a Dremel rotary tool into a compact belt sander, handy for finishing 3D prints and small parts. I designed it in 2018 and released the printable parts on Thingiverse, where it became the most popular project in the whole Dremel category, with over 24k likes.</p>
+      <div class="pw-row" style="max-width:860px">
+        <figure class="pw-img" style="flex: 1.805 1 0"><img src="assets/maker/sand-belt/render.jpg" alt="Sand Belt Stand render" loading="lazy" /></figure>
+        <figure class="pw-img" style="flex: 1.781 1 0"><img src="assets/maker/sand-belt/real.jpg" alt="3D-printed Sand Belt Stand in use" loading="lazy" /></figure>
+      </div>
+      <div class="pw-video"><iframe src="https://www.youtube.com/embed/kZdbn9PsBNo" title="Sand Belt for Dremel" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      <div class="pw-row" style="max-width:860px">
+        <figure class="pw-img" style="flex: 1.805 1 0"><img src="assets/maker/sand-belt/parts.jpg" alt="Printed parts of the Sand Belt Stand" loading="lazy" /><figcaption>All the printable parts.</figcaption></figure>
+        <figure class="pw-img" style="flex: 1.546 1 0"><img src="assets/maker/sand-belt/dimensions.png" alt="Sand Belt Stand dimensions" loading="lazy" /><figcaption>Dimensions and assembly reference.</figcaption></figure>
+      </div>
+    </div>`,
+
   "falcon-mouse": () => `
     <div class="content-wide pw-page maker-page">
-      <img class="pw-logo" src="assets/maker/falcon-mouse/logo.png" alt="Star Wars" />
+      <div class="pw-titlebar">
+        <img class="pw-logo" src="assets/maker/falcon-mouse/logo.png" alt="Star Wars" />
+        <h1>Millennium Falcon Mouse</h1>
+        <a class="pw-btn" href="https://www.thingiverse.com/thing:6683242" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg><span>View on Thingiverse</span></a>
+      </div>
+      <p class="pw-intro">As a fan of the Star Wars series, I made this 3D-printed wireless mouse of the Millennium Falcon back in 2017. After I posted it on Instagram it reached over 150k people, and many wanted to build their own, so I designed an upgraded version with higher detail and an easier, solder-free assembly.</p>
+      <div class="pw-cover-row">
+        <figure class="pw-cover-cell"><img src="assets/maker/falcon-mouse/cover.jpg" alt="Millennium Falcon 3D-printed mouse" loading="lazy" /></figure>
+        <div class="pw-video"><iframe src="https://www.youtube.com/embed/zsmf0Fp8Sbo" title="Millennium Falcon Mouse" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+      </div>
+      <h2 class="pw-heading">3D Modeling</h2>
+      <p class="pw-text">The first step was to pick a cheap wireless mouse from AliExpress and reverse-engineer its electronics in Autodesk Fusion 360. Then I modeled the Falcon from reference images, making sure the internal electronics would fit neatly inside the hull.</p>
+      <div class="pw-row" style="max-width:760px">
+        <figure class="pw-img" style="flex: 1.864 1 0"><img src="assets/maker/falcon-mouse/mouse1.jpg" alt="3D model of the Millennium Falcon mouse" loading="lazy" /><figcaption>The Falcon modeled around the mouse internals.</figcaption></figure>
+        <figure class="pw-img" style="flex: 0.832 1 0"><img src="assets/maker/falcon-mouse/mouse2.jpg" alt="Internal electronics layout" loading="lazy" /><figcaption>Electronics packed inside.</figcaption></figure>
+      </div>
+      <h2 class="pw-heading">Build and assembly</h2>
+      <p class="pw-text">The design has a screw lid on top for the USB plug, a blue LED in the rear to simulate light speed, and a side button to toggle the LED. After printing, assembly is straightforward with no soldering required, a great project for hobbyists, kids learning robotics, or professional makers.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/falcon-mouse/mouse3.jpg" alt="Assembly process and the final mouse with its LED" loading="lazy" /><figcaption>Printed parts, assembly, and the final result with its blue LED glow.</figcaption></figure>
+    </div>`,
 
-      <p class="pw-intro">
-        As a fan of the Star Wars series, I made this 3D-printed wireless mouse of
-        the Millennium Falcon back in 2017. After I posted it on Instagram it
-        reached over 150k people, and many wanted to build their own — so I
-        designed an upgraded version with higher detail and an easier, solder-free
-        assembly.
-      </p>
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/maker/falcon-mouse/cover.png" alt="Millennium Falcon 3D-printed mouse" loading="lazy" />
-      </figure>
-
-      <div class="pw-video">
-        <iframe src="https://www.youtube.com/embed/zsmf0Fp8Sbo" title="Millennium Falcon Mouse" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  "baltha-maker": () => `
+    <div class="content-wide pw-page maker-page">
+      <div class="pw-titlebar">
+        <img class="pw-logo baltha-logo" src="assets/maker/baltha-maker/logo.png" alt="Baltha Maker" />
+        <a class="pw-btn" href="https://www.instagram.com/baltha.maker/" target="_blank" rel="noopener"><span>View on Instagram</span></a>
+      </div>
+      <p class="pw-intro">Baltha Maker is a 3D printing and digital fabrication business I started in 2018, in parallel with my Product Design studies at UFSC. It began by helping classmates with their prototypes and project demands, and gradually grew into a real service. By 2019 I had already built a solid network of clients and was able to operate in a commercial space in the center of Florianópolis, providing 3D printing and fabrication services for people and businesses across Santa Catarina and eventually other parts of Brazil.</p>
+      <div class="pw-services">
+        <div class="pw-service"><img src="assets/maker/baltha-maker/fdm.jpg" alt="FDM 3D printing" loading="lazy" /><h3>FDM 3D printing</h3><p>Fused-deposition printing for functional parts, prototypes and larger pieces, affordable, durable and quick to iterate.</p></div>
+        <div class="pw-service"><img src="assets/maker/baltha-maker/resin.jpg" alt="Resin 3D printing" loading="lazy" /><h3>Resin 3D printing</h3><p>High-detail resin printing for finer work, essential for dentistry, jewelry and collectible figurines where detail is everything.</p></div>
+        <div class="pw-service"><img src="assets/maker/baltha-maker/laser-cutting.jpg" alt="Laser cutting" loading="lazy" /><h3>Laser cutting</h3><p>Laser cutting and engraving for flat parts, signage and packaging in acrylic, MDF and other sheet materials.</p></div>
+      </div>
+      <h2 class="pw-heading">Types of work</h2>
+      <div class="pw-kinds">
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/scale-models.jpg" alt="Scale models" loading="lazy" /><span>Scale models</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/prototypes.jpg" alt="Prototypes" loading="lazy" /><span>Prototypes</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/bio-models.jpg" alt="Bio models" loading="lazy" /><span>Bio models</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/trophies-gifts.jpg" alt="Trophies and gifts" loading="lazy" /><span>Trophies &amp; gifts</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/custom-projects.jpg" alt="Custom projects" loading="lazy" /><span>Custom projects</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/replacement-parts.jpg" alt="Replacement parts" loading="lazy" /><span>Replacement parts</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/3d-scans.jpg" alt="3D scans" loading="lazy" /><span>3D scans</span></figure>
+        <figure class="pw-kind"><img src="assets/maker/baltha-maker/molds.jpg" alt="Molds" loading="lazy" /><span>Molds</span></figure>
       </div>
 
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">3D Modeling</h2>
-        </div>
-        <p class="pw-text">
-          The first step was to pick a cheap wireless mouse from AliExpress and
-          reverse-engineer its electronics in Autodesk Fusion 360. Then I modeled
-          the Falcon from reference images, making sure the internal electronics
-          would fit neatly inside the hull.
-        </p>
-        <div class="pw-row" style="max-width:760px">
-          <figure class="pw-img" style="flex: 1.864 1 0"><img src="assets/maker/falcon-mouse/mouse1.png" alt="3D model of the Millennium Falcon mouse" loading="lazy" /><figcaption>The Falcon modeled around the mouse internals.</figcaption></figure>
-          <figure class="pw-img" style="flex: 0.832 1 0"><img src="assets/maker/falcon-mouse/mouse2.png" alt="Internal electronics layout" loading="lazy" /><figcaption>Electronics packed inside.</figcaption></figure>
-        </div>
-      </section>
-
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">Build and assembly</h2>
-          <a class="pw-btn" href="https://www.thingiverse.com/thing:6683242" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Get the files</span>
-          </a>
-        </div>
-        <p class="pw-text">
-          The design has a screw lid on top for the USB plug, a blue LED in the
-          rear to simulate light speed, and a side button to toggle the LED. After
-          printing, assembly is straightforward with no soldering required —
-          which makes it a great project for hobbyists, kids learning robotics, or
-          professional makers.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/falcon-mouse/mouse3.png" alt="Assembly process and the final mouse with its LED" loading="lazy" />
-          <figcaption>Printed parts, assembly, and the final result with its blue LED glow.</figcaption>
-        </figure>
-      </section>
+      <h2 class="pw-heading">Location</h2>
+      <p class="pw-text">The Baltha Maker studio was based in the heart of Florianópolis, in Av. Rio Branco, 380, Centro.</p>
+      <div class="pw-map">
+        <iframe src="https://maps.google.com/maps?q=Baltha%20Maker%20-%20Impress%C3%A3o%203D%2C%20Av.%20Rio%20Branco%2C%20380%2C%20Centro%2C%20Florian%C3%B3polis%20-%20SC&z=13&output=embed" title="Baltha Maker location on Google Maps" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
     </div>`,
 
   "florianopolis-museum": () => `
     <div class="content-wide pw-page maker-page">
       <img class="pw-logo" src="assets/maker/florianopolis-museum/logo.png" alt="SESC" />
-
-      <p class="pw-intro">
-        A 1:41 scale model of the SESC Florianópolis Museum — the historic
-        Victor Meirelles building — now on display in the museum's entrance
-        hall. It let me bring together architecture, design engineering, technical
-        CAD and, for the first time, NURBS modeling, which I've used ever since.
-      </p>
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/maker/florianopolis-museum/cover.png" alt="Florianópolis Museum — Victor Meirelles building" loading="lazy" />
-      </figure>
-
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">3D Modeling</h2>
-        </div>
-        <p class="pw-text">
-          From archives, floor plans and facade drawings, I built the 3D model of
-          the building in Autodesk Fusion 360 — technical CAD modeling for the
-          structure and NURBS for the fine ornamental details to be reproduced in
-          the print.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/florianopolis-museum/image1.png" alt="3D model details of the Florianópolis Museum" loading="lazy" />
-          <figcaption>Ornamental elements modeled with NURBS in Fusion 360.</figcaption>
-        </figure>
-      </section>
-
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">3D printing and finishing</h2>
-        </div>
-        <p class="pw-text">
-          For printing, the model was split into many parts and printed in different
-          colors to minimize painting. The parts were joined by vacuum fitting and
-          gluing, and the whole surface was sealed with a final layer of epoxy resin
-          for protection and preservation.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/florianopolis-museum/image2.png" alt="3D printing process and individual parts" loading="lazy" />
-          <figcaption>Multi-color printed parts — railings, shutters and ornaments.</figcaption>
-        </figure>
-        <p class="pw-text">
-          The finished model is hollow and weighs around 20&nbsp;kg. It sits in the
-          entrance hall of the museum, catching the eye of everyone who visits.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/florianopolis-museum/image3.jpg" alt="Final 3D-printed model on display in the museum" loading="lazy" />
-          <figcaption>The finished 1:41 scale model in the museum's entrance hall.</figcaption>
-        </figure>
-      </section>
+      <p class="pw-intro">A 1:40 scale model of the SESC Florianópolis Museum, the historic Victor Meirelles building, now on display in the museum's entrance hall. It let me bring together architecture, design engineering, technical CAD and, for the first time, NURBS modeling, which I've used ever since.</p>
+      <div class="pw-row" style="max-width:860px">
+        <figure class="pw-img" style="flex: 1.506 1 0"><img src="assets/maker/florianopolis-museum/image3.jpg" alt="The finished 3D-printed model on display" loading="lazy" /><figcaption>The finished model on display.</figcaption></figure>
+        <figure class="pw-img" style="flex: 1.469 1 0"><img src="assets/maker/florianopolis-museum/cover.jpg" alt="The actual Victor Meirelles building" loading="lazy" /><figcaption>The real building.</figcaption></figure>
+      </div>
+      <h2 class="pw-heading">3D Modeling</h2>
+      <p class="pw-text">From archives, floor plans and facade drawings, I built the 3D model of the building in Autodesk Fusion 360, with technical CAD modeling for the structure and NURBS for the fine ornamental details to be reproduced in the print.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/florianopolis-museum/image1.jpg" alt="3D model details of the Florianópolis Museum" loading="lazy" /><figcaption>Ornamental elements modeled with NURBS in Fusion 360.</figcaption></figure>
+      <h2 class="pw-heading">3D printing and finishing</h2>
+      <p class="pw-text">For printing, the model was split into many parts and printed in different colors to minimize painting. The parts were joined by vacuum fitting and gluing, and the whole surface was sealed with a final layer of epoxy resin for protection and preservation.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/florianopolis-museum/image2.jpg" alt="3D printing process and individual parts" loading="lazy" /><figcaption>Multi-color printed parts: railings, shutters and ornaments.</figcaption></figure>
+      <p class="pw-text">The finished model is hollow and weighs around 20&nbsp;kg. It sits in the entrance hall of the museum, catching the eye of everyone who visits.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/florianopolis-museum/image3.jpg" alt="Final 3D-printed model on display in the museum" loading="lazy" /><figcaption>The finished 1:40 scale model in the museum's entrance hall.</figcaption></figure>
     </div>`,
 
   "mesc-museum": () => `
     <div class="content-wide pw-page maker-page">
       <img class="pw-logo" src="assets/maker/mesc-museum/logo.png" alt="MESC" />
+      <p class="pw-intro">After the Florianópolis Museum model, the Museu da Escola Catarinense (MESC), a nearby institution downtown, asked me for a similar piece. It's a beautiful early-20th-century neoclassical building with imposing columns and a distinctive curved skylight roof.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/mesc-museum/cover.jpg" alt="Museu da Escola Catarinense, MESC" loading="lazy" /></figure>
+      <h2 class="pw-heading">3D Modeling</h2>
+      <p class="pw-text">The experience from the SESC project made this one much smoother. I followed the same workflow, using architectural floor plans and facade references to build an accurate model in Autodesk Fusion 360, with NURBS surfaces for the columns, cornices and other ornamental detail.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/mesc-museum/mesc1.jpg" alt="3D CAD model of the MESC Museum" loading="lazy" /><figcaption>The complete model rendered in Autodesk Fusion 360.</figcaption></figure>
+      <h2 class="pw-heading">Production and finishing</h2>
+      <p class="pw-text">The model was printed in multiple parts with the same multi-color approach. The curved skylight was especially interesting to produce, taking careful print orientation and supports. After vacuum fitting and gluing, the surface was coated in epoxy resin for durability and a premium finish.</p>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/mesc-museum/mesc2.jpg" alt="3D-printed MESC model during assembly" loading="lazy" /><figcaption>The assembled scale model before final finishing.</figcaption></figure>
+      <figure class="pw-img pw-img-single"><img src="assets/maker/mesc-museum/mesc3.jpg" alt="Finished MESC Museum scale model" loading="lazy" /><figcaption>The completed model ready for display (I know it looks AI-generated with this sun beam, but it's not).</figcaption></figure>
+    </div>`,
 
-      <p class="pw-intro">
-        After the Florianópolis Museum model, the Museu da Escola Catarinense
-        (MESC) — a nearby institution downtown — asked me for a similar
-        piece. It's a beautiful early-20th-century neoclassical building with
-        imposing columns and a distinctive curved skylight roof.
-      </p>
-
-      <figure class="pw-img pw-img-single">
-        <img src="assets/maker/mesc-museum/cover.png" alt="Museu da Escola Catarinense — MESC" loading="lazy" />
-      </figure>
-
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">3D Modeling</h2>
+  "edge-planning": () => `
+    <div class="content-wide pw-page maker-page">
+      <div class="pw-titlebar">
+        <img class="pw-logo edge-logo" src="assets/maker/edge-planning/logo.png" alt="Edge" />
+        <h1>Edge Planning Center</h1>
+      </div>
+      <p class="pw-intro">Edge Planning Center is a digital dentistry planning center I co-founded in Florianópolis with two dentists, the first of its kind in the city. Before launching, I interned at Done 3D in Ribeirão Preto, São Paulo, one of Brazil's references in 3D printing for dentistry, where I practiced resin printing with softwares like Meshmixer, 3Shape and Blue Sky Bio. As technical lead, I owned the fabrication process end to end, from supply chain to packaging the final product.</p>
+      <div class="pw-ig">
+        <div class="pw-ig-col">
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/Cxf53nOrjzP/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CNkPGl4H9hs/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
         </div>
-        <p class="pw-text">
-          The experience from the SESC project made this one much smoother. I
-          followed the same workflow: architectural floor plans and facade
-          references to build an accurate model in Autodesk Fusion 360, with NURBS
-          surfaces for the columns, cornices and other ornamental detail.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/mesc-museum/mesc1.png" alt="3D CAD model of the MESC Museum" loading="lazy" />
-          <figcaption>The complete model rendered in Autodesk Fusion 360.</figcaption>
-        </figure>
-      </section>
-
-      <section class="pw-section">
-        <div class="pw-section-head">
-          <h2 class="pw-section-title">Production and finishing</h2>
+        <div class="pw-ig-col">
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/reel/DFdolXmRS7c/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CL_rIwNAfjt/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
         </div>
-        <p class="pw-text">
-          The model was printed in multiple parts with the same multi-color
-          approach. The curved skylight was especially interesting to produce,
-          taking careful print orientation and supports. After vacuum fitting and
-          gluing, the surface was coated in epoxy resin for durability and a premium
-          finish.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/mesc-museum/mesc2.png" alt="3D-printed MESC model during assembly" loading="lazy" />
-          <figcaption>The assembled scale model before final finishing.</figcaption>
-        </figure>
-        <figure class="pw-img pw-img-single">
-          <img src="assets/maker/mesc-museum/mesc3.png" alt="Finished MESC Museum scale model" loading="lazy" />
-          <figcaption>The completed model ready for display (I know it looks AI-generated with this sun beam — it's not).</figcaption>
-        </figure>
-      </section>
+        <div class="pw-ig-col">
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CpxJ-zvAlt6/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
+          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/CL_qiEggx3O/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:0;max-width:540px;min-width:300px;padding:0;width:calc(100% - 2px);"></blockquote>
+        </div>
+      </div>
+      </div>
     </div>`,
 
   petwheels: () => `
@@ -1810,17 +1916,41 @@ const PROJECT_PAGES = {
       <section class="pw-section">
         <div class="pw-section-head">
           <h2 class="pw-section-title">Business Model</h2>
+          <a class="pw-btn" href="https://petwheels.io" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>
+            <span>petwheels.io</span>
+          </a>
         </div>
-        <p class="pw-text">
-          The business model rests on digital fabrication: every chair is
-          parametrically fit to a dog's measurements and printed on demand,
-          anywhere, by anyone with a 3D printer, instead of being hand-built one
-          by one. Try the live customiser below: change the measurements and the
-          chair re-fits in real time.
-        </p>
         <!-- Interactive 3D customizer (isolated in its own document) -->
         <div class="pw-frame">
           <iframe src="petwheels/index.html?v=7" title="Petwheels 3D customizer" loading="lazy"></iframe>
+        </div>
+        <div class="pw-bm">
+          <figure class="pw-bm-vid">
+            <video src="assets/petwheels/pethweels-cadQuery.mp4" autoplay loop muted playsinline preload="auto"></video>
+          </figure>
+          <p class="pw-text">
+            The promise behind Petwheels is to make mass customization of wheelchairs
+            for dogs possible, letting anyone get a custom wheelchair as easily and
+            quickly as buying a pre-built one online. The hard part was always doing
+            that reliably at scale,
+            building a platform that generates a correct CAD model every time,
+            without someone having to step in and fix it by hand. When I graduated in
+            2022, a platform like that meant a lot of money and people, more than I
+            was ready to commit to back then. In that context, the coming of AI was
+            the game changer. As the AI models kept getting better, I was able to
+            rebuild the wheelchair, originally made in Fusion 360, as a code-first
+            design using existing CAD libraries.
+          </p>
+          <p class="pw-text">
+            Now, users can enter a few measurements, preview an approximate version
+            of the wheelchair in the browser (a polygonal model running in
+            Babylon.js), and click to generate the real CAD design on the spot.
+            Instead of a full CAD program running in the cloud, which is expensive and
+            more prone to errors, the model is built at scale and reliably, with no
+            human intervention and with STL files ready for print. That is what made
+            Petwheels possible as a real online service.
+          </p>
         </div>
       </section>
 
@@ -1837,7 +1967,7 @@ const PROJECT_PAGES = {
           Registered as Brazilian utility model <strong>BR&nbsp;20&nbsp;2022&nbsp;002397-8</strong>
           (filed 2022, published 2023) by UFSC, with Artur Donadel Balthazar and Regiane
           Trevisan Pupo as inventors. Its core contribution is the chair's
-          <strong>flexible lateral bars</strong>: existing wheelchairs use rigid aluminium
+          <strong>flexible lateral bars</strong>. Existing wheelchairs use rigid aluminium
           or PVC side bars that force the dog to walk in a straight line and, on
           front-wheeled designs, require swivel casters. Petwheels replaces them with thin,
           flexible printed bars that bend only left and right, letting the dog rotate its
@@ -1923,7 +2053,7 @@ const PROJECT_PAGES = {
           every animal has its own anatomy and temperament: small or large, thin
           or heavy, calm or anxious, amputated or paralysed, with or without a
           need for physiotherapy. Beyond the technical difficulty there is a
-          cultural one: an animal's needs are often overlooked, with euthanasia,
+          cultural one. An animal's needs are often overlooked, with euthanasia,
           abandonment and neglect chosen over looking for a solution, and little
           scientific investment goes into developing real alternatives. The mind
           map below lays out the main variables involved and highlights the
@@ -1993,7 +2123,7 @@ const PROJECT_PAGES = {
         <p class="pw-text">
           A synchronic look at today's makers, both established manufacturers and a
           growing DIY community, shows they still wrestle with the same core
-          challenge: every chair has to be customised and adapted to an individual
+          challenge of customising and adapting every chair to an individual
           animal. Most rely on rigid aluminium or 3D-printed frames adjusted by
           screws, rarely use standardised wheels, and span a wide price range.
         </p>
@@ -2035,7 +2165,7 @@ const PROJECT_PAGES = {
             <p class="pw-mkt-name">DIY models</p>
             <p class="pw-mkt-loc">Worldwide · open-source</p>
             <div class="pw-mkt-meta"><span>Lowest cost</span><span>PVC &amp; salvaged parts</span><span>Shared online</span></div>
-            <p class="pw-mkt-note">A style of its own: owners who can't afford specialist care build chairs from PVC pipe, second-hand wheels and adapted collars, often from open-source files (Thingiverse); accessible, but rarely ergonomic.</p>
+            <p class="pw-mkt-note">A style of its own. Owners who can't afford specialist care build chairs from PVC pipe, second-hand wheels and adapted collars, often from open-source files (Thingiverse), accessible but rarely ergonomic.</p>
             <div class="pw-mkt-figs">
               <figure class="pw-img"><img src="assets/petwheels/mkt-diy-1.png" alt="Home-made PVC-pipe dog wheelchair" loading="lazy" /></figure>
               <figure class="pw-img"><img src="assets/petwheels/mkt-diy-2.png" alt="Open-source 3D-printed DIY dog wheelchair" loading="lazy" /></figure>
@@ -2087,7 +2217,7 @@ const PROJECT_PAGES = {
               <img class="pw-persona-av" src="assets/petwheels/persona-natasha.jpg" alt="Natasha" loading="lazy" />
               <div><p class="pw-persona-name">Natasha, 29</p><p class="pw-persona-role">Veterinary student</p></div>
             </div>
-            <p>She lives with 13 dogs and 8 cats rescued from the street. Three have permanent hind-leg paralysis and one was born without front limbs: four dogs who need wheelchairs, but she has only two donated PVC chairs. She knows ill-fitting chairs cause pain, so she's crowdfunding on social media to build proper, made-to-measure ones.</p>
+            <p>She lives with 13 dogs and 8 cats rescued from the street. Three have permanent hind-leg paralysis and one was born without front limbs, so four dogs in all need wheelchairs, but she has only two donated PVC chairs. She knows ill-fitting chairs cause pain, so she's crowdfunding on social media to build proper, made-to-measure ones.</p>
           </div>
           <div class="pw-persona">
             <span class="pw-persona-pub">Veterinarian</span>
@@ -2111,7 +2241,7 @@ const PROJECT_PAGES = {
         <div class="pw-taskgrid pw-taskgrid-3">
           <div class="pw-taskcard"><h5>Walk / run</h5><p>The most frequent task, on four paws for physiotherapy, or on two when the chair replaces the weakened limbs. Needs space and dry, fairly even ground; real physical effort.</p></div>
           <div class="pw-taskcard"><h5>Rest</h5><p>Brief, since the chair is meant to keep the dog moving. How it's built sets the resting positions: lying, sitting or with the head supported. No effort.</p></div>
-          <div class="pw-taskcard"><h5>Eat / drink</h5><p>Brief and static: the dog lowers its head to the bowl, with effort in the jaw, usually on four paws, but also sitting or leaning.</p></div>
+          <div class="pw-taskcard"><h5>Eat / drink</h5><p>Brief and static, with the dog lowering its head to the bowl and effort in the jaw, usually on four paws, but also sitting or leaning.</p></div>
         </div>
         <div class="pw-taskgrid pw-taskgrid-2">
           <div class="pw-taskcard pw-taskcard-media">
@@ -2126,9 +2256,9 @@ const PROJECT_PAGES = {
 
         <p class="pw-pill">Tasks performed by the owner</p>
         <div class="pw-taskgrid pw-taskgrid-3">
-          <div class="pw-taskcard"><h5>Put on / take off</h5><p>Brief: position the dog and secure it, usually with collars, fabric or Velcro. Harder with anxious or restless dogs.</p></div>
-          <div class="pw-taskcard"><h5>Walk the dog</h5><p>Medium to long: the owner supervises while the dog walks or exercises, outdoors on dry, even ground.</p></div>
-          <div class="pw-taskcard"><h5>Wash / clean</h5><p>Light cleaning wipes the wheels after each outing; heavy cleaning, every few weeks, may mean taking the chair apart: fabric in the machine, rigid parts scrubbed.</p></div>
+          <div class="pw-taskcard"><h5>Put on / take off</h5><p>Brief. You position the dog and secure it, usually with collars, fabric or Velcro. Harder with anxious or restless dogs.</p></div>
+          <div class="pw-taskcard"><h5>Walk the dog</h5><p>Medium to long, with the owner supervising while the dog walks or exercises, outdoors on dry, even ground.</p></div>
+          <div class="pw-taskcard"><h5>Wash / clean</h5><p>Light cleaning wipes the wheels after each outing; heavy cleaning, every few weeks, may mean taking the chair apart, with the fabric in the machine and the rigid parts scrubbed.</p></div>
         </div>
 
         <p class="pw-pill">Problems identified</p>
@@ -2201,7 +2331,7 @@ const PROJECT_PAGES = {
           <div class="pw-concept">
             <figure><img src="assets/petwheels/concept-freedom.png" alt="Freedom mood board: dogs running free, broken chains, open sky" loading="lazy" /></figure>
             <p class="pw-concept-name">Freedom</p>
-            <p>The product's very purpose: to give back movement, to feel free again as it should.</p>
+            <p>The product's very purpose is to give back movement, to feel free again as it should.</p>
           </div>
           <div class="pw-concept">
             <figure><img src="assets/petwheels/concept-resilience.png" alt="Resilience mood board" loading="lazy" /></figure>
@@ -2217,8 +2347,8 @@ const PROJECT_PAGES = {
         <p class="pw-pill">Product expression</p>
         <p class="pw-text">
           The expression board pinned down the traits, lines and attitude the
-          product should carry: robustness and controlled speed over fragility,
-          drawing on working dogs and concept cars.
+          product should carry, favouring robustness and controlled speed over
+          fragility, drawing on working dogs and concept cars.
         </p>
         <div class="pw-row" style="max-width:680px">
           <figure class="pw-img" style="flex: 1.585 1 0"><img src="assets/petwheels/expression-dog.jpg" alt="A working police dog in a tactical harness" loading="lazy" /></figure>
@@ -2258,8 +2388,8 @@ const PROJECT_PAGES = {
         <p class="pw-pill">Morphometric parameters</p>
         <p class="pw-text">
           The first step was to adapt the 3D dog model (the "dummy") to a
-          wheelchair-user posture: the femur and tibia set at 90° as vets
-          recommend for relaxation, with a slight lateral gap between the thighs so
+          wheelchair-user posture, with the femur and tibia set at 90° as vets
+          recommend for relaxation, and a slight lateral gap between the thighs so
           they seat into the chair and the dog can still urinate and defecate.
           Knowing the measurements would be taken by third parties, vets or owners,
           five simple, easy-to-take parameters were chosen to drive the whole
@@ -2298,8 +2428,8 @@ const PROJECT_PAGES = {
           fast, not fragile with thin rims and hollow spokes.
         </p>
         <figure class="pw-img pw-img-single" style="max-width:300px">
-          <div class="pw-ph">The final wheel design: robust, fluid spokes within a tyre</div>
-          <figcaption>The wheel: robust and fluid, not fragile.</figcaption>
+          <div class="pw-ph">The final wheel design, with robust, fluid spokes within a tyre</div>
+          <figcaption>The wheel, robust and fluid, not fragile.</figcaption>
         </figure>
 
         <!-- Solutions -->
@@ -2352,7 +2482,7 @@ const PROJECT_PAGES = {
         <p class="pw-text">
           The wheel axes are tilted 10°, giving the dog more stability on sloped
           ground and cutting the chance of a tip. The incline also helps the chair
-          hold its position: the more it tends to pitch forward or back, the harder
+          hold its position. The more it tends to pitch forward or back, the harder
           it is to move; in the extreme, fully tipped upright, the wheels point in
           different directions and the chair won't roll either way unless dragged.
         </p>
@@ -2420,7 +2550,7 @@ const PROJECT_PAGES = {
         Zenik is a piece of convertible urban furniture created for the Square
         Lab, the coworking and creative-experimentation plaza of Centro Sapiens,
         an initiative turning the east side of downtown Florianópolis into a
-        creative district. Developed as a low-complexity product-design project at
+        creative district. Developed as a low-complexity product design project at
         UFSC, by a three-person team in partnership with Centro Sapiens, it
         answers the plaza's brief for furniture that is easy to move and
         transport, compatible with many different audiences and occasions, simple
@@ -2468,7 +2598,7 @@ const PROJECT_PAGES = {
           from: public squares and parks, which are free, open-air and able to hold
           huge numbers of people but offer few services, and private coworking
           spaces, which are paid and small but fully equipped with internet,
-          kitchens and meeting areas. The Square Lab sits between the two: a free,
+          kitchens and meeting areas. The Square Lab sits between the two, a free,
           open-air plaza that still has to support focused work.
         </p>
         <p class="pw-text">
@@ -2534,7 +2664,7 @@ const PROJECT_PAGES = {
           range: <strong>Praça XV</strong>, a busy and socially mixed central
           square (elderly, students and workers alongside a vulnerable homeless
           population, in a delicate part of the city), and <strong>Avenida
-          Hercílio Luz</strong>, a younger and more open counterpoint: an avenue
+          Hercílio Luz</strong>, a younger and more open counterpoint, an avenue
           with bars, quiet and fairly empty at its start, with stretches well
           exposed to the sun, and plenty of room to be enriched aesthetically,
           culturally and with information.
@@ -2656,7 +2786,7 @@ const PROJECT_PAGES = {
         <p class="pw-text">
           The survey brought up demands we already expected, like networking and
           interaction between people, but it also revealed a problem specific to
-          coworkers: a lack of <strong>privacy</strong>, closely tied to silence
+          coworkers, a lack of <strong>privacy</strong>, closely tied to silence
           and a productive environment. Since the Square Lab will be an open
           coworking plaza, with a strong focus on events and visitors, a good
           balance between focus and leisure areas became the project's central
@@ -2765,7 +2895,7 @@ const PROJECT_PAGES = {
         <h3 class="pw-subtitle">Ideation</h3>
         <p class="pw-text">
           During ideation, the most varied ideas came up, from swings to exercise
-          furniture. One idea stood out, though: a desk that can rotate and become a
+          furniture. One idea stood out, though, a desk that can rotate and become a
           lounger. It made it possible to bring study and work together with rest
           and leisure in the same space, which could be one of the Square Lab's
           private areas, promoting focus, concentration, silence and privacy.
@@ -2824,7 +2954,7 @@ const PROJECT_PAGES = {
           Finally, the golden ratio (1.618…) guided the form. It is the proportion
           nature settles on for balanced growth, found in everything from the
           tiniest bodies, like the atom, to the most gigantic, like planets and
-          galaxies. Zenik carries it too: folded as a table it fits a perfect
+          galaxies. Zenik carries it too. Folded as a table it fits a perfect
           square, and reclined as a lounger it fits a golden rectangle.
         </p>
         <div class="pw-images pw-images-2">
@@ -2880,7 +3010,7 @@ const PROJECT_PAGES = {
 
       <p class="pw-intro">
         Durare is an innovative carry-on suitcase, "built to last", developed as
-        a high-complexity product-design project at UFSC. The goal was to bring
+        a high-complexity product design project at UFSC. The goal was to bring
         solutions not yet seen on the market, drawing on some of the main trends
         that are shaping how people travel.
       </p>
@@ -2945,7 +3075,7 @@ const PROJECT_PAGES = {
 
         <h4 class="pw-subhead">2 · New mobility technologies</h4>
         <p class="pw-text">
-          Still on rubber: Michelin developed a new type of tyre that needs no
+          Still on rubber, Michelin developed a new type of tyre that needs no
           air, with no inner chamber to rupture. This considerably increases
           durability, since a large share of tyres are scrapped exactly because
           that inner chamber fails. Michelin signed a contract with GM in early
@@ -3096,7 +3226,7 @@ const PROJECT_PAGES = {
           <p class="pw-text">
             Components are usually bought off the shelf from specialist makers,
             such as telescopic handles, wheels and grips. That is not a rule,
-            though. Some brands verticalise instead: the British brand Rolling, for
+            though. Some brands verticalise instead. The British brand Rolling, for
             example, injection-moulds its own wheels to cut its internal costs.
           </p>
           <div class="pw-row">
@@ -3969,14 +4099,14 @@ const PROJECT_PAGES = {
       </div>
 
       <p class="pw-intro">
-        TUFF is a <strong>rapid beverage chiller</strong>, a mechanical-engineering
+        TUFF is a <strong>rapid beverage chiller</strong>, a mechanical engineering
         project developed at UFSC's Department of Mechanical Engineering (2016) for
-        the energy-drink brand <strong>CAN</strong>. The goal was direct: take a
-        warm bottle to fridge-cold in <strong>under a minute</strong>, in a
+        the energy-drink brand <strong>CAN</strong>. The goal was to take a warm
+        bottle and get it fridge-cold in <strong>under a minute</strong>, in a
         portable machine. A radial clamp grips the bottle and spins it at variable
         speed inside a chilled salt-water bath, while a vapour-compression circuit
         and polyurethane-foam insulation do the cooling. The whole project followed
-        the <strong>PRODIP</strong> product-development methodology (NEDIP-UFSC),
+        the <strong>PRODIP</strong> product development methodology (NEDIP-UFSC),
         moving through four phases: Informational, Conceptual, Preliminary and
         Detailed design.
       </p>
@@ -3998,7 +4128,7 @@ const PROJECT_PAGES = {
           a House of Quality to rank the requirements.
         </p>
         <figure class="pw-img pw-img-single tuff-phase-img">
-          <img src="assets/tuff/phase1.png" alt="PRODIP product-development model with the Informational Design phase highlighted" loading="lazy" />
+          <img src="assets/tuff/phase1.png" alt="PRODIP product development model with the Informational Design phase highlighted" loading="lazy" />
           <figcaption>PRODIP model: Informational design highlighted.</figcaption>
         </figure>
 
@@ -4026,8 +4156,8 @@ const PROJECT_PAGES = {
 
         <p class="pw-pill">Market research</p>
         <p class="pw-text">
-          A survey of the beverage-cooler field: what exists, how efficient it is, and
-          where the gap sits. Most products lean on Peltier elements and take the better
+          A survey of the beverage-cooler field, looking at what exists, how efficient it
+          is, and where the gap sits. Most products lean on Peltier elements and take the better
           part of an hour. Only the rotating Cooper Cooler is genuinely fast, and none
           chills a bottle in under a minute while staying portable.
         </p>
@@ -4035,7 +4165,7 @@ const PROJECT_PAGES = {
           <div class="mkt-brand">
             <div class="mkt-logo"><span class="mkt-name">Can Cooler</span></div>
             <p class="mkt-price">8-10&nbsp;°C below ambient · ~1&nbsp;h</p>
-            <p class="mkt-note">Peltier element, no compressor: silent but slow. Compact at 105 × 150 × 120&nbsp;mm, so genuinely portable.</p>
+            <p class="mkt-note">Peltier element, no compressor, so it's silent but slow. Compact at 105 × 150 × 120&nbsp;mm, so genuinely portable.</p>
             <div class="mkt-shot"><img src="assets/tuff/canCooler.png" alt="The Can Cooler thermoelectric beverage cooler" loading="lazy" /></div>
           </div>
           <div class="mkt-brand">
@@ -4057,7 +4187,7 @@ const PROJECT_PAGES = {
             <div class="mkt-shot"><img src="assets/tuff/cooperCooler.png" alt="The Cooper Cooler, which rotates the bottle in iced water" loading="lazy" /></div>
           </div>
         </div>
-        <div class="dr-key">The takeaway: thermoelectric coolers are quiet but slow; only the Cooper Cooler's spin-in-water approach is fast, which pointed the concept towards forced convection by rotating the bottle in a chilled bath.</div>
+        <div class="dr-key">The takeaway is that thermoelectric coolers are quiet but slow, and only the Cooper Cooler's spin-in-water approach is fast, which pointed the concept towards forced convection by rotating the bottle in a chilled bath.</div>
 
         <p class="pw-pill">Standards</p>
         <p class="pw-text">
@@ -4075,7 +4205,7 @@ const PROJECT_PAGES = {
             <tr><td>Lei 1916/67, Art. 5º</td><td>Maximum permitted noise for compressors.</td></tr>
           </tbody>
         </table>
-        <div class="dr-key">The compressor drives the key constraint: a <strong>55&nbsp;dB</strong> noise ceiling, which later forces acoustic insulation into the design.</div>
+        <div class="dr-key">The compressor drives the key constraint, a <strong>55&nbsp;dB</strong> noise ceiling, which later forces acoustic insulation into the design.</div>
 
         <p class="pw-pill">Design requirements</p>
         <p class="pw-text">
@@ -4185,13 +4315,13 @@ const PROJECT_PAGES = {
           Pugh matrix, producing the selected concept.
         </p>
         <figure class="pw-img pw-img-single tuff-phase-img">
-          <img src="assets/tuff/phase2.png" alt="PRODIP product-development model with the Conceptual Design phase highlighted" loading="lazy" />
+          <img src="assets/tuff/phase2.png" alt="PRODIP product development model with the Conceptual Design phase highlighted" loading="lazy" />
           <figcaption>PRODIP model: Conceptual design highlighted.</figcaption>
         </figure>
 
         <p class="pw-pill">Functional structure</p>
         <p class="pw-text">
-          First, the thing being chilled: a 260 mL <strong>CAN Energy Drink</strong>
+          First, the thing being chilled is a 260 mL <strong>CAN Energy Drink</strong>
           bottle, a local Florianópolis (Canasvieiras) brand. Its size and shape
           (≈ 55 mm across) set the geometry the whole machine is built around.
         </p>
@@ -4286,7 +4416,7 @@ const PROJECT_PAGES = {
             ).join("")}
           </tbody>
         </table>
-        <div class="dr-key">In short: a radial clamp spins the bottle at variable speed in a salt-water bath chilled by a compressor circuit, wrapped in polyurethane-foam and acoustic insulation, on mains power. That is the concept carried into the preliminary phase.</div>
+        <div class="dr-key">In short, a radial clamp spins the bottle at variable speed in a salt-water bath chilled by a compressor circuit, wrapped in polyurethane-foam and acoustic insulation, on mains power. That is the concept carried into the preliminary phase.</div>
 
         <!-- ===================== PHASE 3 ===================== -->
         <h3 class="pw-subtitle">Preliminary design</h3>
@@ -4297,7 +4427,7 @@ const PROJECT_PAGES = {
           refined towards economic viability.
         </p>
         <figure class="pw-img pw-img-single tuff-phase-img">
-          <img src="assets/tuff/phase3.png" alt="PRODIP product-development model with the Preliminary Design phase highlighted" loading="lazy" />
+          <img src="assets/tuff/phase3.png" alt="PRODIP product development model with the Preliminary Design phase highlighted" loading="lazy" />
           <figcaption>PRODIP model: Preliminary design highlighted.</figcaption>
         </figure>
 
@@ -4338,7 +4468,7 @@ const PROJECT_PAGES = {
           The bottle is spun inside a fluid that carries heat from its wall to the
           evaporator coil. Ethylene glycol was rejected for toxicity (it can contact the
           drink), so the prototype used a cheap, non-toxic <strong>salt-water</strong>
-          (NaCl) mix. The more salt, the lower the freezing point: at ~20 % it stays
+          (NaCl) mix. The more salt, the lower the freezing point, so at ~20 % it stays
           liquid down to about −16 °C, comfortably below the coil's working temperature:
         </p>
         <div class="tuff-parts">
@@ -4491,7 +4621,7 @@ const PROJECT_PAGES = {
           <img src="assets/tuff/cooling-curve.png" alt="Bottle temperature falling over time across the bench tests" loading="lazy" />
           <figcaption>Bottle temperature vs time: the cooling is exponential.</figcaption>
         </figure>
-        <div class="dr-key">The decisive finding: the prototype's 300 rpm motor was too slow (the simulations called for ~570 rpm), which set the headline change for the optimized product.</div>
+        <div class="dr-key">The decisive finding was that the prototype's 300 rpm motor was too slow (the simulations called for ~570 rpm), which set the headline change for the optimized product.</div>
 
         <p class="pw-pill">Optimized product</p>
         <p class="pw-text">
@@ -4525,7 +4655,7 @@ const PROJECT_PAGES = {
 
         <h4 class="pw-subhead">Reservoir</h4>
         <p class="pw-text">
-          <strong>Salt water</strong> was confirmed as the convection fluid: glycol's
+          <strong>Salt water</strong> was confirmed as the convection fluid, since glycol's
           viscosity at low temperature badly hurt the heat exchange in testing, on top of
           its toxicity. Insulation stays <strong>polyurethane foam, 30 mm</strong>, and
           the acoustic foam was dropped because the compressor ran quietly in tests.
@@ -4557,8 +4687,8 @@ const PROJECT_PAGES = {
 
         <h4 class="pw-subhead">Structure &amp; assembly</h4>
         <p class="pw-text">
-          The coupling works like a blender: a metal cup holds the bottle, lined with
-          rubbers that let the user slide the bottle in and out while gripping it during
+          The coupling works like a blender, with a metal cup that holds the bottle, lined
+          with rubbers that let the user slide the bottle in and out while gripping it during
           the spin; sealing rings on the shaft stop the fluid leaking. The reservoir
           (inner wall, outer wall, 30 mm foam between) is fixed to the housing by steel
           arms, the motor mounts underneath, and the electronics sit in a compartment at
@@ -4576,7 +4706,7 @@ const PROJECT_PAGES = {
           <img src="assets/tuff/cover.png" alt="Final product render: the CAN-branded TUFF housing, two views" loading="lazy" />
           <figcaption>Final product: the CAN-branded housing.</figcaption>
         </figure>
-        <div class="dr-key">Outcome: a fully defined optimized model, with components priced and manufacturing routes identified, ready to hand off to the detailed-design phase.</div>
+        <div class="dr-key">The outcome was a fully defined optimized model, with components priced and manufacturing routes identified, ready to hand off to the detailed design phase.</div>
 
         <!-- ===================== PHASE 4 ===================== -->
         <h3 class="pw-subtitle">Detailed design</h3>
@@ -4586,7 +4716,7 @@ const PROJECT_PAGES = {
           drawings.
         </p>
         <figure class="pw-img pw-img-single tuff-phase-img">
-          <img src="assets/tuff/phase4.png" alt="PRODIP product-development model with the Detailed Design phase highlighted" loading="lazy" />
+          <img src="assets/tuff/phase4.png" alt="PRODIP product development model with the Detailed Design phase highlighted" loading="lazy" />
           <figcaption>PRODIP model: Detailed design highlighted.</figcaption>
         </figure>
 
@@ -4729,7 +4859,7 @@ const PROJECT_PAGES = {
 
       <p class="pw-pill">Why it's here</p>
       <ul class="pw-list epi-why">
-        <li>It was my <strong>very first real 3D print</strong>, right after a tiny Batman logo to test the printer I'd just bought in the US during my mechanical-engineering exchange (2016).</li>
+        <li>It was my <strong>very first real 3D print</strong>, right after a tiny Batman logo to test the printer I'd just bought in the US during my mechanical engineering exchange (2016).</li>
         <li>From zero to <strong>working prototypes in under a week</strong>, which felt genuinely magical to me and my supervisor.</li>
         <li>My advisor, <strong>Prof. Ravindra</strong>, was so impressed he bought a 3D printer for the lab, changing how it prototyped from then on.</li>
         <li>It was my <strong>first international presentation</strong>, to professors, students and visitors at an NJIT science fair.</li>
@@ -4779,10 +4909,10 @@ const PROJECT_PAGES = {
 
       <p class="pw-intro">
         DocolCozy Compact is a compact heated towel rail, developed as a
-        medium-complexity product-design project at UFSC in partnership with
+        medium-complexity product design project at UFSC in partnership with
         <strong>Docol</strong>. The goal was to bring the comfort of a warm towel to
         the small studio apartments, with no dividers between the rooms, that are
-        shaping how people live today, guided throughout by universal-design
+        shaping how people live today, guided throughout by universal design
         principles so it works for as many people as possible.
       </p>
 
@@ -4801,7 +4931,7 @@ const PROJECT_PAGES = {
           The brief had two sides. The project ran in partnership with
           <strong>Docol</strong>, so the product had to fit the company, its
           identity, values and the market it competes in. The theme set by the
-          course was also clear: design for <strong>reduced spaces</strong> and for
+          course was also clear, to design for <strong>reduced spaces</strong> and for
           everyone, through <strong>universal design</strong>. Everything below works
           from that brief.
         </p>
@@ -4925,7 +5055,7 @@ const PROJECT_PAGES = {
           <p class="pw-text">
             Bringing together what came out of the audience interviews and the
             market, we saw the possibility of working with <strong>heated towel
-            rails</strong>. That defined the product to design: a heated towel rail,
+            rails</strong>. That defined the product to design, a heated towel rail,
             for the studio bathroom, for everyone.
           </p>
           <figure class="pdef-icon"><img src="assets/docol/product-def.png" alt="Heated towel rail icon" loading="lazy" /></figure>
@@ -5063,7 +5193,7 @@ const PROJECT_PAGES = {
                 <th>Available Towel Length</th>
                 <th>Tubes in contact with towel</th>
                 <th>Contact area<span>(tube cross section)</span></th>
-                <th>Universal-design fit</th>
+                <th>Universal design fit</th>
                 <th>Reduced-space fit</th>
                 <th>Aesthetics</th>
                 <th>Manufacturing cost</th>
@@ -5103,7 +5233,7 @@ const PROJECT_PAGES = {
         <p class="pw-pill">From the DocolCozy line</p>
         <p class="pw-text">The product keeps some features already established in the DocolCozy line:</p>
         <ul class="pw-list">
-          <li><strong>Single piece.</strong> Being made as a single piece supports universal-design principles 3 and 5 (intuitive use and tolerance for error). Since Docol replaces the whole unit if there is a fault, there is no need for heavy maintenance.</li>
+          <li><strong>Single piece.</strong> Being made as a single piece supports universal design principles 3 and 5 (intuitive use and tolerance for error). Since Docol replaces the whole unit if there is a fault, there is no need for heavy maintenance.</li>
           <li><strong>Heating.</strong> Moderate and constant (between 35 and 45&nbsp;°C), with no temperature control, which keeps it simple, intuitive and safe.</li>
           <li><strong>Timer.</strong> The one adjustable function, closely tied to Docol's vision of delivering sustainable, ecologically economical products.</li>
           <li><strong>Stainless steel.</strong> Adds to the durability and quality of the product, a strong value of the brand.</li>
@@ -5239,7 +5369,7 @@ const PROJECT_PAGES = {
 
         <p class="pw-pill">The build</p>
         <div class="proto-grid">
-          <figure class="pw-img"><img src="assets/docol/build1.jpg" alt="3D-printing the prototype parts" loading="lazy" /></figure>
+          <figure class="pw-img"><img src="assets/docol/build1.jpg" alt="3D printing the prototype parts" loading="lazy" /></figure>
           <figure class="pw-img"><img src="assets/docol/build2.jpg" alt="Printed tube segments" loading="lazy" /></figure>
           <figure class="pw-img"><img src="assets/docol/build3.jpg" alt="The bars assembled into the corner form" loading="lazy" /></figure>
           <figure class="pw-img"><img src="assets/docol/build5.jpg" alt="The assembled rail" loading="lazy" /></figure>

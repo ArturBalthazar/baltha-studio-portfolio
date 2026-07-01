@@ -1545,6 +1545,43 @@ body {
   border: 0;
 }
 
+/* Petwheels business model: one text block that wraps around the CadQuery
+   video floated to the right, then extends full-width once it runs past it. */
+.pw-bm {
+  margin: 26px 0 22px;
+}
+.pw-bm::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+.pw-bm .pw-text:last-child {
+  margin-bottom: 0;
+}
+.pw-bm-vid {
+  float: right;
+  width: 52%;
+  max-width: 560px;
+  margin: 4px 0 14px 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-subtle);
+}
+.pw-bm-vid video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 640px) {
+  .pw-bm-vid {
+    float: none;
+    width: 100%;
+    max-width: none;
+    margin: 8px 0 16px;
+  }
+}
+
 /* Responsive 16:9 video embed (e.g. YouTube). */
 .pw-video {
   max-width: 820px;
@@ -1562,10 +1599,43 @@ body {
   display: block;
 }
 
+/* Embedded map (e.g. Baltha Maker location). */
+.pw-map {
+  max-width: 900px;
+  height: 380px;
+  margin: 8px 0 24px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.pw-map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+@media (max-width: 760px) {
+  .pw-map { height: 320px; }
+}
+
 /* Baltha Maker project logos (Star Wars / SESC / MESC). */
 .maker-page .pw-logo {
   height: 58px;
 }
+
+/* Edge Planning wordmark is chunky — a bit smaller. */
+.pw-titlebar .edge-logo {
+  height: 46px;
+}
+
+/* Baltha Maker wordmark is a compact two-line block — sized up to match the Edge logo. */
+.pw-titlebar .baltha-logo {
+  height: 76px;
+}
+
+/* Interactive Design company headers. */
+.pw-titlebar .meetkai-logo { height: 46px; }
+.pw-titlebar .mtr-logo { height: 92px; }
 
 /* Baltha Studio work-project logos (clients / tools). */
 .work-page .pw-logo {
@@ -1580,6 +1650,143 @@ body {
   color: var(--text);
   margin: 30px 0 12px;
 }
+
+/* Baltha Maker service columns (FDM / resin / laser) — framed cards, full image. */
+.pw-services {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 900px;
+  margin: 20px 0 30px;
+}
+.pw-service {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--bg);
+}
+.pw-service img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+.pw-service h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 12px 0 4px;
+}
+.pw-service p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+@media (max-width: 760px) {
+  .pw-services { grid-template-columns: 1fr; gap: 16px; }
+}
+
+/* Project-kind grid (4 x 2). */
+.pw-kinds {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 12px 0 28px;
+}
+.pw-kind {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.pw-kind img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--bg-subtle);
+}
+.pw-kind span {
+  display: block;
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+/* Instagram embeds: two fixed-width columns side by side. The blockquotes carry
+   IG's own width:calc(100% - 2px) inline style, so they size to each column;
+   columns wrap below each other on narrow screens. */
+.pw-ig {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  margin: 12px 0 8px;
+}
+.pw-ig-col {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.pw-ig-col .instagram-media {
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+/* ---- Polish components ---- */
+
+/* Icon + wordmark logo lockup (Meetcraft). */
+.pw-lockup { display: flex; align-items: center; gap: 7px; margin: 0 0 22px; flex-wrap: wrap; }
+.pw-lockup-icon { height: 50px; width: auto; display: block; }
+.pw-lockup-word { height: 26px; width: auto; display: block; }
+
+/* Title bar: logo and/or title with an optional action button beside it. */
+.pw-titlebar { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin: 0 0 18px; }
+.pw-titlebar h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.pw-titlebar .pw-logo { margin: 0; }
+
+/* Heading with an action button beside it. */
+.pw-headbar { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin: 30px 0 12px; }
+.pw-headbar .pw-heading { margin: 0; }
+
+/* Cover image + video side by side (both framed 16:9). */
+.pw-cover-row { display: flex; gap: 16px; align-items: flex-start; max-width: 980px; margin: 8px 0 24px; }
+.pw-cover-row > * { flex: 1 1 0; min-width: 0; margin: 0; }
+.pw-cover-row .pw-cover-cell img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border: 1px solid var(--border); border-radius: 10px; }
+@media (max-width: 760px) { .pw-cover-row { flex-direction: column; } }
+
+/* Two videos side by side. */
+.pw-video-row { display: flex; gap: 16px; max-width: 980px; margin: 8px 0 22px; }
+.pw-video-row .pw-video { flex: 1 1 0; min-width: 0; margin: 0; }
+@media (max-width: 760px) { .pw-video-row { flex-direction: column; } }
+
+/* Responsive feature cards (title, image, text) that wrap to new rows. */
+.pw-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; max-width: 940px; margin: 20px 0 30px; }
+.pw-card { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--border-strong); border-radius: 12px; padding: 16px; background: var(--bg); }
+.pw-card h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 0 0 12px; }
+.pw-card img { width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-subtle); }
+.pw-card p { font-size: 13px; line-height: 1.55; color: var(--text-muted); margin: 12px 0 0; }
+
+/* Before/after drag comparison slider (mirrors the interactive site). */
+.pw-compare { margin: 8px 0 24px; max-width: 860px; }
+.pw-compare-box { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); cursor: ew-resize; user-select: none; }
+.pw-compare-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.pw-compare-before { position: absolute; top: 0; left: 0; height: 100%; width: 50%; overflow: hidden; }
+.pw-compare-before img { width: 200%; max-width: none; }
+.pw-compare-divider { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%); background: #fff; box-shadow: 0 0 6px rgba(15,23,42,.4); pointer-events: none; }
+.pw-compare-divider::after { content: ""; position: absolute; top: 50%; left: 50%; width: 36px; height: 36px; transform: translate(-50%,-50%); border-radius: 50%; background: rgba(255,255,255,.92); border: 2px solid #fff; box-shadow: 0 1px 6px rgba(15,23,42,.35); }
+.pw-compare figcaption { font-size: 12px; color: var(--text-faint); margin-top: 8px; }
 
 /* Feature row: an image beside a short title + paragraph (image left by
    default, .img-right flips it). Stacks on mobile. */
@@ -4405,6 +4612,11 @@ body {
 .cv-page {
   /* Fills the panel; the panel already constrains the width. */
   max-width: none;
+  /* The panel is a fixed 40vw (desktop) / 100vw (mobile), so the identity card
+     can be narrow regardless of the viewport. Make this a query container so
+     the card can restructure based on its own width, not the screen's. */
+  container-type: inline-size;
+  container-name: cvpage;
 }
 
 /* Identity card: photo flush on the left, info on the right. */
@@ -4418,13 +4630,15 @@ body {
   background: var(--bg-subtle);
 }
 
-/* Portrait image: fixed width, height follows the source ratio (no crop, no
-   stretch). It's the tallest element, so it sets the card height and sits flush
-   to the top, left and bottom edges. */
+/* Portrait image: fixed width, stretched to the full card height (the info
+   column is usually the taller side). object-fit: cover crops the sides to fill
+   instead of leaving gaps or distorting. */
 .cv-photo {
   width: 180px;
+  align-self: stretch;
   height: auto;
-  align-self: flex-start;
+  object-fit: cover;
+  object-position: center;
   flex-shrink: 0;
   display: block;
 }
@@ -4458,6 +4672,7 @@ body {
 .cv-info-value {
   font-size: 15px;
   color: var(--text);
+  overflow-wrap: anywhere; /* long emails/links wrap instead of overflowing */
 }
 
 .cv-info-value a {
@@ -4469,6 +4684,30 @@ body {
 .cv-info-value a:hover {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+/* Narrow card (small screen, or the 40vw panel on a smaller monitor): the flush
+   full-height portrait doesn't fit next to the info, so drop it to its own row
+   as a small, centered framed thumbnail ("moldura") and let the info list span
+   the full width. Driven by the card's own width via the .cv-page container. */
+@container cvpage (max-width: 500px) {
+  .cv-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    padding: 20px;
+  }
+  .cv-photo {
+    width: 132px;
+    align-self: center;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+  }
+  .cv-info {
+    width: 100%;
+    padding: 0;
+    justify-content: flex-start;
+  }
 }
 
 .cv-section {
@@ -4535,6 +4774,140 @@ body {
 
 .cv-page .placeholder-box {
   height: 180px;
+}
+
+/* Experience: stacked cards, each with a role/period header, a company
+   meta line and a bullet list of responsibilities. */
+.cv-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-job {
+  padding: 18px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--bg-subtle);
+}
+
+.cv-job-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.cv-job-role {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.cv-job-period {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.cv-job-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.cv-job-company {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cv-job-sep {
+  margin: 0 7px;
+  color: var(--text-faint);
+}
+
+.cv-job-bullets {
+  margin: 11px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cv-job-bullets li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Education: one card per entry, degree + school on the left, years right. */
+.cv-edu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cv-edu-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--bg-subtle);
+}
+
+.cv-edu-degree {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cv-edu-note {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.cv-edu-note--split {
+  color: var(--text-faint); /* gray — split graduation */
+}
+
+.cv-edu-note--incomplete {
+  color: #ca8a04; /* yellow/gold — incomplete (kept legible on white) */
+}
+
+.cv-edu-school {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cv-edu-period {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.cv-references {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-faint);
 }
 
 
@@ -4814,28 +5187,20 @@ body {
     padding: 24px 16px;
   }
 
-  /* Identity card stays one row; smaller photo + tighter type so it fits. */
-  .cv-card {
-    flex-direction: row;
-    align-items: stretch;
-  }
-  .cv-photo {
-    width: 116px;
-  }
+  /* Identity card layout (row → stacked portrait) is handled by the .cv-page
+     container query; here we just tighten the info type for narrow screens. */
   .cv-info {
-    padding: 14px 16px;
     gap: 9px;
   }
   .cv-info-row {
     gap: 10px;
   }
   .cv-info-label {
-    width: 64px;
+    width: 72px;
     font-size: 10px;
   }
   .cv-info-value {
     font-size: 13px;
-    overflow-wrap: anywhere;
   }
 
   /* Image rows stack on narrow screens. */

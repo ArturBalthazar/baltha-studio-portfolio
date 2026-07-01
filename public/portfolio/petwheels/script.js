@@ -1864,6 +1864,25 @@
     // ---- Locate nodes from the glb (names from Blender outliner) ----
     const getNode = (n) => scene.getTransformNodeByName(n) || scene.getMeshByName(n);
     const getMesh = (n) => scene.getMeshByName(n);
+    // A part exported with more than one material is split by the glTF loader
+    // into a geometry-less parent node plus one child mesh per primitive
+    // (e.g. Rim_primitive0/1). Resolve a part name to every mesh that actually
+    // carries geometry — the single mesh for a one-material part, or the split
+    // children for a multi-material one — so mirroring covers them all. The
+    // primitive children are direct children of the base node, so sibling parts
+    // (ArmHub next to Arm, Tire next to Rim) are never picked up by mistake.
+    const getMeshes = (n) => {
+      const base = getNode(n);
+      if (!base) return [];
+      const out = [];
+      if (typeof base.getTotalVertices === 'function' && base.getTotalVertices() > 0) {
+        out.push(base);
+      }
+      base.getChildMeshes(true).forEach((m) => {
+        if (m.getTotalVertices() > 0) out.push(m);
+      });
+      return out;
+    };
 
     const petwheels       = getNode('Petwheels');
     const armGroup        = getNode('ArmGroup');
@@ -1896,9 +1915,7 @@
     // Visible parts that make up the right half. The mirror creates the left.
     const visibleNames = ['Arm', 'ArmHub', 'LegSupport', 'LegSupportStrap',
                           'Main', 'Seat', 'SideBar', 'SideBarBand_R', 'Rim', 'Tire'];
-    const visibleMeshes = visibleNames
-      .map(getMesh)
-      .filter((m) => !!m);
+    const visibleMeshes = visibleNames.flatMap(getMeshes);
 
     // ---- 4 shared style materials ----
     // The .glb arrives with per-mesh materials. We collapse them into 4 PBR
@@ -1976,7 +1993,7 @@
         return null;
       };
       const tScale = findTarget((n) => n === 'scale');
-      const tHH    = findTarget((n) => n === 'heighthigh');
+      const tHH    = findTarget((n) => n === 'heighthigh' || n === 'heightmax');
 
       const basisPos = Float32Array.from(legSupport.getVerticesData(POSITION) || []);
       const basisNrm = Float32Array.from(legSupport.getVerticesData(NORMAL)   || []);
@@ -2113,7 +2130,11 @@
             case 'scalemax':   v = w.scaleMax; break;
             case 'radius':
               // Rim's Radius shape key is authored inverted (1=min, 0=max).
-              v = (mesh.name === 'Rim') ? (1 - w.radius) : w.radius;
+              // A multi-material Rim is split by the glTF loader into
+              // Rim_primitive0/1 (the base "Rim" becomes a geometry-less
+              // parent), so match "Rim" as a substring. Nothing else in the
+              // model carries "Rim" in its name.
+              v = mesh.name.includes('Rim') ? (1 - w.radius) : w.radius;
               break;
             case 'thickness':  v = w.thickness; break;
             default: v = null;
