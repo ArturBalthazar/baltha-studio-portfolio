@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=7" />
+<link rel="stylesheet" href="styles.css?v=8" />
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <style>
@@ -41,6 +41,11 @@
   }
   .panel { max-height: none; border-left: 1px solid var(--line-soft) !important; }
   .stage { min-height: 0; }
+  /* Tighter viewer header in the embed — same trim the site uses on mobile. */
+  .viewport-topbar { padding: 9px 12px; }
+  .model-select-trigger { padding: 3px 10px 3px 3px; gap: 7px; }
+  .model-select-thumb { width: 26px; height: 26px; }
+  .model-select-name { font-size: 14px; }
   /* Restore the panel's internal per-step scroll (the stacked breakpoint drops it). */
   .step-body, .step-scroll { overflow: hidden; }
   .step-scroll { overflow-y: auto; }
@@ -251,6 +256,37 @@
     <!-- LEFT: 3D VIEWPORT -->
     <div class="viewport" id="viewport">
 
+      <div class="viewport-topbar">
+        <div class="model-select">
+          <button class="model-select-trigger" id="modelSelectTrigger" type="button"
+                  aria-haspopup="listbox" aria-expanded="false" aria-controls="modelSelectMenu">
+            <img class="model-select-thumb" id="modelSelectThumb" src="assets/petwheels-dog.png" alt="" />
+            <span class="model-select-name" id="modelSelectName">Flow</span>
+            <svg class="model-select-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="model-select-menu" id="modelSelectMenu" hidden>
+            <!-- Options are rendered from the MODELS catalog in script.js. -->
+            <ul class="model-options-list" id="modelOptionsList" role="listbox" aria-label="Wheelchair model"></ul>
+            <div class="model-menu-footer">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+              <span>More models coming soon</span>
+            </div>
+          </div>
+        </div>
+        <!-- Weight + price (estimated from the pricing curves). Both update
+             live from the parameters (script.js + pricing.js). -->
+        <div class="print-stats">
+          <div class="stat">
+            <span class="stat-label">Weight</span>
+            <span class="stat-value" id="statWeight">≈ 1.2 kg</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Price</span>
+            <span class="stat-value" id="statPrice">—</span>
+          </div>
+        </div>
+      </div>
+
       <div class="stage">
         <div class="stage-grid" aria-hidden="true"></div>
         <div class="stage-glow" aria-hidden="true"></div>
@@ -282,23 +318,32 @@
           <button class="vp-ctl" id="rotateL" title="Rotate left">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           </button>
+          <button class="vp-ctl" id="resetView" title="Reset view">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+          </button>
           <button class="vp-ctl" id="rotateR" title="Rotate right">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           </button>
           <div class="vp-divider"></div>
-          <button class="vp-ctl" id="zoomOut" title="Zoom out">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-          </button>
-          <button class="vp-ctl" id="zoomIn" title="Zoom in">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
-          </button>
-          <div class="vp-divider"></div>
-          <button class="vp-ctl is-active" id="toggleMeasures" title="Toggle measurements">
+          <button class="vp-ctl" id="toggleMeasures" title="Toggle measurements">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="1"/><line x1="7" y1="9" x2="7" y2="11.5"/><line x1="11" y1="9" x2="11" y2="12.5"/><line x1="15" y1="9" x2="15" y2="11.5"/></svg>
           </button>
           <button class="vp-ctl" id="fullscreen" title="Fullscreen">
             <svg id="fsIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6"/><path d="M21 9V3h-6"/><path d="M3 15v6h6"/><path d="M21 15v6h-6"/></svg>
           </button>
+        </div>
+
+        <!-- vertical zoom slider (left). Top = zoom in, bottom = zoom out -->
+        <div class="vp-zoom">
+          <span class="vp-zoom-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+          </span>
+          <div class="vp-zoom-track">
+            <input type="range" class="vp-zoom-slider" id="zoomSlider" min="0" max="100" step="1" value="50" aria-label="Zoom" />
+          </div>
+          <span class="vp-zoom-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </span>
         </div>
       </div>
     </div>
@@ -340,9 +385,9 @@ Length
                 </span>
               </span>
               <div class="field-input">
-                <input type="range" min="20" max="70" step="0.1" value="32" data-measure="length" id="rangeLength" />
+                <input type="range" min="20" max="70" step="0.1" value="40" data-measure="length" id="rangeLength" />
                 <div class="field-output">
-                  <input class="field-value" type="text" inputmode="decimal" id="valLength" value="32.0" />
+                  <input class="field-value" type="text" inputmode="decimal" id="valLength" value="40.0" />
                   <span class="unit">cm</span>
                 </div>
               </div>
@@ -356,9 +401,9 @@ Height
                 </span>
               </span>
               <div class="field-input">
-                <input type="range" min="12" max="60" step="0.1" value="25" data-measure="height" id="rangeHeight" />
+                <input type="range" min="12" max="60" step="0.1" value="30" data-measure="height" id="rangeHeight" />
                 <div class="field-output">
-                  <input class="field-value" type="text" inputmode="decimal" id="valHeight" value="25.0" />
+                  <input class="field-value" type="text" inputmode="decimal" id="valHeight" value="30.0" />
                   <span class="unit">cm</span>
                 </div>
               </div>
@@ -372,9 +417,9 @@ Hip width
                 </span>
               </span>
               <div class="field-input">
-                <input type="range" min="5" max="30" step="0.1" value="8" data-measure="width" id="rangeWidth" />
+                <input type="range" min="5" max="30" step="0.1" value="13" data-measure="width" id="rangeWidth" />
                 <div class="field-output">
-                  <input class="field-value" type="text" inputmode="decimal" id="valWidth" value="8.0" />
+                  <input class="field-value" type="text" inputmode="decimal" id="valWidth" value="13.0" />
                   <span class="unit">cm</span>
                 </div>
               </div>
@@ -388,9 +433,9 @@ Thigh girth
                 </span>
               </span>
               <div class="field-input">
-                <input type="range" min="12" max="60" step="0.1" value="20" data-measure="thigh" id="rangeThigh" />
+                <input type="range" min="12" max="60" step="0.1" value="27" data-measure="thigh" id="rangeThigh" />
                 <div class="field-output">
-                  <input class="field-value" type="text" inputmode="decimal" id="valThigh" value="20.0" />
+                  <input class="field-value" type="text" inputmode="decimal" id="valThigh" value="27.0" />
                   <span class="unit">cm</span>
                 </div>
               </div>
@@ -451,7 +496,7 @@ Thigh girth
         <div class="step-body" data-body="style">
           <div class="step-scroll">
           <h2 class="step-title">Style your wheelchair</h2>
-          <p class="step-desc">Pick colors per material group and choose accessories. Color is for preview only — the real color is whatever filament you print with.</p>
+          <p class="step-desc">Pick colors per material group and choose accessories. Your chair is built in the exact colors you pick here.</p>
 
           <div class="style-group material-list">
             <div class="material-row" data-mat="m1" data-filament="rigid">
@@ -500,6 +545,7 @@ Thigh girth
           </div>
 
           <div class="style-group">
+            <span class="group-label">Accessories</span>
             <div class="toggle-row">
               <label class="switch">
                 <input type="checkbox" id="legSupport" checked />
@@ -509,6 +555,29 @@ Thigh girth
                 <span class="switch-label">Include rear leg slings</span>
                 <span class="switch-desc">For dogs that can't bear any weight on their hind legs.</span>
               </div>
+              <span class="acc-price" data-acc="legSupport">+ R$ 15</span>
+            </div>
+            <div class="toggle-row">
+              <label class="switch">
+                <input type="checkbox" id="backStrap" checked />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+              <div>
+                <span class="switch-label">Include back strap</span>
+                <span class="switch-desc">Padded strap over the lower back that keeps your dog securely in place.</span>
+              </div>
+              <span class="acc-price" data-acc="backStrap">+ R$ 25</span>
+            </div>
+            <div class="toggle-row">
+              <label class="switch">
+                <input type="checkbox" id="includeCollar" checked />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+              <div>
+                <span class="switch-label">Include collar</span>
+                <span class="switch-desc">Soft padded collar for extra support and comfort.</span>
+              </div>
+              <span class="acc-price" data-acc="collar">+ R$ 70</span>
             </div>
           </div>
 
@@ -529,8 +598,8 @@ Thigh girth
         <!-- STEP 3: REVIEW -->
         <div class="step-body" data-body="review">
           <div class="step-scroll">
-          <h2 class="step-title">Review & download</h2>
-          <p class="step-desc">A summary of your configuration. The STL files are available on the Petwheels store.</p>
+          <h2 class="step-title">Review the fit</h2>
+          <p class="step-desc">Confirm the measurements and spec below. Ordering a real chair happens on the Petwheels store.</p>
 
           <div class="review-card">
             <div class="review-row"><span>Length</span><b><span id="revLength">42.0</span> <span class="rev-unit">cm</span></b></div>
@@ -540,19 +609,25 @@ Thigh girth
             <div class="review-row"><span>Wheel thickness</span><b><span id="revThickness">1.20</span> ×</b></div>
             <div class="review-row"><span>Wheel radius</span><b><span id="revRadius">6.2</span> <span class="rev-unit">cm</span></b></div>
             <div class="review-row"><span>Rear leg slings</span><b id="revLeg2">Yes</b></div>
+            <div class="review-row"><span>Back strap</span><b id="revBackStrap">Yes</b></div>
             <div class="review-row"><span>Collar</span><b id="revCollar">Yes</b></div>
           </div>
           </div>
 
           <div class="review-actions">
+            <div class="review-price">
+              <span class="review-price-label">Custom-fit wheelchair</span>
+              <span class="review-price-amount" id="reviewPrice">$149</span>
+            </div>
+
             <a class="btn btn-cta btn-lg btn-block" href="https://petwheels.io" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Get the STL files</span>
+              <span>Order yours at petwheels.io</span>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
 
             <div class="trust-row">
-              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Instant download</span>
-              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Personal-use license</span>
+              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Vet-informed fit</span>
+              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Made to your dog's measurements</span>
             </div>
 
             <div class="step-nav">
@@ -572,7 +647,8 @@ Thigh girth
   </div>
 </section>
 
-<script src="script.js?v=6"></script>
+<script src="pricing.js?v=1"></script>
+<script src="script.js?v=7"></script>
 <script>
   // Floating "Controls" toggle for the narrow-embed drawer. Added here so the
   // whole responsive behaviour stays self-contained to this embed. The button

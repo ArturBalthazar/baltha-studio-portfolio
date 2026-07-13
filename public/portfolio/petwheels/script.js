@@ -11,11 +11,13 @@
   // dropdown and trigger pill are rendered from this on boot, so HTML doesn't
   // need to change when you add or rename a model.
   //   id          — unique slug used as data-model and as the GLB-swap key.
-  //   name        — short name shown as the option title in the dropdown.
-  //   displayName — name shown in the viewer's header pill (the trigger).
-  //                 Falls back to `name` if omitted. Lets the dropdown stay
-  //                 terse ("Flow") while the header reads as a product
-  //                 ("Petwheels Flow"), or vice-versa.
+  //   name        — SHORT name ("Frontier"). Used inside the viewer only
+  //                 (dropdown options + header pill). Everywhere else —
+  //                 cart, checkout, orders, pet device chip — the full
+  //                 product name is derived via productName() below, so
+  //                 renaming here propagates everywhere automatically.
+  //   displayName — optional override for the viewer's header pill.
+  //                 Falls back to `name` if omitted.
   //   description — secondary line under the name in the dropdown.
   //   thumbnail   — relative path to the option's small image.
   //   glb         — relative path to the .glb (reserved for when there's
@@ -24,13 +26,17 @@
   const MODELS = [
     {
       id:          'zephyr',
-      name:        'Petwheels Frontier',
-      displayName: 'Frontier',
+      name:        'Frontier',
       description: 'Rear-leg wheelchair',
       thumbnail:   'assets/petwheels-dog.png',
       glb:         'assets/petwheels.glb',
     },
   ];
+
+  // Full product name for everything OUTSIDE the viewer ("Petwheels
+  // Frontier"). Derived, never hardcoded — and tolerant of a future model
+  // whose name already carries the brand.
+  const productName = (m) => /petwheels/i.test(m.name) ? m.name : 'Petwheels ' + m.name;
 
   // ============ FILAMENT CATALOG ============
   // Filaments by stock type. The Style step shows the `rigid` palette for the
@@ -81,8 +87,25 @@
     ],
   };
 
+  // Default Style material per slot (colour + finish). The wheelchair boots
+  // with THIS set — not the raw .glb materials — so the viewer shows the
+  // default filament choice even before the user opens the Style step. Colours
+  // are sRGB hex; finishes mirror the nearest catalog filament (m1 ≈ Sky Blue,
+  // m2 ≈ Silver, m3/m4 ≈ Black). SLOT_DEFAULT_HEX (used by the STL export)
+  // derives from this so there's a single source of truth.
+  const SLOT_DEFAULTS = {
+    m1: { hex: '#428AE9', roughness: 0.35, metallic: 0.70 },
+    m2: { hex: '#838383', roughness: 0.35, metallic: 0.65 },
+    m3: { hex: '#1A1A1A', roughness: 0.55, metallic: 0.49 },
+    m4: { hex: '#1A1A1A', roughness: 0.55, metallic: 0.49 },
+  };
+
   // ============ STATE ============
   let rig = null;   // parametric assembly + morph rig; assigned after glb load
+  // When the dog update-hook is installed it re-solves the dog AFTER rig.update,
+  // so rig.update defers its own auto-framing to the hook (which frames once,
+  // with the dog at its fresh pose). Avoids a stale frame + a double bbox pass.
+  let dogFramesAfterSolve = false;
 
   // Auto wheel radius from height (mm) — piecewise linear, mirrors
   // params.py Wheel_Radius when Auto_Wheel_Radius=True. Hoisted to module
@@ -97,19 +120,22 @@
   const state = {
     screen: 'steps',            // welcome | steps — this embed starts on the steps
     step: 'measure',            // measure | style | review
+    modelId: MODELS[0].id,      // currently selected wheelchair model
     unit: 'cm',
     wheel: 75,
     harness: 'padded',
     harnessLabel: 'Padded',
     legSupport: true,
+    backStrap: true,
     includeCollar: true,
     dogVisible: true,           // "Full view" vs "Wheelchair only"
-    measuresVisible: true,      // measurement overlay toggle (ruler button)
+    measuresVisible: false,     // measurement overlay toggle (ruler button). Starts
+                                // off; the Measure step auto-enables it (see setStep).
     // length/height/width/thigh in cm (UI units). thickness is ThicknessFactor (1.0–2.0).
     // radiusManual: when true, radiusOffset (mm) is layered on top of the auto
     // wheel radius and the internal height is shortened by the same amount.
     measures: {
-      length: 32, height: 25, width: 8, thigh: 20, thickness: 1.2,
+      length: 40, height: 30, width: 13, thigh: 27, thickness: 1.2,
       radiusManual: false, radiusOffset: 0,
     },
   };
@@ -135,11 +161,10 @@
     $$('.step-body').forEach((b) => {
       b.classList.toggle('is-active', b.dataset.body === step);
     });
-    // The measurement overlay only makes sense on the Measure step — show it
-    // there, hide it on Style/Review. (projectDimensions reads this each frame.)
-    state.measuresVisible = (step === 'measure');
-    const mBtn = document.getElementById('toggleMeasures');
-    if (mBtn) mBtn.classList.toggle('is-active', state.measuresVisible);
+    // Measurement overlay auto-follows the step: on in Measure, off elsewhere
+    // (Style / Review). The user can still override with the ruler button — this
+    // only re-applies the default each time they change step.
+    if (typeof setMeasuresVisible === 'function') setMeasuresVisible(step === 'measure');
     // Refresh the summary with the latest measurements/options on entry.
     if (step === 'review') updateReview();
   };
@@ -172,7 +197,7 @@
       updateMeasureOutputs();
       updateChips();
       updateReview();
-      updatePrintStats();
+      updateWeightStat();
       // Height changes the auto wheel radius, which moves the valid
       // offset window — re-tune the radius-offset slider before pushing
       // the rest of the update through to the rig.
@@ -193,6 +218,8 @@
       if (thicknessOut && document.activeElement !== thicknessOut) {
         thicknessOut.value = state.measures.thickness.toFixed(2);
       }
+      updateReview();
+      updateWeightStat();
       if (rig) rig.update();
     });
     if (thicknessOut) thicknessOut.value = state.measures.thickness.toFixed(2);
@@ -253,13 +280,15 @@
       updateRangeFill(slider);
       writeDisplay();
       // Drive the same downstream chain the slider's input handler does.
+      // Review + weight/price react to every key (thickness drives the wheel
+      // weight too); the cm-only bits are the unit displays and radius sync.
       if (unit === 'cm') {
         updateMeasureOutputs();
         updateChips();
-        updateReview();
-        updatePrintStats();
         if (key === 'height') syncRadiusOffsetRange();
       }
+      updateReview();
+      updateWeightStat();
       if (rig) rig.update();
     };
 
@@ -374,6 +403,8 @@
       syncRadiusOffsetRange();
       refreshLockUI();
       writeRadiusDisplay();
+      updateReview();
+      updateWeightStat();
       if (rig) rig.update();
     });
 
@@ -381,6 +412,8 @@
       state.measures.radiusOffset = +radiusOffsetInput.value;
       updateRangeFill(radiusOffsetInput);
       writeRadiusDisplay();
+      updateReview();
+      updateWeightStat();
       if (rig) rig.update();
     });
 
@@ -408,6 +441,8 @@
       radiusOffsetInput.value = String(off);
       updateRangeFill(radiusOffsetInput);
       writeRadiusDisplay();
+      updateReview();
+      updateWeightStat();
       if (rig) rig.update();
     };
     radiusValueInput.addEventListener('change', commitRadius);
@@ -652,6 +687,7 @@
     const strapMir = scene.getMeshByName('LegSupportStrap_mir');
     if (strapSrc) strapSrc.setEnabled(state.legSupport);
     if (strapMir) strapMir.setEnabled(state.legSupport);
+    updateWeightStat();
   });
 
   // Collar — toggle is wired now, but the mesh isn't in the .glb yet. When
@@ -665,7 +701,38 @@
       const collarMir = scene.getMeshByName('Collar_mir');
       if (collarSrc) collarSrc.setEnabled(state.includeCollar);
       if (collarMir) collarMir.setEnabled(state.includeCollar);
+      updateWeightStat();
     });
+  }
+
+  // Back strap — keeps the dog in place over the lower back. No mesh in the
+  // .glb yet; when it lands (probably "BackStrap"), the setEnabled lines
+  // will start mattering, same deal as the collar.
+  const backStrapToggle = $('#backStrap');
+  if (backStrapToggle) {
+    backStrapToggle.addEventListener('change', (e) => {
+      state.backStrap = e.target.checked;
+      const revBackStrap = $('#revBackStrap');
+      if (revBackStrap) revBackStrap.textContent = state.backStrap ? 'Yes' : 'No';
+      const strapSrc = scene.getMeshByName('BackStrap');
+      const strapMir = scene.getMeshByName('BackStrap_mir');
+      if (strapSrc) strapSrc.setEnabled(state.backStrap);
+      if (strapMir) strapMir.setEnabled(state.backStrap);
+      updateWeightStat();
+    });
+  }
+
+  // Accessory price tags in the Style step read straight from pricing.js so
+  // the chips never drift from what the quote actually charges.
+  {
+    const acc = window.Petwheels && window.Petwheels.pricing
+      && window.Petwheels.pricing.config.accessories;
+    if (acc) {
+      $$('.acc-price[data-acc]').forEach((el) => {
+        const price = acc[el.dataset.acc];
+        if (typeof price === 'number') el.textContent = '+ R$ ' + price;
+      });
+    }
   }
 
   // ============ DERIVED UI ============
@@ -689,23 +756,114 @@
     if (revRadius) revRadius.textContent = formatRadius(computeCurrentR());
     const revLeg = $('#revLeg2');
     if (revLeg) revLeg.textContent = state.legSupport ? 'Yes' : 'No';
+    const revBackStrap = $('#revBackStrap');
+    if (revBackStrap) revBackStrap.textContent = state.backStrap ? 'Yes' : 'No';
     const revCollar = $('#revCollar');
     if (revCollar) revCollar.textContent = state.includeCollar ? 'Yes' : 'No';
+    // Price: estimated print weight × material cost × multiplier (pricing.js).
+    const revPrice = $('#reviewPrice');
+    if (revPrice) {
+      const pricing = window.Petwheels && window.Petwheels.pricing;
+      revPrice.textContent = pricing
+        ? pricing.formatBRL(currentPriceCents())
+        : '$' + (FALLBACK_PRICE_CENTS / 100).toFixed(0);
+    }
     // Measurement rows share the active unit (cm/in); thickness is a × factor.
     $$('.rev-unit').forEach((e) => { e.textContent = state.unit; });
   }
-  function updatePrintStats() {
-    const size = state.measures.length + state.measures.height;
-    const time = Math.max(8, Math.round(size * 0.25 + 2));
-    const filament = Math.max(140, Math.round(size * 5 + 60));
-    const tEl = $('#statTime'); if (tEl) tEl.textContent = '~' + time + 'h';
-    const fEl = $('#statFilament'); if (fEl) fEl.textContent = '~' + filament + ' g';
+  // Estimated printed weight of the whole chair (pricing.js curves). "≈"
+  // because real prints vary with slicer settings — but it's close enough
+  // for a vet to judge against the dog's size and strength.
+  function updateWeightStat() {
+    const q = currentQuote();
+    const el = $('#statWeight');
+    if (el) {
+      el.textContent = !q ? '-'
+        : q.totalGrams >= 1000 ? '≈ ' + (q.totalGrams / 1000).toFixed(2) + ' kg'
+        : '≈ ' + q.totalGrams + ' g';
+    }
+    // Price sits beside the weight in the header now (same source as Review).
+    const pEl = $('#statPrice');
+    if (pEl) {
+      const pricing = window.Petwheels && window.Petwheels.pricing;
+      pEl.textContent = pricing
+        ? pricing.formatBRL(currentPriceCents())
+        : '$' + (FALLBACK_PRICE_CENTS / 100).toFixed(0);
+    }
+    updateDebugPanel(q);
   }
+
+  // ---- TEMP pricing debug overlay (remove with the #vpDebug markup) ----
+  // Per part: the normalized param values the calculator used, unit/total
+  // grams, every weight-sheet row re-evaluated through the fitted curve
+  // ("sheet check": sheet grams → model grams; these should match), and the
+  // 0/1 corner weights the fit implies (incl. the extrapolated ones).
+  const dbgPanel = $('#vpDebug');
+  const dbgBody  = $('#vpDebugBody');
+  const dbgBtn   = $('#vpDebugBtn');
+  if (dbgBtn && dbgPanel) {
+    dbgBtn.addEventListener('click', () => {
+      dbgPanel.hidden = !dbgPanel.hidden;
+      dbgBtn.classList.toggle('is-active', !dbgPanel.hidden);
+      dbgBtn.setAttribute('aria-pressed', String(!dbgPanel.hidden));
+      if (!dbgPanel.hidden) updateDebugPanel(currentQuote());
+    });
+  }
+
+  function updateDebugPanel(q) {
+    if (!dbgBody || !dbgPanel || dbgPanel.hidden) return;
+    const pricing = window.Petwheels && window.Petwheels.pricing;
+    if (!pricing || !q) { dbgBody.textContent = 'pricing.js not loaded'; return; }
+    const L = (name) => name[0];                     // param → letter (scale→s …)
+    const fmt = (x, d = 2) => (+x).toFixed(d);
+    const mm = {
+      scale:     state.measures.thigh  * 10,
+      height:    state.measures.height * 10,
+      length:    state.measures.length * 10,
+      width:     state.measures.width  * 10,
+      radius:    computeCurrentR(),
+      thickness: state.measures.thickness,
+    };
+
+    let html = '<div class="dbg-sec">inputs (mm → normalized 0–1)</div>';
+    html += '<div class="dbg-line">' + Object.keys(mm).map((k) =>
+      L(k) + '=' + (k === 'thickness' ? fmt(mm[k]) : Math.round(mm[k])) +
+      '→' + fmt(q.params[k], 3)).join('&ensp;') + '</div>';
+
+    html += '<div class="dbg-sec">parts: ∛w linear fit, ^' + pricing.config.exponent + '</div>';
+    for (const p of q.parts) {
+      const atStr = p.params.map((n, i) => L(n) + '=' + fmt(p.at[i])).join(' ');
+      html += '<div class="dbg-part"><b>' + p.label + '</b> ×' + p.qty +
+        ' @ ' + atStr + ' → <b>' + fmt(p.unitGrams, 1) + ' g</b> each, ' +
+        fmt(p.totalGrams, 1) + ' g</div>';
+      const d = pricing.partDiagnostics(p.id);
+      html += '<div class="dbg-rows">sheet: ' + d.rows.map((r) =>
+        '[' + r.at.join(',') + ']' + r.sheet + '→' + r.model).join(' ') + '</div>';
+      html += '<div class="dbg-rows">corners(' + d.params.map(L).join('') + '): ' +
+        d.corners.map((c) => c.at.join('') + '→' + fmt(c.grams, 0)).join(' ') + '</div>';
+    }
+    const skipped = pricing.parts
+      .filter((pp) => pp.optional && !q.parts.some((p) => p.id === pp.id));
+    if (skipped.length) {
+      html += '<div class="dbg-rows">excluded: ' + skipped.map((p) => p.label).join(', ') + '</div>';
+    }
+
+    html += '<div class="dbg-sec">totals</div>';
+    html += '<div class="dbg-line">weight ' + q.totalGrams + ' g · material R$' +
+      fmt(q.materialBRL) + ' × ' + pricing.config.priceMultiplier + ' = R$' +
+      fmt(q.materialBRL * pricing.config.priceMultiplier) + '</div>';
+    html += '<div class="dbg-line">accessories: ' + (q.accessories.length
+      ? q.accessories.map((a) => a.id + ' +' + a.priceBRL).join(' ') : 'none') +
+      ' → R$' + fmt(q.accessoriesBRL) + '</div>';
+    html += '<div class="dbg-line"><b>price ' + pricing.formatBRL(q.priceCents) + '</b></div>';
+    dbgBody.innerHTML = html;
+  }
+  // ---- end TEMP pricing debug ----
 
   updateChips();
   updateMeasureOutputs();
   updateReview();
-  updatePrintStats();
+  updateWeightStat();
 
   // ============ NAV SCROLL ============
   const nav = $('.nav');
@@ -740,6 +898,21 @@
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
   scene.autoClear = true;
+
+  // We drive ALL input ourselves (our own pointer listeners for rotation; no
+  // Babylon camera control or mesh picking — camera.inputs is cleared below).
+  // Babylon's InputManager otherwise attaches its own pointer listeners to the
+  // canvas and preventDefaults them, which blocks the browser's touch-action
+  // page scroll — so a vertical drag over the canvas wouldn't scroll on mobile.
+  // Detach it (and disable the preventDefault flags) so touch-action works.
+  scene.preventDefaultOnPointerDown = false;
+  scene.preventDefaultOnPointerUp = false;
+  try { scene.detachControl(); } catch (_) {}
+  // Babylon's engine sets `canvas.style.touchAction = 'none'` INLINE, which beats
+  // our stylesheet rule — so re-assert pan-y inline here (last write wins). This
+  // is what actually lets a vertical touch drag scroll the page while a
+  // horizontal drag rotates the model.
+  canvas.style.touchAction = 'pan-y';
 
   // camera — flatter (narrower) FOV for a less fisheye look. Beta is the
   // polar angle from +Y: π/2 is horizon-level, smaller values look down on
@@ -782,6 +955,9 @@
   // ============ MODEL ROTATION (portfolio-style) ============
   // Y rotates freely (accumulates on drag).
   // X "peeks" up to ±15° with progressive resistance, then springs back on release.
+  // Set ALLOW_PEEK = false to disable the vertical (up/down) tilt entirely — the
+  // model then only does the 360° Y spin. Flip back to true to restore it.
+  const ALLOW_PEEK = false;
   const PEEK_MAX = Math.PI / 12;
   const PEEK_RESISTANCE = 6;
   const ROT_SPEED = 0.006;
@@ -832,8 +1008,28 @@
   let bboxCenterLocal = null;   // current center (eased toward the goal each frame)
   let bboxCenterGoal  = null;   // target center from the latest frameCamera()
   let autoFitRadius   = null;
+  let modelHorizRadius = null;  // half the model's XZ diagonal — sizes the scale-ref circle
   let userZoomFactor  = 1.0;
   let camGoalRadius   = null;
+
+  // Vertical zoom slider (left of the viewport). A 0–100 position maps to
+  // userZoomFactor on a GEOMETRIC scale, so the default (factor 1.0) lands near
+  // the middle: pos 100 (top) = most zoomed IN (ZOOM_FACTOR_MIN), pos 0 (bottom)
+  // = most zoomed OUT (ZOOM_FACTOR_MAX). Two-way bound with the wheel/pinch.
+  const ZOOM_SLIDER_MAX = 100;
+  let zoomSlider = null;   // assigned in the viewport-controls section
+  const zoomFactorFromSlider = (pos) =>
+    ZOOM_FACTOR_MAX * Math.pow(ZOOM_FACTOR_MIN / ZOOM_FACTOR_MAX, pos / ZOOM_SLIDER_MAX);
+  const sliderFromZoomFactor = (z) =>
+    ZOOM_SLIDER_MAX * Math.log(z / ZOOM_FACTOR_MAX) / Math.log(ZOOM_FACTOR_MIN / ZOOM_FACTOR_MAX);
+  // Reflect the current factor onto the slider (position + fill). Skipped while
+  // the user is dragging the slider so their own input isn't fought.
+  const syncZoomSlider = () => {
+    if (!zoomSlider || document.activeElement === zoomSlider) return;
+    const pos = Math.max(0, Math.min(ZOOM_SLIDER_MAX, sliderFromZoomFactor(userZoomFactor)));
+    zoomSlider.value = String(pos);
+    zoomSlider.style.setProperty('--p', pos + '%');
+  };
 
   // Live dimension overlay (spatial HTML/SVG annotations). See the DIMENSION
   // OVERLAY block below tickCameraFollow.
@@ -853,6 +1049,7 @@
     const goal = autoFitRadius * userZoomFactor;
     camGoalRadius = Math.max(camera.lowerRadiusLimit,
                              Math.min(camera.upperRadiusLimit, goal));
+    syncZoomSlider();
   };
   const applyUserZoom = (mult) => {
     userZoomFactor = Math.max(ZOOM_FACTOR_MIN,
@@ -887,11 +1084,14 @@
     const predicate = (m) =>
       m && m.isEnabled && m.isEnabled() &&
       m.isVisible !== false &&
+      !(m.metadata && m.metadata.scaleRef) &&
       m.getTotalVertices && m.getTotalVertices() > 0;
 
     const invMR = BABYLON.Matrix.Invert(modelRoot.getWorldMatrix());
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    // Wheelchair-only XZ extents (dog excluded) — sizes the scale-ref circle.
+    let wMinX = Infinity, wMinZ = Infinity, wMaxX = -Infinity, wMaxZ = -Infinity;
     const tmp = new BABYLON.Vector3();
     scene.meshes.forEach((m) => {
       if (!predicate(m)) return;
@@ -900,6 +1100,7 @@
         catch (_) { try { m.refreshBoundingInfo(false, true); } catch (__) {} }
       }
       m.computeWorldMatrix(true);
+      const isDog = /dog/i.test(m.name);
       const corners = m.getBoundingInfo().boundingBox.vectorsWorld;
       for (let i = 0; i < corners.length; i++) {
         BABYLON.Vector3.TransformCoordinatesToRef(corners[i], invMR, tmp);
@@ -909,6 +1110,12 @@
         if (tmp.x > maxX) maxX = tmp.x;
         if (tmp.y > maxY) maxY = tmp.y;
         if (tmp.z > maxZ) maxZ = tmp.z;
+        if (!isDog) {
+          if (tmp.x < wMinX) wMinX = tmp.x;
+          if (tmp.z < wMinZ) wMinZ = tmp.z;
+          if (tmp.x > wMaxX) wMaxX = tmp.x;
+          if (tmp.z > wMaxZ) wMaxZ = tmp.z;
+        }
       }
     });
     if (!isFinite(minX) || !isFinite(maxX)) return;
@@ -936,6 +1143,15 @@
     const halfV = Math.tan(camera.fov / 2);
     const halfH = halfV * aspect;
     const horizontalSpan = Math.sqrt(sx * sx + sz * sz);
+    // Half the WHEELCHAIR-only horizontal (XZ) diagonal — the radius that
+    // circumscribes just the chassis footprint (dog excluded). Drives the
+    // scale-ref props' circle so they sit just outside the wheelchair regardless
+    // of the current measurements. Falls back to the full span if, somehow, no
+    // wheelchair mesh was measured.
+    const wSpan = (isFinite(wMinX) && isFinite(wMaxX))
+      ? Math.sqrt((wMaxX - wMinX) * (wMaxX - wMinX) + (wMaxZ - wMinZ) * (wMaxZ - wMinZ))
+      : horizontalSpan;
+    modelHorizRadius = wSpan * 0.5;
     const fitDistance = Math.max(sy * 0.5 / halfV, horizontalSpan * 0.5 / halfH, 0.5);
     autoFitRadius = fitDistance * ZOOM_FACTOR;
     camera.lowerRadiusLimit = fitDistance * 0.6;
@@ -1014,6 +1230,11 @@
     const mesh = scene.meshes.find((m) =>
       m && m.name && m.name.toLowerCase().replace(/[^a-z]/g, '').includes('tighui'));
     if (!mesh) { console.warn('[thigh] TighUI mesh not found'); return; }
+    // The raw 3D LINES mesh is only a projection source — the thigh line the user
+    // sees is the SVG overlay (drawn from this mesh each frame). Never render the
+    // mesh itself. isVisible=false keeps its world matrix + Scale morph live (so
+    // thighSeg can still read them) while keeping it out of the picture entirely.
+    mesh.isVisible = false;
     const basis = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
     const indices = mesh.getIndices();
     if (!basis || !indices) { console.warn('[thigh] TighUI missing geometry'); return; }
@@ -1078,7 +1299,29 @@
   // driving the exact same downstream chain the slider's input handler does so
   // the model, side panel, chips, review and print stats all stay in sync.
   const capKey = (key) => key.charAt(0).toUpperCase() + key.slice(1);
-  function setMeasure(key, value) {
+
+  // Measurement locks: when a pet is selected in the Measure step, its saved
+  // measurements are authoritative — sliders, typed fields AND the 3D overlay
+  // drags are frozen for the locked keys. account.js drives this via
+  // window.Petwheels.setMeasureLocks; applyMeasures bypasses with force=true.
+  const measureLocks = {};
+  window.Petwheels = window.Petwheels || {};
+  window.Petwheels.setMeasureLocks = (locks) => {
+    ['length', 'height', 'width', 'thigh'].forEach((k) => {
+      const on = !!(locks && locks[k]);
+      measureLocks[k] = on;
+      const slider = $('#range' + capKey(k));
+      const input = $('#val' + capKey(k));
+      if (slider) {
+        slider.disabled = on;
+        slider.closest('.field')?.classList.toggle('is-locked', on);
+      }
+      if (input) input.disabled = on;
+    });
+  };
+
+  function setMeasure(key, value, force = false) {
+    if (measureLocks[key] && !force) return;
     const slider = $('#range' + capKey(key));
     if (!slider) return;
     const v = clampSnap(value, +slider.min, +slider.max, +slider.step || 0.1);
@@ -1091,7 +1334,7 @@
     updateMeasureOutputs();
     updateChips();
     updateReview();
-    updatePrintStats();
+    updateWeightStat();
     if (key === 'height') syncRadiusOffsetRange();
     if (rig) rig.update();
   }
@@ -1256,10 +1499,12 @@
   function projectDimensions() {
     dimOverlay = dimOverlay || $('#dimOverlay');
     if (!dimOverlay || !modelRoot) return;
-    // Only show while customizing, once the dog is solved, and while the ruler
-    // toggle is on. The measures work with OR without the dog (the dog's vertices
-    // are still solved when it's hidden), so this no longer keys off dog view.
-    if (state.screen !== 'steps' || !dog || !dog.ready || !state.measuresVisible) {
+    // Show whenever the ruler toggle is on and the dog is solved — on ANY screen
+    // (welcome included), so turning measures on before "Start customizing" still
+    // draws the lines. The measures work with OR without the dog visible (the
+    // dog's vertices are still solved when it's hidden), so this doesn't key off
+    // dog view either.
+    if (!dog || !dog.ready || !state.measuresVisible) {
       if (dimOverlay.style.display !== 'none') dimOverlay.style.display = 'none';
       if (dimDrag) endDimDrag();
       return;
@@ -1663,7 +1908,7 @@
       mesh.hasVertexAlpha = false;
       const mat = new BABYLON.PBRMaterial('dogMat', scene);
       mat.albedoColor = new BABYLON.Color3(1, 1, 1);
-      mat.metallic = 0.5; mat.roughness = 0.5; mat.backFaceCulling = false;
+      mat.metallic = 0.35; mat.roughness = 0.5; mat.backFaceCulling = false;
       mesh.material = mat;
 
       const PW = (window.PW && window.PW.nodes) || {};
@@ -1716,10 +1961,16 @@
       // Hook into the rig so every slider change re-solves the dog. Guard the
       // dog step so a solver error can never break the wheelchair's update.
       if (rig && typeof rig.update === 'function') {
+        // rig.update now defers its step-7 framing to us so the frame is
+        // computed ONCE, with the dog already at its new pose. Otherwise the
+        // pivot locks onto the dog's previous pose (orbits off-centre) and the
+        // bbox gets rebuilt twice per event (the "fight"/stutter on param drag).
+        dogFramesAfterSolve = true;
         const orig = rig.update;
         rig.update = function () {
-          orig.apply(this, arguments);
+          orig.apply(this, arguments);   // step 7 skipped — deferred to here
           try { updateDog(); } catch (e) { console.error('[dog] update failed', e); }
+          if (modelRoot) { try { frameCamera(); } catch (_) {} }
         };
       }
       updateDog();
@@ -1729,6 +1980,8 @@
       window.PW.updateDog = updateDog;
       // Honour the current view tab and frame instantly (no fly-in on load).
       applyDogVisibility(true);
+      // Bring in the real-world scale props, sharing the dog's material.
+      setupScaleRefs(mat);
       console.log('[dog] ready', {
         roles: Object.keys(roles).reduce((o, k) => (o[k] = roles[k].vi, o), {}),
         targets: Object.keys(targets), floorLocalY: +dog.floorLocalY.toFixed(4),
@@ -1737,6 +1990,139 @@
     } catch (e) {
       console.error('[dog] setup failed', e);
     }
+  }
+
+  // ============ SCALE-REFERENCE PROPS (person + ball) ============
+  // Two real-world props — a standing person (back-right) and a ball
+  // (back-left) — parked on an invisible ground circle centred on the
+  // wheelchair. They give the user a sense of the real-world size of the
+  // wheelchair. Both are world-fixed (follow the camera, stay behind the chair,
+  // tilt with the vertical-drag peek). The circle radius tracks the
+  // wheelchair's own footprint (dog excluded) plus a fixed clearance, so it
+  // grows/shrinks with the wheelchair and the props never overlap it.
+  //
+  // Because the camera is fixed and only the MODEL spins on drag, we keep these
+  // props WORLD-fixed (not parented to modelRoot) and re-place them every frame
+  // off the camera's own basis, so they always stay "behind" the wheelchair and
+  // never rotate out of view — i.e. they follow the camera in 360°.
+  //
+  // They reuse the dog's PBR material (white, metallic 0.35) and are flagged
+  // metadata.scaleRef so frameCamera's bbox ignores them (otherwise the camera
+  // would zoom out to fit a 1.7 m person and shrink the wheelchair to nothing).
+  //
+  // Tunables — adjust to taste. Both props ride the same camera-relative ground
+  // circle (centred on camera.target, radius ∝ the wheelchair's own footprint),
+  // but with independent clearance + angle so the person stands well back and
+  // the ball tucks in close.
+  const SCALE_REF_SCALE    = 1.0;         // uniform scale applied to each prop
+  const SCALE_REF_R_FACTOR = 1.0;         // circle radius = this × the wheelchair's horizontal bbox radius + offset
+  const SCALE_REF_YAW      = Math.PI / 4; // extra yaw (rad) added on top of facing the camera (45°)
+  // Person — stands well clear, behind the chair.
+  const PERSON_R_OFFSET    = 0.60;        // clearance (m) added to the footprint radius
+  const PERSON_R_MIN       = 0.40;        // hard floor on the radius (m)
+  const PERSON_SPREAD      = 0.60;        // angle (rad) off dead-centre-back (~34° → mostly behind)
+  // Ball — tucked in close, on the OTHER side, a bit forward.
+  const BALL_R_OFFSET      = 0.10;        // small clearance (m) → sits just outside the chair
+  const BALL_R_MIN         = 0.20;        // hard floor on the radius (m)
+  const BALL_SPREAD        = 1.00;        // angle (rad) off dead-centre-back (~57° → back-left, beside the chair)
+
+  let scaleRefRoot   = null;
+  let scaleRefPerson = null;   // holder TransformNode (world-fixed, right side)
+  let scaleRefBall   = null;   // holder TransformNode (world-fixed, left side)
+
+  async function setupScaleRefs(sharedMat) {
+    try {
+      // World-fixed anchor (no parent → lives in world space, ignores the
+      // model's drag rotation).
+      scaleRefRoot = new BABYLON.TransformNode('ScaleRefRoot', scene);
+
+      const loadProp = async (file, holderName, parentNode) => {
+        const res = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/', file, scene);
+        const root = res.meshes.find((m) => m.name === '__root__') || res.meshes[0];
+        // A holder we own drives position + rotation; the imported __root__
+        // stays a child so its glTF coordinate-conversion transform is intact.
+        const holder = new BABYLON.TransformNode(holderName, scene);
+        holder.parent = parentNode;
+        holder.scaling.setAll(SCALE_REF_SCALE);
+        if (root) root.parent = holder;
+        res.meshes.forEach((m) => {
+          if (!m.getTotalVertices || m.getTotalVertices() === 0) return;
+          if (sharedMat) m.material = sharedMat;   // same material as the dog
+          m.metadata = Object.assign({}, m.metadata, { scaleRef: true });
+          m.isPickable = false;
+        });
+        return holder;
+      };
+
+      // Both props are world-fixed (follow the camera, stay behind the chair,
+      // tilt with the peek) — the person on the right, the ball on the left.
+      scaleRefPerson = await loadProp('person.glb', 'ScaleRef_person', scaleRefRoot);
+      scaleRefBall   = await loadProp('ball.glb',   'ScaleRef_ball',   scaleRefRoot);
+      updateScaleRefs();
+    } catch (e) {
+      console.warn('[scaleRef] setup failed — are person.glb / ball.glb in website/assets/?', e);
+    }
+  }
+
+  // Re-place the props on the ground circle every frame. sideSign +1 = the
+  // camera's right, -1 = the camera's left; both sit "behind" (into the scene).
+  const _srBack  = new BABYLON.Vector3();
+  const _srRight = new BABYLON.Vector3();
+  const _srD     = new BABYLON.Vector3();
+  const _srQPeek = new BABYLON.Quaternion();
+  const _srQFace = new BABYLON.Quaternion();
+  const placeScaleProp = (holder, sideSign, rOffset, rMin, spread) => {
+    if (!holder) return;
+    // Radius tracks the wheelchair's own footprint, plus a fixed clearance so
+    // the prop never overlaps the chair, whatever the current measurements.
+    const wheelR = (modelHorizRadius != null ? modelHorizRadius : rMin);
+    const R = Math.max(rMin, wheelR * SCALE_REF_R_FACTOR + rOffset);
+    const cosA = Math.cos(spread);
+    const sinA = sideSign * Math.sin(spread);
+    // Rest position on the ground circle, centred on the camera's own pivot
+    // (camera.target) so it shares the exact point the view rotates around — the
+    // prop then stays glued behind the wheelchair instead of drifting on spin.
+    const x = camera.target.x + R * (cosA * _srBack.x + sinA * _srRight.x);
+    const z = camera.target.z + R * (cosA * _srBack.z + sinA * _srRight.z);
+    // Face the camera, then add the fixed yaw so the prop reads at an angle.
+    const yaw = Math.atan2(camera.position.x - x, camera.position.z - z) + SCALE_REF_YAW;
+
+    // Apply the SAME "peek" tilt the wheelchair gets on a vertical drag, pivoting
+    // about camera.target. camera.target tracking cancels the model's translation,
+    // so on screen the chassis appears to tip about that point — matching the peek
+    // here makes the prop tip *with* it instead of sliding. peekX and _srRight are
+    // exactly the axis/angle the model-rotation code uses, so the two stay in sync.
+    // (The 360° Y-spin is deliberately NOT applied — the prop must stay in view.)
+    BABYLON.Quaternion.RotationAxisToRef(_srRight, peekX, _srQPeek);
+    _srD.set(x - camera.target.x, -camera.target.y, z - camera.target.z);
+    _srD.rotateByQuaternionToRef(_srQPeek, _srD);
+    holder.position.set(camera.target.x + _srD.x, camera.target.y + _srD.y, camera.target.z + _srD.z);
+
+    BABYLON.Quaternion.RotationAxisToRef(BABYLON.Axis.Y, yaw, _srQFace);
+    holder.rotationQuaternion = holder.rotationQuaternion || new BABYLON.Quaternion();
+    _srQPeek.multiplyToRef(_srQFace, holder.rotationQuaternion);   // face first, then tilt
+  };
+  function updateScaleRefs() {
+    if (!scaleRefPerson && !scaleRefBall) return;
+    // Force the camera to resolve its transform for THIS frame first. We run
+    // before scene.render(), and tickCameraFollow just changed camera.target /
+    // radius — but camera.position and camera.getDirection() are lazy and still
+    // hold last frame's values until the view matrix rebuilds. Reading them
+    // stale here (then rendering with the fresh ones) is what makes the props
+    // flicker. getViewMatrix(true) rebuilds position/basis now, so the props are
+    // placed with the exact camera state the frame is about to render with.
+    camera.getViewMatrix(true);
+    // "Behind" = camera → target, projected onto the ground plane.
+    _srBack.copyFrom(camera.target).subtractInPlace(camera.position);
+    _srBack.y = 0;
+    if (_srBack.lengthSquared() < 1e-6) _srBack.set(0, 0, 1);
+    _srBack.normalize();
+    _srRight.copyFrom(camera.getDirection(BABYLON.Axis.X));
+    _srRight.y = 0;
+    if (_srRight.lengthSquared() < 1e-6) _srRight.set(1, 0, 0);
+    _srRight.normalize();
+    placeScaleProp(scaleRefPerson, +1, PERSON_R_OFFSET, PERSON_R_MIN, PERSON_SPREAD); // person → far, back-right
+    placeScaleProp(scaleRefBall,   -1, BALL_R_OFFSET,   BALL_R_MIN,   BALL_SPREAD);   // ball → close, forward-left
   }
 
   // Smooth tween helper for accumulatedY / peekX / radius
@@ -1913,54 +2299,54 @@
     refMeshes.forEach((m) => { m.isVisible = false; });
 
     // Visible parts that make up the right half. The mirror creates the left.
-    const visibleNames = ['Arm', 'ArmHub', 'LegSupport', 'LegSupportStrap',
+    const visibleNames = ['Arm', 'ArmHub', 'Buttons', 'LegSupport', 'LegSupportStrap',
                           'Main', 'Seat', 'SideBar', 'SideBarBand_R', 'Rim', 'Tire'];
-    const visibleMeshes = visibleNames.flatMap(getMeshes);
+    // Hardware_* parts keep their original .glb material (they're deliberately
+    // excluded from MATERIAL_SLOTS below), but they still belong to the right
+    // half, so include them in the mirror. Matched by prefix so any future
+    // Hardware_N is picked up automatically.
+    const hardwareMeshes = scene.meshes.filter((m) =>
+      m && /^Hardware/i.test(m.name) &&
+      m.getTotalVertices && m.getTotalVertices() > 0);
+    const visibleMeshes = visibleNames.flatMap(getMeshes).concat(hardwareMeshes);
 
     // ---- 4 shared style materials ----
-    // The .glb arrives with per-mesh materials. We collapse them into 4 PBR
-    // slots so the Style step can re-tint groups of parts in one place (one
-    // swatch row → one material → many meshes). Defaults are cloned from
-    // the FIRST listed mesh's existing material in each slot, so the viewer
-    // looks identical to the raw .glb on boot.
+    // The .glb arrives with per-mesh materials (including baked ColorAtlas
+    // ones). We replace them with 4 flat PBR slots seeded from SLOT_DEFAULTS —
+    // the default Style filament set — so the wheelchair shows the intended
+    // default look on boot, not the raw .glb materials. The Style step then
+    // re-tints a whole slot (one swatch row → one material → many meshes).
+    //
+    // Assignment uses getMeshes (not getMesh) so multi-material parts that the
+    // glTF loader split into <name>_primitive0/1 all get the slot material —
+    // otherwise the split Rim/Arm primitives would keep their raw .glb atlas.
+    //
+    // NOTE: Hardware_* parts are intentionally NOT listed in any slot, so they
+    // keep their original .glb material and are never restyled.
     //
     // Add or move a mesh between slots by editing this map — no other code
     // needs to change. Mirror instances follow automatically because they
-    // share their source's material.
+    // share their source's material. "Buttons" rides the SideBar slot (m3).
     const MATERIAL_SLOTS = {
       m1: ['Rim', 'Arm', 'Main', 'SideBarBand_R'],
       m2: ['ArmHub', 'LegSupport'],
-      m3: ['SideBar'],
+      m3: ['SideBar', 'Buttons'],
       m4: ['Tire', 'Seat', 'LegSupportStrap'],
     };
     const styleMats = {};
     Object.entries(MATERIAL_SLOTS).forEach(([slot, names]) => {
-      const seed = names.map(getMesh).find((m) => m && m.material);
-      if (!seed) {
-        console.warn('[Petwheels rig] no source material for', slot, names);
-        return;
-      }
-      const src = seed.material;
+      const meshes = names.flatMap(getMeshes);
       const mat = new BABYLON.PBRMaterial('petwheels_' + slot, scene);
-      // PBR defaults from the seed mesh. Colors cloned so later swatch
-      // edits to mat.albedoColor don't mutate the original .glb material.
-      if (src.albedoColor)       mat.albedoColor = src.albedoColor.clone();
-      else if (src.diffuseColor) mat.albedoColor = src.diffuseColor.clone();
-      if (typeof src.metallic  === 'number') mat.metallic  = src.metallic;
-      if (typeof src.roughness === 'number') mat.roughness = src.roughness;
-      // Textures (if any) follow along so the boot visual matches the .glb.
-      // Refs are shared (not cloned) since textures are heavy and read-only.
-      if (src.albedoTexture)   mat.albedoTexture   = src.albedoTexture;
-      if (src.metallicTexture) mat.metallicTexture = src.metallicTexture;
-      if (src.bumpTexture)     mat.bumpTexture     = src.bumpTexture;
-      if (src.ambientTexture)  mat.ambientTexture  = src.ambientTexture;
-      if (src.emissiveColor)   mat.emissiveColor   = src.emissiveColor.clone();
+      // Flat filament look from the slot default (sRGB hex → linear albedo),
+      // no textures — this matches exactly what the Style swatch handler sets
+      // when the user later picks a filament.
+      const def = SLOT_DEFAULTS[slot];
+      mat.albedoColor = BABYLON.Color3.FromHexString(def.hex).toLinearSpace();
+      mat.metallic    = def.metallic;
+      mat.roughness   = def.roughness;
       mat.backFaceCulling = false;
       styleMats[slot] = mat;
-      names.forEach((name) => {
-        const m = getMesh(name);
-        if (m) m.material = mat;
-      });
+      meshes.forEach((m) => { if (m) m.material = mat; });
     });
 
     // Backface culling off on every material — the mirror instances inherit the
@@ -2134,7 +2520,11 @@
               // Rim_primitive0/1 (the base "Rim" becomes a geometry-less
               // parent), so match "Rim" as a substring. Nothing else in the
               // model carries "Rim" in its name.
-              v = mesh.name.includes('Rim') ? (1 - w.radius) : w.radius;
+              // Hardware_2 (the wheel-hub axle/bolt, mesh Rim_R.001) shares the
+              // SAME inverted Radius shape key, so it has to invert too — its
+              // node name doesn't contain "Rim", so match it explicitly.
+              v = (mesh.name.includes('Rim') || mesh.name.includes('Hardware_2'))
+                    ? (1 - w.radius) : w.radius;
               break;
             case 'thickness':  v = w.thickness; break;
             default: v = null;
@@ -2236,9 +2626,17 @@
       //    the dog (= glTF/Babylon X), Blender Z = vertical (= glTF/Babylon Y),
       //    Blender Y = along the dog (= -glTF Z). The pivot's Y_cad is 0, so
       //    Petwheels.local Z stays 0.
+      //    Pivot Y uses the DISPLAYED (uncompensated) height, not Hmm. The
+      //    wheel-radius height compensation lives ONLY in the morph weights
+      //    (hlow/hhigh from Hmm), which reshape the arm and slide the wheel
+      //    centre. Driving the whole-chassis pivot with Hmm too would move the
+      //    frame (and the dog parented to it) up/down as the wheel grows — the
+      //    frame should stay put (attached to the dog) while the wheel centre
+      //    is what moves. So keep the pivot at the true height; the wheel rides
+      //    the arm morph instead.
       petwheels.position.set(
         (w.Wmm / 2 + 53 * w.sf) * MM_TO_M,
-        (0.82 * w.Hmm)         * MM_TO_M,
+        (0.82 * w.displayedHmm) * MM_TO_M,
         0,
       );
       petwheels.computeWorldMatrix(true);
@@ -2264,7 +2662,9 @@
 
       // 7) Auto-frame — re-target the camera goal so the model stays centered
       //    in view as it deforms. The render loop's lerp does the actual ease.
-      frameCamera();
+      //    When the dog hook is active it frames AFTER re-solving the dog, so we
+      //    skip here to avoid a stale frame + a redundant second bbox pass.
+      if (!dogFramesAfterSolve) frameCamera();
     }
 
     // Expose for debugging from the browser console.
@@ -2301,8 +2701,8 @@
       try {
         rig = buildRig(scene, modelRoot);
         if (rig) rig.update();
-        // Now that styleMats exist, paint each material chip with its
-        // slot's current albedo so the Style step shows the .glb defaults.
+        // Now that styleMats exist, paint each material chip with its slot's
+        // current albedo so the Style step shows the default filament colours.
         if (typeof window.__pwSyncMaterialChips === 'function') {
           window.__pwSyncMaterialChips();
         }
@@ -2336,7 +2736,8 @@
   // downloads the resulting STL zip. The morph-rigged preview stays in the
   // viewer — no generated .glb is loaded. Progress streams over Supabase Realtime.
   const cfg = window.PETWHEELS_CONFIG || {};
-  const SLOT_DEFAULT_HEX = { m1: '#428AE9', m2: '#838383', m3: '#1A1A1A', m4: '#1A1A1A' };
+  const SLOT_DEFAULT_HEX = Object.fromEntries(
+    Object.entries(SLOT_DEFAULTS).map(([k, v]) => [k, v.hex]));
 
   let _sb = null;
   const getSupabase = () => {
@@ -2500,53 +2901,127 @@
   buildBtn?.addEventListener('click', startBuild);
   buildCancelEl?.addEventListener('click', cancelOrClose);
 
+  // ============ CONFIG BRIDGE (customizer → cart / checkout) ============
+  // account.js reads the live customizer state through this. Measurements are
+  // always reported in CENTIMETRES (the canonical unit) regardless of the unit
+  // toggle; `unit` just says what the UI was showing. Keeping this the single
+  // read surface means account.js never has to reach into the private `state`.
+  //
+  // Price comes from pricing.js: per-part printed weight is estimated from the
+  // current parameters (weight-sheet.pdf curves), then
+  // price = totalKg × R$140/kg × 5. Tweak in pricing.js CONFIG.
+  const FALLBACK_PRICE_CENTS = 14900; // only if pricing.js failed to load
+
+  // Live quote for the current customizer state. Sliders are cm → mm ×10.
+  function currentQuote() {
+    const pricing = window.Petwheels && window.Petwheels.pricing;
+    if (!pricing) return null;
+    return pricing.quoteMm({
+      thighMm:         state.measures.thigh  * 10,
+      heightMm:        state.measures.height * 10,
+      lengthMm:        state.measures.length * 10,
+      widthMm:         state.measures.width  * 10,
+      radiusMm:        computeCurrentR(),
+      thicknessFactor: state.measures.thickness,
+      legSupport:      state.legSupport,
+      backStrap:       state.backStrap,
+      collar:          state.includeCollar,
+    });
+  }
+  function currentPriceCents() {
+    const q = currentQuote();
+    return q ? q.priceCents : FALLBACK_PRICE_CENTS;
+  }
+  window.Petwheels = window.Petwheels || {};
+  window.Petwheels.currentQuote = currentQuote;
+  window.Petwheels.getConfig = () => {
+    const model = MODELS.find((m) => m.id === state.modelId) || MODELS[0];
+    return {
+      modelId:   model.id,
+      modelName: productName(model),
+      unit:      state.unit,
+      priceCents: currentPriceCents(),
+      // Pet chosen in the Measure step's picker (set by account.js). Rides
+      // into cart_items.pet_id so checkout preselects it.
+      petId: window.Petwheels.selectedPetId || null,
+      // canonical centimetres
+      measures: {
+        length: state.measures.length,
+        height: state.measures.height,
+        width:  state.measures.width,
+        thigh:  state.measures.thigh,
+        thickness: state.measures.thickness,
+        wheelRadiusCm: computeCurrentR() / 10,
+      },
+      options: {
+        legSupport:    state.legSupport,
+        backStrap:     state.backStrap,
+        includeCollar: state.includeCollar,
+      },
+      materials: currentMaterialHexes(),
+    };
+  };
+  // Let account.js prefill the customizer when a pet is chosen for a new
+  // build. force=true so it can write values even while those keys are
+  // locked (switching from one locked pet straight to another).
+  window.Petwheels.applyMeasures = (m) => {
+    if (!m) return;
+    ['length', 'height', 'width', 'thigh'].forEach((k) => {
+      if (typeof m[k] === 'number' && !Number.isNaN(m[k])) {
+        setMeasure(k, m[k], true);
+      }
+    });
+  };
+
   // ============ POINTER DRAG (model rotation) ============
   canvas.style.cursor = 'grab';
 
-  // On touch devices, only rotate when the drag starts over the model mesh;
-  // otherwise forward the vertical drag to the parent page so it scrolls past
-  // the embedded viewer instead of rotating it.
-  let scrollFwd = false;
-  let scrollLastY = 0;
-  const overModel = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const pick = scene.pick(
-      e.clientX - rect.left,
-      e.clientY - rect.top,
-      (m) => m && m.isVisible !== false && m.isPickable !== false &&
-             m.getTotalVertices && m.getTotalVertices() > 0
-    );
-    return !!(pick && pick.hit);
-  };
+  // Touch axis-lock. On a touchscreen we must NOT setPointerCapture on
+  // pointerdown — capturing there suppresses the browser's touch-action:pan-y
+  // page scroll (which is the bug: dragging up/down over the canvas wouldn't
+  // scroll). Instead we wait for the first move to lock the gesture:
+  //   horizontal → rotate the model (and capture so the drag keeps tracking),
+  //   vertical   → do nothing and let the browser scroll the page.
+  // Mouse/pen have no touch-action scroll, so they rotate immediately as before.
+  let downX = 0, downY = 0;
+  let dragAxis = null;          // touch: null = undecided, 'x' = rotate, 'y' = scroll
+  const DRAG_LOCK_PX = 6;       // movement before the axis is decided
 
   const onPointerDown = (e) => {
-    if (!modelRoot) return;
-    if (activePointerId !== null) return; // ignore extra fingers mid-gesture
-    if (e.pointerType === 'touch' && !overModel(e)) {
-      // Empty space on a touch device: scroll the page, don't rotate.
-      scrollFwd = true;
-      scrollLastY = e.clientY;
-      activePointerId = e.pointerId;
-      canvas.setPointerCapture?.(e.pointerId);
-      return;
-    }
-    isDragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
+    if (!modelRoot || activePointerId !== null) return;   // ignore extra fingers
     activePointerId = e.pointerId;
-    canvas.setPointerCapture?.(e.pointerId);
-    canvas.style.cursor = 'grabbing';
+    lastX = downX = e.clientX;
+    lastY = downY = e.clientY;
+    if (e.pointerType === 'touch') {
+      dragAxis = null;          // decide on the first move
+      isDragging = false;
+    } else {
+      dragAxis = 'x';
+      isDragging = true;
+      canvas.setPointerCapture?.(e.pointerId);
+      canvas.style.cursor = 'grabbing';
+    }
   };
   const onPointerMove = (e) => {
-    if (scrollFwd && e.pointerId === activePointerId) {
-      const dy = scrollLastY - e.clientY;
-      scrollLastY = e.clientY;
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: 'pw-scroll', dy: dy }, '*');
+    if (activePointerId === null || e.pointerId !== activePointerId || !modelRoot) return;
+
+    // Touch: lock to an axis once the finger has moved enough.
+    if (dragAxis === null) {
+      const tdx = e.clientX - downX, tdy = e.clientY - downY;
+      if (Math.abs(tdx) < DRAG_LOCK_PX && Math.abs(tdy) < DRAG_LOCK_PX) return;
+      if (Math.abs(tdx) > Math.abs(tdy)) {
+        dragAxis = 'x';                              // horizontal → rotate
+        isDragging = true;
+        lastX = e.clientX; lastY = e.clientY;        // start fresh from the lock point
+        try { canvas.setPointerCapture?.(e.pointerId); } catch (_) {}
+        canvas.style.cursor = 'grabbing';
+      } else {
+        dragAxis = 'y';                              // vertical → let the page scroll
+        return;
       }
-      return;
     }
-    if (!isDragging || !modelRoot) return;
+    if (dragAxis === 'y' || !isDragging) return;
+
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
     lastX = e.clientX;
@@ -2555,27 +3030,28 @@
     // Y — free, accumulates
     accumulatedY += -dx * ROT_SPEED;
 
-    // X — soft-clamped with progressive resistance
-    const normalized = Math.abs(peekX) / PEEK_MAX;
-    const resistance = 1 + normalized * normalized * PEEK_RESISTANCE;
-    let np = peekX + (-dy * ROT_SPEED) / resistance;
-    np = Math.max(-PEEK_MAX, Math.min(PEEK_MAX, np));
-    peekX = np;
+    // X — soft-clamped with progressive resistance (disabled when ALLOW_PEEK is off)
+    if (ALLOW_PEEK) {
+      const normalized = Math.abs(peekX) / PEEK_MAX;
+      const resistance = 1 + normalized * normalized * PEEK_RESISTANCE;
+      let np = peekX + (-dy * ROT_SPEED) / resistance;
+      np = Math.max(-PEEK_MAX, Math.min(PEEK_MAX, np));
+      peekX = np;
+    }
 
     applyModelRotation();
   };
   const onPointerUp = (e) => {
-    if (scrollFwd) {
-      scrollFwd = false;
-      if (activePointerId !== null) canvas.releasePointerCapture?.(activePointerId);
-      activePointerId = null;
-      return;
+    if (activePointerId !== null && e.pointerId !== activePointerId) return;
+    dragAxis = null;
+    if (isDragging) {
+      isDragging = false;
+      if (activePointerId !== null && canvas.hasPointerCapture?.(activePointerId)) {
+        try { canvas.releasePointerCapture?.(activePointerId); } catch (_) {}
+      }
+      canvas.style.cursor = 'grab';
     }
-    if (!isDragging) return;
-    isDragging = false;
-    if (activePointerId !== null) canvas.releasePointerCapture?.(activePointerId);
     activePointerId = null;
-    canvas.style.cursor = 'grab';
   };
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
@@ -2595,28 +3071,27 @@
   requestAnimationFrame(springLoop);
 
   // ============ RENDER LOOP ============
-  // When the customizer is scrolled out of the parent page, the embedder calls
-  // window.pwSetRenderActive(false) so we skip rendering AND the per-frame
-  // getBoundingClientRect() layout read — both otherwise compete with the host
-  // page's scroll on the main thread and make it stutter/jump.
-  let renderActive = true;
-  window.pwSetRenderActive = (on) => { renderActive = !!on; };
-
-  engine.runRenderLoop(() => {
-    if (!renderActive) return;
+  // Gated to run ONLY while the viewport is on-screen (see the IntersectionObserver
+  // below). Once the viewer scrolls out of view we stopRenderLoop() entirely and
+  // skip the per-frame layout read in measureAndResize — so scrolling the rest of
+  // the page is as light as any normal site (no WebGL draw, no getBoundingClientRect
+  // thrash competing with the browser's scroll/paint). This is why a long page with
+  // a 3D hero would otherwise feel progressively laggier the more it renders.
+  let viewerVisible = true;
+  const renderFrame = () => {
     tickCameraFollow();
+    try { updateScaleRefs(); } catch (e) { /* props are cosmetic — never stall the frame */ }
     scene.render();
     try { projectDimensions(); } catch (e) { /* never let the overlay stall rendering */ }
-  });
+  };
+  engine.runRenderLoop(renderFrame);
 
-  // Canvas sizing — probe the canvas's CSS box only a few times per second.
-  // Reading getBoundingClientRect() every frame forces a synchronous reflow
-  // that janks the host page's scroll; size changes (resize, fullscreen) are
-  // rare, so ~7x/sec catches them without the per-frame layout thrash.
-  let lastW = 0, lastH = 0, measureTick = 0;
+  // Continuous canvas sizing — measure the canvas's CSS box every frame, but ONLY
+  // while the viewer is visible. getBoundingClientRect() forces a synchronous
+  // layout; doing it every frame during an off-screen scroll is a big jank source.
+  let lastW = 0, lastH = 0;
   const measureAndResize = () => {
-    if (!renderActive) { requestAnimationFrame(measureAndResize); return; }
-    if ((measureTick++ % 9) === 0) {
+    if (viewerVisible) {
       const rect = canvas.getBoundingClientRect();
       const cssW = Math.max(0, Math.floor(rect.width));
       const cssH = Math.max(0, Math.floor(rect.height));
@@ -2634,6 +3109,25 @@
     requestAnimationFrame(measureAndResize);
   };
   measureAndResize();
+
+  // Pause/resume the whole 3D pipeline as the viewer scrolls out of / into view.
+  // rootMargin gives a 300px head-start so it's already rendering before it edges
+  // into view (no blank flash). Falls back to always-on if IO is unsupported.
+  const viewerEl = $('#viewport') || canvas;
+  if ('IntersectionObserver' in window && viewerEl) {
+    const io = new IntersectionObserver((entries) => {
+      const vis = entries.some((en) => en.isIntersecting);
+      if (vis === viewerVisible) return;
+      viewerVisible = vis;
+      if (vis) {
+        lastW = lastH = 0;                 // size may have changed while hidden — force a re-measure
+        engine.runRenderLoop(renderFrame);
+      } else {
+        engine.stopRenderLoop();           // no WebGL work at all while off-screen
+      }
+    }, { root: null, rootMargin: '300px', threshold: 0 });
+    io.observe(viewerEl);
+  }
 
   // Fullscreen: instead of fighting CSS specificity, directly force the canvas to
   // cover the screen with inline !important styles. Nothing can beat that.
@@ -2706,6 +3200,9 @@
     const on = state.dogVisible !== false;
     if (d.mesh) d.mesh.setEnabled(on);
     if (d.inst) d.inst.setEnabled(on);
+    // The scale-ref props (person + ball) belong with the dog — hide them in
+    // "Wheelchair only" too. Both holders live under scaleRefRoot.
+    if (scaleRefRoot) scaleRefRoot.setEnabled(on);
     // Re-derive the framing for the new bbox. Eased by default; instant only on
     // first load so the landing view doesn't fly in.
     if (modelRoot) frameCamera(instant);
@@ -2785,6 +3282,7 @@
       const model = MODELS.find((m) => m.id === id);
       if (!model) return;
       selectedId = model.id;
+      state.modelId = model.id;
       // Update the option list's selected state in place — cheaper than a
       // full re-render and keeps focus/scroll position stable.
       $$('.model-option', modelMenu).forEach((opt) => {
@@ -2837,8 +3335,20 @@
   // the radius toward the recomputed camGoalRadius (= autoFit × userFactor).
   $('#rotateL').addEventListener('click', () => tweenAccumulatedY(-Math.PI / 8));
   $('#rotateR').addEventListener('click', () => tweenAccumulatedY(Math.PI / 8));
-  $('#zoomIn').addEventListener('click', () => applyUserZoom(0.85));
-  $('#zoomOut').addEventListener('click', () => applyUserZoom(1.18));
+  // Vertical zoom slider — drives userZoomFactor directly; the render loop lerps
+  // the radius toward camGoalRadius (= autoFit × factor). Wheel/pinch push the
+  // factor back onto the slider via syncZoomSlider().
+  zoomSlider = $('#zoomSlider');
+  if (zoomSlider) {
+    zoomSlider.addEventListener('input', () => {
+      const pos = +zoomSlider.value;
+      zoomSlider.style.setProperty('--p', pos + '%');
+      userZoomFactor = Math.max(ZOOM_FACTOR_MIN,
+                                Math.min(ZOOM_FACTOR_MAX, zoomFactorFromSlider(pos)));
+      applyZoom();
+    });
+    syncZoomSlider();   // seat the thumb + fill at the current factor
+  }
   $('#resetView')?.addEventListener('click', () => {
     tween(() => accumulatedY, 0, (v) => { accumulatedY = v; applyModelRotation(); }, 400);
     tween(() => peekX, 0, (v) => { peekX = v; applyModelRotation(); }, 400);
@@ -2846,52 +3356,6 @@
     // ease the radius back to it.
     frameCamera(false, true);
   });
-
-  // Wheel zooms ONLY when the cursor is inside the model's screen-projected
-  // bounding box. Outside that rect (e.g. on the gradient background around
-  // the wheelchair), the event passes through to normal page scrolling —
-  // the canvas takes up a lot of the viewport, so always-prevent would steal
-  // the user's scroll gesture in the common case.
-  //
-  // We project the 8 corners of the world bbox to screen each event and
-  // hit-test the cursor against the resulting 2D rect. That's a few vec3
-  // multiplies — cheap compared to even one frame of jank — and it tracks
-  // the model as it morphs / rotates / zooms without any caching.
-  const isCursorOverModelBbox = (clientX, clientY) => {
-    if (!modelRoot) return false;
-    const rect = canvas.getBoundingClientRect();
-    const cx = clientX - rect.left;
-    const cy = clientY - rect.top;
-    if (cx < 0 || cy < 0 || cx > rect.width || cy > rect.height) return false;
-
-    const predicate = (m) =>
-      m && m.isEnabled && m.isEnabled() &&
-      m.isVisible !== false &&
-      m.getTotalVertices && m.getTotalVertices() > 0;
-    const bounds = modelRoot.getHierarchyBoundingVectors(true, predicate);
-    if (!isFinite(bounds.min.x) || !isFinite(bounds.max.x)) return false;
-
-    // Project to a viewport sized in CSS pixels so cursor coords match
-    // without any DPR juggling.
-    const viewport = new BABYLON.Viewport(0, 0, 1, 1).toGlobal(rect.width, rect.height);
-    const transform = scene.getTransformMatrix();
-    const identity = BABYLON.Matrix.Identity();
-    let minSx = Infinity, minSy = Infinity, maxSx = -Infinity, maxSy = -Infinity;
-    const v = new BABYLON.Vector3();
-    for (let i = 0; i < 8; i++) {
-      v.set(
-        (i & 1) ? bounds.max.x : bounds.min.x,
-        (i & 2) ? bounds.max.y : bounds.min.y,
-        (i & 4) ? bounds.max.z : bounds.min.z,
-      );
-      const p = BABYLON.Vector3.Project(v, identity, transform, viewport);
-      if (p.x < minSx) minSx = p.x;
-      if (p.x > maxSx) maxSx = p.x;
-      if (p.y < minSy) minSy = p.y;
-      if (p.y > maxSy) maxSy = p.y;
-    }
-    return cx >= minSx && cx <= maxSx && cy >= minSy && cy <= maxSy;
-  };
 
   // Hovering a measurement field (its slider, value box or "?") lights up the
   // matching dimension on the dog — the same effect as hovering the line itself,
@@ -2910,9 +3374,12 @@
     });
   });
 
-  // Wheel-to-zoom is intentionally disabled: the wheel only ever scrolls the
-  // host page now, and zoom is done through the +/- buttons. This removes the
-  // scroll/zoom conflict over the viewer.
+  // Mouse-wheel zoom is intentionally DISABLED. Babylon's own camera wheel input
+  // is already cleared (camera.inputs.clear()), and we no longer attach a custom
+  // wheel handler — the old one projected the model's bounding box on every wheel
+  // event (getHierarchyBoundingVectors), which stuttered/froze the viewer. Zoom is
+  // UI-only now (the vertical zoom slider). Wheel over the canvas just scrolls the
+  // page normally.
   $('#fullscreen').addEventListener('click', () => {
     const el = $('#viewport');
     if (!document.fullscreenElement) el.requestFullscreen?.();

@@ -1,12 +1,11 @@
 // ---------- Portfolio data ----------
 // Categories shown in the header, each with its list of projects.
-// Content is placeholder for now — to be filled in per project later.
 const CATEGORIES = [
   {
     id: "product-design",
     label: "Product Design",
     description:
-      "Projects developed during the Product Design degree, with emphasis on blabla and blabla. Placeholder text to be replaced.",
+      "Projects developed throughout the Product Design program at UFSC (2018–2021), showcasing an interdisciplinary approach to research, ideation, prototyping, and the development of innovative product solutions.",
     projects: [
       { id: "petwheels", title: "Petwheels" },
       { id: "durare", title: "Durare" },
@@ -18,7 +17,7 @@ const CATEGORIES = [
     id: "mechanical-engineering",
     label: "Mechanical Engineering",
     description:
-      "Mechanical engineering work focused on blabla, covering design, analysis and prototyping. Placeholder text to be replaced.",
+      "Selected projects developed during the Mechanical Engineering program at UFSC (2012–2017), highlighting analytical, technical, and engineering problem-solving skills.",
     projects: [
       { id: "tuff", title: "TUFF" },
       { id: "epicyclic-magnetic-gear", title: "Epicyclic Magnetic Gear" },
@@ -28,7 +27,7 @@ const CATEGORIES = [
     id: "3d-printing",
     label: "3D Printing",
     description:
-      "3D printing work, from a viral Dremel belt sander and a Millennium Falcon mouse to my Baltha Maker studio, museum scale models and a digital dentistry venture.",
+      "Projects and professional experience exploring additive manufacturing, digital fabrication, and small-scale production, from rapid prototyping to commercial products and manufacturing workflows.",
     projects: [
       { id: "baltha-maker", title: "Baltha Maker" },
       { id: "edge-planning", title: "Edge Planning Center" },
@@ -39,7 +38,7 @@ const CATEGORIES = [
     id: "interactive-design",
     label: "Interactive Design",
     description:
-      "Interactive 3D experiences for the web and AR: games, virtual showrooms and product visualizers built with Babylon.js and Blender at MeetKai and More Than Real.",
+      "Interactive 3D design projects built for the web, from product visualizers, virtual showrooms and games for marketing, while working for Meetkai and More Than Real.",
     projects: [
       { id: "meetkai", title: "MeetKai" },
       { id: "more-than-real", title: "More Than Real" },
@@ -59,15 +58,6 @@ const sidebarTitle = document.getElementById("sidebar-title");
 const sidebarLabel = document.getElementById("sidebar-label");
 const content = document.getElementById("content");
 const skillsPanel = document.getElementById("skills-panel");
-
-// The Petwheels customizer (in an iframe) forwards off-model touch drags here so
-// the page scrolls past the 3D viewer instead of rotating it (mobile). See
-// petwheels/script.js.
-window.addEventListener("message", (e) => {
-  if (e.data && e.data.type === "pw-scroll" && typeof e.data.dy === "number") {
-    content.scrollBy(0, e.data.dy);
-  }
-});
 
 // ---------- Render helpers ----------
 function getCategory(id) {
@@ -112,9 +102,6 @@ const PROJECT_SECTIONS = {
     "Mood boards",
     "Ideation",
     "Creation",
-    "Solutions",
-    "Materials & fabrication",
-    "Customization",
   ],
   zenik: [
     "Briefing",
@@ -277,23 +264,56 @@ function goToSection(projId, label) {
 const PROJECT_SKILLS = {
   meetkai: {
     Summary:
-      "3D Designer & Tools Developer at MeetKai (California, remote since 2023), an AI and metaverse company. I design and optimize 3D assets and full scenes for WebGL, build and maintain the MeetKai Suite of Blender tools used across the 3D team, and develop Babylon.js demo scenes. Work here spans the BYD Virtual Dealership, Sony’s Survive Thanksgiving, the Detroit Pistons store and the MeetKai Suite add-on.",
-    Year: "Since 2023",
-    Knowledge: ["Real-time 3D on the web", "Pipeline optimization", "Tooling & automation"],
+      "3D Designer & Tools Developer at MeetKai (California, remote, 2023-2026), an AI and metaverse company. I design and optimize 3D assets and full scenes for WebGL, build and maintain the MeetKai Suite of Blender tools used across the 3D team, and develop Babylon.js demo scenes. Work here spans many clients: BYD, Sony, the Detroit Pistons, Silicon Box (chip manufacturing), Orange (mobile), Tata Electronics, Dream Big (chip design), The Wall Street Journal and others, of which a few are showcased here.",
+    Year: "2023 - 2026",
+    Knowledge: [
+      "Polygonal Modeling",
+      "CAD Modeling",
+      "Web Design",
+      "Web Development",
+      "Real-time Rendering",
+      "Video Editing",
+      "Automation",
+      "Artificial Intelligence",
+    ],
     Skills: ["3D modeling", "Environment design", "Optimization", "Blender add-on development"],
-    Software: ["Babylon.js", "Blender", "Blender API", "Python", "Substance 3D"],
+    Software: [
+      "Blender",
+      "Autodesk Fusion 360",
+      "Adobe Substance 3D",
+      "Adobe Photoshop",
+      "Babylon.js",
+      "Unity",
+      "JavaScript",
+      "Python",
+      "Blender API",
+      "Cursor",
+      "Claude Code",
+    ],
   },
   "more-than-real": {
     Summary:
-      "3D Designer for AR at More Than Real (São Paulo, remote since 2022), a studio building augmented-reality experiences for sales and marketing. As a freelance 3D artist I model, texture and optimize assets for WebAR (from Nescafé Dolce Gusto coffee machines to Stellantis car models), creating UV maps, realistic textures, baked lighting and materials tuned for real-time visualization.",
-    Year: "Since 2022",
-    Knowledge: ["WebAR", "Product & automotive 3D", "Marketing experiences"],
+      "3D Designer for AR at More Than Real (São Paulo, remote, 2022), a studio building augmented-reality experiences for sales and marketing. As a freelance 3D artist I model, texture and optimize assets for WebAR (from Nescafé Dolce Gusto coffee machines to Stellantis car models, plus work for clients like Seara and Sika), creating UV maps, realistic textures, baked lighting and materials tuned for real-time visualization.",
+    Year: "2022",
+    Knowledge: [
+      "Polygonal Modeling",
+      "CAD Modeling",
+      "Real-time Rendering",
+      "Augmented Reality",
+    ],
     Skills: ["3D modeling", "Texturing", "Optimization", "Surface / NURBS modeling"],
-    Software: ["Babylon.js", "Spark AR", "Blender", "Fusion 360", "Substance 3D"],
+    Software: [
+      "Blender",
+      "Autodesk Fusion 360",
+      "Adobe Substance 3D",
+      "Adobe Photoshop",
+      "Babylon.js",
+      "Spark AR",
+    ],
   },
   meetcraft: {
     Summary:
-      "A web-based 3D editor powered by Babylon.js for building interactive 3D scenes in the browser, with real-time collaboration. It started as a personal project to explore AI-powered creative tools and grew into a full platform \u2014 React/TypeScript frontend, Babylon.js rendering, and Supabase for auth, sync and storage.",
+      "A web-based 3D editor powered by Babylon.js for building interactive 3D scenes in the browser, with real-time collaboration. It started as a personal project to explore AI-powered creative tools and grew into a full platform: a React/TypeScript frontend, Babylon.js rendering, and Supabase for auth, sync and storage.",
     Year: "2024",
     Knowledge: ["Real-time 3D on the web", "Collaborative editing", "AI tooling"],
     Skills: ["Full-stack development", "Babylon.js", "UI/UX design", "3D"],
@@ -301,7 +321,7 @@ const PROJECT_SKILLS = {
   },
   "meetkai-suite": {
     Summary:
-      "A Blender add-on I built on my own initiative to automate MeetKai's 3D for web pipeline \u2014 material aggregation and remeshing, lightmap/AO baking, UV mapping, a color-atlas editor, armature aggregation, and an AI assistant. It is now a standard tool used across the team's 3D production.",
+      "A Blender add-on I built on my own initiative to automate MeetKai's 3D for web pipeline: material aggregation and remeshing, lightmap/AO baking, UV mapping, a color-atlas editor, armature aggregation, and an AI assistant. It is now a standard tool used across the team's 3D production.",
     Year: "2023",
     Knowledge: ["3D pipeline optimization", "Lightmapping", "Tooling & automation"],
     Skills: ["Blender add-on development", "Python", "Automation", "AI integration"],
@@ -313,23 +333,23 @@ const PROJECT_SKILLS = {
     Year: "2023",
     Knowledge: ["Real-time 3D", "Performance optimization", "Environment art"],
     Skills: ["Environment design", "3D modeling", "Crowd optimization", "Cutscenes"],
-    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+    Software: ["Babylon.js", "Blender", "Adobe Substance 3D", "Adobe Photoshop"],
   },
   "byd-dealership": {
     Summary:
-      "A 3D web showroom for BYD where users tour dealerships, customize colors and take virtual test drives in the browser. I led much of the 3D work \u2014 most notably recreating the BYD Seagull from scratch (exterior, interior, materials and interactive animations) and building the Philippines dealership digital twin.",
+      "A 3D web showroom for BYD where users tour dealerships, customize colors and take virtual test drives in the browser. I led much of the 3D work, most notably recreating the BYD Seagull from scratch (exterior, interior, materials and interactive animations) and building the Philippines dealership digital twin.",
     Year: "2024",
     Knowledge: ["Automotive 3D", "Web optimization", "Digital twins"],
     Skills: ["Vehicle modeling", "Interior modeling", "Texturing", "Animation"],
-    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+    Software: ["Babylon.js", "Blender", "Adobe Substance 3D", "Adobe Photoshop"],
   },
   "pistons-store": {
     Summary:
-      "An interactive 3D merchandise store for the Detroit Pistons across three environments \u2014 a showroom, the arena court, and a locker-room event space. I was 3D lead and handled most of the UX, building optimized real-time environments with baked lighting and lightweight animated crowds.",
+      "An interactive 3D merchandise store for the Detroit Pistons across three environments: a showroom, the arena court, and a locker-room event space. I was 3D lead and handled most of the UX, building optimized real-time environments with baked lighting and lightweight animated crowds.",
     Year: "2024",
     Knowledge: ["Real-time 3D", "Lightmapping", "Retail / e-commerce 3D"],
     Skills: ["Environment design", "UX design", "Lightmap baking", "3D"],
-    Software: ["Babylon.js", "Blender", "Substance 3D", "Photoshop"],
+    Software: ["Babylon.js", "Blender", "Adobe Substance 3D", "Adobe Photoshop"],
   },
   "chevrolet-montana": {
     Summary:
@@ -337,15 +357,15 @@ const PROJECT_SKILLS = {
     Year: "2022",
     Knowledge: ["WebAR", "Automotive 3D", "Marketing experiences"],
     Skills: ["Vehicle modeling", "Optimization", "AR", "Animation"],
-    Software: ["Babylon.js", "Spark AR", "Blender", "Photoshop"],
+    Software: ["Babylon.js", "Spark AR", "Blender", "Adobe Photoshop"],
   },
   "dolce-gusto": {
     Summary:
-      "3D models of Nescaf\u00e9 Dolce Gusto coffee machines for WebXR sales and marketing. With no original CAD available, I recreated them from photos and specs \u2014 surface modeling in Fusion 360, then Blender for UVs, materials and per-color variants for real-time AR switching.",
+      "3D models of Nescaf\u00e9 Dolce Gusto coffee machines for WebXR sales and marketing. With no original CAD available, I recreated them from photos and specs, doing surface modeling in Fusion 360, then Blender for UVs, materials and per-color variants for real-time AR switching.",
     Year: "2022",
     Knowledge: ["WebXR / AR", "Product visualization", "Surface modeling"],
     Skills: ["Product modeling", "Surface / NURBS modeling", "Materials", "AR"],
-    Software: ["Babylon.js", "Spark AR", "Fusion 360", "Blender"],
+    Software: ["Babylon.js", "Spark AR", "Autodesk Fusion 360", "Blender"],
   },
   "sand-belt": {
     Summary:
@@ -359,7 +379,15 @@ const PROJECT_SKILLS = {
     Summary:
       "My 3D printing studio, started in 2018 alongside my Product Design studies at UFSC. It grew from helping classmates with prototypes into a full service business (FDM and resin printing plus laser cutting), serving people and companies across Santa Catarina and Brazil.",
     Year: "2018-2021",
-    Knowledge: ["3D printing services", "FDM & resin printing", "Laser cutting"],
+    Knowledge: [
+      "CAD Modeling",
+      "Polygonal Modeling",
+      "Surface Modeling",
+      "Digital Fabrication",
+      "Materials Science",
+      "Solid Mechanics",
+      "Business Management",
+    ],
     Skills: ["3D printing", "3D modeling", "Finishing", "Client services"],
     Software: ["Ultimaker Cura", "Autodesk Fusion 360", "Blender"],
   },
@@ -367,15 +395,27 @@ const PROJECT_SKILLS = {
     Summary:
       "A pioneer digital dentistry planning center in Florian\u00f3polis that I co-founded with two dentists. I was the technical lead, owning the fabrication process end to end, from supply chain to packaging, after training in resin printing and digital dentistry at Done 3D in Ribeir\u00e3o Preto.",
     Year: "2021",
-    Knowledge: ["Digital dentistry", "Resin 3D printing", "Production & supply chain"],
+    Knowledge: [
+      "Polygonal Modeling",
+      "Digital Dentistry",
+      "Radiology",
+      "Digital Fabrication",
+      "Materials Science",
+      "Business Management",
+    ],
     Skills: ["Resin 3D printing", "Meshmixer", "3Shape", "Blue Sky Bio"],
     Software: ["Meshmixer", "3Shape", "Blue Sky Bio"],
+    People: [
+      "Artur Balthazar (technical lead)",
+      "Bernardo Passoni (dentist, administrator)",
+      "Rodrigo Veras (dentist, radiologist)",
+    ],
   },
   "falcon-mouse": {
     Summary:
-      "A 3D-printed wireless mouse shaped like the Millennium Falcon, made in 2017 as a Star Wars fan project. After going viral on Instagram (150k+ reach), it was redesigned with higher detail and a solder-free assembly so anyone could print and build their own.",
-    Year: "2017",
-    Knowledge: ["Reverse engineering", "Digital fabrication", "Hobby electronics"],
+      "A 3D-printed wireless mouse shaped like the Millennium Falcon, first prototyped in 2017 as a Star Wars fan project. After going viral on Instagram (150k+ reach), it was redesigned in 2020 (the version shown here) with higher detail and a solder-free assembly so anyone could print and build their own.",
+    Year: "2020",
+    Knowledge: ["CAD Modeling", "Digital Fabrication", "Electronics"],
     Skills: ["3D modeling", "Mechanism design", "3D printing", "DFAM"],
     Software: ["Autodesk Fusion 360", "Blender", "Ultimaker Cura"],
   },
@@ -397,12 +437,13 @@ const PROJECT_SKILLS = {
   },
   durare: {
     Summary:
-      "Durare was an innovative carry-on suitcase built to last, developed as a high-complexity product design project at UFSC, in the fourth semester, by a team of three. The work followed a full development cycle, from desk, user and market research through to a physical prototype. Travellers were surveyed and observed, the case was studied functionally and ergonomically (OWAS postures and anthropometric data), and the findings were turned into ranked requirements through a House of Quality. From there the concept was detailed in CAD and resolved into real mechanisms, like a telescopic handle locked by neodymium magnets and retractable natural-rubber wheels that let the case climb steps. The result was built as a 3D-printed, hand-finished prototype with sewn soft goods.",
+      "Durare was a carry-on suitcase built to last, developed as a high-complexity product design project at UFSC, in the fourth semester, by a team of three. The work followed a full development cycle, from desk, user and market research through to a physical prototype. Travellers were surveyed and observed, the case was studied functionally and ergonomically (OWAS postures and anthropometric data), and the findings were turned into ranked requirements through a House of Quality. From there the concept was detailed in CAD and resolved into real mechanisms, like a telescopic handle locked by neodymium magnets and retractable natural-rubber wheels that let the case climb steps. The result was built as a 3D-printed, hand-finished prototype with sewn soft goods.",
     Year: "2019",
     Knowledge: [
       "Design Methodology",
       "Product Ergonomics",
       "Materials & Manufacturing Processes",
+      "CAD Modeling",
       "Marketing & Consumer Behaviour",
       "Design & Innovation",
       "Design & Sustainability",
@@ -418,6 +459,12 @@ const PROJECT_SKILLS = {
       "Prototyping",
     ],
     Software: ["Autodesk Fusion 360", "Ultimaker Cura", "Adobe Photoshop"],
+    People: [
+      "Artur Balthazar",
+      "Ana Verónica Paz y Miño (advisor)",
+      "João Marcelo Duarte",
+      "Maressa Medina",
+    ],
   },
   "docol-cozy": {
     Summary:
@@ -428,6 +475,7 @@ const PROJECT_SKILLS = {
       "Product Ergonomics",
       "Universal & Inclusive Design",
       "Materials & Manufacturing Processes",
+      "CAD Modeling",
       "Marketing & Consumer Behaviour",
       "Design & Innovation",
     ],
@@ -441,6 +489,11 @@ const PROJECT_SKILLS = {
       "Prototyping",
     ],
     Software: ["Autodesk Fusion 360", "Ultimaker Cura", "Adobe Photoshop"],
+    People: [
+      "Artur Balthazar",
+      "Ivan Luiz de Medeiros (advisor)",
+      "João Marcelo Duarte",
+    ],
   },
   zenik: {
     Summary:
@@ -452,7 +505,7 @@ const PROJECT_SKILLS = {
       "Materials & Manufacturing Processes",
       "Marketing & Consumer Behaviour",
       "Theory of Form",
-      "Technical Drawing & CAD",
+      "CAD Modeling",
     ],
     Skills: [
       "Design thinking",
@@ -462,6 +515,12 @@ const PROJECT_SKILLS = {
       "Rendering",
     ],
     Software: ["Autodesk Fusion 360", "Adobe Photoshop"],
+    People: [
+      "Artur Balthazar",
+      "Cristiano Alves (advisor)",
+      "Akyniele Alves",
+      "João Marcelo Duarte",
+    ],
   },
   petwheels: {
     Summary:
@@ -472,7 +531,7 @@ const PROJECT_SKILLS = {
       "Product Ergonomics",
       "Materials & Manufacturing Processes",
       "Digital Fabrication",
-      "Parametric & 3D Modelling",
+      "CAD Modeling",
       "Marketing & Consumer Behaviour",
       "Design & Innovation",
     ],
@@ -485,6 +544,7 @@ const PROJECT_SKILLS = {
       "Mechanism design",
       "Prototyping",
     ],
+    People: ["Artur Balthazar", "Regiane Trevisan Pupo (advisor)"],
     Software: ["Autodesk Fusion 360", "Ultimaker Cura", "Babylon.js"],
   },
   tuff: {
@@ -492,15 +552,14 @@ const PROJECT_SKILLS = {
       "TUFF was a mechanical engineering project developed in 2016 in the Integrated Project course at UFSC, for the energy-drink brand CAN. The goal was a portable machine that chills a warm bottle to fridge-cold in under a minute. Following the PRODIP development methodology, the work moved through four phases, from user needs and specifications to a detailed, costed design. The winning concept spins the bottle at variable speed in a chilled salt-water bath, cooled by a vapour-compression circuit and held cold by polyurethane-foam insulation. A working prototype was built and bench-tested at the POLO lab, with the refrigeration cycle sized in CoolPack and the rotating flow analysed in SolidWorks Flow Simulation; an Arduino runs the motor and protects the compressor. The detailed design phase produced a fully defined, costed and manufacturable rapid chiller.\n\nAcross a large engineering team, I took part in every stage of the project, though my focus leaned towards turning TUFF into a viable product for the market and the client rather than a pure experiment. That pulled me into the market analysis, the 3D modelling and the prototyping. I was responsible for all of the 3D work and 3D prints, and ran several of the hands-on tests, from filling the reservoir with polyurethane foam to the bottle coupling and its motor-driven rotation.",
     Year: "2016",
     Knowledge: [
-      "Engineering Design Methodology",
-      "Technical Drawing",
-      "Geometric Modelling & CAD",
+      "Design Methodology",
+      "CAD Modeling",
+      "Electronics",
       "Thermodynamics",
-      "Heat Transfer",
       "Fluid Mechanics",
+      "Heat Transfer",
       "Engineering Materials",
       "Manufacturing Processes",
-      "Electronics",
     ],
     Skills: [
       "Refrigeration design",
@@ -510,6 +569,16 @@ const PROJECT_SKILLS = {
       "Mechanism design",
       "Prototyping",
       "Bench testing",
+    ],
+    People: [
+      "Artur Balthazar",
+      "Saulo Güths (advisor)",
+      "Matheus de Lorenzo Oliveira",
+      "Bruno Alexandro Scheidt",
+      "Caio Fraga da Luz",
+      "Mattheus Kuiava Longen",
+      "Marcelo Campos R. Candomil Farias",
+      "Nicolas Bianchi Schmitz",
     ],
     Software: [
       "Autodesk Inventor",
@@ -523,11 +592,11 @@ const PROJECT_SKILLS = {
       "The Magnetic Epicyclic Gear was a research project carried out in 2016 during a summer research assistantship at NJIT (New Jersey Institute of Technology), while on a mechanical engineering exchange. It explores a contactless gearbox that transmits torque through rare-earth magnets instead of meshing teeth, removing the friction, wear, lubrication and most of the noise of a conventional gear. The design uses a planetary (epicyclic) layout, an 18-magnet ring, three planet gears, a three-magnet sun-gear output and a carrier rotor, giving a 7:1 ratio. Every part was modelled and 3D-printed in-house, and the working rig spun a small turbine to light a bulb, reaching about 1.63 V and running without slipping up to roughly 100 RPM input. It was my first real 3D print and my first international presentation, at an NJIT science fair.",
     Year: "2016",
     Knowledge: [
-      "Mechanisms",
+      "CAD Modeling",
+      "Digital Fabrication",
       "Machine Elements",
-      "Electromagnetism",
-      "Engineering Materials",
-      "Geometric Modelling & CAD",
+      "Electronics",
+      "Physics",
     ],
     Skills: [
       "Research",
@@ -538,6 +607,12 @@ const PROJECT_SKILLS = {
       "Testing",
     ],
     Software: ["Autodesk Inventor"],
+    People: [
+      "Artur Balthazar",
+      "Ravindra Nuggehalli (advisor)",
+      "Eduardo Pereira",
+      "Leonardo Fontoura",
+    ],
   },
 };
 
@@ -554,11 +629,11 @@ function renderSkills() {
     return;
   }
 
-  // Display labels for the three pill sets (data keys stay Software/Skills/Knowledge).
+  // Display labels for the pill sets (data keys stay Software/Knowledge/People).
   const LABELS = {
-    Software: "Software used",
-    Skills: "Skills exercised",
     Knowledge: "Knowledge-base",
+    Software: "Software & Tools used",
+    People: "People",
   };
   const pillSection = (key) => {
     const tags = data[key];
@@ -591,23 +666,19 @@ function renderSkills() {
     : "";
 
   skillsPanel.innerHTML = `${summary}${yearBlock}${pillSection("Knowledge")}${pillSection(
-    "Skills"
-  )}${pillSection("Software")}`;
+    "Software"
+  )}${pillSection("People")}`;
 }
 
-// Pause the Petwheels customizer's WebGL render loop the moment its iframe is
-// fully out of view — its continuous rendering shares the main thread with the
-// page and stutters scrolling otherwise. No rootMargin, so it pauses as soon as
-// the viewer leaves the viewport (not 300px later, which left a janky band just
-// below it).
-let pwVisObserver = null;
-// Cover row: size each figure's flex-grow to its media's own aspect ratio, read
-// from the real file (image or video). With flex-basis 0, flex-grow ∝ aspect
-// makes the figures come out the same height automatically — no hard-coded
-// ratios, so it adapts to whatever cover files are dropped in.
+// Media rows (cover + business model): size each figure's flex-grow to its
+// media's own aspect ratio, read from the real file (image or video). With
+// flex-basis 0, flex-grow ∝ aspect makes the figures come out the same height
+// automatically — no hard-coded ratios, so it adapts to whatever files are
+// dropped in.
 function setupPetwheelsCover(scope) {
-  const row = scope.querySelector(".pw-cover");
-  if (!row) return;
+  scope.querySelectorAll(".pw-cover, .pw-bm-row, .pw-images-fit").forEach(fitMediaRow);
+}
+function fitMediaRow(row) {
   const figs = [...row.querySelectorAll("figure")];
   const fit = (fig) => {
     const m = fig.querySelector("img, video");
@@ -628,20 +699,6 @@ function setupPetwheelsCover(scope) {
       m.addEventListener("load", () => fit(fig), { once: true });
     }
   });
-}
-
-function setupPetwheelsRenderPause(scope) {
-  const iframe = scope.querySelector(".pw-frame iframe");
-  if (!iframe || !("IntersectionObserver" in window)) return;
-  pwVisObserver = new IntersectionObserver(
-    (entries) => {
-      const visible = entries.some((e) => e.isIntersecting);
-      const w = iframe.contentWindow;
-      if (w && typeof w.pwSetRenderActive === "function") w.pwSetRenderActive(visible);
-    },
-    { root: content, threshold: 0 }
-  );
-  pwVisObserver.observe(iframe);
 }
 
 // The card positions/sizes are authored at this design width/height; the whole
@@ -1009,7 +1066,6 @@ function renderContent() {
       // One-time setup, scoped to this page.
       if (proj.id === "petwheels") {
         setupPetwheelsCover(node);
-        setupPetwheelsRenderPause(node);
         setupPetwheelsNews(node);
       }
       if (proj.id === "zenik") setupZenikPositions(node);
@@ -1048,8 +1104,8 @@ function renderContent() {
 // Rendered once into the slide-in CV panel (see #cv-inner).
 const CV_INFO = [
   { label: "Name", value: "Artur Donadel Balthazar" },
-  { label: "Location", value: "Florianópolis, Brazil - open to relocation" },
   { label: "Nationality", value: "Brazilian / Italian" },
+  { label: "Location", value: "Florianópolis, Brazil - open to relocation" },
   {
     label: "Email",
     value: "arturbalthazar@gmail.com",
@@ -1080,18 +1136,22 @@ const CV_SKILLS = [
   {
     label: "Knowledge-based skills",
     tags: [
-      "Surface, organic and CAD modeling",
-      "3D art pipeline",
-      "Asset optimization",
-      "Environment and scene design",
+      "Design thinking, research and development",
+      "CAD, surface and organic 3D modeling",
+      "Programmatic CAD and computational design",
+      "Design for additive manufacturing (DFAM)",
+      "Sketching and ideation",
+      "Digital fabrication and rapid prototyping",
+      "Materials and manufacturing processes",
+      "UV mapping, texturing and rendering",
       "Photogrammetry and 3D scanning",
-      "2D graphics and texture creation",
-      "3D tools development",
+      "2D graphics and vector editing",
+      "Real-time 3D for web and AR",
+      "3D tools development and automation",
       "Web development",
-      "Front-end development",
-      "Back-end integration",
-      "AI-assisted scripting and debugging",
       "UI/UX design",
+      "Oral and visual presentation",
+      "Business management",
     ],
   },
   {
@@ -1102,6 +1162,7 @@ const CV_SKILLS = [
       "Originality",
       "Eye for detail",
       "Proactivity",
+      "Holistic vision",
       "Task-driven",
       "Self-motivation",
       "Adaptability",
@@ -1117,26 +1178,29 @@ const CV_SKILLS = [
   {
     label: "Software, tools and programming languages",
     tags: [
-      "Blender",
-      "Maya",
-      "3DsMax",
-      "SketchUp",
-      "Fusion 360",
+      "Autodesk Fusion 360",
       "Rhinoceros",
+      "SolidWorks",
+      "CadQuery",
+      "Blender",
+      "Autodesk Maya",
+      "Autodesk 3ds Max",
+      "Google SketchUp",
+      "Adobe Substance",
+      "Adobe Photoshop",
+      "Adobe Illustrator",
+      "Figma",
       "Unity",
       "Unreal Engine",
-      "Adobe Substance",
-      "Photoshop",
-      "Illustrator",
-      "Figma",
-      "Blender API",
       "Python",
+      "Blender API",
       "JavaScript",
       "TypeScript",
       "Babylon.js",
-      "Git/GitHub",
-      "Supabase",
       "React",
+      "Supabase",
+      "Git/GitHub",
+      "Claude Code",
       "Cursor",
     ],
   },
@@ -1174,7 +1238,7 @@ const CV_EXPERIENCE = [
     location: "California, US (remote)",
     period: "Jan 2023 - Present",
     bullets: [
-      "3D design and optimization of assets and 3D scenes for WebGL applications.",
+      "3D design and optimization of assets and virtual spaces for WebGL applications.",
       "Design and maintenance of MeetKai Suite, a complete set of Blender tools used by the 3D team, aimed at reducing friction in the 3D scene creation process, making it faster, more reliable and intuitive.",
       "Development of Babylon.js demo scenes to gather attention of potential clients.",
     ],
@@ -1186,7 +1250,7 @@ const CV_EXPERIENCE = [
     location: "São Paulo, Brazil (remote)",
     period: "Jan 2022 - Present",
     bullets: [
-      "Working as a freelancer in a wide range of 3D projects.",
+      "Working as a freelancer in a wide range of product visualization 3D projects.",
       "3D modeling, texturing and optimization of Nescafé Dolce Gusto coffee machines for WebAR.",
       "Asset and topology optimization of 3D car models for car manufacturer Stellantis, creating UV maps, realistic textures, texture baking and materials for WebAR visualization.",
     ],
@@ -1539,7 +1603,7 @@ const PROJECT_PAGES = {
     
 
       <h2 class="pw-subtitle">Pistons Virtual Store</h2>
-            <img class="pw-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
+            <img class="pw-logo pistons-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
       <p class="pw-text">The Pistons Virtual Store is an interactive 3D web experience for Detroit Pistons official merchandise: jerseys, hoodies, headwear and gifts, spread across three environments. I was 3D lead and handled most of the UX decisions, building all three environments (and many interactive assets) optimized for real-time web rendering.</p>
       <div class="pw-cover-row">
         <figure class="pw-cover-cell"><img src="assets/interactive/pistons-store/cover.jpg" alt="Pistons virtual store" loading="lazy" /></figure>
@@ -1586,7 +1650,7 @@ const PROJECT_PAGES = {
       <p class="pw-intro">More Than Real is a São Paulo-based studio building augmented-reality experiences for sales and marketing, where I work remotely as a freelance 3D Designer for AR. I handle 3D modeling, texturing and optimization for WebAR, creating UV maps, realistic textures, baked lighting and materials tuned for real-time visualization. Two of the projects I worked on:</p>
 
       <h2 class="pw-subtitle">Chevrolet Montana</h2>
-            <img class="pw-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
+            <img class="pw-logo chevy-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
       <p class="pw-text">The Chevrolet Montana 2023 launched with a major marketing campaign, including a feature on the Big Brother Brasil reality show. I developed the 3D model for AR visualization as part of the campaign, one of several automotive projects I worked on at More Than Real.</p>
       <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/cover.jpg" alt="Chevrolet Montana lineup" loading="lazy" /></figure>
       <h2 class="pw-heading">3D Development</h2>
@@ -1598,7 +1662,7 @@ const PROJECT_PAGES = {
     
 
       <h2 class="pw-subtitle">Nescafé Dolce Gusto</h2>
-            <img class="pw-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
+            <img class="pw-logo dg-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
       <p class="pw-text">I created 3D models of Nescafé Dolce Gusto coffee machines for WebXR sales and marketing experiences, interactive AR models that let customers explore the products in their own space before buying.</p>
       <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/cover.jpg" alt="Dolce Gusto coffee machines" loading="lazy" /></figure>
       <p class="pw-text">Since Nescafé had no original 3D files for these machines, I recreated them from scratch using only photos and technical specs. Surface modeling was done in Autodesk Fusion 360, then brought into Blender for UV unwrapping, materials and rendering.</p>
@@ -1717,7 +1781,7 @@ const PROJECT_PAGES = {
 
   "pistons-store": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
+      <img class="pw-logo pistons-logo" src="assets/interactive/pistons-store/logo.png" alt="Detroit Pistons" />
       <p class="pw-text">The Pistons Virtual Store is an interactive 3D web experience for Detroit Pistons official merchandise: jerseys, hoodies, headwear and gifts, spread across three environments. I was 3D lead and handled most of the UX decisions, building all three environments (and many interactive assets) optimized for real-time web rendering.</p>
       <div class="pw-cover-row">
         <figure class="pw-cover-cell"><img src="assets/interactive/pistons-store/cover.jpg" alt="Pistons virtual store" loading="lazy" /></figure>
@@ -1743,7 +1807,7 @@ const PROJECT_PAGES = {
 
   "chevrolet-montana": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
+      <img class="pw-logo chevy-logo" src="assets/interactive/chevrolet-montana/logo.png" alt="Chevrolet" />
       <p class="pw-text">The Chevrolet Montana 2023 launched with a major marketing campaign, including a feature on the Big Brother Brasil reality show. I developed the 3D model for AR visualization as part of the campaign, one of several automotive projects I worked on at More Than Real.</p>
       <figure class="pw-img pw-img-single"><img src="assets/interactive/chevrolet-montana/cover.jpg" alt="Chevrolet Montana lineup" loading="lazy" /></figure>
       <h2 class="pw-heading">3D Development</h2>
@@ -1756,7 +1820,7 @@ const PROJECT_PAGES = {
 
   "dolce-gusto": () => `
     <div class="content-wide pw-page work-page">
-      <img class="pw-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
+      <img class="pw-logo dg-logo" src="assets/interactive/dolce-gusto/logo.png" alt="Nescafé Dolce Gusto" />
       <p class="pw-text">I created 3D models of Nescafé Dolce Gusto coffee machines for WebXR sales and marketing experiences, interactive AR models that let customers explore the products in their own space before buying.</p>
       <figure class="pw-img pw-img-single"><img src="assets/interactive/dolce-gusto/cover.jpg" alt="Dolce Gusto coffee machines" loading="lazy" /></figure>
       <p class="pw-text">Since Nescafé had no original 3D files for these machines, I recreated them from scratch using only photos and technical specs. Surface modeling was done in Autodesk Fusion 360, then brought into Blender for UV unwrapping, materials and rendering.</p>
@@ -1810,7 +1874,7 @@ const PROJECT_PAGES = {
     <div class="content-wide pw-page maker-page">
       <div class="pw-titlebar">
         <img class="pw-logo baltha-logo" src="assets/maker/baltha-maker/logo.png" alt="Baltha Maker" />
-        <a class="pw-btn" href="https://www.instagram.com/baltha.maker/" target="_blank" rel="noopener"><span>View on Instagram</span></a>
+        <a class="pw-btn pw-btn-glow" href="https://www.instagram.com/baltha.maker/" target="_blank" rel="noopener"><span class="pw-btn-glow-fx" aria-hidden="true"></span><span>View on Instagram</span></a>
       </div>
       <p class="pw-intro">Baltha Maker is a 3D printing and digital fabrication business I started in 2018, in parallel with my Product Design studies at UFSC. It began by helping classmates with their prototypes and project demands, and gradually grew into a real service. By 2019 I had already built a solid network of clients and was able to operate in a commercial space in the center of Florianópolis, providing 3D printing and fabrication services for people and businesses across Santa Catarina and eventually other parts of Brazil.</p>
       <div class="pw-services">
@@ -1895,7 +1959,14 @@ const PROJECT_PAGES = {
 
   petwheels: () => `
     <div class="content-wide pw-page">
-      <img class="pw-logo" src="assets/petwheels-logo.png" alt="Petwheels" />
+      <div class="pw-titlebar">
+        <img class="pw-logo" src="assets/petwheels-logo.png" alt="Petwheels" />
+        <a class="pw-btn pw-btn-glow" href="https://petwheels.io" target="_blank" rel="noopener">
+          <span class="pw-btn-glow-fx" aria-hidden="true"></span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>
+          <span>petwheels.io</span>
+        </a>
+      </div>
 
       <p class="pw-intro">
         Petwheels is a 3D-printed wheelchair for dogs with motor disabilities,
@@ -1921,14 +1992,7 @@ const PROJECT_PAGES = {
             <span>petwheels.io</span>
           </a>
         </div>
-        <!-- Interactive 3D customizer (isolated in its own document) -->
-        <div class="pw-frame">
-          <iframe src="petwheels/index.html?v=7" title="Petwheels 3D customizer" loading="lazy"></iframe>
-        </div>
         <div class="pw-bm">
-          <figure class="pw-bm-vid">
-            <video src="assets/petwheels/pethweels-cadQuery.mp4" autoplay loop muted playsinline preload="auto"></video>
-          </figure>
           <p class="pw-text">
             The promise behind Petwheels is to make mass customization of wheelchairs
             for dogs possible, letting anyone get a custom wheelchair as easily and
@@ -1942,15 +2006,29 @@ const PROJECT_PAGES = {
             rebuild the wheelchair, originally made in Fusion 360, as a code-first
             design using existing CAD libraries.
           </p>
+          <div class="pw-bm-row">
+            <figure>
+              <video src="assets/petwheels/pethweels-cadQuery.mp4" autoplay loop muted playsinline preload="auto"></video>
+            </figure>
+            <figure>
+              <img src="assets/petwheels/wheelchairs.jpg" alt="A batch of finished Petwheels wheelchairs in different colors and sizes" loading="lazy" />
+            </figure>
+          </div>
           <p class="pw-text">
             Now, users can enter a few measurements, preview an approximate version
             of the wheelchair in the browser (a polygonal model running in
             Babylon.js), and click to generate the real CAD design on the spot.
             Instead of a full CAD program running in the cloud, which is expensive and
             more prone to errors, the model is built at scale and reliably, with no
-            human intervention and with STL files ready for print. That is what made
-            Petwheels possible as a real online service.
+            human intervention and with STL files ready for print. From there,
+            customers choose how they get their chair: order it 3D-printed on demand
+            and delivered assembled, or buy the STL files and print it themselves.
+            That is what made Petwheels possible as a real online service.
           </p>
+        </div>
+        <!-- Interactive 3D customizer (isolated in its own document) -->
+        <div class="pw-frame">
+          <iframe src="petwheels/index.html?v=8" title="Petwheels 3D customizer" loading="lazy"></iframe>
         </div>
       </section>
 
@@ -1979,7 +2057,7 @@ const PROJECT_PAGES = {
           the chair be fitted to each dog's measurements at the design stage, removing most
           of the manual height, length and width adjustments that older designs depend on.
         </p>
-        <div class="pw-images pw-images-2">
+        <div class="pw-images pw-images-fit">
           <figure class="pw-img">
             <img src="assets/petwheels/patent-fig5.jpg" alt="Patent figure 5: front isometric view" loading="lazy" />
             <figcaption>Figure 5: front isometric view</figcaption>
@@ -2350,10 +2428,9 @@ const PROJECT_PAGES = {
           product should carry, favouring robustness and controlled speed over
           fragility, drawing on working dogs and concept cars.
         </p>
-        <div class="pw-row" style="max-width:680px">
-          <figure class="pw-img" style="flex: 1.585 1 0"><img src="assets/petwheels/expression-dog.jpg" alt="A working police dog in a tactical harness" loading="lazy" /></figure>
-          <figure class="pw-img" style="flex: 2 1 0"><img src="assets/petwheels/expression-car1.jpg" alt="A yellow sports car as a reference for robustness and speed" loading="lazy" /></figure>
-        </div>
+        <figure class="pw-img pw-img-single" style="max-width:680px">
+          <img src="assets/petwheels/expression.png" alt="Product-expression board: a sports car, a concept-car wheel, a working police dog and a robot dog toy" loading="lazy" />
+        </figure>
 
         <!-- Ideation -->
         <h3 class="pw-subtitle">Ideation</h3>
@@ -2362,14 +2439,16 @@ const PROJECT_PAGES = {
           from several angles, making it easier to sketch ideas straight over the
           animal rather than fighting the drawing.
         </p>
-        <figure class="pw-img pw-img-single" style="max-width:360px">
-          <div class="pw-ph">Printed dog templates used as a sketching base</div>
-          <figcaption>Printed dog templates used as a sketching base.</figcaption>
-        </figure>
-        <div class="pw-row" style="max-width:720px">
-          <figure class="pw-img" style="flex: 1.333 1 0"><div class="pw-ph">Concept sketch over a printed dog template</div></figure>
-          <figure class="pw-img" style="flex: 0.75 1 0"><div class="pw-ph">Concept sketch</div></figure>
-          <figure class="pw-img" style="flex: 0.75 1 0"><div class="pw-ph">Concept sketch</div></figure>
+        <div class="pw-row" style="max-width:none">
+          <figure class="pw-img" style="flex: 0.8465 1 0"><img src="assets/petwheels/ideation-templates.png" alt="Printed dog templates used as a sketching base" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation4.jpg" alt="Concept sketches over the dog template: strap-mounted wheels in side and back views" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation3.jpg" alt="Concept sketches over the dog template: early wheel and harness explorations" loading="lazy" /></figure>
+          <!-- Pair aspect is 0.6667; slightly less so the 16px internal gap
+               doesn't make the pair run taller than the row's other images. -->
+          <div class="pw-stack" style="flex: 0.63 1 0">
+            <figure class="pw-img"><img src="assets/petwheels/ideation1.jpg" alt="Concept sketch of a car-like silhouette drawn around the dog" loading="lazy" /></figure>
+            <figure class="pw-img"><img src="assets/petwheels/ideation2.jpg" alt="Concept sketch of a flowing organic line wrapping the dog's body" loading="lazy" /></figure>
+          </div>
         </div>
 
         <!-- Creation -->
@@ -2380,10 +2459,9 @@ const PROJECT_PAGES = {
           and front-limb cases too. It was named <strong>Pet Wheels</strong>, a nod
           to the miniature-car brand Hot Wheels.
         </p>
-        <div class="pw-row" style="max-width:820px">
-          <figure class="pw-img" style="flex: 1.937 1 0"><div class="pw-ph">Pet Wheels final product: side view</div></figure>
-          <figure class="pw-img" style="flex: 1.936 1 0"><div class="pw-ph">Pet Wheels final product: front view</div></figure>
-        </div>
+        <figure class="pw-img pw-img-single" style="max-width:820px">
+          <img src="assets/petwheels/creation1.png" alt="Four rendered views of the final Petwheels wheelchair fitted to a dog model" loading="lazy" />
+        </figure>
 
         <p class="pw-pill">Morphometric parameters</p>
         <p class="pw-text">
@@ -2402,10 +2480,11 @@ const PROJECT_PAGES = {
           <div class="pw-measure"><span class="pw-measure-n">4</span><span class="pw-measure-k">Shoulder width</span><span class="pw-measure-v">265&nbsp;mm</span></div>
           <div class="pw-measure"><span class="pw-measure-n">5</span><span class="pw-measure-k">Thigh circumference</span><span class="pw-measure-v">360&nbsp;mm</span></div>
         </div>
-        <figure class="pw-img pw-img-single" style="max-width:560px">
-          <div class="pw-ph">The five morphometric measurements marked on the dog model</div>
-          <figcaption>The five measurements that parametrise the whole chair.</figcaption>
-        </figure>
+        <div class="pw-row" style="max-width:820px">
+          <figure class="pw-img" style="flex: 1.3314 1 0"><img src="assets/petwheels/paremeters1.jpg" alt="Length (1) and shoulder height (2) marked on the 3D dog model" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 1.3314 1 0"><img src="assets/petwheels/paremeters2.jpg" alt="Pelvis width (3) marked on the dog model, seen from behind" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 1.3314 1 0"><img src="assets/petwheels/paremeters3.jpg" alt="Thigh circumference (4) marked around the hind leg" loading="lazy" /></figure>
+        </div>
 
         <p class="pw-pill">3D modelling</p>
         <p class="pw-text">
@@ -2418,22 +2497,23 @@ const PROJECT_PAGES = {
           is more predictable, less error-prone, cheaper and far quicker than the
           mostly handcrafted process it replaces.
         </p>
-        <div class="pw-row" style="max-width:640px">
-          <figure class="pw-img" style="flex: 1.03 1 0"><div class="pw-ph">Organic thigh-seat form developed over the dog mesh</div></figure>
-          <figure class="pw-img" style="flex: 1.031 1 0"><div class="pw-ph">The final parametric thigh-seat part</div></figure>
+        <div class="pw-row" style="max-width:820px">
+          <figure class="pw-img" style="flex: 1.1572 1 0">
+            <img src="assets/petwheels/creation2.png" alt="The organic thigh-seat form developed over the dog mesh" loading="lazy" />
+            <figcaption>The organic thigh seat, developed over the dog mesh.</figcaption>
+          </figure>
+          <figure class="pw-img" style="flex: 2.6413 1 0">
+            <img src="assets/petwheels/creation3.png" alt="Parameter table and T-Spline control cage: control points positioned by functions of the measurements" loading="lazy" />
+            <figcaption>T-Spline control points positioned by functions of the parameters.</figcaption>
+          </figure>
         </div>
         <p class="pw-text">
           The wheels got the same treatment. The concept cars from the expression
           board were the reference, so the wheel reads as robust yet fluid and
           fast, not fragile with thin rims and hollow spokes.
         </p>
-        <figure class="pw-img pw-img-single" style="max-width:300px">
-          <div class="pw-ph">The final wheel design, with robust, fluid spokes within a tyre</div>
-          <figcaption>The wheel, robust and fluid, not fragile.</figcaption>
-        </figure>
 
-        <!-- Solutions -->
-        <h3 class="pw-subtitle">Solutions</h3>
+        <p class="pw-pill">Solutions</p>
         <p class="pw-text">
           A series of structural decisions answer the problems found in the
           environment analysis directly.
@@ -2443,16 +2523,16 @@ const PROJECT_PAGES = {
           The hind-paw support sits close to the grip point so the legs can't swing
           enough to destabilise the dog while it moves.
         </p>
-        <div class="pw-row" style="max-width:620px">
-          <figure class="pw-img" style="flex: 0.7 1 0"><div class="pw-ph">Rear-paw fixation near the grip point</div></figure>
-          <figure class="pw-img" style="flex: 2.968 1 0"><div class="pw-ph">Three fabric-strap fixation points along the dog's back</div></figure>
-        </div>
         <h4 class="pw-subhead">Three fabric-strap fixation points</h4>
         <p class="pw-text">
           To hold the dog securely and keep the spine properly aligned, fabric
           straps anchor at three points along the body, the second of which is
           optional.
         </p>
+        <figure class="pw-img pw-img-single" style="max-width:520px">
+          <img src="assets/petwheels/solution2.png" alt="Side view with the fabric-strap fixation points and the rear-paw support circled" loading="lazy" />
+          <figcaption>The strap fixation points, with the rear-paw support at the grip point.</figcaption>
+        </figure>
         <h4 class="pw-subhead">Flexible horizontal bars</h4>
         <p class="pw-text">
           The standout solution, and the heart of the patent, is the flexible
@@ -2460,8 +2540,8 @@ const PROJECT_PAGES = {
           of movement, while staying rigid vertically; wide gaps let the fabric
           straps follow the dog's thorax as it rotates.
         </p>
-        <figure class="pw-img pw-img-single" style="max-width:440px">
-          <div class="pw-ph">Top view of the chair flexing left and right with the dog's body</div>
+        <figure class="pw-img pw-img-single" style="max-width:560px">
+          <img src="assets/petwheels/solution1.png" alt="Top view of the chair, the flexible bars letting the body curve left and right around the centerline" loading="lazy" />
           <figcaption>The bars flex with the dog's natural left-and-right curving.</figcaption>
         </figure>
         <h4 class="pw-subhead">Fine adjustment</h4>
@@ -2475,8 +2555,8 @@ const PROJECT_PAGES = {
           (1&nbsp;cm steps).
         </p>
         <figure class="pw-img pw-img-single" style="max-width:420px">
-          <div class="pw-ph">Diagram of the wheel-arm angle and extension adjustments</div>
-          <figcaption>Angle (1) and extend/retract (2) fine adjustments.</figcaption>
+          <img src="assets/petwheels/solution3.png" alt="Close-up of the wheel arm showing the angle adjustment and the extend/retract adjustment" loading="lazy" />
+          <figcaption>The wheel-arm angle and extension fine adjustments.</figcaption>
         </figure>
         <h4 class="pw-subhead">Wheels inclined at 10°</h4>
         <p class="pw-text">
@@ -2486,19 +2566,22 @@ const PROJECT_PAGES = {
           it is to move; in the extreme, fully tipped upright, the wheels point in
           different directions and the chair won't roll either way unless dragged.
         </p>
-        <div class="pw-row" style="max-width:560px">
-          <figure class="pw-img" style="flex: 1.034 1 0"><div class="pw-ph">Inclined wheels keeping the chair stable on a slope</div></figure>
-          <figure class="pw-img" style="flex: 1.854 1 0"><div class="pw-ph">How the inclined wheels resist rolling fore and aft</div></figure>
-        </div>
+        <figure class="pw-img pw-img-single" style="max-width:640px">
+          <img src="assets/petwheels/solution4.png" alt="Rear view showing the wheels meeting a slope at 90 degrees, and front view showing the 10-degree wheel incline" loading="lazy" />
+          <figcaption>The inclined wheels add stability on slopes and resist fore-and-aft tipping.</figcaption>
+        </figure>
 
-        <!-- Materials & fabrication -->
-        <h3 class="pw-subtitle">Materials &amp; fabrication</h3>
+        <p class="pw-pill">Materials</p>
         <p class="pw-text">
           Materials were chosen by weight, durability, ease of fabrication, cost
           and looks. Most parts are FDM 3D-printed, everything except the screws,
           nuts, bearings and fabrics, and every part is shaped so it can sit
           flat on the print bed.
         </p>
+        <figure class="pw-img pw-img-single" style="max-width:640px">
+          <img src="assets/petwheels/solution5.png" alt="Material callouts over the product: PETg and TPU printed parts, nylon webbing and perforated polyester fabric" loading="lazy" />
+          <figcaption>Where each material lives on the product.</figcaption>
+        </figure>
         <div class="pw-materials">
           <div class="pw-mat">
             <p class="pw-mat-name">PETg filament</p>
@@ -2526,18 +2609,17 @@ const PROJECT_PAGES = {
             <p>Screws and nuts, the best value of the options, with good durability and mechanical strength at low cost.</p>
           </div>
         </div>
-
-        <!-- Customization -->
-        <h3 class="pw-subtitle">Customization</h3>
-        <p class="pw-text">
-          Because the design is parametric, it adapts beyond the common hind-leg
-          case. A four-wheel version serves four-paw paralysis, and doubles as a
-          physiotherapy aid, while a front variant handles front-limb disability,
-          including congenital absence or amputation.
-        </p>
-        <figure class="pw-img pw-img-single">
-          <div class="pw-ph">The four-wheel Pet Wheels variant for four-paw paralysis and physiotherapy</div>
-          <figcaption>The four-wheel variant: for four-paw paralysis and physiotherapy.</figcaption>
+        <p class="pw-pill">Prototyping</p>
+        <figure class="pw-img pw-img-single" style="max-width:820px">
+          <img src="assets/petwheels/prototype1.png" alt="The thigh seat in the slicer, printing on an FDM printer, and the finished blue part in hand" loading="lazy" />
+          <figcaption>From slicer to printed part: prototyping the thigh seat on an FDM printer.</figcaption>
+        </figure>
+        <figure class="pw-img pw-imgset" style="max-width:820px">
+          <div class="pw-imgset-row">
+            <img src="assets/petwheels/prototype2.png" alt="The assembled blue prototype chair, with flexible bars, thigh seats and wheels" style="flex: 1.4234 1 0" loading="lazy" />
+            <img src="assets/petwheels/prototype3.jpg" alt="A French bulldog wearing the blue Petwheels prototype" style="flex: 1.4993 1 0" loading="lazy" />
+          </div>
+          <figcaption>The assembled prototype, and its first fitting on a real dog.</figcaption>
         </figure>
       </section>
     </div>`,
