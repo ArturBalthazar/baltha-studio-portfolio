@@ -75,6 +75,10 @@ function renderHeader() {
   });
 }
 
+// Petwheels' Ideation section is hidden for now; flip to true to bring back
+// both its sidebar entry and its content block (kept in PETWHEELS_IDEATION).
+const SHOW_PETWHEELS_IDEATION = false;
+
 // In-page section titles for projects that have a custom page. Labels must match
 // the heading text exactly (used to scroll to the section). The "Research &
 // Development" group label is intentionally omitted — it's just a divider.
@@ -100,7 +104,7 @@ const PROJECT_SECTIONS = {
     "Environment analysis",
     "Design requirements",
     "Mood boards",
-    "Ideation",
+    ...(SHOW_PETWHEELS_IDEATION ? ["Ideation"] : []),
     "Creation",
   ],
   zenik: [
@@ -1351,6 +1355,24 @@ const CV_EDUCATION = [
   },
 ];
 
+// Extracurricular activities (publications, research programs and the like).
+const CV_EXTRAS = [
+  {
+    title: "Article published at ENSUS 2019 - VII Encontro de Sustentabilidade em Projeto",
+    period: "May 2019",
+    bullets: [
+      'Published and presented an article titled "Overpopulation, abandonment and mistreatment of dogs: a social design study", developing an anatomical 3D printed prosthesis for a dog.',
+    ],
+  },
+  {
+    title: "Summer research at New Jersey Institute of Technology (NJIT), USA",
+    period: "May - Aug 2016",
+    bullets: [
+      "Summer research during the mechanical engineering split graduation, where I developed and presented a magnetic gear mechanism to professors and guests.",
+    ],
+  },
+];
+
 function cvJob(job) {
   const bullets = job.bullets.map((b) => `<li>${b}</li>`).join("");
   return `
@@ -1364,6 +1386,19 @@ function cvJob(job) {
         <span class="cv-job-sep">·</span>${job.companyNote}
         <span class="cv-job-sep">·</span>${job.location}
       </p>
+      <ul class="cv-job-bullets">${bullets}</ul>
+    </article>`;
+}
+
+// Same layout as a job entry, minus the company meta line.
+function cvExtra(item) {
+  const bullets = item.bullets.map((b) => `<li>${b}</li>`).join("");
+  return `
+    <article class="cv-job">
+      <div class="cv-job-head">
+        <h3 class="cv-job-role">${item.title}</h3>
+        <span class="cv-job-period">${item.period}</span>
+      </div>
       <ul class="cv-job-bullets">${bullets}</ul>
     </article>`;
 }
@@ -1427,6 +1462,12 @@ function renderCV() {
       <section id="cv-education" class="cv-section">
         <h2 class="cv-section-title">Education</h2>
         <ul class="cv-edu-list">${CV_EDUCATION.map(cvEdu).join("")}</ul>
+      </section>
+
+      <!-- Extracurricular activities -->
+      <section id="cv-extras" class="cv-section">
+        <h2 class="cv-section-title">Extracurricular Activities</h2>
+        <div class="cv-jobs">${CV_EXTRAS.map(cvExtra).join("")}</div>
       </section>
 
       <p class="cv-references">References available upon request.</p>
@@ -1550,6 +1591,27 @@ function docolDesignReqBody() {
 }
 
 // ---------- Custom project pages ----------
+// Petwheels Ideation section, currently hidden (see SHOW_PETWHEELS_IDEATION).
+const PETWHEELS_IDEATION = `
+        <!-- Ideation -->
+        <h3 class="pw-subtitle">Ideation</h3>
+        <p class="pw-text">
+          Because the form is so organic, sheets were printed with the dog seen
+          from several angles, making it easier to sketch ideas straight over the
+          animal rather than fighting the drawing.
+        </p>
+        <div class="pw-row" style="max-width:none">
+          <figure class="pw-img" style="flex: 0.8465 1 0"><img src="assets/petwheels/ideation-templates.png" alt="Printed dog templates used as a sketching base" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation4.jpg" alt="Concept sketches over the dog template: strap-mounted wheels in side and back views" loading="lazy" /></figure>
+          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation3.jpg" alt="Concept sketches over the dog template: early wheel and harness explorations" loading="lazy" /></figure>
+          <!-- Pair aspect is 0.6667; slightly less so the 16px internal gap
+               doesn't make the pair run taller than the row's other images. -->
+          <div class="pw-stack" style="flex: 0.63 1 0">
+            <figure class="pw-img"><img src="assets/petwheels/ideation1.jpg" alt="Concept sketch of a car-like silhouette drawn around the dog" loading="lazy" /></figure>
+            <figure class="pw-img"><img src="assets/petwheels/ideation2.jpg" alt="Concept sketch of a flowing organic line wrapping the dog's body" loading="lazy" /></figure>
+          </div>
+        </div>`;
+
 const PROJECT_PAGES = {
   // ===== Interactive Design (company pages) =====
   meetkai: () => `
@@ -2432,24 +2494,7 @@ const PROJECT_PAGES = {
           <img src="assets/petwheels/expression.png" alt="Product-expression board: a sports car, a concept-car wheel, a working police dog and a robot dog toy" loading="lazy" />
         </figure>
 
-        <!-- Ideation -->
-        <h3 class="pw-subtitle">Ideation</h3>
-        <p class="pw-text">
-          Because the form is so organic, sheets were printed with the dog seen
-          from several angles, making it easier to sketch ideas straight over the
-          animal rather than fighting the drawing.
-        </p>
-        <div class="pw-row" style="max-width:none">
-          <figure class="pw-img" style="flex: 0.8465 1 0"><img src="assets/petwheels/ideation-templates.png" alt="Printed dog templates used as a sketching base" loading="lazy" /></figure>
-          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation4.jpg" alt="Concept sketches over the dog template: strap-mounted wheels in side and back views" loading="lazy" /></figure>
-          <figure class="pw-img" style="flex: 0.75 1 0"><img src="assets/petwheels/ideation3.jpg" alt="Concept sketches over the dog template: early wheel and harness explorations" loading="lazy" /></figure>
-          <!-- Pair aspect is 0.6667; slightly less so the 16px internal gap
-               doesn't make the pair run taller than the row's other images. -->
-          <div class="pw-stack" style="flex: 0.63 1 0">
-            <figure class="pw-img"><img src="assets/petwheels/ideation1.jpg" alt="Concept sketch of a car-like silhouette drawn around the dog" loading="lazy" /></figure>
-            <figure class="pw-img"><img src="assets/petwheels/ideation2.jpg" alt="Concept sketch of a flowing organic line wrapping the dog's body" loading="lazy" /></figure>
-          </div>
-        </div>
+        ${SHOW_PETWHEELS_IDEATION ? PETWHEELS_IDEATION : ""}
 
         <!-- Creation -->
         <h3 class="pw-subtitle">Creation</h3>
