@@ -1434,6 +1434,17 @@ function renderCV() {
 
   return `
     <div class="content-wide cv-page">
+      <!-- Video CV — the first thing in the panel, right above the identity card. -->
+      <section id="cv-video" class="cv-video" aria-label="Video CV">
+        <div class="cv-video-frame">
+          <iframe src="https://www.youtube.com/embed/WWfWDaPzvxM?rel=0"
+                  title="Artur Balthazar — video CV"
+                  loading="lazy"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen></iframe>
+        </div>
+      </section>
+
       <!-- Identity card -->
       <section id="cv-about" class="cv-card">
         <img class="cv-photo" src="assets/cv.png" alt="Artur Donadel Balthazar" />
@@ -2090,7 +2101,7 @@ const PROJECT_PAGES = {
         </div>
         <!-- Interactive 3D customizer (isolated in its own document) -->
         <div class="pw-frame">
-          <iframe src="petwheels/index.html?v=8" title="Petwheels 3D customizer" loading="lazy"></iframe>
+          <iframe src="petwheels/index.html?v=10" title="Petwheels 3D customizer" loading="lazy"></iframe>
         </div>
       </section>
 
@@ -5717,3 +5728,67 @@ renderSidebar();
 renderContent();
 renderCategorySelect();
 renderProjectSelect();
+
+// ---------- Intro video splash ----------
+// Floats the video CV centered over a darkened page on load. The visitor
+// clicks the video itself to play (YouTube's own play button); the X above
+// it, the backdrop or Esc close it. Closing flies the card toward the
+// Curriculum Vitae header button — measured live, so it works at any
+// viewport — then pops the button as the card is "caught" there.
+(() => {
+  const modal = document.getElementById("intro-video");
+  if (!modal) return;
+  const card = document.getElementById("intro-video-card");
+  const iframe = document.getElementById("intro-video-iframe");
+  const cvButton = document.getElementById("about-toggle");
+  let closing = false;
+
+  const close = () => {
+    if (closing || !modal.classList.contains("open")) return;
+    closing = true;
+    const cardRect = card.getBoundingClientRect();
+    // Fly to the CV button's center; if it's hidden (mobile layout without
+    // the button), aim at the top-right corner of the viewport instead.
+    let targetX = window.innerWidth - 40;
+    let targetY = 40;
+    let targetScale = 0.06;
+    if (cvButton && cvButton.offsetParent) {
+      const t = cvButton.getBoundingClientRect();
+      targetX = t.left + t.width / 2;
+      targetY = t.top + t.height / 2;
+      targetScale = Math.max(0.05, t.width / cardRect.width);
+    }
+    const dx = targetX - (cardRect.left + cardRect.width / 2);
+    const dy = targetY - (cardRect.top + cardRect.height / 2);
+    modal.classList.add("closing");
+    card.style.transition =
+      "transform 0.55s cubic-bezier(0.5, -0.05, 0.3, 1), opacity 0.55s ease";
+    card.style.transform = `translate(${dx}px, ${dy}px) scale(${targetScale})`;
+    card.style.opacity = "0";
+    setTimeout(() => {
+      if (cvButton) {
+        cvButton.classList.add("cv-catch");
+        setTimeout(() => cvButton.classList.remove("cv-catch"), 500);
+      }
+    }, 380);
+    setTimeout(() => {
+      modal.classList.remove("open", "closing");
+      modal.setAttribute("aria-hidden", "true");
+      iframe.src = ""; // stop playback for good
+      modal.remove();
+    }, 580);
+  };
+
+  modal
+    .querySelectorAll("[data-close-intro]")
+    .forEach((el) => el.addEventListener("click", close));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+
+  // Open shortly after load so the page paints underneath first.
+  setTimeout(() => {
+    modal.setAttribute("aria-hidden", "false");
+    modal.classList.add("open");
+  }, 350);
+})();

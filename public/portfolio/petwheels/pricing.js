@@ -38,6 +38,10 @@
     materialPricePerKg: 140,  // R$ per kg of filament
     priceMultiplier:    5,    // final price = material cost × this
     exponent:           3,    // weight ≈ (linear size)^exponent (3 = volume)
+    // Flat price (centavos) of the printable STL bundle (productType 'stl') —
+    // the digital download instead of the assembled chair. KEEP IN SYNC with
+    // supabase/functions/_shared/pricing.ts (the copy that actually bills).
+    stlBundleCents:     8990, // R$ 89,90
     // Flat add-on prices (R$) — added on top of material × multiplier when
     // the matching toggle is on. Keys match the quote opts / PARTS.optional.
     accessories: {
@@ -234,6 +238,17 @@
     return clamp01((value - r.min) / (r.max - r.min));
   };
 
+  // Retail treatment applied to the final computed price (in cents):
+  // 1. snap to the nearest 10 centavos, so a raw R$ 831,13 quotes as
+  //    R$ 831,10 — cents always end in 0;
+  // 2. never land exactly on a multiple of R$ 10 — those drop 10 centavos
+  //    (R$ 910,00 → R$ 909,90, R$ 900,00 → R$ 899,90).
+  function treatPriceCents(rawBRL) {
+    let cents = Math.round(rawBRL * 10) * 10;
+    if (cents > 0 && cents % 1000 === 0) cents -= 10;
+    return cents;
+  }
+
   // Quote from normalized 0..1 params. opts.legSupport=false drops parts
   // whose `optional` flag matches; each opts key that is not false also adds
   // its CONFIG.accessories price on top of the printed-material price.
@@ -261,7 +276,7 @@
       accessoriesBRL += price;
     }
     const materialBRL = (totalGrams / 1000) * CONFIG.materialPricePerKg;
-    const priceBRL = materialBRL * CONFIG.priceMultiplier + accessoriesBRL;
+    const priceCents = treatPriceCents(materialBRL * CONFIG.priceMultiplier + accessoriesBRL);
     return {
       params: t,
       parts,
@@ -269,8 +284,8 @@
       totalGrams: Math.round(totalGrams),
       materialBRL: Math.round(materialBRL * 100) / 100,
       accessoriesBRL,
-      priceBRL: Math.round(priceBRL * 100) / 100,
-      priceCents: Math.round(priceBRL * 100),
+      priceBRL: priceCents / 100,
+      priceCents,
     };
   }
 

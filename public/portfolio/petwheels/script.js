@@ -4,6 +4,9 @@
 
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  // i18n: translate a user-facing English string (i18n.js). Falls through to
+  // the input when i18n isn't loaded or the language is English.
+  const tr = (s) => (window.PW_I18N && window.PW_I18N.t) ? window.PW_I18N.t(s) : s;
 
   // ============ MODEL CATALOG ============
   // Single source of truth for the wheelchair models shown in the viewport's
@@ -11,7 +14,7 @@
   // dropdown and trigger pill are rendered from this on boot, so HTML doesn't
   // need to change when you add or rename a model.
   //   id          — unique slug used as data-model and as the GLB-swap key.
-  //   name        — SHORT name ("Frontier"). Used inside the viewer only
+  //   name        — SHORT name ("Model A1"). Used inside the viewer only
   //                 (dropdown options + header pill). Everywhere else —
   //                 cart, checkout, orders, pet device chip — the full
   //                 product name is derived via productName() below, so
@@ -20,21 +23,50 @@
   //                 Falls back to `name` if omitted.
   //   description — secondary line under the name in the dropdown.
   //   thumbnail   — relative path to the option's small image.
-  //   glb         — relative path to the .glb (reserved for when there's
-  //                 more than one model; currently every entry uses the
-  //                 same file).
+  //   glb         — SEMANTIC model key, resolved through MODEL_FILES /
+  //                 fetchModel (the on-disk assets carry obfuscated names).
+  //                 Reserved for when there's more than one model; currently
+  //                 every entry uses the same file.
   const MODELS = [
     {
       id:          'zephyr',
-      name:        'Frontier',
+      name:        'Model A1',
       description: 'Rear-leg wheelchair',
-      thumbnail:   'assets/petwheels-dog.png',
-      glb:         'assets/petwheels.glb',
+      thumbnail:   'assets/petwheels-dog3.png',
+      glb:         'petwheels.glb',
     },
   ];
 
+  // ============ PRODUCT TYPE CATALOG ============
+  // Same customization, two deliverables. 'assembled' is priced live from the
+  // weight quote (pricing.js); 'stl' is the flat printable-bundle price
+  // (pricing.js CONFIG.stlBundleCents, mirrored server-side). Rendered as the
+  // "Product type" dropdown in the panel's persistent context row.
+  const PRODUCT_TYPES = [
+    {
+      id: 'assembled',
+      name: 'Assembled product',
+      description: 'Built, tested and shipped to your door',
+    },
+    {
+      id: 'stl',
+      name: 'STL files for print',
+      description: 'Digital download, print it yourself',
+    },
+  ];
+  const productTypeById = (id) =>
+    PRODUCT_TYPES.find((p) => p.id === id) || PRODUCT_TYPES[0];
+
+  // STL selling is SUSPENDED — chairs are made by partner manufacturers now,
+  // so the site sells the assembled product only. Flip to true to bring the
+  // printable bundle back; everything downstream still understands it.
+  const STL_SALES_ENABLED = false;
+  const ACTIVE_PRODUCT_TYPES = STL_SALES_ENABLED
+    ? PRODUCT_TYPES
+    : PRODUCT_TYPES.filter((p) => p.id !== 'stl');
+
   // Full product name for everything OUTSIDE the viewer ("Petwheels
-  // Frontier"). Derived, never hardcoded — and tolerant of a future model
+  // Model A1"). Derived, never hardcoded — and tolerant of a future model
   // whose name already carries the brand.
   const productName = (m) => /petwheels/i.test(m.name) ? m.name : 'Petwheels ' + m.name;
 
@@ -65,21 +97,21 @@
   //                                get a metallic dual-color filament.
   //   sheen     — second sRGB hex for dual-color filaments. Ignored unless
   //               the 'dual-color' tag is present.
+  // PETG stock — plain solid colors only: every rigid entry is non-metallic
+  // at 0.4 roughness (no silk/metallic/matte/dual-color variants; the `tags`
+  // machinery still works if a special filament ever comes back).
   const FILAMENTS = {
     rigid: [
-      { name: 'Sky Blue',        color: '#399cff', roughness: 0.35, metallic: 0.70, tags: ['metallic'] },
-      { name: 'Pure White',      color: '#F5F5F5', roughness: 0.55, metallic: 0.00 },
-      { name: 'Black',           color: '#000000', roughness: 0.55, metallic: 0.49 },
-      { name: 'Black',           color: '#000000', roughness: 0.80, metallic: 0.49, tags: ['matte'] },
-      { name: 'Sunshine Yellow', color: '#FACC15', roughness: 0.55, metallic: 0.00 },
-      { name: 'Purple',          color: '#652ba8', roughness: 0.30, metallic: 0.70, tags: ['metallic'] },
-      { name: 'Wood',            color: '#744f3a', roughness: 0.80, metallic: 0.49, tags: ['matte'] },
-      { name: 'Green/Yellow',    color: '#57cc33', roughness: 0.35, metallic: 0.45, tags: ['dual-color'], sheen: '#FACC15' },
-      { name: 'Copper',          color: '#bd6b3b', roughness: 0.30, metallic: 0.70, tags: ['metallic'] },
-      { name: 'Red',             color: '#972929', roughness: 0.30, metallic: 0.70, tags: ['metallic'] },
-      { name: 'Navy Blue',       color: '#3e536e', roughness: 0.30, metallic: 0.70, tags: ['metallic'] },
-      { name: 'Silver',          color: '#93989e', roughness: 0.35, metallic: 0.65, tags: ['metallic'] },
-      { name: 'Gold',            color: '#ac8a3f', roughness: 0.35, metallic: 0.65, tags: ['metallic'] },
+      { name: 'White',      color: '#F2F3F5', roughness: 0.4, metallic: 0 },
+      { name: 'Light Gray', color: '#8F959D', roughness: 0.4, metallic: 0 },
+      { name: 'Black',      color: '#1A1A1A', roughness: 0.4, metallic: 0 },
+      { name: 'Blue',       color: '#3186DC', roughness: 0.4, metallic: 0 },
+      { name: 'Orange',     color: '#F07020', roughness: 0.4, metallic: 0 },
+      { name: 'Yellow',     color: '#FACC15', roughness: 0.4, metallic: 0 },
+      { name: 'Red',        color: '#C62828', roughness: 0.4, metallic: 0 },
+      { name: 'Purple',     color: '#6D3BB8', roughness: 0.4, metallic: 0 },
+      { name: 'Olive',      color: '#6B7F3A', roughness: 0.4, metallic: 0 },
+      { name: 'Wood',       color: '#744F3A', roughness: 0.4, metallic: 0 },
     ],
     flexible: [
       { name: 'Black', color: '#000000', roughness: 0.50, metallic: 0.49 },
@@ -90,14 +122,15 @@
   // Default Style material per slot (colour + finish). The wheelchair boots
   // with THIS set — not the raw .glb materials — so the viewer shows the
   // default filament choice even before the user opens the Style step. Colours
-  // are sRGB hex; finishes mirror the nearest catalog filament (m1 ≈ Sky Blue,
-  // m2 ≈ Silver, m3/m4 ≈ Black). SLOT_DEFAULT_HEX (used by the STL export)
+  // are sRGB hex; finishes mirror the nearest catalog filament (m1 ≈ Blue,
+  // m2 ≈ Light Gray, m3 ≈ Black — PETG: metallic 0, roughness 0.4; m4 keeps
+  // the flexible/TPU black). SLOT_DEFAULT_HEX (used by the STL export)
   // derives from this so there's a single source of truth.
   const SLOT_DEFAULTS = {
-    m1: { hex: '#428AE9', roughness: 0.35, metallic: 0.70 },
-    m2: { hex: '#838383', roughness: 0.35, metallic: 0.65 },
-    m3: { hex: '#1A1A1A', roughness: 0.55, metallic: 0.49 },
-    m4: { hex: '#1A1A1A', roughness: 0.55, metallic: 0.49 },
+    m1: { hex: '#3186DC', roughness: 0.4, metallic: 0 },
+    m2: { hex: '#8F959D', roughness: 0.4, metallic: 0 },
+    m3: { hex: '#1A1A1A', roughness: 0.4, metallic: 0 },
+    m4: { hex: '#1A1A1A', roughness: 0.50, metallic: 0.49 },
   };
 
   // ============ STATE ============
@@ -121,6 +154,7 @@
     screen: 'steps',            // welcome | steps — this embed starts on the steps
     step: 'measure',            // measure | style | review
     modelId: MODELS[0].id,      // currently selected wheelchair model
+    productType: 'assembled',   // 'assembled' | 'stl' (PRODUCT_TYPES)
     unit: 'cm',
     wheel: 75,
     harness: 'padded',
@@ -135,18 +169,68 @@
     // radiusManual: when true, radiusOffset (mm) is layered on top of the auto
     // wheel radius and the internal height is shortened by the same amount.
     measures: {
-      length: 40, height: 30, width: 13, thigh: 27, thickness: 1.2,
+      length: 35, height: 25, width: 10, thigh: 25, thickness: 1.2,
       radiusManual: false, radiusOffset: 0,
     },
   };
 
+  // Factory defaults for the toolbar's reset-measurements button (and the
+  // single source the state block above boots from — keep them in sync with
+  // the slider `value` attributes in index.html).
+  const MEASURE_DEFAULTS = { length: 35, height: 25, width: 10, thigh: 25, thickness: 1.2 };
+
   // ============ NAVIGATION ============
+  const heroGrid = $('.hero-grid');
+  // Header tabs: highlight the one matching the current screen/step, and
+  // glide the outline pill (.nav-pill) over to it. When the page is scrolled
+  // to the bottom stop (the contact footer), the Contact anchor wins instead —
+  // navAtContact is flipped by the scroll handler further down.
+  let navAtContact = false;
+  let fitHeroTitle = null;   // assigned by the typewriter block below
+  const syncNavTabs = () => {
+    const links = $('.nav-links');
+    if (!links) return;
+    const target = state.screen === 'welcome' ? 'welcome' : state.step;
+    let active = null;
+    $$('.nav-links [data-nav]').forEach((b) => {
+      const on = !navAtContact && b.dataset.nav === target;
+      b.classList.toggle('is-active', on);
+      if (on) active = b;
+    });
+    const contact = links.querySelector('a[href="#contact"]');
+    if (contact) {
+      contact.classList.toggle('is-active', navAtContact);
+      if (navAtContact) active = contact;
+    }
+    let pill = links.querySelector('.nav-pill');
+    if (!pill) {
+      pill = document.createElement('span');
+      pill.className = 'nav-pill';
+      pill.style.transition = 'none';   // no slide-in on first paint
+      links.prepend(pill);
+      setTimeout(() => { pill.style.transition = ''; }, 60);
+    }
+    if (active) {
+      pill.hidden = false;
+      pill.style.width = active.offsetWidth + 'px';
+      pill.style.height = active.offsetHeight + 'px';
+      pill.style.transform = `translate(${active.offsetLeft}px, ${active.offsetTop}px)`;
+    } else {
+      pill.hidden = true;
+    }
+  };
   const showScreen = (name) => {
     state.screen = name === 'welcome' ? 'welcome' : 'steps';
     $$('.panel-screen').forEach((s) => {
       s.classList.toggle('is-active', s.dataset.screen === state.screen);
     });
+    // Welcome owns the full hero (viewport column collapsed); any step
+    // brings the 3D viewport back. See .hero-grid.is-welcome in styles.css.
+    if (heroGrid) heroGrid.classList.toggle('is-welcome', state.screen === 'welcome');
     if (name !== 'welcome') setStep(name);
+    syncNavTabs();
+    // The headline is only measurable while the welcome screen is visible.
+    if (state.screen === 'welcome' && fitHeroTitle) fitHeroTitle();
   };
 
   const setStep = (step) => {
@@ -164,17 +248,140 @@
     // Measurement overlay auto-follows the step: on in Measure, off elsewhere
     // (Style / Review). The user can still override with the ruler button — this
     // only re-applies the default each time they change step.
-    if (typeof setMeasuresVisible === 'function') setMeasuresVisible(step === 'measure');
+    // try/catch (not typeof): setMeasuresVisible is a const declared after the
+    // Babylon guard, so if the viewer never initialized (CDN/WebGL failure)
+    // even `typeof` throws a TDZ ReferenceError and would break navigation.
+    try { setMeasuresVisible(step === 'measure'); } catch (_) { /* viewer not initialized */ }
     // Refresh the summary with the latest measurements/options on entry.
     if (step === 'review') updateReview();
   };
 
+  // ---- hash routing ----
+  // Every section owns a hash (#home/#measure/#style/#review, plus the
+  // #contact footer anchor), so the URL always names where you are and the
+  // browser's back/forward buttons walk between sections. All UI navigation
+  // funnels through navigate(); the hashchange handler is the single place
+  // that actually flips screens.
+  const HASH_FOR = { welcome: 'home', measure: 'measure', style: 'style', review: 'review' };
+  const NAME_FOR = { '': 'welcome', home: 'welcome', measure: 'measure', style: 'style', review: 'review' };
+  const applyHash = (glide) => {
+    const h = (location.hash || '').slice(1);
+    if (h === 'contact') { syncNavTabs(); return; }   // footer anchor — scroll handled elsewhere
+    const name = NAME_FOR[h];
+    if (name == null) return;                          // unknown hash — leave the screen alone
+    showScreen(name);
+    if (glide) glidePage(0);
+  };
+  const navigate = (name) => {
+    const target = '#' + (HASH_FOR[name] || 'home');
+    if (location.hash === target) {
+      // Same section (e.g. logo while already home) — still restore the view.
+      showScreen(name);
+      glidePage(0);
+      return;
+    }
+    location.hash = target;   // pushes history → hashchange → applyHash
+  };
+  window.addEventListener('hashchange', () => applyHash(true));
+
   $$('[data-go]').forEach((btn) => {
-    btn.addEventListener('click', () => showScreen(btn.dataset.go));
+    btn.addEventListener('click', () => navigate(btn.dataset.go));
   });
   $$('.step').forEach((s) => {
-    s.addEventListener('click', () => showScreen(s.dataset.step));
+    s.addEventListener('click', () => navigate(s.dataset.step));
   });
+  // Header tabs (Home / Measure / Style / Review) drive the same screens and
+  // bring the customizer back into view.
+  $$('.nav-links [data-nav]').forEach((btn) => {
+    btn.addEventListener('click', () => navigate(btn.dataset.nav));
+  });
+  // The logo is Home.
+  $('.nav-logo')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    navigate('welcome');
+  });
+  syncNavTabs();   // initial highlight (Home, unless a restore/hash overrides)
+
+  // ---- welcome title: rotating typed adjective ----
+  // Types each word, holds, erases (faster), then moves to the next with a
+  // different brand gradient. The rest of the headline reflows around it.
+  {
+    const el = $('#typeWord');
+    if (el) {
+      const WORDS = [
+        { w: 'Perfect-fit', g: 'linear-gradient(100deg, #FF7A1A, #FF3D78)' },   // orange → pink
+        { w: 'Comfortable', g: 'linear-gradient(100deg, #7C3AED, #2FB8FF)' },   // purple → blue
+        { w: 'Modern',      g: 'linear-gradient(100deg, #FF3D78, #7C3AED)' },   // pink → purple
+        { w: 'Affordable',  g: 'linear-gradient(100deg, #FF7A1A, #C13FA9)' },   // orange → magenta
+      ];
+      const TYPE_MS = 85, ERASE_MS = 40, HOLD_MS = 1800, GAP_MS = 400;
+      let wi = 0;
+      const cur = () => tr(WORDS[wi].w);   // word in the active language
+      let ci = cur().length;   // page loads with the first word complete
+      let dir = -1;
+      el.textContent = cur();
+      el.style.setProperty('--word-grad', WORDS[0].g);
+      const step = () => {
+        ci += dir;
+        el.textContent = cur().slice(0, ci);
+        if (dir > 0 && ci >= cur().length) {
+          dir = -1;
+          setTimeout(step, HOLD_MS);
+        } else if (dir < 0 && ci <= 0) {
+          dir = 1;
+          wi = (wi + 1) % WORDS.length;
+          el.style.setProperty('--word-grad', WORDS[wi].g);
+          setTimeout(step, GAP_MS);
+        } else {
+          setTimeout(step, dir > 0 ? TYPE_MS : ERASE_MS);
+        }
+      };
+      setTimeout(step, HOLD_MS);
+
+      // Keep the headline on exactly TWO lines for every word in the cycle:
+      // measure the worst case (each word fully typed) and step the font
+      // size down from the stylesheet value until all of them fit.
+      const h1 = el.closest('.panel-title');
+      fitHeroTitle = () => {
+        if (!h1 || !h1.offsetParent) return;   // welcome hidden — nothing to measure
+        const saved = el.textContent;
+        h1.style.fontSize = '';                // restart from the CSS size
+        const prevMin = h1.style.minHeight;
+        h1.style.minHeight = '0';              // min-height would mask the line count
+        let size = parseFloat(getComputedStyle(h1).fontSize);
+        const words = WORDS.map((w) => tr(w.w));
+        const overflows = () => words.some((w) => {
+          el.textContent = w;
+          return h1.scrollHeight > size * 1.05 * 2 + 4;   // taller than two lines
+        });
+        while (overflows() && size > 24) {
+          size -= 1;
+          h1.style.fontSize = size + 'px';
+        }
+        h1.style.minHeight = prevMin;
+        el.textContent = saved;
+      };
+      // Fit once webfonts have real metrics, and again on resize.
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => fitHeroTitle && fitHeroTitle());
+      }
+      fitHeroTitle();
+      let fitTimer = 0;
+      window.addEventListener('resize', () => {
+        clearTimeout(fitTimer);
+        fitTimer = setTimeout(() => fitHeroTitle && fitHeroTitle(), 150);
+      });
+
+      // Language switch: restart the current word cleanly in the new language
+      // and re-fit (word lengths differ per language).
+      window.addEventListener('pw:langchange', () => {
+        ci = 0;
+        dir = 1;
+        el.textContent = '';
+        if (fitHeroTitle) fitHeroTitle();
+      });
+    }
+  }
 
   // ============ MEASUREMENTS ============
   const updateRangeFill = (input) => {
@@ -223,6 +430,95 @@
       if (rig) rig.update();
     });
     if (thicknessOut) thicknessOut.value = state.measures.thickness.toFixed(2);
+  }
+
+  // -------- "?" help tooltips --------
+  // Rich hover cards: a short how-to-measure instruction plus a small looping
+  // demo video (CAD-software style). Each tip is moved out of its label and
+  // into <body>, then positioned `fixed` and clamped to the viewport — the
+  // old in-flow absolute tips overflowed the panel edge, and a transformed /
+  // overflow ancestor would clip or misplace them.
+  {
+    const openTips = new Set();
+    const closeAllTips = () => openTips.forEach((close) => close());
+    window.addEventListener('scroll', closeAllTips, { capture: true, passive: true });
+    window.addEventListener('resize', closeAllTips);
+    // Tap anywhere outside the "?" or the tip closes it — touch has no
+    // mouseleave. Capture phase so taps that stop propagation still count.
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.field-help') || e.target.closest('.field-help-tip')) return;
+      closeAllTips();
+    }, true);
+    // Hover/focus only drive the tips where a real hover exists. On touch the
+    // browser synthesizes mouseenter right before click — open() then the
+    // click-toggle would close() in the same tap and the tip never showed.
+    const canHover = window.matchMedia('(hover: hover)').matches;
+
+    $$('.field-help').forEach((btn) => {
+      const tip = btn.querySelector('.field-help-tip');
+      if (!tip) return;
+      document.body.appendChild(tip);
+      const video = tip.querySelector('video');
+      // Touch-only X button (CSS hides it where hover handles closing).
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'tip-close';
+      closeBtn.setAttribute('aria-label', 'Close');
+      closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      tip.appendChild(closeBtn);
+
+      const place = () => {
+        const r = btn.getBoundingClientRect();
+        const t = tip.getBoundingClientRect();
+        const m = 12;
+        let left = r.left + r.width / 2 - t.width / 2;
+        left = Math.max(m, Math.min(left, window.innerWidth - m - t.width));
+        let top = r.top - t.height - 10;
+        const below = top < m;
+        if (below) top = r.bottom + 10;
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+        tip.classList.toggle('tip-below', below);
+        tip.style.setProperty('--arrow-x', (r.left + r.width / 2 - left) + 'px');
+      };
+
+      const close = () => {
+        tip.classList.remove('is-open');
+        openTips.delete(close);
+        if (video) video.pause();
+      };
+      const open = () => {
+        tip.classList.add('is-open');
+        openTips.add(close);
+        place();
+        if (video) {
+          video.currentTime = 0;
+          video.play().catch(() => {});
+        }
+      };
+
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      });
+
+      if (canHover) {
+        btn.addEventListener('mouseenter', open);
+        btn.addEventListener('mouseleave', close);
+        btn.addEventListener('focus', open);
+        btn.addEventListener('blur', close);
+      }
+      // The "?" lives inside a <label>: without preventDefault a tap/click
+      // activates the label's slider instead of the tip. Click also toggles,
+      // which is the only way to open it on touch devices.
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (tip.classList.contains('is-open')) close();
+        else open();
+      });
+    });
   }
 
   // -------- typeable numeric inputs --------
@@ -484,8 +780,10 @@
 
   $$('.unit-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      $$('.unit-btn').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
+      // Two toggles exist (Measure header + the mobile one in the viewer) —
+      // sync by unit so both always show the same active side.
+      $$('.unit-btn').forEach((b) =>
+        b.classList.toggle('is-active', b.dataset.unit === btn.dataset.unit));
       state.unit = btn.dataset.unit;
       updateMeasureOutputs();
       updateChips();
@@ -493,6 +791,58 @@
       writeRadiusDisplay();
     });
   });
+
+  // ============ MOBILE PANEL TABS ============
+  // Phones show one measurement slider at a time (tab strip above it) and split
+  // the Style step into Style / Accessories tabs. The strips are display:none
+  // on desktop; the active choice is stamped as data-mtab / data-stab on the
+  // step body, and the mobile CSS shows/hides content off those attributes.
+  // The dimension overlay also reads mobileMeasureTab: on phones the selected
+  // measurement's 3D line renders lit (value shown), like desktop hover.
+  const MOBILE_PANEL_MQ = window.matchMedia('(max-width: 640px)');
+  let mobileMeasureTab = 'length';
+  {
+    const measureBody = $('.step-body[data-body="measure"]');
+    const tabsWrap = $('#measureTabs');
+    $$('#measureTabs .mtab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $$('#measureTabs .mtab').forEach((b) => b.classList.toggle('is-active', b === btn));
+        if (measureBody) measureBody.dataset.mtab = btn.dataset.mtab;
+        mobileMeasureTab = btn.dataset.mtab;
+        // Center the tab by scrolling ONLY the strip — scrollIntoView also
+        // scrolls every scrollable ancestor and nudged the whole page sideways.
+        if (tabsWrap) {
+          tabsWrap.scrollTo({
+            left: (btn.offsetLeft - tabsWrap.offsetLeft) - (tabsWrap.clientWidth - btn.offsetWidth) / 2,
+            behavior: 'smooth',
+          });
+        }
+      });
+    });
+    const styleBody = $('.step-body[data-body="style"]');
+    $$('#styleTabs .stab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $$('#styleTabs .stab').forEach((b) => b.classList.toggle('is-active', b === btn));
+        if (styleBody) styleBody.dataset.stab = btn.dataset.stab;
+      });
+    });
+
+    // On phones the pet picker leaves the context row (which is hidden there)
+    // and docks beside the Measure title, in the slot the unit toggle vacated.
+    // Same element either way — account.js's partner-hiding and the picker's
+    // own behavior keep working wherever it lives.
+    const petMount = $('#petPickerMount');
+    const petField = petMount && petMount.closest('.pet-pick-field');
+    const contextRow = $('.panel-context-row');
+    const measureHeadRow = $('.step-body[data-body="measure"] .step-head-row');
+    const placePetField = () => {
+      if (!petField || !contextRow || !measureHeadRow) return;
+      if (MOBILE_PANEL_MQ.matches) measureHeadRow.appendChild(petField);
+      else contextRow.insertBefore(petField, contextRow.firstChild);
+    };
+    placePetField();
+    MOBILE_PANEL_MQ.addEventListener('change', placePetField);
+  }
 
   // ============ STYLE ============
   // Each material row carries data-mat="m1..m4". The chip shows the current
@@ -536,15 +886,19 @@
   const tagLabel = (tag) =>
     tag.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  // Render the row title as filament name + tag badges. No tags → name only.
-  // Called when the user picks a filament.
+  // Render the row title after a filament pick. Two spans: the authored part
+  // name (.mt-part — phones keep showing it) and the filament name + tag
+  // badges (.mt-filament — what desktop shows). CSS picks one per viewport.
   const renderRowTitle = (titleEl, filament) => {
     if (!titleEl || !filament) return;
+    if (!titleEl.dataset.part) titleEl.dataset.part = titleEl.textContent.trim();
     const tags = filament.tags || [];
     const badges = tags.map((tag) =>
-      `<span class="material-tag material-tag-${tag}">${tagLabel(tag)}</span>`
+      `<span class="material-tag material-tag-${tag}">${tr(tagLabel(tag))}</span>`
     ).join('');
-    titleEl.innerHTML = escapeHtmlAttr(filament.name) + badges;
+    titleEl.innerHTML =
+      `<span class="mt-part">${escapeHtmlAttr(titleEl.dataset.part)}</span>` +
+      `<span class="mt-filament">${escapeHtmlAttr(tr(filament.name))}${badges}</span>`;
   };
 
   // Sync each chip's CSS color to its material's current albedo. Boot-time
@@ -602,7 +956,7 @@
             (f.sheen ? `data-sheen="${f.sheen}" ` : '') +
             `data-name="${escapeHtmlAttr(f.name)}">` +
             `<span class="material-swatch-color${cls}" style="${cssVars}"></span>` +
-            `<span class="material-swatch-name">${escapeHtmlAttr(f.name)}</span>` +
+            `<span class="material-swatch-name">${escapeHtmlAttr(tr(f.name))}</span>` +
           '</button>'
         );
       }).join('');
@@ -682,17 +1036,22 @@
   // disabled meshes so the camera framing follows the new silhouette.
   $('#legSupport').addEventListener('change', (e) => {
     state.legSupport = e.target.checked;
-    const revLeg = $('#revLeg2'); if (revLeg) revLeg.textContent = state.legSupport ? 'Yes' : 'No';
+    const revLeg = $('#revLeg2'); if (revLeg) revLeg.textContent = state.legSupport ? tr('Yes') : tr('No');
     const strapSrc = scene.getMeshByName('LegSupportStrap');
     const strapMir = scene.getMeshByName('LegSupportStrap_mir');
     if (strapSrc) strapSrc.setEnabled(state.legSupport);
     if (strapMir) strapMir.setEnabled(state.legSupport);
+    // The anchored sling accessory (legSling.glb) is the rear-leg sling now.
+    const slingSrc = scene.getMeshByName('LegSling');
+    const slingMir = scene.getMeshByName('LegSling_mir');
+    if (slingSrc) slingSrc.setEnabled(state.legSupport);
+    if (slingMir) slingMir.setEnabled(state.legSupport);
     updateWeightStat();
   });
 
-  // Collar — toggle is wired now, but the mesh isn't in the .glb yet. When
-  // it lands (probably named "Collar"), the commented setEnabled lines
-  // below will start mattering.
+  // Collar — dog-mounted mesh (collar.glb, loaded + renamed 'Collar' in
+  // setupDog). Driven by its Style toggle alone: it stays visible in
+  // "Wheelchair only" too — it's part of the product, like the sling/strap.
   const collarToggle = $('#includeCollar');
   if (collarToggle) {
     collarToggle.addEventListener('change', (e) => {
@@ -713,7 +1072,7 @@
     backStrapToggle.addEventListener('change', (e) => {
       state.backStrap = e.target.checked;
       const revBackStrap = $('#revBackStrap');
-      if (revBackStrap) revBackStrap.textContent = state.backStrap ? 'Yes' : 'No';
+      if (revBackStrap) revBackStrap.textContent = state.backStrap ? tr('Yes') : tr('No');
       const strapSrc = scene.getMeshByName('BackStrap');
       const strapMir = scene.getMeshByName('BackStrap_mir');
       if (strapSrc) strapSrc.setEnabled(state.backStrap);
@@ -755,11 +1114,13 @@
     const revRadius = $('#revRadius');
     if (revRadius) revRadius.textContent = formatRadius(computeCurrentR());
     const revLeg = $('#revLeg2');
-    if (revLeg) revLeg.textContent = state.legSupport ? 'Yes' : 'No';
+    if (revLeg) revLeg.textContent = state.legSupport ? tr('Yes') : tr('No');
     const revBackStrap = $('#revBackStrap');
-    if (revBackStrap) revBackStrap.textContent = state.backStrap ? 'Yes' : 'No';
+    if (revBackStrap) revBackStrap.textContent = state.backStrap ? tr('Yes') : tr('No');
     const revCollar = $('#revCollar');
-    if (revCollar) revCollar.textContent = state.includeCollar ? 'Yes' : 'No';
+    if (revCollar) revCollar.textContent = state.includeCollar ? tr('Yes') : tr('No');
+    const revProductType = $('#revProductType');
+    if (revProductType) revProductType.textContent = tr(productTypeById(state.productType).name);
     // Price: estimated print weight × material cost × multiplier (pricing.js).
     const revPrice = $('#reviewPrice');
     if (revPrice) {
@@ -870,9 +1231,192 @@
   if (nav) {
     const onScroll = () => {
       nav.style.boxShadow = window.scrollY > 8 ? '0 6px 18px -10px rgba(15,18,38,.15)' : 'none';
+      // Contact "tab": past the midpoint between the two page stops (hero top /
+      // contact bottom) the header highlights Contact; before it, the current
+      // screen tab. Flips mid-glide, exactly when the page is mostly footer.
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const at = max > 40 && window.scrollY > max / 2;
+      if (at !== navAtContact) {
+        navAtContact = at;
+        syncNavTabs();
+      }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
+  }
+
+  // ============ ONE-SHOT PAGE SCROLL (desktop) ============
+  // The page has exactly two stops: the customizer hero (top) and the contact
+  // footer (bottom). On desktop, any wheel attempt at page scroll is swallowed
+  // and replaced with a single eased glide to the other stop — no partial
+  // native scrolling first. Wheel is left alone only when it belongs to
+  // something else: an inner scroller that can still move in that direction
+  // (panel steps, dropdown menus), or floating UI (modals, fixed menus).
+  const DESKTOP = window.matchMedia('(min-width: 1101px)');
+  // Self-driven eased glide (rAF tween). Native window.scrollTo smooth proved
+  // unreliable here (janky/instant on this page), so we own the animation:
+  // one ease-in-out flight per target, repeat gestures to the same target are
+  // no-ops, and a reverse gesture mid-flight retargets from the current
+  // position instead of being swallowed.
+  let glideRaf = 0;
+  let glideTarget = -1;
+  const glidePage = (top) => {
+    const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    top = Math.max(0, Math.min(top, max));
+    if (!DESKTOP.matches) {                       // mobile: keep native behavior
+      window.scrollTo({ top, behavior: 'smooth' });
+      return;
+    }
+    if (glideRaf && glideTarget === top) return;  // already flying there
+    cancelAnimationFrame(glideRaf);
+    glideRaf = 0;
+    glideTarget = top;
+    const from = window.scrollY;
+    const dist = top - from;
+    if (Math.abs(dist) < 1) { glideTarget = -1; return; }
+    const DUR = 700;
+    const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    let start;
+    const frame = (ts) => {
+      if (start === undefined) start = ts;
+      const t = Math.min(1, (ts - start) / DUR);
+      // behavior:'instant' — the stylesheet's `html { scroll-behavior: smooth }`
+      // would otherwise turn every frame's position write into its own native
+      // smooth animation, and the tween never actually moves the page.
+      window.scrollTo({ top: from + dist * ease(t), behavior: 'instant' });
+      if (t < 1) {
+        glideRaf = requestAnimationFrame(frame);
+      } else {
+        glideRaf = 0;
+        glideTarget = -1;
+      }
+    };
+    glideRaf = requestAnimationFrame(frame);
+  };
+  // EMBED DEVIATION: the site's wheel hijack (glide between the two page
+  // stops) is NOT installed here. The embed is a single full-height hero
+  // inside an iframe — preventDefault on wheel would stop the gesture from
+  // chaining out to the portfolio page, trapping the visitor's scroll on the
+  // 3D viewer. glidePage stays (navigate()/applyHash call it; it's a no-op
+  // when the document doesn't scroll).
+
+  // ============ LANGUAGE SWITCH ============
+  // i18n.js re-writes the static DOM; this repaints everything script.js
+  // renders dynamically, and re-seats the header nav pill (label widths
+  // change with the language).
+  window.addEventListener('pw:langchange', () => {
+    try {
+      updateReview();
+      updateWeightStat();
+      renderSwatches();
+      syncNavTabs();
+    } catch (_) { /* pre-init — nothing rendered yet */ }
+  });
+
+  // ============ SESSION SNAPSHOT (checkout round-trip) ============
+  // The customizer has no server state — navigating to checkout.html and back
+  // reloads the page. A sessionStorage snapshot written on pagehide and
+  // replayed here (through the normal input handlers, so every side effect
+  // fires) keeps the customization alive across that round-trip.
+  const SNAP_KEY = 'pw:customizer';
+  window.addEventListener('pagehide', () => {
+    try {
+      const mats = {};
+      $$('.material-row').forEach((row) => {
+        const sel = row.querySelector('.material-swatch-item.is-selected');
+        if (sel && sel.dataset.color) mats[row.dataset.mat] = sel.dataset.color;
+      });
+      sessionStorage.setItem(SNAP_KEY, JSON.stringify({
+        screen: state.screen,
+        step: state.step,
+        productType: state.productType,
+        unit: state.unit,
+        measures: { ...state.measures },
+        legSupport: state.legSupport,
+        backStrap: state.backStrap,
+        includeCollar: state.includeCollar,
+        mats,
+      }));
+    } catch (_) { /* storage unavailable — snapshot is best-effort */ }
+  });
+
+  // Replay a slider value through its real input handler (state, fills,
+  // price, rig — every side effect fires). Shared by the session restore,
+  // the share-link apply, and the toolbar's reset-measurements button.
+  const replaySlider = (sel, v) => {
+    const s = $(sel);
+    if (s && typeof v === 'number' && !Number.isNaN(v)) {
+      s.value = v;
+      s.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  };
+
+  {
+    let snap = null;
+    try { snap = JSON.parse(sessionStorage.getItem(SNAP_KEY) || 'null'); } catch (_) {}
+    // Shared-configuration link (?c=<base64url JSON>, built by the share
+    // button): decode it, let it OVERRIDE the session snapshot, and clean the
+    // query off the address bar — from here the pagehide snapshot keeps the
+    // config alive, and a reload won't re-apply a stale link.
+    try {
+      const c = new URLSearchParams(location.search).get('c');
+      if (c) {
+        const shared = JSON.parse(atob(c.replace(/-/g, '+').replace(/_/g, '/')));
+        if (shared && typeof shared === 'object') {
+          snap = { ...shared, screen: 'steps', step: 'measure' };
+        }
+        history.replaceState(null, '', location.pathname + location.hash);
+      }
+    } catch (_) { /* malformed link — ignore it */ }
+    if (snap) {
+      // Before the sliders replay: their input handlers recompute the price,
+      // which depends on the product type. The dropdown (built later in this
+      // file) initializes from state.productType, so this is all it needs.
+      if (ACTIVE_PRODUCT_TYPES.some((p) => p.id === snap.productType)) {
+        state.productType = snap.productType;
+      }
+      if (snap.unit && snap.unit !== state.unit) {
+        $(`.unit-btn[data-unit="${snap.unit}"]`)?.click();
+      }
+      const m = snap.measures || {};
+      replaySlider('#rangeLength', m.length);
+      replaySlider('#rangeHeight', m.height);
+      replaySlider('#rangeWidth', m.width);
+      replaySlider('#rangeThigh', m.thigh);
+      replaySlider('#rangeThickness', m.thickness);
+      if (m.radiusManual) {
+        $('#radiusLock')?.click();
+        replaySlider('#rangeRadiusOffset', m.radiusOffset || 0);
+      }
+      [['legSupport', '#legSupport'], ['backStrap', '#backStrap'], ['includeCollar', '#includeCollar']]
+        .forEach(([k, sel]) => {
+          const el = $(sel);
+          if (el && typeof snap[k] === 'boolean' && el.checked !== snap[k]) {
+            el.checked = snap[k];
+            el.dispatchEvent(new Event('change'));
+          }
+        });
+      // Filament colors need rig.materials, which only exist after the GLB
+      // loads — piggyback once on the chip-sync hook the loader calls.
+      if (snap.mats && Object.keys(snap.mats).length) {
+        const orig = window.__pwSyncMaterialChips;
+        window.__pwSyncMaterialChips = () => {
+          if (typeof orig === 'function') orig();
+          Object.entries(snap.mats).forEach(([slot, hex]) => {
+            document.querySelector(
+              `.material-row[data-mat="${slot}"] .material-swatch-item[data-color="${hex}"]`
+            )?.click();
+          });
+          window.__pwSyncMaterialChips = orig;
+        };
+      }
+    }
+    // Deep link from the subpage header tabs (index.html#measure/…). The
+    // hash wins over the snapshot's remembered screen.
+    const hash = (location.hash || '').slice(1);
+    if (hash === 'measure' || hash === 'style' || hash === 'review') showScreen(hash);
+    else if (hash === 'home') showScreen('welcome');
+    else if (snap && snap.screen === 'steps') showScreen(snap.step || 'measure');
   }
 
   // ============ BABYLON VIEWER ============
@@ -1218,6 +1762,20 @@
     { key: 'width' },
     { key: 'thigh' },
   ];
+  // Side-flip: when true, the length/height/thigh annotations jump between the
+  // mirror halves as the model rotates so they always face the camera. Disabled
+  // for now — the lines stay on their fixed halves in every view. Flip back to
+  // true to restore the camera-facing behavior.
+  const DIM_FLIP_SIDES = false;
+  // Desktop: hovering anywhere on a measurement field (label, "?", slider,
+  // value) lights the matching 3D line, exactly like hovering the line itself.
+  let dimFieldHover = null;
+  $$('.step-body[data-body="measure"] .field[data-mfield]').forEach((f) => {
+    f.addEventListener('mouseenter', () => { dimFieldHover = f.dataset.mfield; });
+    f.addEventListener('mouseleave', () => {
+      if (dimFieldHover === f.dataset.mfield) dimFieldHover = null;
+    });
+  });
   // Thigh measurement comes from the chair's "TighUI" line mesh — an open oval
   // outline (a LINES mesh) that scales with the thigh param via its Scale morph.
   // We render the WHOLE outline by projecting every edge each frame (so the UI
@@ -1339,11 +1897,18 @@
     if (rig) rig.update();
   }
 
+  // Non-passive touchmove blocker, live only while a dim drag runs: without
+  // it the browser can claim the gesture for page scrolling mid-drag and fire
+  // pointercancel — the "drags a tiny bit and stops" glitch on phones.
+  // (touch-action: none on the SVG hit targets is not honored everywhere.)
+  const blockDimTouchScroll = (e) => { if (dimDrag) e.preventDefault(); };
   const endDimDrag = () => {
     if (!dimDrag) return;
     dimDrag = null;
     window.removeEventListener('pointermove', onDimDragMove);
     window.removeEventListener('pointerup', endDimDrag);
+    window.removeEventListener('pointercancel', endDimDrag);
+    window.removeEventListener('touchmove', blockDimTouchScroll);
   };
   function onDimDragMove(e) {
     if (!dimDrag) return;
@@ -1382,6 +1947,8 @@
     try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
     window.addEventListener('pointermove', onDimDragMove);
     window.addEventListener('pointerup', endDimDrag);
+    window.addEventListener('pointercancel', endDimDrag);
+    window.addEventListener('touchmove', blockDimTouchScroll, { passive: false });
   }
 
   function ensureDimDom() {
@@ -1470,7 +2037,12 @@
     const cWorldDist = BABYLON.Vector3.DistanceSquared(_tw, camPos);
     const cLocal = BABYLON.Vector3.TransformCoordinates(_tw, invMR);     // → modelRoot-local
     const cMirror = BABYLON.Vector3.TransformCoordinates(new BABYLON.Vector3(-cLocal.x, cLocal.y, cLocal.z), MR);
-    const mirror = BABYLON.Vector3.DistanceSquared(cMirror, camPos) > cWorldDist;
+    // With the side-flip disabled the thigh outline stays permanently on the
+    // MIRROR half — the side it showed in the default view back when it
+    // flipped with the camera. (Length/height keep their own fixed halves.)
+    const mirror = DIM_FLIP_SIDES
+      ? BABYLON.Vector3.DistanceSquared(cMirror, camPos) > cWorldDist
+      : true;
     // Bake the optional reflection (across modelRoot-local X=0) into one matrix.
     const Mfinal = mirror
       ? MW.multiply(invMR).multiply(BABYLON.Matrix.Scaling(-1, 1, 1)).multiply(MR)
@@ -1534,7 +2106,7 @@
     // vertex and fight for hover). Both flip together as the model rotates, so
     // the height stays on the opposite side from length in any view.
     const hL = dog.localFinal.height;
-    const useMirror = dist2(toWorld(mirrorLocal(hL))) < dist2(toWorld(hL));
+    const useMirror = DIM_FLIP_SIDES && dist2(toWorld(mirrorLocal(hL))) < dist2(toWorld(hL));
     const near = (role) => (useMirror ? mirrorLocal(dog.localFinal[role]) : dog.localFinal[role]);
     const far  = (role) => (useMirror ? dog.localFinal[role] : mirrorLocal(dog.localFinal[role]));
 
@@ -1580,9 +2152,12 @@
       d.sa = { x: s.a.x, y: s.a.y };
       d.sb = { x: s.b.x, y: s.b.y };
       d.center = s.center || null;
-      // Dimmed by default; lit (value shown) while hovering the line/bullets or
-      // while this dimension is being dragged.
-      const lit = d.hoverCount > 0 || (dimDrag && dimDrag.rec === d);
+      // Dimmed by default; lit (value shown) while hovering the line/bullets,
+      // while this dimension is being dragged, while its panel field is
+      // hovered (desktop), or while it's the selected mobile measurement tab.
+      const lit = d.hoverCount > 0 || (dimDrag && dimDrag.rec === d) ||
+        d.key === dimFieldHover ||
+        (MOBILE_PANEL_MQ.matches && state.step === 'measure' && d.key === mobileMeasureTab);
       el.g.style.opacity = lit ? '1' : '0.5';
       el.label.style.opacity = lit ? '1' : '0';
       // Label at the centroid for the thigh oval, else the line midpoint.
@@ -1593,6 +2168,44 @@
       el.valEl.textContent = formatVal(s.val) + ' ' + state.unit;
     });
   }
+
+  // ============ MODEL ASSETS ============
+  // Central loader for the 3D models: one fetch per model, shared by every
+  // consumer (the SceneLoader AND the raw binary parsers both want
+  // petwheels/petwheelsDog).
+  //
+  // OBFUSCATION (currently OFF — plain .glb names, so a fresh Blender export
+  // dropped into assets/ just works): to hide the models again, rename each
+  // file to something meaningless, point MODEL_FILES at the new names, set
+  // MODEL_XOR to a byte (e.g. 0x7C), and scramble each file with:
+  //   python -c "import sys; d=open(sys.argv[1],'rb').read(); open(sys.argv[2],'wb').write(bytes(b^0x7C for b in d))" in.glb out.bin
+  const MODEL_FILES = {
+    'petwheels.glb':    'assets/petwheels.glb',
+    'petwheelsDog.glb': 'assets/petwheelsDog.glb',
+    'backStap.glb':     'assets/backStap.glb',
+    'legSling.glb':     'assets/legSling.glb',
+    'person.glb':       'assets/person.glb',
+    'ball.glb':         'assets/ball.glb',
+    'collar.glb':       'assets/collar.glb',
+  };
+  const MODEL_XOR = 0;   // 0 = plain files, no descramble pass
+  const modelBufs = new Map();   // semantic name → Promise<ArrayBuffer>
+  const fetchModel = (name) => {
+    if (!modelBufs.has(name)) {
+      modelBufs.set(name, (async () => {
+        const res = await fetch(MODEL_FILES[name] || 'assets/' + name);
+        if (!res.ok) throw new Error(`${name}: fetch failed (${res.status})`);
+        const u8 = new Uint8Array(await res.arrayBuffer());
+        if (MODEL_XOR) for (let i = 0; i < u8.length; i++) u8[i] ^= MODEL_XOR;
+        return u8.buffer;
+      })());
+    }
+    return modelBufs.get(name);
+  };
+  // Blob-URL wrapper for the Babylon loaders. Pass '.glb' as pluginExtension
+  // at the call site — a blob URL has no extension for the loader to sniff.
+  const modelUrl = async (name) =>
+    URL.createObjectURL(new Blob([await fetchModel(name)]));
 
   // ============ DOG (parametric companion mesh) ============
   // petwheelsDog.glb is half a dog (the −X sagittal half), placed at the same
@@ -1620,8 +2233,7 @@
   //     attribute order); these are the overlay's measurement anchors.
   //   • roles   — by dominant morph; these are the vertices the solver drives.
   // The two differ: a marker isn't necessarily moved most by its own morph.
-  async function parseDogMarkers(url) {
-    const ab = await (await fetch(url)).arrayBuffer();
+  async function parseDogMarkers(ab) {
     const dv = new DataView(ab);
     const total = dv.getUint32(8, true);
     let off = 12, json = null, binOffset = 0;
@@ -1695,28 +2307,50 @@
     // heuristic below does NOT recover it (e.g. the front height marker is the
     // vertex the Length morph stretches the most). GroundColor is the bottom of
     // the paw; (height marker → ground marker) is the true height span.
-    const SEMANTIC_BY_INDEX = ['height', 'width', 'length', 'ground'];
+    // COLOR_4/5 are the accessory anchor groups (BackStrapColor /
+    // LegSlingColor) — multi-vertex regions, so those two use the MEAN of
+    // every marked vertex instead of the single brightest one.
+    const SEMANTIC_BY_INDEX = ['height', 'width', 'length', 'ground', 'backstrap', 'legsling'];
+    // every vertex whose color reads bright (r+g+b past half of white)
+    const markedViSet = (ai) => {
+      const a = g.accessors[ai], nc = ncOf[a.type], bv = g.bufferViews[a.bufferView];
+      const cs = cSize[a.componentType], stride = bv.byteStride || cs * nc;
+      const base = binOffset + (bv.byteOffset || 0) + (a.byteOffset || 0);
+      const white = a.componentType === 5126 ? 1 : a.componentType === 5123 ? 65535 : 255;
+      const out = [];
+      for (let vi = 0; vi < a.count; vi++) {
+        let sum = 0;
+        for (let c = 0; c < Math.min(nc, 3); c++) sum += readC(base + vi * stride + c * cs, a.componentType);
+        if (sum > 1.5 * white) out.push(vi);
+      }
+      return out.length ? out : [markedVi(ai)];
+    };
     const colorKeys = Object.keys(prim.attributes)
       .filter((k) => /^COLOR_/.test(k))
       .sort((a, b) => (+a.split('_')[1]) - (+b.split('_')[1]));
     const roles = {};    // morph-control vertices, for the length/width solve (by dominant morph)
     const markers = {};  // semantic measurement anchors, for the overlay + height solve (by color index)
     colorKeys.forEach((k, idx) => {
-      const vi = markedVi(prim.attributes[k]);
+      const sem = SEMANTIC_BY_INDEX[idx];
+      const vis = idx >= 4 ? markedViSet(prim.attributes[k]) : [markedVi(prim.attributes[k])];
+      const avg = (fn) => {
+        const s = [0, 0, 0];
+        vis.forEach((vi) => { const v = fn(vi); s[0] += v[0]; s[1] += v[1]; s[2] += v[2]; });
+        return s.map((x) => x / vis.length);
+      };
       const d = {};
-      prim.targets.forEach((t, ti) => { d[names[ti] || ('M' + ti)] = accVec3(t.POSITION, vi); });
+      prim.targets.forEach((t, ti) => { d[names[ti] || ('M' + ti)] = avg((vi) => accVec3(t.POSITION, vi)); });
       const entry = {
-        vi, base: V(accVec3(POS, vi)),
+        vi: vis[0], base: V(avg((vi) => accVec3(POS, vi))),
         d: { Height: V(d.Height || [0,0,0]), Length: V(d.Length || [0,0,0]),
              Width: V(d.Width || [0,0,0]), Scale: V(d.Scale || [0,0,0]) },
       };
       // Overlay: which measurement this marker annotates (explicit Blender order).
-      const sem = SEMANTIC_BY_INDEX[idx];
       if (sem) markers[sem] = entry;
       // Solver: which morph drives this vertex (so the length/width weight solve
-      // can move it). The ground marker is overlay/height-solve only — keep it
-      // out of the heuristic so it can't clobber a length/width role.
-      if (sem && sem !== 'ground') {
+      // can move it). Ground + accessory markers stay out of the heuristic so
+      // they can't clobber a length/width role.
+      if (['height', 'length', 'width'].includes(sem)) {
         const cand = [['height', mag(d.Height || [0,0,0])],
                       ['length', mag(d.Length || [0,0,0])],
                       ['width',  mag(d.Width  || [0,0,0])]].sort((x, y) => y[1] - x[1]);
@@ -1766,11 +2400,15 @@
     const N = (v) => BABYLON.Vector3.TransformNormal(v, Mdl);
     const deltas = (e) => ({ Height: N(e.d.Height), Length: N(e.d.Length), Width: N(e.d.Width), Scale: N(e.d.Scale) });
     const baseL = {}, dL = {};   // solver: morph-control vertices (length/width)
-    const baseM = {}, dM = {};   // overlay + height solve: semantic measurement markers
+    const baseM = {}, dM = {};   // overlay + height solve + accessory anchors
     ['height', 'length', 'width'].forEach((role) => {
       baseL[role] = T(R[role].base);   dL[role] = deltas(R[role]);
     });
-    ['height', 'length', 'width', 'ground'].forEach((role) => {
+    // Accessory markers (backstrap / legsling) ride along when the dog glb
+    // carries them — same math, they just don't participate in the solve.
+    const markerRoles = ['height', 'length', 'width', 'ground', 'backstrap', 'legsling']
+      .filter((role) => Rm[role]);
+    markerRoles.forEach((role) => {
       baseM[role] = T(Rm[role].base);  dM[role] = deltas(Rm[role]);
     });
 
@@ -1854,12 +2492,22 @@
     setInf('scale', wS); setInf('height', wH); setInf('length', wL); setInf('width', wW);
     dog.weights = { wS, wH, wL, wW };
 
+    // The collar rides the dog: same four morphs, same solved weights.
+    if (dog.collar) {
+      const c = dog.collar.targets;
+      if (c.scale)  c.scale.influence  = wS;
+      if (c.height) c.height.influence = wH;
+      if (c.length) c.length.influence = wL;
+      if (c.width)  c.width.influence  = wW;
+    }
+
     // Store the three SEMANTIC marker vertices (Blender Height/Width/LengthColor)
     // in modelRoot-local space for the overlay. These are distinct from the
     // morph-control vertices the solver used above, but follow the same solved
     // weights — applying the global morph weights to each marker's own deltas
     // gives its true post-morph position.
-    ['height', 'length', 'width', 'ground'].forEach((role) => {
+    markerRoles.forEach((role) => {
+      if (!dog.localFinal[role]) dog.localFinal[role] = new BABYLON.Vector3();
       dog.localFinal[role].copyFrom(baseM[role])
         .addInPlace(dM[role].Scale.scale(wS))
         .addInPlace(dM[role].Height.scale(wH))
@@ -1879,20 +2527,33 @@
       dog.inst.scaling.copyFrom(ts);
       dog.inst.computeWorldMatrix(true);
     }
+
+    // Collar mirror: identical treatment (its transform matches the dog's, but
+    // compute from its own matrix so the two can never drift apart).
+    if (dog.collar && dog.collar.inst) {
+      dog.collar.mesh.computeWorldMatrix(true);
+      const cRootM = dog.collar.mesh.getWorldMatrix().multiply(MRinv);
+      const cs = new BABYLON.Vector3(), cq = new BABYLON.Quaternion(), ct = new BABYLON.Vector3();
+      cRootM.decompose(cs, cq, ct);
+      dog.collar.inst.position.copyFrom(ct);
+      dog.collar.inst.rotationQuaternion.copyFrom(cq);
+      dog.collar.inst.scaling.copyFrom(cs);
+      dog.collar.inst.computeWorldMatrix(true);
+    }
   }
 
   // Load + wire the dog: parse markers, append to scene, recolor white, parent
   // to the chassis origin, mirror, and hook into the rig's update cycle.
   async function setupDog() {
     try {
-      const parsed = await parseDogMarkers('assets/petwheelsDog.glb');
+      const parsed = await parseDogMarkers(await fetchModel('petwheelsDog.glb'));
       const roles = parsed && parsed.roles, markers = parsed && parsed.markers;
       if (!roles || !roles.height || !roles.length || !roles.width
           || !markers || !markers.height || !markers.length || !markers.width || !markers.ground) {
         console.warn('[dog] marker parse incomplete — skipping', parsed);
         return;
       }
-      await BABYLON.SceneLoader.AppendAsync('assets/', 'petwheelsDog.glb', scene);
+      await BABYLON.SceneLoader.AppendAsync('', await modelUrl('petwheelsDog.glb'), scene, undefined, '.glb');
       let mesh = scene.getMeshByName('PetWheelsDog-3');
       if (!mesh || !mesh.morphTargetManager) {
         // Fall back to any newly-loaded mesh that looks like the dog (has the
@@ -1958,6 +2619,52 @@
         UNIT: DOG_UNIT, floorOffset: 0,   // live-tunable from the console
       };
 
+      // ---- collar (collar.glb): a second dog-driven mesh ----
+      // Authored exactly like the dog (same half-mesh convention, same origin
+      // translation, same 4 morphs) but exported separately so it keeps its
+      // own material and can be toggled from the Style step. It never solves
+      // anything — updateDog copies the dog's solved weights onto it.
+      try {
+        // ImportMeshAsync (NOT Append + scene diff): setupAccessories loads
+        // concurrently with this, so a scene-wide diff can capture the strap/
+        // sling meshes — res.meshes is scoped to THIS file only.
+        const cRes = await BABYLON.SceneLoader.ImportMeshAsync(
+          '', '', await modelUrl('collar.glb'), scene, undefined, '.glb');
+        const cMesh = cRes.meshes.find((x) => x.morphTargetManager && x.morphTargetManager.numTargets >= 3)
+          || cRes.meshes.find((x) => x.getTotalVertices && x.getTotalVertices() > 0);
+        if (cMesh) {
+          const cRoot = cMesh.parent;
+          cMesh.name = 'Collar';   // the Style toggle looks it up by this name
+          if (petwheels) {
+            cMesh.parent = petwheels;
+            cMesh.position.set(0, 0, 0);   // same doubled-translation fix as the dog
+          }
+          if (cRoot && cRoot !== petwheels && cRoot.name === '__root__'
+              && (!cRoot.getChildMeshes || cRoot.getChildMeshes().length === 0)) {
+            try { cRoot.dispose(); } catch (_) {}
+          }
+          let cInst = null;
+          if (mirrorRoot) {
+            cInst = cMesh.createInstance('Collar_mir');
+            cInst.parent = mirrorRoot;
+            cInst.rotationQuaternion = new BABYLON.Quaternion();
+            cInst.alwaysSelectAsActiveMesh = true;
+          }
+          const cTargets = {};
+          const cMgr = cMesh.morphTargetManager;
+          if (cMgr) for (let i = 0; i < cMgr.numTargets; i++) {
+            const t = cMgr.getTarget(i);
+            cTargets[dogNorm(t.name)] = t;
+          }
+          dog.collar = { mesh: cMesh, inst: cInst, targets: cTargets };
+          console.log('[collar] ready', { mesh: cMesh.name, targets: Object.keys(cTargets) });
+        } else {
+          console.warn('[collar] no mesh found in collar.glb');
+        }
+      } catch (e) {
+        console.warn('[collar] load failed — continuing without it', e);
+      }
+
       // Hook into the rig so every slider change re-solves the dog. Guard the
       // dog step so a solver error can never break the wheelchair's update.
       if (rig && typeof rig.update === 'function') {
@@ -1981,7 +2688,9 @@
       // Honour the current view tab and frame instantly (no fly-in on load).
       applyDogVisibility(true);
       // Bring in the real-world scale props, sharing the dog's material.
-      setupScaleRefs(mat);
+      // Awaited so the boot sequence's reveal includes them — un-awaited
+      // they popped in after the loading screen was gone.
+      await setupScaleRefs(mat);
       console.log('[dog] ready', {
         roles: Object.keys(roles).reduce((o, k) => (o[k] = roles[k].vi, o), {}),
         targets: Object.keys(targets), floorLocalY: +dog.floorLocalY.toFixed(4),
@@ -1989,6 +2698,511 @@
       });
     } catch (e) {
       console.error('[dog] setup failed', e);
+    }
+  }
+
+  // ============ ANCHORED ACCESSORIES (backStap.glb + legSling.glb) ============
+  // Soft parts that glue themselves to the chair AND the dog every frame:
+  //
+  //   BackStrap — its root sits on the chair's BackStrap_Anchor. The 'X'
+  //     morph is solved so the strap's BackStrap_X marker reaches the
+  //     MIRRORED anchor (the strap spans both chair halves); the 'Z' morph
+  //     so BackStrap_Z reaches the dog's BackStrapColor vertex group.
+  //     The marker meshes carry no morphs of their own, so each solve uses
+  //     the strap mesh's morph deltas sampled at the marker's basis spot.
+  //
+  //   LegSling — its root sits on the LegSupport's LegSlingColor vertex
+  //     group (COLOR_1; Babylon only surfaces COLOR_0, so the indices come
+  //     from a raw glb parse and the live positions from the LegSupport's
+  //     CPU-morph buffer). Its X/Y/Z morphs are solved as a 3×3 system so
+  //     the LegSlingAnchor mesh (which shares the morphs) lands on the
+  //     dog's LegSlingColor group. Mirrored for the other leg.
+  //
+  // Solved on every frame (scene.onBeforeRenderObservable) — the math is a
+  // handful of matrix inversions on 24-vertex helpers, so ordering against
+  // rig.update / updateDog never matters and the anchors can't lag a frame.
+  let acc = null;
+
+  // Raw-glb reader (same trick as parseDogMarkers): the marked vertex sets of
+  // EVERY COLOR_n attribute on the LegSupport. Blender doesn't guarantee the
+  // export order of color attributes (one re-export swapped MirrorEdges and
+  // LegSlingColor), so the caller classifies the sets geometrically instead
+  // of trusting the index. Vertex order in the binary matches what Babylon
+  // loaded, so the indices map straight onto legCpu's buffers.
+  async function parseLegSupportColorSets(ab) {
+    const dv = new DataView(ab);
+    const total = dv.getUint32(8, true);
+    let off = 12, json = null, binOffset = 0;
+    while (off < total) {
+      const clen = dv.getUint32(off, true), ctype = dv.getUint32(off + 4, true);
+      if (ctype === 0x4E4F534A) json = JSON.parse(new TextDecoder().decode(new Uint8Array(ab, off + 8, clen)));
+      else if (ctype === 0x004E4942) binOffset = off + 8;
+      off += 8 + clen;
+    }
+    if (!json) return null;
+    const node = (json.nodes || []).find((n) => n.name === 'LegSupport' && n.mesh != null);
+    if (!node) return null;
+    const prim = json.meshes[node.mesh].primitives[0];
+    const ncOf = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };
+    const cSize = { 5121: 1, 5123: 2, 5126: 4 };
+    const keys = Object.keys(prim.attributes || {})
+      .filter((k) => /^COLOR_/.test(k))
+      .sort((x, y) => (+x.split('_')[1]) - (+y.split('_')[1]));
+    return keys.map((k) => {
+      const a = json.accessors[prim.attributes[k]];
+      const bv = json.bufferViews[a.bufferView];
+      const nc = ncOf[a.type] || 4, cs = cSize[a.componentType] || 4;
+      const stride = bv.byteStride || cs * nc;
+      const base = binOffset + (bv.byteOffset || 0) + (a.byteOffset || 0);
+      const read = (p) => a.componentType === 5126 ? dv.getFloat32(p, true)
+        : a.componentType === 5123 ? dv.getUint16(p, true) / 65535
+        : dv.getUint8(p) / 255;
+      const out = [];
+      for (let vi = 0; vi < a.count; vi++) {
+        let sum = 0;
+        for (let c = 0; c < Math.min(nc, 3); c++) sum += read(base + vi * stride + c * cs);
+        if (sum > 1.5) out.push(vi);
+      }
+      return out;
+    });
+  }
+
+  // Morph-aware world-space bounding-box centre of a helper mesh.
+  const accCenterWorld = (mesh) => {
+    mesh.computeWorldMatrix(true);
+    try { mesh.refreshBoundingInfo({ applyMorph: true }); }
+    catch (_) { try { mesh.refreshBoundingInfo(false, true); } catch (__) {} }
+    return mesh.getBoundingInfo().boundingBox.centerWorld.clone();
+  };
+
+  async function setupAccessories() {
+    try {
+      if (!modelRoot) return;
+      const PWn = (window.PW && window.PW.nodes) || {};
+      const mirrorRoot = PWn.mirrorRoot;
+
+      // Holder pattern (same as the scale props): a TransformNode we position
+      // drives each accessory; the imported __root__ keeps its glTF
+      // handedness conversion as a child. CRITICAL: the authored group node
+      // inside each glb carries the WORLD position it was modeled at
+      // (BackStrapGroup ~ (0.05, 0.23, 0)) — zero it, exactly like the dog
+      // loader does, or every accessory floats by that offset no matter
+      // where the holder goes.
+      const loadGroup = async (file, holderName, groupName) => {
+        const res = await BABYLON.SceneLoader.ImportMeshAsync('', '', await modelUrl(file), scene, undefined, '.glb');
+        const root = res.meshes.find((m) => m.name === '__root__') || res.meshes[0];
+        const holder = new BABYLON.TransformNode(holderName, scene);
+        holder.parent = modelRoot;
+        // Hidden until the boot sequence finishes the first full solve —
+        // otherwise the accessory flashes at its authored spot and inflates
+        // the camera framing while everything is still settling.
+        holder.setEnabled(false);
+        if (root) root.parent = holder;
+        // Zero the authored group translation (see note above). It may load
+        // as a TransformNode or a Mesh depending on the exporter. Remember
+        // which SIDE (sign of x) the group was authored on — the strap needs
+        // it to know when to mirror itself across.
+        const group = scene.getTransformNodeByName(groupName) || scene.getMeshByName(groupName);
+        let authoredX = 1, renderedSideX = 1;
+        if (group) {
+          authoredX = group.position.x >= 0 ? 1 : -1;
+          // Which side does the AUTHORED accessory land on AS RENDERED
+          // (after the glTF __root__ X-mirror)? On that side the geometry
+          // must be counter-mirrored to look exactly as authored; on the
+          // opposite side the conversion's mirror is the wanted one.
+          group.computeWorldMatrix(true);
+          modelRoot.computeWorldMatrix(true);
+          const gl = BABYLON.Vector3.TransformCoordinates(
+            group.getAbsolutePosition(),
+            BABYLON.Matrix.Invert(modelRoot.getWorldMatrix()));
+          renderedSideX = gl.x >= 0 ? 1 : -1;
+          group.position.set(0, 0, 0);
+        } else console.warn('[accessories] group node missing in ' + file + ': ' + groupName);
+        console.log('[accessories] ' + file + ' loaded: '
+          + res.meshes.map((m) => m.name + '(' + (m.getTotalVertices ? m.getTotalVertices() : 0) + 'v'
+            + (m.morphTargetManager ? ',morphs' : '') + ')').join(' '));
+        return { holder, meshes: res.meshes, authoredX, renderedSideX };
+      };
+      const strapLoad = await loadGroup('backStap.glb', 'BackStrapHolder', 'BackStrapGroup');
+      const slingLoad = await loadGroup('legSling.glb', 'LegSlingHolder', 'LegSlingGroup');
+      const strapHolder = strapLoad.holder, slingHolder = slingLoad.holder;
+
+      // Resolve a part from ITS OWN import: exact node name, the loader's
+      // multi-material split ("<name>_primitive0"), or a geometry child of a
+      // transform node carrying the name — whatever this Babylon build did.
+      const resolveIn = (meshes, name) => {
+        let m = meshes.find((x) => x.name === name);
+        if (m && (!m.getTotalVertices || m.getTotalVertices() > 0)) return m;
+        const holderNode = m;   // 0-vert parent (split mesh) — try its children
+        m = meshes.find((x) => x.name === name + '_primitive0');
+        if (m) return m;
+        if (holderNode && holderNode.getChildMeshes) {
+          const kid = holderNode.getChildMeshes(true).find((x) => x.getTotalVertices() > 0);
+          if (kid) return kid;
+        }
+        return meshes.find((x) => x.parent && x.parent.name === name
+          && x.getTotalVertices && x.getTotalVertices() > 0) || holderNode || null;
+      };
+      const fromScene = (name) => {
+        const m = scene.getMeshByName(name);
+        if (m) return m;
+        const n = scene.getTransformNodeByName(name);
+        if (n && n.getChildMeshes) {
+          return n.getChildMeshes(true).find((x) => x.getTotalVertices() > 0) || null;
+        }
+        return null;
+      };
+
+      const strap  = resolveIn(strapLoad.meshes, 'BackStrap');
+      const strapX = resolveIn(strapLoad.meshes, 'BackStrap_X');
+      const strapZ = resolveIn(strapLoad.meshes, 'BackStrap_Z');
+      const sling  = resolveIn(slingLoad.meshes, 'LegSling');
+      const slingA = resolveIn(slingLoad.meshes, 'LegSlingAnchor');
+      const chairAnchor = fromScene('BackStrap_Anchor');
+      const legSupportMesh = fromScene('LegSupport');
+      if (!strap || !strapX || !strapZ || !sling || !slingA || !chairAnchor || !legSupportMesh) {
+        console.warn('[accessories] nodes missing — skipping ' + JSON.stringify({
+          strap: strap && strap.name, strapX: strapX && strapX.name,
+          strapZ: strapZ && strapZ.name, sling: sling && sling.name,
+          slingA: slingA && slingA.name, chairAnchor: chairAnchor && chairAnchor.name,
+          legSupport: legSupportMesh && legSupportMesh.name,
+        }));
+        return;
+      }
+      console.log('[accessories] resolved ' + JSON.stringify({
+        strap: strap.name, strapX: strapX.name, strapZ: strapZ.name,
+        sling: sling.name, slingA: slingA.name,
+      }));
+
+      // Marker/anchor meshes are helpers — never rendered, never framed.
+      [strapX, strapZ, slingA, chairAnchor].forEach((m) => { m.isVisible = false; });
+
+      // Which way does the strap actually SPAN as rendered? The glTF
+      // __root__ handedness conversion mirrors X, so the Blender-side sign
+      // of the group can't be trusted — measure the root→tip direction in
+      // modelRoot space while the holder is still untouched at the origin.
+      modelRoot.computeWorldMatrix(true);
+      const MRinv0 = BABYLON.Matrix.Invert(modelRoot.getWorldMatrix());
+      const tip0 = BABYLON.Vector3.TransformCoordinates(accCenterWorld(strapX), MRinv0);
+      strapHolder.computeWorldMatrix(true);
+      const root0 = BABYLON.Vector3.TransformCoordinates(strapHolder.getAbsolutePosition(), MRinv0);
+      const strapDirX0 = (tip0.x - root0.x) >= 0 ? 1 : -1;
+
+      // The soft parts keep their AUTHORED materials (per Artur) — do not
+      // rebind them to the m4 fabric slot, so the Style swatches leave the
+      // strap/sling fabric look alone.
+
+      const findTarget = (mesh, nm) => {
+        const g = mesh.morphTargetManager;
+        if (!g) return null;
+        for (let i = 0; i < g.numTargets; i++) {
+          const t = g.getTarget(i);
+          if ((t.name || '').toLowerCase() === nm) return t;
+        }
+        return null;
+      };
+
+      // ---- strap solve data (captured at the basis pose: influences are 0) ----
+      strap.computeWorldMatrix(true);
+      const sInv0 = BABYLON.Matrix.Invert(strap.getWorldMatrix());
+      const A0x = BABYLON.Vector3.TransformCoordinates(accCenterWorld(strapX), sInv0);
+      const A0z = BABYLON.Vector3.TransformCoordinates(accCenterWorld(strapZ), sInv0);
+      const sPos = strap.getVerticesData(BABYLON.VertexBuffer.PositionKind) || [];
+      // Mean morph delta over the K strap vertices nearest a marker — that's
+      // how much the morph moves the strap AT the marker.
+      const meanDeltaNear = (positions, targetPos, P, K = 30) => {
+        const n = positions.length / 3, ds = [];
+        for (let vi = 0; vi < n; vi++) {
+          const dx = positions[vi * 3] - P.x, dy = positions[vi * 3 + 1] - P.y, dz = positions[vi * 3 + 2] - P.z;
+          ds.push([dx * dx + dy * dy + dz * dz, vi]);
+        }
+        ds.sort((x, y) => x[0] - y[0]);
+        const v = new BABYLON.Vector3();
+        const k = Math.min(K, ds.length);
+        for (let i = 0; i < k; i++) {
+          const vi = ds[i][1];
+          v.x += targetPos[vi * 3]     - positions[vi * 3];
+          v.y += targetPos[vi * 3 + 1] - positions[vi * 3 + 1];
+          v.z += targetPos[vi * 3 + 2] - positions[vi * 3 + 2];
+        }
+        return v.scaleInPlace(1 / Math.max(1, k));
+      };
+      const tX = findTarget(strap, 'x'), tZ = findTarget(strap, 'z');
+      const tS = findTarget(strap, 'scale');
+      const DX = tX ? meanDeltaNear(sPos, tX.getPositions(), A0x) : null;
+      const DZ = tZ ? meanDeltaNear(sPos, tZ.getPositions(), A0z) : null;
+      // Scale displacement AT each marker — subtracted from the solve target
+      // so the X/Z weights don't fight the chair-driven Scale morph.
+      const DSx = tS ? meanDeltaNear(sPos, tS.getPositions(), A0x) : null;
+      const DSz = tS ? meanDeltaNear(sPos, tS.getPositions(), A0z) : null;
+
+      // ---- sling solve data (the anchor mesh carries its own X/Y/Z morphs) ----
+      const meanAll = (arr) => {
+        const v = new BABYLON.Vector3();
+        for (let i = 0; i < arr.length; i += 3) { v.x += arr[i]; v.y += arr[i + 1]; v.z += arr[i + 2]; }
+        return v.scaleInPlace(3 / Math.max(3, arr.length));
+      };
+      const aPos = slingA.getVerticesData(BABYLON.VertexBuffer.PositionKind) || [];
+      const b0 = meanAll(aPos);
+      const aT = { x: findTarget(slingA, 'x'), y: findTarget(slingA, 'y'), z: findTarget(slingA, 'z'),
+                   scale: findTarget(slingA, 'scale') };
+      const sT = { x: findTarget(sling, 'x'), y: findTarget(sling, 'y'), z: findTarget(sling, 'z'),
+                   scale: findTarget(sling, 'scale') };
+      const dOf = (t) => t ? meanAll(t.getPositions()).subtractInPlace(b0) : new BABYLON.Vector3();
+      const AD = { x: dOf(aT.x), y: dOf(aT.y), z: dOf(aT.z), scale: dOf(aT.scale) };
+
+      // The chair's live Scale weight, read off the Main mesh's own morph so
+      // the accessories always agree with whatever the rig applied.
+      const mainMesh = fromScene('Main');
+      const chairScaleT = mainMesh ? findTarget(mainMesh, 'scale') : null;
+
+      // The chair-side mount: LegSupport vertices painted LegSlingColor.
+      // Classify the two color groups GEOMETRICALLY — the MirrorEdges set is
+      // the one hugging the sagittal plane (root-local x ≈ 0) at basis; the
+      // sling mount sits out on the bar. If the export shuffled the COLOR
+      // order, hot-swap the CPU snap's vertex set too, or the snap clamps
+      // the sling mount onto the plane and deforms the LegSupport.
+      let rootIdx = null;
+      const colorSets = await parseLegSupportColorSets(await fetchModel('petwheels.glb'));
+      const lc0 = window.PW && window.PW.legCpu;
+      if (colorSets && colorSets.length >= 2 && lc0 && lc0.basisPos) {
+        legSupportMesh.computeWorldMatrix(true);
+        modelRoot.computeWorldMatrix(true);
+        const toRoot = legSupportMesh.getWorldMatrix()
+          .multiply(BABYLON.Matrix.Invert(modelRoot.getWorldMatrix()));
+        const meanAbsX = (set) => {
+          if (!set.length) return Infinity;
+          let s = 0;
+          const v = new BABYLON.Vector3();
+          set.forEach((vi) => {
+            v.set(lc0.basisPos[vi * 3], lc0.basisPos[vi * 3 + 1], lc0.basisPos[vi * 3 + 2]);
+            s += Math.abs(BABYLON.Vector3.TransformCoordinates(v, toRoot).x);
+          });
+          return s / set.length;
+        };
+        const a0 = meanAbsX(colorSets[0]), a1 = meanAbsX(colorSets[1]);
+        const mirrorIdx = a0 <= a1 ? colorSets[0] : colorSets[1];
+        rootIdx = a0 <= a1 ? colorSets[1] : colorSets[0];
+        const cur = new Set(lc0.whiteIdx || []);
+        const same = mirrorIdx.length === cur.size && mirrorIdx.every((vi) => cur.has(vi));
+        if (!same) {
+          console.warn('[accessories] LegSupport color groups were swapped in the export — '
+            + 'reassigning MirrorEdges (' + (lc0.whiteIdx || []).length + ' → '
+            + mirrorIdx.length + ' verts) and re-snapping');
+          lc0.whiteIdx = mirrorIdx;
+          if (rig && typeof rig.update === 'function') rig.update();
+        }
+      } else if (colorSets && colorSets.length === 1) {
+        rootIdx = colorSets[0];   // single group — nothing to disambiguate
+      }
+
+      // Mirrored sling for the other leg (the strap spans — no mirror needed).
+      let slingInst = null;
+      if (mirrorRoot) {
+        slingInst = sling.createInstance('LegSling_mir');
+        slingInst.parent = mirrorRoot;
+        slingInst.rotationQuaternion = new BABYLON.Quaternion();
+        slingInst.alwaysSelectAsActiveMesh = true;
+        slingInst.setEnabled(false);   // instances don't inherit the holder's state
+      }
+
+      acc = { strapHolder, slingHolder, strap, sling, slingA, chairAnchor,
+              legSupportMesh, A0x, A0z, DX, DZ, DSx, DSz, tX, tZ, tS,
+              b0, AD, aT, sT, chairScaleT, rootIdx, slingInst, strapDirX0,
+              slingRenderedX: slingLoad.renderedSideX };
+
+      // Reveal happens in the boot sequence (after the first full solve),
+      // honouring whatever the Style toggles say by then.
+      acc.applyToggles = () => {
+        strapHolder.setEnabled(true);
+        slingHolder.setEnabled(true);
+        strap.setEnabled(state.backStrap !== false);
+        sling.setEnabled(state.legSupport !== false);
+        if (slingInst) slingInst.setEnabled(state.legSupport !== false);
+      };
+
+      scene.onBeforeRenderObservable.add(updateAccessories);
+      window.PW = window.PW || {};
+      window.PW.acc = acc;
+      window.PW.updateAccessories = updateAccessories;
+      console.log('[accessories] ready', {
+        slingRootVerts: rootIdx ? rootIdx.length : 0,
+        strapTargets: { X: !!tX, Z: !!tZ },
+        slingTargets: { X: !!aT.x, Y: !!aT.y, Z: !!aT.z },
+      });
+    } catch (e) {
+      console.error('[accessories] setup failed', e);
+    }
+  }
+
+  // Debug: `PW.accDebug = true` in the console streams the solve state once
+  // a second; the first few frames always log so a broken boot is visible.
+  let _accFrames = 0;
+  let _accLastLog = 0;
+  let _accLastErr = 0;
+  function _accLog(payload) {
+    const now = performance.now();
+    const wantsIt = (window.PW && window.PW.accDebug) || _accFrames <= 3;
+    if (!wantsIt || now - _accLastLog < 1000) return;
+    _accLastLog = now;
+    console.log('[accessories]', payload);
+  }
+
+  const _accV = new BABYLON.Vector3();
+  function updateAccessories() {
+    if (!acc || !modelRoot) return;
+    _accFrames++;
+    try {
+      modelRoot.computeWorldMatrix(true);
+      const MR = modelRoot.getWorldMatrix();
+      const MRinv = BABYLON.Matrix.Invert(MR);
+
+      // The chair's live Scale weight drives the accessories' bulk too — the
+      // strap/sling thicken with the chair instead of staying basis-sized.
+      const wS = acc.chairScaleT ? acc.chairScaleT.influence : 0;
+      if (acc.tS) acc.tS.influence = wS;
+      if (acc.sT.scale) acc.sT.scale.influence = wS;
+      if (acc.aT.scale) acc.aT.scale.influence = wS;
+
+      // ---- BackStrap: root on the chair anchor ----
+      const aw = accCenterWorld(acc.chairAnchor);
+      const al = BABYLON.Vector3.TransformCoordinates(aw, MRinv);
+      acc.strapHolder.position.copyFrom(al);
+      // The strap must always span INWARD, across the sagittal plane toward
+      // the mirrored anchor. Its rendered root→tip direction was measured at
+      // load (strapDirX0); flip the holder whenever that direction doesn't
+      // point away from the anchor's side.
+      acc.strapHolder.scaling.x = -(al.x >= 0 ? 1 : -1) * acc.strapDirX0;
+      acc.strapHolder.computeWorldMatrix(true);
+      acc.strap.computeWorldMatrix(true);
+      const sInv = BABYLON.Matrix.Invert(acc.strap.getWorldMatrix());
+
+      // X morph: BackStrap_X reaches the MIRRORED anchor (modelRoot-local X
+      // flip). The marker's position is A0 + wS·DS + wX·DX, so the Scale
+      // displacement is subtracted from the target before solving for wX.
+      if (acc.tX && acc.DX) {
+        const lm = BABYLON.Vector3.TransformCoordinates(aw, MRinv);
+        lm.x = -lm.x;
+        const tw = BABYLON.Vector3.TransformCoordinates(lm, MR);
+        const tl = BABYLON.Vector3.TransformCoordinates(tw, sInv).subtractInPlace(acc.A0x);
+        if (acc.DSx) tl.subtractInPlace(acc.DSx.scale(wS));
+        const d2 = acc.DX.lengthSquared();
+        // Floor at 0: the Scale morph moves the tip along nearly the same
+        // axis as X, so a slight Scale overshoot would otherwise drive X
+        // NEGATIVE and fold the tip back on itself.
+        if (d2 > 1e-12) {
+          acc.tX.influence = Math.min(3, Math.max(0, BABYLON.Vector3.Dot(tl, acc.DX) / d2));
+        }
+      }
+      // Z morph: BackStrap_Z reaches the dog's BackStrapColor group.
+      if (acc.tZ && acc.DZ && dog && dog.ready && dog.localFinal.backstrap) {
+        const tw = BABYLON.Vector3.TransformCoordinates(dog.localFinal.backstrap, MR);
+        const tl = BABYLON.Vector3.TransformCoordinates(tw, sInv).subtractInPlace(acc.A0z);
+        if (acc.DSz) tl.subtractInPlace(acc.DSz.scale(wS));
+        const d2 = acc.DZ.lengthSquared();
+        if (d2 > 1e-12) {
+          acc.tZ.influence = Math.min(3, Math.max(-1, BABYLON.Vector3.Dot(tl, acc.DZ) / d2));
+        }
+      }
+
+      // ---- LegSling: root on the LegSupport's LegSlingColor group ----
+      // Live positions come from the LegSupport's CPU-morph output buffer.
+      const lc = window.PW && window.PW.legCpu;
+      if (acc.rootIdx && acc.rootIdx.length && lc && lc.outPos && lc.outPos.length) {
+        _accV.set(0, 0, 0);
+        for (const vi of acc.rootIdx) {
+          _accV.x += lc.outPos[vi * 3];
+          _accV.y += lc.outPos[vi * 3 + 1];
+          _accV.z += lc.outPos[vi * 3 + 2];
+        }
+        _accV.scaleInPlace(1 / acc.rootIdx.length);
+        acc.legSupportMesh.computeWorldMatrix(true);
+        const rw = BABYLON.Vector3.TransformCoordinates(_accV, acc.legSupportMesh.getWorldMatrix());
+        const rl = BABYLON.Vector3.TransformCoordinates(rw, MRinv);
+        // The LegSupport SOURCE half sits on the +X (right) side, but the
+        // sling is authored for the LEFT side — the one the dog half
+        // occupies. Mirror the mount across the sagittal plane so the source
+        // sling lands on the dog's side; the hardware instance (reflected by
+        // mirrorRoot) then covers the right leg.
+        const slingSide = (dog && dog.ready && dog.localFinal.legsling)
+          ? (Math.sign(dog.localFinal.legsling.x) || -1) : -1;
+        rl.x = slingSide * Math.abs(rl.x);
+        acc.slingHolder.position.copyFrom(rl);
+        // Chirality: the glTF conversion X-mirrors the geometry AND the side
+        // it lands on, which cancel out — the conversion's own mirror is
+        // already the correct handedness for the side the source sits on
+        // (buckle on the OUTER face); counter-mirroring is needed only when
+        // we FORCE the sling onto the opposite side of where it rendered.
+        // (Empirically pinned: the inverse mapping put both buckles inboard.)
+        // The hardware instance reflects the source again, keeping the pair.
+        acc.slingHolder.scaling.x = (slingSide === acc.slingRenderedX) ? 1 : -1;
+        acc.slingHolder.computeWorldMatrix(true);
+      }
+
+      // X/Y/Z morphs: LegSlingAnchor lands on the dog's LegSlingColor group.
+      // Anchor position is linear in the three weights → one 3×3 solve.
+      if (dog && dog.ready && dog.localFinal.legsling && acc.aT.x && acc.aT.y && acc.aT.z) {
+        acc.slingA.computeWorldMatrix(true);
+        const aInv = BABYLON.Matrix.Invert(acc.slingA.getWorldMatrix());
+        const tw = BABYLON.Vector3.TransformCoordinates(dog.localFinal.legsling, MR);
+        const t = BABYLON.Vector3.TransformCoordinates(tw, aInv).subtractInPlace(acc.b0);
+        // Remove the Scale morph's own displacement of the anchor before the
+        // X/Y/Z solve, so the weights don't compensate for the scaling.
+        if (acc.AD.scale) t.subtractInPlace(acc.AD.scale.scale(wS));
+        const a = acc.AD.x, b = acc.AD.y, c = acc.AD.z;
+        const det = a.x * (b.y * c.z - b.z * c.y)
+                  - b.x * (a.y * c.z - a.z * c.y)
+                  + c.x * (a.y * b.z - a.z * b.y);
+        if (Math.abs(det) > 1e-12) {
+          const wx = (t.x * (b.y * c.z - b.z * c.y) - b.x * (t.y * c.z - t.z * c.y) + c.x * (t.y * b.z - t.z * b.y)) / det;
+          const wy = (a.x * (t.y * c.z - t.z * c.y) - t.x * (a.y * c.z - a.z * c.y) + c.x * (a.y * t.z - a.z * t.y)) / det;
+          const wz = (a.x * (b.y * t.z - b.z * t.y) - b.x * (a.y * t.z - a.z * t.y) + t.x * (a.y * b.z - a.z * b.y)) / det;
+          const put = (tg, w) => { if (tg && isFinite(w)) tg.influence = w; };
+          // "Wheelchair only": no visible leg to reach for, so the sling keeps
+          // its authored pose on X and Y (both morphs neutral) and follows the
+          // dog only on Z. Full view applies the complete solve.
+          const chairOnly = state.dogVisible === false;
+          const wxUsed = chairOnly ? 0 : wx;
+          const wyUsed = chairOnly ? 0 : wy;
+          put(acc.aT.x, wxUsed); put(acc.aT.y, wyUsed); put(acc.aT.z, wz);
+          put(acc.sT.x, wxUsed); put(acc.sT.y, wyUsed); put(acc.sT.z, wz);
+        }
+      }
+
+      // Mirror instance copies the sling's in-root transform (mirrorRoot's
+      // −X scaling reflects it), like every other mirrored mesh.
+      if (acc.slingInst) {
+        acc.sling.computeWorldMatrix(true);
+        const m = acc.sling.getWorldMatrix().multiply(MRinv);
+        const ts = new BABYLON.Vector3(), tq = new BABYLON.Quaternion(), tt = new BABYLON.Vector3();
+        m.decompose(ts, tq, tt);
+        acc.slingInst.position.copyFrom(tt);
+        acc.slingInst.rotationQuaternion.copyFrom(tq);
+        acc.slingInst.scaling.copyFrom(ts);
+      }
+
+      const r3 = (v) => v && v.asArray().map((x) => +x.toFixed(3));
+      _accLog({
+        anchorWorld: r3(aw),
+        strapHolder: r3(acc.strapHolder.position),
+        wX: acc.tX && +acc.tX.influence.toFixed(3),
+        wZ: acc.tZ && +acc.tZ.influence.toFixed(3),
+        slingHolder: r3(acc.slingHolder.position),
+        slingFlip: acc.slingHolder.scaling.x,
+        slingRenderedX: acc.slingRenderedX,
+        slingW: acc.aT.x && [acc.aT.x, acc.aT.y, acc.aT.z].map((t) => t && +t.influence.toFixed(3)),
+        dogReady: !!(dog && dog.ready),
+        dogBackstrap: dog && dog.localFinal.backstrap && r3(dog.localFinal.backstrap),
+        dogLegsling: dog && dog.localFinal.legsling && r3(dog.localFinal.legsling),
+        slingRootVerts: acc.rootIdx ? acc.rootIdx.length : 0,
+      });
+    } catch (e) {
+      // Keep the render loop alive, but never silently — throttled.
+      const now = performance.now();
+      if (now - _accLastErr > 2000) {
+        _accLastErr = now;
+        console.error('[accessories] frame update failed', e);
+      }
     }
   }
 
@@ -2037,7 +3251,7 @@
       scaleRefRoot = new BABYLON.TransformNode('ScaleRefRoot', scene);
 
       const loadProp = async (file, holderName, parentNode) => {
-        const res = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/', file, scene);
+        const res = await BABYLON.SceneLoader.ImportMeshAsync('', '', await modelUrl(file), scene, undefined, '.glb');
         const root = res.meshes.find((m) => m.name === '__root__') || res.meshes[0];
         // A holder we own drives position + rotation; the imported __root__
         // stays a child so its glTF coordinate-conversion transform is intact.
@@ -2060,7 +3274,7 @@
       scaleRefBall   = await loadProp('ball.glb',   'ScaleRef_ball',   scaleRefRoot);
       updateScaleRefs();
     } catch (e) {
-      console.warn('[scaleRef] setup failed — are person.glb / ball.glb in website/assets/?', e);
+      console.warn('[scaleRef] setup failed — are the person/ball model assets in website/assets/?', e);
     }
   }
 
@@ -2157,9 +3371,11 @@
   //     and replay (target = refCenter + offset) so any future drift is OK.
   //
   // Morph names from the glb (case/dash normalized): Scale, Length,
-  // Height_high, Height_low, Radius, Thickness. There is no "Width" morph —
-  // Width only shifts the root in X (= half the separation between the
-  // mirrored halves; the LegSupport stretches inward to meet the plane).
+  // Height_min/_max (+ legacy Height_low/_high), Height_mid (Buttons,
+  // Hardware_1), Scale_min/_max, Scale_mid + Scale_max_1/_2 (Arm, ArmHub),
+  // Radius, Thickness. There is no "Width" morph — Width only shifts the root
+  // in X (= half the separation between the mirrored halves; the LegSupport
+  // stretches inward to meet the plane).
   function buildRig(scene, rootNode) {
     const PARAM = {
       length:      { min: 200, max: 700 },   // mm — morph Length
@@ -2227,7 +3443,9 @@
       }
 
       // ---- Length ----
-      const length = clamp01(lerpInv(Lmm, PARAM.length.min, PARAM.length.max));
+      // No direct weight here anymore: the sidebar family's Length morph is
+      // solved geometrically per frame (see solveSidebarLength) so that the
+      // Main-origin → SideBarBand-center distance equals Lmm − 80·sf.
 
       // ---- Height (basis = 250 mm midpoint) ----
       // Height_low / Height_high (legacy) and Height_min / Height_max (new) are
@@ -2240,9 +3458,31 @@
         hlow  = 0;
         hhigh = clamp01(lerpInv(Hmm, PARAM.heightMid, PARAM.heightHigh.max)); // 250 → 0, 600 → 1
       }
+
+      // ---- Progressive Scale_mid → Scale_max handoff (Arm family) ----
+      // On meshes that carry a Scale_mid key, scaling up from the 200 mm basis
+      // uses Scale_mid ALONE until the halfway point, then hands off linearly
+      // to the Scale_max key(s) so mid + max always sums to the upward weight:
+      //   sUp ≤ 0.5 : mid = sUp,     max = 0
+      //   sUp > 0.5 : mid = 1 − sUp, max = 2·sUp − 1   (at sUp=1: mid 0, max 1)
+      const sUp       = scaleMax;                    // upward-normalized thigh scale
+      const scaleMid  = Math.min(sUp, 1 - sUp);
+      const scaleMaxT = Math.max(0, 2 * sUp - 1);    // total Scale_max component
+      // Arm/ArmHub split that max between two sculpts by the height-up weight:
+      // Scale_max_1 is the low-height sculpt (active when Height_max = 0, incl.
+      // heights below basis), Scale_max_2 the tall one (Height_max = 1); a mid
+      // height blends them linearly — e.g. hhigh 0.5 → 0.25 + 0.25.
+      const scaleMax1 = scaleMaxT * (1 - hhigh);
+      const scaleMax2 = scaleMaxT * hhigh;
+      // Same progressive handoff for meshes carrying Height_mid (Buttons,
+      // Hardware_1): Height_mid first, then their single Height_max.
+      const hhighMid  = Math.min(hhigh, 1 - hhigh);
+      const hhighMaxT = Math.max(0, 2 * hhigh - 1);
+
       const radius    = clamp01(lerpInv(R, PARAM.radiusMorph.min, PARAM.radiusMorph.max));
       const thickness = clamp01(lerpInv(m.thickness, PARAM.thickness.min, PARAM.thickness.max));
-      return { scale, scaleMin, scaleMax, length, hlow, hhigh,
+      return { scale, scaleMin, scaleMax, hlow, hhigh,
+               scaleMid, scaleMaxT, scaleMax1, scaleMax2, hhighMid, hhighMaxT,
                radius, thickness, sf,
                Wmm, Hmm, Tmm, Lmm, R, autoR, displayedHmm };
     }
@@ -2295,12 +3535,19 @@
 
     // ---- Hide reference meshes (they're invisible helpers, not parts) ----
     // Keep them enabled so we can read their morphed bounding boxes.
-    const refMeshes = scene.meshes.filter((m) => /Ref$/.test(m.name));
+    // SeatHole1–4Ref are exempt: since the re-export they carry the actual
+    // seat-fixation screw geometry, so they render as visible hardware.
+    const refMeshes = scene.meshes.filter((m) =>
+      /Ref$/.test(m.name) && !/^SeatHole/i.test(m.name));
     refMeshes.forEach((m) => { m.isVisible = false; });
 
     // Visible parts that make up the right half. The mirror creates the left.
+    // SideBarScrew + the SeatHole screws keep their original .glb materials
+    // (not listed in MATERIAL_SLOTS), like the Hardware_* parts.
     const visibleNames = ['Arm', 'ArmHub', 'Buttons', 'LegSupport', 'LegSupportStrap',
-                          'Main', 'Seat', 'SideBar', 'SideBarBand_R', 'Rim', 'Tire'];
+                          'Main', 'Seat', 'SideBar', 'SideBarBand_R', 'SideBarScrew',
+                          'Rim', 'Tire',
+                          'SeatHole1Ref', 'SeatHole2Ref', 'SeatHole3Ref', 'SeatHole4Ref'];
     // Hardware_* parts keep their original .glb material (they're deliberately
     // excluded from MATERIAL_SLOTS below), but they still belong to the right
     // half, so include them in the mirror. Matched by prefix so any future
@@ -2326,12 +3573,13 @@
     //
     // Add or move a mesh between slots by editing this map — no other code
     // needs to change. Mirror instances follow automatically because they
-    // share their source's material. "Buttons" rides the SideBar slot (m3).
+    // share their source's material. "Buttons" are printed in TPU, so they
+    // ride the flexible slot (m4) with the tire/seat.
     const MATERIAL_SLOTS = {
       m1: ['Rim', 'Arm', 'Main', 'SideBarBand_R'],
       m2: ['ArmHub', 'LegSupport'],
-      m3: ['SideBar', 'Buttons'],
-      m4: ['Tire', 'Seat', 'LegSupportStrap'],
+      m3: ['SideBar'],
+      m4: ['Tire', 'Seat', 'LegSupportStrap', 'Buttons'],
     };
     const styleMats = {};
     Object.entries(MATERIAL_SLOTS).forEach(([slot, names]) => {
@@ -2430,6 +3678,79 @@
       });
     }
 
+    // ---- SideBar Length solve: precompute the band's morph-center deltas ----
+    // The sidebar family's Length weight isn't a direct slider mapping: it's
+    // whatever weight puts the SideBarBand's geometric center at exactly
+    // (Length − 80·sf) mm from the Main part's origin. Morph targets are
+    // additive, so the band's mesh-local center is linear in every weight:
+    //   c_local(wLen) = cBasis + Σ otherW_i·dMean_i + wLen·dMeanLen
+    // We cache the basis mean + per-target mean deltas once; the per-frame
+    // solve is then a quadratic in wLen on the world-space segment.
+    const sideBarBand = getMesh('SideBarBand_R');
+    const mainPartNode = getNode('Main');
+    let bandSolve = null;
+    if (sideBarBand && sideBarBand.morphTargetManager && mainPartNode) {
+      const meanV = (arr) => {
+        let x = 0, y = 0, z = 0;
+        const nV = arr.length / 3;
+        for (let i = 0; i < arr.length; i += 3) { x += arr[i]; y += arr[i + 1]; z += arr[i + 2]; }
+        return new BABYLON.Vector3(x / nV, y / nV, z / nV);
+      };
+      const cBasis = meanV(sideBarBand.getVerticesData(POSITION) || []);
+      const mgrB = sideBarBand.morphTargetManager;
+      const others = [];   // non-Length targets: { t, d } (d = mean delta)
+      let dLen = null;
+      for (let i = 0; i < mgrB.numTargets; i++) {
+        const t = mgrB.getTarget(i);
+        const d = meanV(t.getPositions()).subtract(cBasis);
+        if (normName(t.name) === 'length') dLen = d;
+        else others.push({ t, d });
+      }
+      if (dLen) bandSolve = { cBasis, dLen, others };
+      console.log('[Petwheels rig] sidebar length solve wired:', { ok: !!bandSolve });
+    }
+
+    // Solve |bandCenter(wLen) − MainOrigin| = (Lmm − 80·sf) mm. Must run AFTER
+    // applyInfluences (the "other" weights are read live) and after the
+    // sidebar group is positioned — the node's world matrix is morph-
+    // independent, so one closed-form solve is exact, no iteration needed.
+    function solveSidebarLength(w) {
+      if (!bandSolve) return 0;
+      sideBarBand.computeWorldMatrix(true);
+      const M = sideBarBand.getWorldMatrix();
+      const cLocal = bandSolve.cBasis.clone();
+      for (const { t, d } of bandSolve.others) cLocal.addInPlace(d.scale(t.influence));
+      const c0  = BABYLON.Vector3.TransformCoordinates(cLocal, M);
+      const dir = BABYLON.Vector3.TransformNormal(bandSolve.dLen, M);
+      mainPartNode.computeWorldMatrix(true);
+      const e = c0.subtract(mainPartNode.getAbsolutePosition());
+      const T = (w.Lmm - 80 * w.sf) * MM_TO_M;
+      // |e + wLen·dir|² = T²  →  a·wLen² + b·wLen + c = 0; the +√disc root is
+      // the one where distance grows along the morph direction.
+      const a = BABYLON.Vector3.Dot(dir, dir);
+      const b = 2 * BABYLON.Vector3.Dot(e, dir);
+      const c = BABYLON.Vector3.Dot(e, e) - T * T;
+      let wLen = 0;
+      if (a > 1e-12) {
+        const disc = b * b - 4 * a * c;
+        if (disc >= 0) wLen = (-b + Math.sqrt(disc)) / (2 * a);
+      }
+      return clamp01(wLen);   // ≤ 0 → 0 (per spec); >1 capped like every morph
+    }
+
+    // Write the solved weight onto every Length target of the sidebar family.
+    const sidebarLenMeshes = ['SideBar', 'SideBarBand_R', 'SideBarScrew'].flatMap(getMeshes);
+    function applySidebarLength(wLen) {
+      sidebarLenMeshes.forEach((mesh) => {
+        const mgr = mesh.morphTargetManager;
+        if (!mgr) return;
+        for (let i = 0; i < mgr.numTargets; i++) {
+          const t = mgr.getTarget(i);
+          if (normName(t.name) === 'length') t.influence = wLen;
+        }
+      });
+    }
+
     // ---- Build mirror: instances of every visible mesh, under a -X-scaled root ----
     // MirrorRoot lives under modelRoot so drag rotation applies to both halves.
     const mirrorRoot = new BABYLON.TransformNode('PetwheelsMirror', scene);
@@ -2497,6 +3818,15 @@
       scene.meshes.forEach((mesh) => {
         const mgr = mesh.morphTargetManager;
         if (!mgr) return;
+        // Meshes that carry a *_mid key use the progressive mid→max handoff;
+        // meshes without it keep the legacy full-range weight on their plain
+        // Scale_max / Height_max (e.g. WheelCenterRef, LegSupport).
+        let hasScaleMid = false, hasHeightMid = false;
+        for (let i = 0; i < mgr.numTargets; i++) {
+          const tn = normName(mgr.getTarget(i).name);
+          if (tn === 'scalemid')  hasScaleMid  = true;
+          if (tn === 'heightmid') hasHeightMid = true;
+        }
         for (let i = 0; i < mgr.numTargets; i++) {
           const t = mgr.getTarget(i);
           const n = normName(t.name);
@@ -2504,16 +3834,24 @@
           switch (n) {
             // Legacy single shape keys (basis = the params.py min for that param).
             case 'scale':      v = w.scale;    break;
-            case 'length':     v = w.length;   break;
+            // Length (sidebar family) is solved geometrically after the groups
+            // are positioned — see solveSidebarLength in update(). Skip here.
+            case 'length':     v = null;       break;
             // Height: legacy names (Height_low/_high) and renamed (Height_min/_max)
             // share the same numeric weight (basis = 250 mm midpoint).
             case 'heightlow':
             case 'heightmin':  v = w.hlow;     break;
             case 'heighthigh':
-            case 'heightmax':  v = w.hhigh;    break;
-            // Scale split (basis = 200 mm midpoint), on Arm / ArmHub / WheelCenterRef.
+            case 'heightmax':  v = hasHeightMid ? w.hhighMaxT : w.hhigh; break;
+            case 'heightmid':  v = w.hhighMid;  break;
+            // Scale split (basis = 200 mm midpoint), on Arm / ArmHub / Buttons /
+            // Hardware_1 / WheelCenterRef.
             case 'scalemin':   v = w.scaleMin; break;
-            case 'scalemax':   v = w.scaleMax; break;
+            case 'scalemid':   v = w.scaleMid; break;
+            case 'scalemax':   v = hasScaleMid ? w.scaleMaxT : w.scaleMax; break;
+            // Arm/ArmHub: the Scale_max component split by the height-up weight.
+            case 'scalemax1':  v = w.scaleMax1; break;
+            case 'scalemax2':  v = w.scaleMax2; break;
             case 'radius':
               // Rim's Radius shape key is authored inverted (1=min, 0=max).
               // A multi-material Rim is split by the glTF loader into
@@ -2648,6 +3986,11 @@
       positionGroupToRef(sidebarGroup, refSideBarCtr,   offSidebar);
       positionGroupToRef(wheelGroup,   refWheelCenter,  offWheel);
 
+      // 4b) SideBar length: with the sidebar group in place, solve the Length
+      //     weight that puts the band center (Lmm − 80·sf) mm from Main's
+      //     origin, and apply it to SideBar / SideBarBand_R / SideBarScrew.
+      applySidebarLength(solveSidebarLength(w));
+
       // 5) Now the LegSupportGroup world is final — snap and write the buffer.
       if (legCpu && legSupport) {
         clampLegSupportToPlane();
@@ -2682,7 +4025,9 @@
     return { update, materials: styleMats };
   }
 
-  BABYLON.SceneLoader.AppendAsync('assets/', 'petwheels.glb', scene).then(() => {
+  modelUrl('petwheels.glb').then((u) =>
+    BABYLON.SceneLoader.AppendAsync('', u, scene, undefined, '.glb')
+  ).then(async () => {
     // Identify the model root — gltf import creates a "__root__" transform node
     modelRoot = scene.getTransformNodeByName('__root__')
       || scene.transformNodes.find((n) => n.name === '__root__')
@@ -2711,11 +4056,6 @@
         console.error('[Petwheels rig] setup failed', e);
       }
 
-      // First framing snaps the camera (no fly-in animation).
-      frameCamera(true);
-
-      // Load + wire the parametric dog (async; won't block or break the viewer).
-      setupDog();
     }
 
     scene.animationGroups.forEach((g) => g.stop());
@@ -2725,10 +4065,33 @@
       idleAnim.start(true, 1.5, idleAnim.from, idleAnim.to, false);
     }
 
+    if (modelRoot) {
+      // Deterministic boot: the loading screen stays up until the FULL scene
+      // — chair, dog, anchored accessories — is loaded, classified, solved
+      // and framed. Revealing earlier (and letting the async pieces trickle
+      // in) is what produced the launch flakiness: misplaced accessories,
+      // a camera framed around half a scene, and the LegSupport briefly
+      // snapping the wrong (swapped) vertex group. Both setups catch their
+      // own errors, so a failed optional piece can never hang the loader.
+      await Promise.all([setupDog(), setupAccessories()]);
+      try {
+        if (acc) {
+          updateAccessories();                       // first full solve (dog is in)
+          if (acc.applyToggles) acc.applyToggles();  // now safe to show them
+        }
+        if (rig) rig.update();   // final pass: everything in its solved place
+      } catch (e) {
+        console.error('[boot] final solve failed', e);
+      }
+      // Single snap framing of the COMPLETE assembly (no fly-in).
+      frameCamera(true);
+    }
+
     loader?.classList.add('is-hidden');
+    canvas.classList.remove('is-booting');   // fade the finished scene in
   }).catch((err) => {
     console.error('Failed to load petwheels.glb', err);
-    if (loader) loader.textContent = 'Could not load 3D model';
+    if (loader) loader.textContent = tr('Could not load 3D model');
   });
 
   // ============ GET STL FILES (CadQuery → Supabase → download) ============
@@ -2836,12 +4199,12 @@
     setProgress(row.stage || '', row.progress || 0);
     if (row.status === 'done') {
       teardownChannel();
-      setProgress('Done', 100);
+      setProgress(tr('Done'), 100);
       await downloadStlZip(publicUrl(row.zip_path));
       closeModal(); lockUI(false); buildState.building = false;
     } else if (row.status === 'error') {
       teardownChannel();
-      failModal(row.error || 'Build failed');
+      failModal(row.error || tr('Build failed'));
     } else if (row.status === 'cancelled') {
       teardownChannel();
       closeModal(); lockUI(false); buildState.building = false;
@@ -2851,7 +4214,7 @@
   async function startBuild() {
     if (buildState.building) return;
     const sb = getSupabase();
-    if (!sb) { alert('Supabase is not configured.'); return; }
+    if (!sb) { alert(tr('Supabase is not configured.')); return; }
     if (!cfg.CAD_SERVICE_URL) {
       alert('The build service URL is not set yet (config.js → CAD_SERVICE_URL).');
       return;
@@ -2859,13 +4222,13 @@
 
     buildState.building = true;
     if (buildCancelEl) buildCancelEl.textContent = 'Cancel';
-    lockUI(true); openModal(); setProgress('Submitting…', 0);
+    lockUI(true); openModal(); setProgress(tr('Submitting…'), 0);
 
     const params = buildParams();
 
     const { data, error } = await sb.from('build_jobs')
       .insert({ params }).select('id').single();
-    if (error) { failModal('Could not create job: ' + error.message); return; }
+    if (error) { failModal(tr('Could not create job: ') + error.message); return; }
     buildState.jobId = data.id;
 
     buildState.channel = sb.channel('build-' + data.id)
@@ -2881,10 +4244,10 @@
         body: JSON.stringify({ job_id: data.id, params }),
       });
       if (!res.ok) throw new Error('service responded ' + res.status);
-      setProgress('Starting…', 1);
+      setProgress(tr('Starting…'), 1);
     } catch (e) {
       teardownChannel();
-      failModal('Could not reach the build service: ' + e.message);
+      failModal(tr('Could not reach the build service: ') + e.message);
     }
   }
 
@@ -2928,7 +4291,15 @@
       collar:          state.includeCollar,
     });
   }
+  const STL_FALLBACK_CENTS = 8990; // only if pricing.js failed to load
+  function stlPriceCents() {
+    const pricing = window.Petwheels && window.Petwheels.pricing;
+    return (pricing && pricing.config.stlBundleCents) || STL_FALLBACK_CENTS;
+  }
   function currentPriceCents() {
+    // The STL bundle is a flat price — the parameters change the files, not
+    // the printing cost (the buyer prints it themselves).
+    if (state.productType === 'stl') return stlPriceCents();
     const q = currentQuote();
     return q ? q.priceCents : FALLBACK_PRICE_CENTS;
   }
@@ -2939,6 +4310,9 @@
     return {
       modelId:   model.id,
       modelName: productName(model),
+      // 'assembled' | 'stl' — decides how the item is priced (server-side
+      // too: _shared/pricing.ts) and what the buyer receives.
+      productType: state.productType,
       unit:      state.unit,
       priceCents: currentPriceCents(),
       // Pet chosen in the Measure step's picker (set by account.js). Rides
@@ -3090,20 +4464,49 @@
   // while the viewer is visible. getBoundingClientRect() forces a synchronous
   // layout; doing it every frame during an off-screen scroll is a big jank source.
   let lastW = 0, lastH = 0;
+  // Collapse detector for the boot fly-in. Separate from lastW because the
+  // IntersectionObserver below zeroes lastW/lastH on every re-entry (to force
+  // a re-measure) — keying wasCollapsed off lastW made scrolling to the
+  // footer and back replay the boot zoom animation. This one only ever
+  // records honest measurements.
+  let lastRealW = 0;
   const measureAndResize = () => {
     if (viewerVisible) {
       const rect = canvas.getBoundingClientRect();
       const cssW = Math.max(0, Math.floor(rect.width));
       const cssH = Math.max(0, Math.floor(rect.height));
       if (cssW > 0 && cssH > 0 && (cssW !== lastW || cssH !== lastH)) {
+        const wasCollapsed = lastRealW < 50;   // welcome keeps the viewport at ~0 width
         lastW = cssW;
         lastH = cssH;
+        lastRealW = cssW;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         engine.setHardwareScalingLevel(1 / dpr);
         engine.setSize(Math.max(1, Math.round(cssW * dpr)), Math.max(1, Math.round(cssH * dpr)));
+        // The chromatic aberration post-process bakes screenWidth/Height in at
+        // creation and never follows resizes. The pipeline is created while the
+        // welcome screen has the viewport collapsed (tiny canvas), so without
+        // this sync the aberration offset explodes at full size (RGB ghosts).
+        pipeline.chromaticAberration.screenWidth = engine.getRenderWidth();
+        pipeline.chromaticAberration.screenHeight = engine.getRenderHeight();
         // Canvas size changed (resize, fullscreen toggle). Refit — slider
         // edits skip this path; only honest layout changes trigger a re-frame.
-        if (modelRoot) frameCamera(false, true);
+        if (modelRoot) {
+          if (wasCollapsed && cssW > 200) {
+            // First honest size (the viewport was collapsed until now): easing
+            // from the collapsed fit reads as a zoom-IN fly. Instead snap the
+            // frame, start 6% closer than the fit, and let the per-frame lerp
+            // drift outward — a subtle settle-out.
+            frameCamera(true, true);
+            if (camGoalRadius != null) camera.radius = camGoalRadius * 0.94;
+          } else {
+            // Ordinary resize (window, fullscreen, mobile URL-bar show/hide):
+            // refit but PRESERVE the user's dialed-in zoom — resetZoom=true
+            // here made every scroll-driven height change on phones yank the
+            // camera back to the default framing.
+            frameCamera(false, false);
+          }
+        }
       }
     }
     requestAnimationFrame(measureAndResize);
@@ -3200,6 +4603,14 @@
     const on = state.dogVisible !== false;
     if (d.mesh) d.mesh.setEnabled(on);
     if (d.inst) d.inst.setEnabled(on);
+    // The collar is part of the PRODUCT, not the dog: it stays visible in
+    // "Wheelchair only" (like the sling/strap) — only its Style toggle
+    // hides it. Re-applied here so boot restores reconcile correctly.
+    if (d.collar) {
+      const collarOn = state.includeCollar !== false;
+      d.collar.mesh.setEnabled(collarOn);
+      if (d.collar.inst) d.collar.inst.setEnabled(collarOn);
+    }
     // The scale-ref props (person + ball) belong with the dog — hide them in
     // "Wheelchair only" too. Both holders live under scaleRefRoot.
     if (scaleRefRoot) scaleRefRoot.setEnabled(on);
@@ -3227,6 +4638,157 @@
     });
   });
 
+  // Mini toast (the #toast element is injected by site-header.js).
+  let pwToastTimer = null;
+  const pwToast = (msg) => {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast is-show';
+    el.hidden = false;
+    clearTimeout(pwToastTimer);
+    pwToastTimer = setTimeout(() => el.classList.remove('is-show'), 2600);
+  };
+
+  // ---- Toolbar: reset measurements to factory defaults ----
+  // Locked sliders (a selected pet's saved measurements) are left alone — the
+  // pet stays authoritative; everything else replays through the same input
+  // path the sliders use. The wheel radius returns to auto.
+  $('#resetMeasures')?.addEventListener('click', () => {
+    const RESET_MAP = {
+      length: '#rangeLength', height: '#rangeHeight',
+      width: '#rangeWidth', thigh: '#rangeThigh', thickness: '#rangeThickness',
+    };
+    Object.entries(RESET_MAP).forEach(([k, sel]) => {
+      const s = $(sel);
+      if (s && !s.disabled) replaySlider(sel, MEASURE_DEFAULTS[k]);
+    });
+    if (state.measures.radiusManual) $('#radiusLock')?.click();
+    pwToast(tr('Measurements reset to defaults.'));
+  });
+
+  // ---- Share: one link that reopens THIS exact configuration ----
+  // UX: phones get the native share sheet (Web Share API); desktop copies the
+  // link and confirms with a toast + a brief checkmark on the button — the
+  // one-tap copy pattern, no popover to dismiss.
+  const buildShareUrl = () => {
+    const mats = {};
+    $$('.material-row').forEach((row) => {
+      const sel = row.querySelector('.material-swatch-item.is-selected');
+      if (sel && sel.dataset.color) mats[row.dataset.mat] = sel.dataset.color;
+    });
+    const payload = {
+      v: 1,
+      model: state.modelId,
+      unit: state.unit,
+      measures: { ...state.measures },
+      legSupport: state.legSupport,
+      backStrap: state.backStrap,
+      includeCollar: state.includeCollar,
+      mats,
+    };
+    const enc = btoa(JSON.stringify(payload))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `${location.origin}${location.pathname}?c=${enc}#measure`;
+  };
+  const shareBtn = $('#shareBtn');
+  if (shareBtn) {
+    const shareIcon = shareBtn.innerHTML;
+    let shareRevert = null;
+    shareBtn.addEventListener('click', async () => {
+      const url = buildShareUrl();
+      if (navigator.share && MOBILE_PANEL_MQ.matches) {
+        try { await navigator.share({ title: 'Petwheels', url }); return; }
+        catch (_) { /* cancelled or unsupported — fall through to copy */ }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        pwToast(tr('Link copied! Send it to anyone.'));
+        shareBtn.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        shareBtn.classList.add('is-done');
+        clearTimeout(shareRevert);
+        shareRevert = setTimeout(() => {
+          shareBtn.innerHTML = shareIcon;
+          shareBtn.classList.remove('is-done');
+        }, 1600);
+      } catch (_) {
+        window.prompt(tr('Copy the link:'), url);
+      }
+    });
+  }
+
+  // ---- Feedback (heart): tiny modal → public.feedback (insert-only RLS) ----
+  const feedbackBtn = $('#feedbackBtn');
+  if (feedbackBtn) {
+    let fbOverlay = null;
+    const closeFb = () => {
+      if (!fbOverlay) return;
+      fbOverlay.remove();
+      fbOverlay = null;
+      document.body.classList.remove('pw-modal-open');
+    };
+    feedbackBtn.addEventListener('click', () => {
+      if (fbOverlay) return;
+      fbOverlay = document.createElement('div');
+      fbOverlay.className = 'auth-overlay';
+      fbOverlay.innerHTML = `
+        <div class="sheet fb-modal" role="dialog" aria-modal="true">
+          <div class="sheet-header">
+            <h2 class="sheet-title">${tr('Feedback')}</h2>
+            <button class="sheet-close" type="button" aria-label="Close">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <p class="sheet-lede">${tr('Have something to say? A suggestion, a problem, an idea. We read every message.')}</p>
+            <textarea class="fb-text" rows="4" maxlength="4000" placeholder="${tr('Write your message…')}"></textarea>
+            <p class="auth-error" data-fb-error hidden></p>
+            <button class="btn btn-cta btn-block" data-fb-send type="button">${tr('Send')}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(fbOverlay);
+      document.body.classList.add('pw-modal-open');
+      const textEl = fbOverlay.querySelector('.fb-text');
+      const errEl = fbOverlay.querySelector('[data-fb-error]');
+      fbOverlay.querySelector('.sheet-close').addEventListener('click', closeFb);
+      fbOverlay.addEventListener('click', (e) => { if (e.target === fbOverlay) closeFb(); });
+      setTimeout(() => textEl.focus(), 50);
+      fbOverlay.querySelector('[data-fb-send]').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const message = textEl.value.trim();
+        errEl.hidden = true;
+        if (!message) { textEl.focus(); return; }
+        const sbF = window.__pwSb || ((window.supabase && cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY)
+          ? (window.__pwSb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY))
+          : null);
+        if (!sbF) {
+          errEl.textContent = tr('Could not send. Try again.');
+          errEl.hidden = false;
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = tr('Sending…');
+        let user_id = null, email = null;
+        try {
+          const { data } = await sbF.auth.getSession();
+          user_id = (data.session && data.session.user && data.session.user.id) || null;
+          email = (data.session && data.session.user && data.session.user.email) || null;
+        } catch (_) { /* anonymous feedback is fine */ }
+        const { error } = await sbF.from('feedback')
+          .insert({ message, user_id, email, page: 'customizer' });
+        if (error) {
+          btn.disabled = false;
+          btn.textContent = tr('Send');
+          errEl.textContent = tr('Could not send. Try again.');
+          errEl.hidden = false;
+          return;
+        }
+        closeFb();
+        pwToast(tr('Thanks for the feedback!'));
+      });
+    });
+  }
+
   // ---- Model selector dropdown ----
   // Rendered from the MODELS catalog at the top of this file. Adding a new
   // wheelchair = push another entry into MODELS. The trigger pill, the
@@ -3246,7 +4808,7 @@
     const renderTrigger = (model) => {
       // Header pill uses displayName if present, otherwise falls back to
       // the dropdown name so a missing field never reads as empty.
-      if (modelName)  modelName.textContent = model.displayName || model.name;
+      if (modelName)  modelName.textContent = tr(model.displayName || model.name);
       if (modelThumb) modelThumb.src = model.thumbnail;
     };
 
@@ -3260,13 +4822,21 @@
               aria-selected="${selected ? 'true' : 'false'}">
             <img class="model-option-thumb" src="${escapeHtml(m.thumbnail)}" alt="" />
             <div class="model-option-text">
-              <span class="model-option-name">${escapeHtml(m.name)}</span>
-              <span class="model-option-desc">${escapeHtml(m.description)}</span>
+              <span class="model-option-name">${escapeHtml(tr(m.name))}</span>
+              <span class="model-option-desc">${escapeHtml(tr(m.description))}</span>
             </div>
           </li>
         `;
       }).join('');
     };
+
+    // Language switch: re-render the options and the trigger pill (same deal
+    // as the product-type dropdown below).
+    window.addEventListener('pw:langchange', () => {
+      renderOptions();
+      const cur = MODELS.find((m) => m.id === selectedId);
+      if (cur) renderTrigger(cur);
+    });
 
     const closeModelMenu = () => {
       if (modelMenu.hidden) return;
@@ -3328,6 +4898,116 @@
     });
   }
 
+  // ---- Product type dropdown (panel context row) ----
+  // Rendered from PRODUCT_TYPES into #productTypeMount, styled like the
+  // model/pet selectors (same .model-select classes, icon instead of photo).
+  // Switching re-prices everything through currentPriceCents().
+  {
+    const mount = $('#productTypeMount');
+    // With a single active product type there is nothing to choose — hide the
+    // whole "Product type" field (STL sales suspended).
+    if (mount && ACTIVE_PRODUCT_TYPES.length < 2) {
+      const field = mount.closest('.pet-pick-field');
+      if (field) field.hidden = true;
+    } else if (mount) {
+      // Icon strokes carry the brand gradients (warm = assembled, cool = STL)
+      // via inline <linearGradient> defs. The same string is injected in the
+      // trigger AND the menu list, so the ids repeat in the document — that's
+      // fine (identical defs, url(#) resolves to the first one).
+      const ICONS = {
+        // package/box — the assembled chair shipped to the door
+        assembled: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="url(#pwPtypeWarm)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="pwPtypeWarm" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FF7A1A"/><stop offset="1" stop-color="#FF3D78"/></linearGradient></defs><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+        // file with a down arrow — the downloadable STL bundle
+        stl: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="url(#pwPtypeCool)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="pwPtypeCool" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7C3AED"/><stop offset="1" stop-color="#2FB8FF"/></linearGradient></defs><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>',
+      };
+      mount.classList.add('model-select', 'ptype-select');
+      mount.innerHTML = `
+        <button class="model-select-trigger ptype-trigger" type="button"
+                aria-haspopup="listbox" aria-expanded="false">
+          <span class="model-select-thumb ptype-thumb"></span>
+          <span class="model-select-name ptype-name"></span>
+          <svg class="model-select-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="model-select-menu ptype-menu" hidden>
+          <ul class="model-options-list" role="listbox" aria-label="Product type">${
+            ACTIVE_PRODUCT_TYPES.map((p) => `
+              <li class="model-option" role="option" tabindex="0" data-ptype="${p.id}">
+                <span class="model-option-thumb ptype-thumb">${ICONS[p.id] || ''}</span>
+                <div class="model-option-text">
+                  <span class="model-option-name">${tr(p.name)}</span>
+                  <span class="model-option-desc">${tr(p.description)}</span>
+                </div>
+              </li>`).join('')
+          }</ul>
+        </div>`;
+
+      const trigger = mount.querySelector('.ptype-trigger');
+      const thumbEl = trigger.querySelector('.ptype-thumb');
+      const nameEl  = trigger.querySelector('.ptype-name');
+      const menu    = mount.querySelector('.ptype-menu');
+
+      const renderPtype = () => {
+        const p = productTypeById(state.productType);
+        thumbEl.innerHTML = ICONS[p.id] || '';
+        nameEl.textContent = tr(p.name);
+        menu.querySelectorAll('.model-option').forEach((opt) => {
+          const isSel = opt.dataset.ptype === p.id;
+          opt.classList.toggle('is-selected', isSel);
+          opt.setAttribute('aria-selected', isSel ? 'true' : 'false');
+        });
+      };
+      const closePtypeMenu = () => {
+        menu.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+      const selectPtype = (id) => {
+        state.productType = productTypeById(id).id;
+        renderPtype();
+        closePtypeMenu();
+        // Re-price everywhere the total shows (viewport header + review).
+        updateWeightStat();
+        updateReview();
+      };
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.hidden = !menu.hidden;
+        trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+      });
+      document.addEventListener('click', (e) => {
+        if (!menu.hidden && !mount.contains(e.target)) closePtypeMenu();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !menu.hidden) closePtypeMenu();
+      });
+      menu.addEventListener('click', (e) => {
+        const opt = e.target.closest('[data-ptype]');
+        if (opt) selectPtype(opt.dataset.ptype);
+      });
+      menu.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const opt = e.target.closest('[data-ptype]');
+        if (!opt) return;
+        e.preventDefault();
+        selectPtype(opt.dataset.ptype);
+      });
+
+      renderPtype();   // reflects a session-snapshot restore too
+
+      // Language switch: re-label the trigger and the menu options.
+      window.addEventListener('pw:langchange', () => {
+        menu.querySelectorAll('.model-option').forEach((opt) => {
+          const p = productTypeById(opt.dataset.ptype);
+          const nm = opt.querySelector('.model-option-name');
+          const ds = opt.querySelector('.model-option-desc');
+          if (nm) nm.textContent = tr(p.name);
+          if (ds) ds.textContent = tr(p.description);
+        });
+        renderPtype();
+      });
+    }
+  }
+
   const tweenAccumulatedY = (delta) => {
     tween(() => accumulatedY, accumulatedY + delta, (v) => { accumulatedY = v; applyModelRotation(); });
   };
@@ -3348,6 +5028,15 @@
       applyZoom();
     });
     syncZoomSlider();   // seat the thumb + fill at the current factor
+    // The rotated slider's WIDTH is its vertical length — keep it equal to the
+    // track's live height. Desktop track is a fixed 148px; on mobile the track
+    // flexes to whatever stage height is available, so it must be measured.
+    const zoomTrack = zoomSlider.closest('.vp-zoom-track');
+    if (zoomTrack && window.ResizeObserver) {
+      new ResizeObserver(() => {
+        zoomSlider.style.width = zoomTrack.clientHeight + 'px';
+      }).observe(zoomTrack);
+    }
   }
   $('#resetView')?.addEventListener('click', () => {
     tween(() => accumulatedY, 0, (v) => { accumulatedY = v; applyModelRotation(); }, 400);

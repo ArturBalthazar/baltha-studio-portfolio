@@ -29,7 +29,7 @@
   <meta name="twitter:title" content="Baltha Studio • Artur Balthazar's Design Portfolio" />
   <meta name="twitter:description" content="Product design, mechanical engineering, 3D printing and WebGL projects by Artur Balthazar." />
   <meta name="twitter:image" content="https://baltha.studio/assets/brand/og-image.png" />
-  <link rel="stylesheet" href="styles.css?v=214" />
+  <link rel="stylesheet" href="styles.css?v=215" />
 </head>
 <body>
   <div class="app">
@@ -80,6 +80,26 @@
       </aside>
     </div>
 
+    <!-- Intro video splash: floats centered over a darkened page on load.
+         Click the video to play (YouTube's own play button); the X above it,
+         the backdrop or Esc close it — closing flies the card toward the
+         Curriculum Vitae header button (logic in app.js). -->
+    <div class="intro-video" id="intro-video" aria-hidden="true">
+      <div class="intro-video-backdrop" data-close-intro></div>
+      <div class="intro-video-card" id="intro-video-card" role="dialog" aria-modal="true" aria-label="Intro video">
+        <button class="intro-video-close" data-close-intro aria-label="Close video">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+        <div class="intro-video-frame">
+          <iframe id="intro-video-iframe"
+                  src="https://www.youtube.com/embed/WWfWDaPzvxM?rel=0"
+                  title="Artur Balthazar — video CV"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
     <!-- Mobile-only: project info overlay (summary, knowledge, skills, software). -->
     <div class="info-modal" id="info-modal" aria-hidden="true">
       <div class="info-modal-backdrop" data-close-info></div>
@@ -92,6 +112,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=214"></script>
+  <script src="app.js?v=215"></script>
 </body>
 </html>

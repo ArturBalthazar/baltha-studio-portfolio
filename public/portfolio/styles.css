@@ -5381,3 +5381,125 @@ body {
     height: auto;
   }
 }
+
+/* ---------- Video CV (top of the Curriculum Vitae panel) ---------- */
+.cv-video {
+  margin-bottom: 18px;
+}
+
+.cv-video-frame {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+}
+
+.cv-video-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ---------- Intro video splash ---------- */
+/* Floats the video CV centered over a darkened page on load. Closing flies the
+   card toward the Curriculum Vitae header button (transform set inline by
+   app.js from the measured positions); the backdrop fades out underneath. */
+.intro-video {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.intro-video.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* While the card is flying to the header, the overlay stays mounted but must
+   not eat clicks; the backdrop fades on its own so the card remains crisp. */
+.intro-video.closing {
+  pointer-events: none;
+}
+
+.intro-video-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 14, 30, 0.6);
+  transition: opacity 0.4s ease;
+}
+
+.intro-video.closing .intro-video-backdrop {
+  opacity: 0;
+}
+
+.intro-video-card {
+  position: relative;
+  z-index: 1;
+  /* 16:9 card sized to fit both axes with breathing room for the X above. */
+  width: min(880px, 88vw, calc((100vh - 140px) * 16 / 9));
+  will-change: transform;
+  /* Entrance: small pop when .open lands. */
+  transform: scale(0.96);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.intro-video.open .intro-video-card {
+  transform: scale(1);
+}
+
+.intro-video-frame {
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 30px 90px rgba(5, 8, 20, 0.55);
+}
+
+.intro-video-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Close (X): above the card, aligned to its right edge. */
+.intro-video-close {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.intro-video-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.06);
+}
+
+/* Landing pop on the Curriculum Vitae button when the card is "dumped" there. */
+@keyframes cvCatch {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.about-toggle.cv-catch {
+  animation: cvCatch 0.45s ease;
+}
