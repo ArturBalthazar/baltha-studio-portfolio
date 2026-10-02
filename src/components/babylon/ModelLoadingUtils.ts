@@ -15,8 +15,15 @@ export const modelOriginalScales: Map<BABYLON.TransformNode | BABYLON.AbstractMe
 // Store original rotations for models (set when models are loaded, used for reset)
 export const modelOriginalRotations: Map<BABYLON.TransformNode | BABYLON.AbstractMesh, BABYLON.Quaternion> = new Map();
 
+// Model folders (relative to /assets/models/) that ship a separate "lightmaps/" folder.
+// Every other model has its lightmaps embedded in the glTF, so probing them only
+// produces a 404 per mesh. Add a model here when you give it a lightmaps folder.
+const MODELS_WITH_LIGHTMAP_FOLDER = new Set([
+    'meetkai/thanksgiving',
+]);
+
 /**
- * Checks if a lightmaps folder exists for a model and applies lightmaps to mesh materials.
+ * Applies lightmaps from a model's "lightmaps/" folder to its mesh materials.
  * Lightmaps are named after the mesh object (e.g., "chair2_lightmap.png" for mesh "chair2")
  * and are assigned to the material's lightmapTexture using UV channel 2 (coordinatesIndex = 1).
  * 
@@ -33,9 +40,12 @@ export async function applyLightmapsToModel(
     const normalizedPath = basePath.endsWith('/') ? basePath : basePath + '/';
     const lightmapsPath = `${normalizedPath}lightmaps/`;
 
-    // NOTE: We skip folder existence check - individual file checks with
-    // content-type verification are sufficient. HEAD requests to directories
-    // on Vite dev server return 200 even for non-existent paths.
+    // Folder existence can't be checked over HTTP (Vite returns 200 for any
+    // directory path), so use the explicit list instead of probing.
+    const modelKey = normalizedPath.replace(/^.*\/assets\/models\//, '').replace(/\/$/, '');
+    if (!MODELS_WITH_LIGHTMAP_FOLDER.has(modelKey)) {
+        return;
+    }
 
     // Try to load lightmaps for each mesh
     for (const mesh of meshes) {
@@ -62,7 +72,7 @@ export async function applyLightmapsToModel(
 
         // Create the lightmap texture with proper callbacks
         // invertY MUST be false for lightmaps to work correctly
-        new BABYLON.Texture(
+        const lightmapTexture: BABYLON.Texture = new BABYLON.Texture(
             lightmapUrl,
             scene,
             false, // noMipmap
@@ -70,13 +80,13 @@ export async function applyLightmapsToModel(
             BABYLON.Texture.TRILINEAR_SAMPLINGMODE,
             () => {
                 // Success callback - apply the lightmap
-                const lightmapTexture = new BABYLON.Texture(lightmapUrl, scene, false, false);
                 pbrMat.lightmapTexture = lightmapTexture;
                 pbrMat.lightmapTexture.coordinatesIndex = 1; // Use UV2
                 pbrMat.useLightmapAsShadowmap = true;
             },
             () => {
                 // Error callback - lightmap not found, silently skip
+                lightmapTexture.dispose();
             }
         );
     }
